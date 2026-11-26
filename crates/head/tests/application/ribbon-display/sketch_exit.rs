@@ -43,8 +43,7 @@ fn view_keeps_finish_until_the_sketch_is_finished() {
 }
 
 use super::super::workspace_layout::browser_feature::{
-    FEATURE, SKETCH, click_branch_arrow, expect_solid_visible, open_visible_extruded_part,
-    right_click_row,
+    FEATURE, SKETCH, expect_solid_visible, open_visible_extruded_part, right_click_row,
 };
 use cucumber::{given, then, when};
 
@@ -109,11 +108,51 @@ fn part_with_existing_sketch(world: &mut ApplicationWorld) {
     if !active_fixture_is(world, "workspace-layout-native.opd") {
         open_visible_extruded_part(world);
     }
-    let [feature, sketch] = extrusion_and_sketch_rows(world);
-    if world.shows(sketch) {
-        click_branch_arrow(world, feature);
+    if extrusion_sketch_run(world).is_some() {
+        toggle_extrusion_branch(world);
     }
-    world.expect_no_text(sketch);
+    assert!(
+        extrusion_sketch_run(world).is_none(),
+        "expected the extrusion's sketch row to be hidden: {:?}",
+        world.text()
+    );
+}
+
+fn toggle_extrusion_branch(world: &mut ApplicationWorld) {
+    use imgui::sys;
+
+    let [feature, _] = extrusion_and_sketch_rows(world);
+    let row = world.run(feature);
+    let mut icon_inset = sys::ImVec2::default();
+    // Feature captions reserve six spaces for the icon between the arrow and the text.
+    let arrow_inset = unsafe {
+        sys::igCalcTextSize(
+            &mut icon_inset,
+            c"      ".as_ptr(),
+            std::ptr::null(),
+            false,
+            -1.,
+        );
+        sys::igGetFontSize() / 2. + (*sys::igGetStyle()).FramePadding.x
+    };
+    let at = super::super::diagnostics::pointer_pixels([
+        row.minimum[0] - icon_inset.x - arrow_inset,
+        row.center()[1],
+    ]);
+    world.click(at);
+    world.pump(Vec::new());
+}
+
+fn extrusion_sketch_run(
+    world: &mut ApplicationWorld,
+) -> Option<&super::super::diagnostics::RenderedRun> {
+    let [feature, sketch] = extrusion_and_sketch_rows(world);
+    let row = world.run(feature);
+    let row_height = unsafe { imgui::sys::igGetTextLineHeightWithSpacing() };
+    world.frame.runs.iter().find(|run| {
+        let offset = run.center()[1] - row.center()[1];
+        run.list == row.list && run.text == sketch && (0. ..=row_height + 2.).contains(&offset)
+    })
 }
 
 fn active_fixture_is(world: &mut ApplicationWorld, basename: &str) -> bool {
@@ -140,14 +179,17 @@ fn minimized_tools_ribbon(world: &mut ApplicationWorld) {
 }
 #[when("the user expands the extrusion in the model browser")]
 fn expand_existing_extrusion(world: &mut ApplicationWorld) {
-    let [feature, sketch] = extrusion_and_sketch_rows(world);
-    click_branch_arrow(world, feature);
-    world.expect_text(sketch);
+    toggle_extrusion_branch(world);
+    assert!(
+        extrusion_sketch_run(world).is_some(),
+        "expected the extrusion's sketch row beneath its parent: {:?}",
+        world.text()
+    );
 }
 #[when("the user double-clicks its sketch")]
 fn edit_existing_sketch_by_double_click(world: &mut ApplicationWorld) {
-    let [_, sketch] = extrusion_and_sketch_rows(world);
-    let at = super::super::diagnostics::pointer_pixels(world.run(sketch).center());
+    let child = extrusion_sketch_run(world).expect("expected the extrusion's sketch row");
+    let at = super::super::diagnostics::pointer_pixels(child.center());
     world.pump(crate::native::gui_loop_tests::pointer_click_events(at, 2));
     world.pump(Vec::new());
     assert_eq!(
@@ -158,10 +200,10 @@ fn edit_existing_sketch_by_double_click(world: &mut ApplicationWorld) {
 #[then("the Sketch tab is selected while the ribbon remains minimized to tabs")]
 fn sketch_selected_without_commands(world: &mut ApplicationWorld) {
     sketch_tabs_without_commands(world);
-    world.hover([1000, 600]);
-    let inactive = world.pixel_left_of("View");
-    assert_eq!(world.pixel_left_of("Tools"), inactive);
-    assert_ne!(world.pixel_left_of("Sketch"), inactive);
+    assert_eq!(
+        ribbon_tab_underlines(world, ["Sketch", "Tools", "View"]),
+        [true, false, false]
+    );
 }
 #[then("temporary Tools command groups appear beneath the tabs")]
 fn temporary_tools_with_sketch(world: &mut ApplicationWorld) {
@@ -176,10 +218,11 @@ fn finish_in_exit_group(world: &mut ApplicationWorld) {
 #[then("the ribbon remains minimized to tabs with Tools selected")]
 fn minimized_tools_selected(world: &mut ApplicationWorld) {
     world.expect_no_text("Application Options");
-    world.hover([1000, 600]);
-    let inactive = world.pixel_left_of("View");
-    assert_eq!(world.pixel_left_of("Sketch"), inactive);
-    assert_ne!(world.pixel_left_of("Tools"), inactive);
+    assert!(window_geometry("##ribbon-temporary-panel").is_none());
+    assert_eq!(
+        ribbon_tab_underlines(world, ["Tools", "Sketch", "View"]),
+        [true, false, false]
+    );
 }
 
 #[given("an existing sketch is being edited in the MCAD Software")]
