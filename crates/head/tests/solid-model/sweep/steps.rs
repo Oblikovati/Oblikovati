@@ -237,6 +237,44 @@ fn sweep_is_open_for_editing(world: &mut ApplicationWorld) {
     chosen_sources(world);
 }
 
+#[when("the path is cleared while editing")]
+fn clear_sweep_path(world: &mut ApplicationWorld) {
+    click_panel(world, "ClearPath");
+}
+
+#[then("the path selector requests a curve or edge")]
+fn sweep_requests_a_path(world: &mut ApplicationWorld) {
+    let draft = world.state().sweep_preview.unwrap();
+    assert_eq!(draft.result, GuiSweepPreview::MissingPath);
+    assert!(draft.request.path_cleared);
+    let panel = super::world::squeezed(&world.window_text("Sweep"));
+    assert!(panel.contains("SelectCurveorEdge"), "{panel}");
+    assert!(panel.contains("1Profile"), "{panel}");
+    assert!(!panel.contains("1Curve"), "{panel}");
+}
+
+#[then("the solid preview disappears and OK is disabled")]
+fn missing_path_removes_the_sweep_preview(world: &mut ApplicationWorld) {
+    assert!(!world.run_is_enabled("OK"));
+    assert!(world.app().window.scene_triangles.is_empty());
+    assert_eq!(world.state().browser.unwrap().bodies.len(), 1);
+    world.save_capture("sweep-path-cleared");
+}
+
+#[then("the existing Sweep1 solid returns")]
+fn original_sweep_returns(world: &mut ApplicationWorld) {
+    accepted_sweep(world);
+    assert!(world.state().sweep_preview.is_none());
+    assert!(!world.app().window.scene_triangles.is_empty());
+}
+
+#[then("reopening Sweep1 shows its profile and path retained")]
+fn original_sweep_inputs_return(world: &mut ApplicationWorld) {
+    reopen_sweep(world);
+    taper_is_retained(world);
+    assert!(!world.state().sweep_preview.unwrap().request.path_cleared);
+}
+
 #[when("orientation selector style is changed to Dropdown")]
 fn dropdown_style(world: &mut ApplicationWorld) {
     click_panel(world, "Orientation");

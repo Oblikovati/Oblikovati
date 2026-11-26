@@ -136,3 +136,11 @@ The [orientation receipt](receipts/2026-11-26-sweep-orientation-3917/README.md)
 covers the Guide validation and Fixed edit on both Linux backends. Guide
 reference picking and guided geometry remain open. Advanced Properties
 shows the unchecked single-selection option as read-only pending repicking.
+
+### Clear a saved Sweep path
+
+Clear Path keeps the selected profile in the draft, requests a curve or
+edge, removes the Sweep body from the preview and disables OK. Restore
+Path puts the saved reference back in the draft. Cancel shows the original
+body again, and reopening the feature restores its references and taper.
+See the [native receipt](receipts/2026-11-26-sweep-path-cancel-3917/README.md).

@@ -31,6 +31,7 @@ pub struct GuiSweepRequest {
     pub document: u64,
     pub generation: u64,
     pub feature: Option<FeatureId>,
+    pub path_cleared: bool,
     pub orientation: GuiSweepOrientation,
     pub taper: String,
 }
@@ -40,6 +41,7 @@ pub struct GuiSweepRequest {
 pub enum GuiSweepPreview {
     Ready,
     MissingInputs,
+    MissingPath,
     MissingGuide,
     Failed(String),
 }
@@ -102,6 +104,7 @@ pub(crate) struct SweepDialog {
     attempted: Option<GuiSweepRequest>,
     submitted: Option<GuiSweepRequest>,
     feature: Option<FeatureId>,
+    path_cleared: bool,
     orientation: GuiSweepOrientation,
     selector: orientation::OrientationSelector,
     taper: String,
@@ -134,6 +137,7 @@ impl SweepDialog {
             },
         };
         self.feature = feature;
+        self.path_cleared = false;
         self.taper = seed.taper;
         self.orientation = seed.orientation;
         self.document = state.document;
@@ -219,7 +223,17 @@ impl SweepDialog {
             crate::theme::property_label(ui, "Profiles");
             ui.text("1 Profile");
             crate::theme::property_label(ui, "Path");
-            ui.text("1 Curve");
+            if self.path_cleared {
+                ui.text("Select Curve or Edge");
+                if crate::widget_abi::button(ui, "Restore Path", [0., 0.]) {
+                    self.path_cleared = false;
+                }
+            } else {
+                ui.text("1 Curve");
+                if self.feature.is_some() && crate::widget_abi::button(ui, "Clear Path", [0., 0.]) {
+                    self.path_cleared = true;
+                }
+            }
         }
         if !tip {
             self.selector.draw(ui, &mut self.orientation, icons);
@@ -234,6 +248,7 @@ impl SweepDialog {
             document,
             generation,
             feature: self.feature,
+            path_cleared: self.path_cleared,
             orientation: self.orientation,
             taper: if follows_path {
                 self.taper.clone()

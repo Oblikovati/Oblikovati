@@ -81,6 +81,7 @@ impl<
                 request: preview.request.clone(),
                 result: match &preview.result {
                     Ok(Some(_)) => GuiSweepPreview::Ready,
+                    Ok(None) if preview.request.path_cleared => GuiSweepPreview::MissingPath,
                     Ok(None) if preview.request.orientation == GuiSweepOrientation::Guide => {
                         GuiSweepPreview::MissingGuide
                     }
@@ -138,6 +139,23 @@ impl<
     }
 
     fn preview_sweep(&mut self, request: &GuiSweepRequest) -> Result<Option<SweepCommit>, String> {
+        if request.path_cleared {
+            if let Some(feature) = request.feature {
+                let scene = self.part_scenes.part_scene_without_feature_body(
+                    &self.files,
+                    request.document,
+                    feature,
+                )?;
+                self.extrusion_preview = Some((
+                    request.document,
+                    request.generation,
+                    scene,
+                    super::super::owner_extrusion_preview::PreviewKind::Replacement,
+                ));
+                self.part_scenes.invalidate_presentation();
+            }
+            return Ok(None);
+        }
         if request.orientation == GuiSweepOrientation::Guide {
             return Ok(None);
         }

@@ -32,6 +32,49 @@ impl DesktopPartScenes {
     ) -> Result<(), String> {
         self.replay.ensure_checkpoints(files, document)
     }
+    pub(crate) fn part_scene_without_feature_body<
+        O: TransactionObserver,
+        W: WorkspaceObserver,
+        F: DocumentFiles,
+    >(
+        &self,
+        files: &FileWorkspace<O, W, F>,
+        document: u64,
+        feature: FeatureId,
+    ) -> Result<ViewportScene, String> {
+        let session = files
+            .workspace()
+            .session(document)
+            .map_err(|cause| cause.to_string())?;
+        let guid = files
+            .workspace()
+            .identity(document)
+            .map_err(|cause| cause.to_string())?
+            .internal_name;
+        let evaluated = self.current(session)?;
+        let hidden = evaluated
+            .body(feature)
+            .map(|body| body.body_reference_key(session.history(), guid))
+            .transpose()?;
+        let update = render_part_scene(evaluated, (document, session.generation()), |body| {
+            let reference = body.body_reference_key(session.history(), guid)?;
+            if hidden.as_ref() == Some(&reference) {
+                return Ok(None);
+            }
+            let key = bodies::body_reference_text(reference);
+            if !session.body_visible(&key) {
+                return Ok(None);
+            }
+            Ok(Some(body_color(files, session.snapshot(), &key)?))
+        })?;
+        if !update.status.presentation_declines.is_empty() {
+            return Err(format!(
+                "incomplete feature preview: {:?}",
+                update.status.presentation_declines
+            ));
+        }
+        Ok(update.scene)
+    }
     pub(crate) fn preview_feature_edit<
         O: TransactionObserver,
         W: WorkspaceObserver,
