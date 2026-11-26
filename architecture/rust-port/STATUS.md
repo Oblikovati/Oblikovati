@@ -91,8 +91,8 @@ using this status; the live scenario directory can change.
   All 18 pinned scenarios have R0 baseline records. Strict acceptance
   requires bounded build and runtime inputs under #3978.
 - Ribbon Command Availability (#3956) passed all five current scenarios and
-  39 steps with the published Part, Assembly, and Drawing. See the
-  [current run](receipts/2026-11-24-ribbon-command-availability-current-3956/README.md).
+  39 steps on Wayland and X11 with the published Part, Assembly, and Drawing.
+  See the [current runs](receipts/2026-11-26-ribbon-command-availability-wayland-3956/README.md).
   The [earlier run](receipts/2026-11-20-ribbon-command-availability-complete-3956/README.md)
   includes the pinned scenarios and X11 Text and Fillet checks.
 - Ribbon Keyboard Navigation (#3856) passed all 18 current scenarios and 220 steps

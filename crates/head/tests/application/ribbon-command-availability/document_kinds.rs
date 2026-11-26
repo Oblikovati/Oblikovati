@@ -75,16 +75,16 @@ fn select_ribbon_tab(world: &mut ApplicationWorld, label: &str) {
 
 #[then("the Place Views ribbon displays Create, Modify, Sketch and Sheets groups")]
 fn drawing_view_groups(world: &mut ApplicationWorld) {
-    expect_ribbon_labels(world, &["Create", "Modify", "Sketch", "Sheets"]);
+    expect_ribbon_groups(world, &["Create", "Modify", "Sketch", "Sheets"]);
 }
 
 #[then("the Annotate ribbon displays Dimension, Text and Symbols commands")]
 fn drawing_annotation_groups(world: &mut ApplicationWorld) {
-    expect_ribbon_labels(world, &["Dimension", "Text", "Symbols"]);
+    expect_ribbon_groups(world, &["Dimension", "Text", "Symbols"]);
 }
 
-fn expect_ribbon_labels(world: &ApplicationWorld, labels: &[&str]) {
+fn expect_ribbon_groups(world: &ApplicationWorld, labels: &[&str]) {
     for label in labels {
-        world.run_in_window(RIBBON, label);
+        world.run_in_window(RIBBON, &label.to_ascii_uppercase());
     }
 }

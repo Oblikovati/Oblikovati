@@ -146,6 +146,8 @@ XML import and export. Global Text Off still hides its caption.
 The [current Quick Access toolbar suite](receipts/2026-11-26-quick-access-wayland-3955/README.md)
 passed all 25 cases on Wayland and X11. It covers native tooltip hover,
 command placement, document context, Extrude invocation, and menu dismissal.
+The [command availability suite](receipts/2026-11-26-ribbon-command-availability-wayland-3956/README.md)
+also passed on both desktops in Part, Assembly, and Drawing documents.
 
 Shell can also be added to Quick Access from its main-panel menu.
 The shortcut uses the same availability check and action as the
