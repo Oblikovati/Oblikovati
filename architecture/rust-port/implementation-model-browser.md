@@ -39,6 +39,10 @@ Creating a feature in single-member scope computes it in Copy State.
 Switching to Primary suppresses the solid and strikes through the row.
 [Single-member feature checks](receipts/2026-11-26-model-state-single-member-feature-3896/README.md)
 
+The [full Wayland rerun](receipts/2026-11-26-model-browser-wayland-rerun-3896/README.md)
+passed 96 of 100 scenarios. The four remaining setups need the
+extrusion-owned taper parameter.
+
 A double-click sends the document and sketch IDs to the existing owner edit
 operation. The same operation remains available through script and add-in owner
 wrappers. The owner checks document focus, sketch continuity, plane resolution,

@@ -18,6 +18,7 @@ GUI filesystem test-module visibility edit. Wayland used nested Weston
 13 and X11 used Openbox. Both used Xvfb and Vulkan Lavapipe. The
 [published input hashes](current-inputs.sha256) matched before and after
 both runs. Strict build and runtime verification remains open under #3978.
+The committed test source removes one blank line before `body_face_pixel`.
 
 - [Wayland report](wayland.json) and [step arguments](wayland-arguments.json)
 - [X11 report](x11.json) and [step arguments](x11-arguments.json)
