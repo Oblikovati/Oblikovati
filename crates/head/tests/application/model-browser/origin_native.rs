@@ -1,23 +1,22 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//! Exercise origin context menus through native X11 pointer input (#4115).
-use super::super::super::x11_input;
+//! Exercise origin context menus through the desktop window (#4115).
 use super::*;
 
 fn native_click(world: &mut ApplicationWorld, label: &str) {
     let at = diagnostics::pointer_pixels(world.run(label).center());
-    x11_input::click(at);
+    world.desktop_click(at);
     settle(world);
 }
 
 fn native_menu(world: &mut ApplicationWorld, label: &str) {
     let at = diagnostics::pointer_pixels(world.run(label).center());
-    x11_input::right_click(at);
+    world.desktop_right_click(at);
     settle(world);
 }
 
 fn clear_selection(world: &mut ApplicationWorld, label: &str) {
     let empty = super::super::super::viewport_entity_selection::empty_viewport_point(world);
-    x11_input::click(empty);
+    world.desktop_click(empty);
     settle(world);
     assert!(!row_accent(world, label), "expected {label} deselected");
 }
@@ -71,7 +70,7 @@ fn origin_center_point_native_menu_identifies_row_and_commands() {
     point_rows(&mut world);
     relationships_row(&mut world);
     world.save_capture("origin-point-menu");
-    x11_input::press_escape();
+    world.desktop_escape();
     settle(&mut world);
     expect_block_kept(&mut world);
     world.close();
@@ -87,10 +86,10 @@ fn origin_folder_native_collapse_preserves_direct_rows() {
     expect_rows(&world, &["YZ Plane", "X Axis", "Center Point"]);
     let origin = world.run("Origin");
     let arrow = [origin.minimum[0] - 10., origin.center()[1]];
-    x11_input::click(diagnostics::pointer_pixels(arrow));
+    world.desktop_click(diagnostics::pointer_pixels(arrow));
     settle(&mut world);
     world.expect_no_text("YZ Plane");
-    x11_input::click(diagnostics::pointer_pixels(arrow));
+    world.desktop_click(diagnostics::pointer_pixels(arrow));
     settle(&mut world);
     expect_rows(&world, &["YZ Plane", "X Axis", "Center Point"]);
     expect_block_kept(&mut world);
@@ -107,7 +106,7 @@ fn origin_auto_resize_is_a_per_datum_native_menu_setting() {
     native_click(&mut world, "Auto-Resize");
     native_menu(&mut world, "X Axis");
     assert!(!world.checked("Auto-Resize"));
-    x11_input::press_escape();
+    world.desktop_escape();
     settle(&mut world);
     native_menu(&mut world, "YZ Plane");
     assert!(world.checked("Auto-Resize"));
@@ -154,10 +153,6 @@ fn open_large_origin_fixture(world: &mut ApplicationWorld) {
         })
         .unwrap();
     settle(world);
-}
-
-fn blue_axis_pixels(world: &mut ApplicationWorld) -> usize {
-    super::super::super::workspace_layout::browser_feature::colored_pixels(world, [64, 153, 255])
 }
 
 #[test]

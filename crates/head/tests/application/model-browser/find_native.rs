@@ -14,11 +14,7 @@ fn click(world: &mut ApplicationWorld, label: &str) {
 }
 
 fn click_at(world: &mut ApplicationWorld, center: [i32; 2]) {
-    if world.app().window.native.view.uses_wayland() {
-        world.click(center);
-    } else {
-        super::super::x11_input::click(center);
-    }
+    world.desktop_click(center);
     settle(world);
 }
 

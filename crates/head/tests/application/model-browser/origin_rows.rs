@@ -143,7 +143,7 @@ fn plane_hidden(world: &mut ApplicationWorld) {
 #[given("the Origin branch is expanded and the X Axis is hidden")]
 fn x_axis_hidden(world: &mut ApplicationWorld) {
     world.expect_text("X Axis");
-    expect_outline(world, false);
+    assert_eq!(blue_axis_pixels(world), 0, "expected no axis highlight");
 }
 #[when("I right-click the X Axis row")]
 #[when("the user right-clicks the X Axis row")]
@@ -155,7 +155,11 @@ fn right_click_axis(world: &mut ApplicationWorld) {
 #[then("the row is highlighted and the axis is highlighted in blue in the viewport")]
 fn axis_lit(world: &mut ApplicationWorld) {
     assert!(lit(world, "X Axis"), "expected the row's accent");
-    expect_outline(world, true);
+    assert!(blue_axis_pixels(world) > 0, "expected the blue axis");
+}
+
+fn blue_axis_pixels(world: &mut ApplicationWorld) -> usize {
+    super::super::workspace_layout::browser_feature::colored_pixels(world, [64, 153, 255])
 }
 #[then("Visibility is unchecked and Auto Resize is checked in the context menu")]
 fn axis_menu_marks(world: &mut ApplicationWorld) {

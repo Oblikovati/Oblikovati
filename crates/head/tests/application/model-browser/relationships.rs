@@ -172,7 +172,7 @@ fn native_done_closes_relationships_and_keeps_the_part() {
     from_xy(&mut world);
     xy_selected(&mut world);
     let done = world.run_in_window("Relationships", "Done").center();
-    super::super::x11_input::click(diagnostics::pointer_pixels(done));
+    world.desktop_click(diagnostics::pointer_pixels(done));
     world.pump(Vec::new());
     assert!(diagnostics::window_geometry("Relationships").is_none());
     world.expect_active(document);

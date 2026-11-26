@@ -25,6 +25,13 @@ pub trait HeadWindow {
         ))
     }
 
+    /// Open the system file manager at a directory, for example the saved Part's parent.
+    fn open_directory(&mut self, path: &std::path::Path) -> Result<(), String> {
+        Err(format!(
+            "directory {path:?}: expected a native file manager"
+        ))
+    }
+
     /// Observe the drawable used for capture metadata; example: `window.window_capture_extent()?`.
     fn window_capture_extent(&mut self) -> Result<Option<[u32; 2]>, String> {
         Ok(None)

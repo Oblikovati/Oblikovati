@@ -26,6 +26,11 @@ impl HeadWindow for ScriptedGuiWindow {
         self.native.window_action(action)
     }
 
+    fn open_directory(&mut self, path: &std::path::Path) -> Result<(), String> {
+        self.opened_directories.push(path.to_owned());
+        Ok(())
+    }
+
     fn set_tool_candidate(
         &mut self,
         hover: Option<&oblikovati_viewport::ViewportSketchHover>,

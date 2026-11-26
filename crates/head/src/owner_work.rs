@@ -35,7 +35,6 @@ impl<
     ) -> Result<Option<oblikovati_model::sketch::SketchPlane>, String> {
         self.look_at_plane()
     }
-
     fn set_selection_mode_from_gui(
         &mut self,
         mode: oblikovati_gui::GuiSelectionMode,
@@ -251,6 +250,9 @@ impl<
         options: oblikovati_model::ui_scale::UiScaleOptions,
     ) -> Result<bool, String> {
         self.persist_ui_scale(options)
+    }
+    fn saved_document_path(&self, document: u64) -> Result<&std::path::Path, String> {
+        self.files.path(document).map_err(|cause| cause.to_string())
     }
     fn gui_command_state(&mut self) -> Result<oblikovati_gui::GuiCommandState, String> {
         self.gui_command_snapshot()

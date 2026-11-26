@@ -70,10 +70,11 @@ pub(crate) fn root_row(
             choice: crate::GuiBrowserChoice::Root,
         });
     }
-    root_menu(ui, browser, view, actions);
+    root_menu(ui, state, browser, view, actions);
 }
 fn root_menu(
     ui: &Ui,
+    state: &GuiCommandState,
     browser: &GuiModelBrowser,
     view: &mut BrowserView,
     actions: &mut Vec<GuiShellAction>,
@@ -81,7 +82,7 @@ fn root_menu(
     let Some(_menu) = ui.begin_popup(ROOT_MENU) else {
         return;
     };
-    muted_menu_item(ui, "Open File Location");
+    file_location_item(ui, state, actions);
     if ui
         .menu_item_config("Copy File Path")
         .enabled(browser.path.is_some())
@@ -101,5 +102,18 @@ fn root_menu(
     }
     if ui.menu_item("Find in Window") {
         find_in_window(view, ui, actions);
+    }
+}
+
+fn file_location_item(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
+    let request = state.document.map(GuiShellAction::OpenDocumentFolder);
+    let enabled = request.as_ref().is_some_and(|action| action.enabled(state));
+    if ui
+        .menu_item_config("Open File Location")
+        .enabled(enabled)
+        .build()
+        && let Some(action) = request
+    {
+        actions.push(action);
     }
 }

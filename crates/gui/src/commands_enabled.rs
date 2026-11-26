@@ -21,6 +21,11 @@ impl GuiShellAction {
     pub fn enabled(&self, state: &GuiCommandState) -> bool {
         match self {
             Self::OpenTeamWebInBrowser(_) | Self::ProjectFile(_) => true,
+            Self::OpenDocumentFolder(document) => state
+                .document_storage
+                .get(document)
+                .and_then(|storage| storage.path.as_deref())
+                .is_some_and(|path| std::path::Path::new(path).is_absolute()),
             Self::SketchCurvature(action) => action.enabled(state),
             Self::DismissSketchContext { .. } => true,
             Self::SelectContextConstraintGlyph { token, glyph }

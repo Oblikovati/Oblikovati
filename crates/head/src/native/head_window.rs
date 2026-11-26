@@ -3,6 +3,10 @@
 use super::*;
 
 impl HeadWindow for NativeHeadWindow {
+    fn open_directory(&mut self, path: &std::path::Path) -> Result<(), String> {
+        crate::frames::resource_browser::open_directory(path)
+    }
+
     fn synchronize_projection_extent(&mut self) -> Result<bool, String> {
         self.view.synchronize_projection_extent()
     }

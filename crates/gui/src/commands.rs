@@ -4,6 +4,7 @@ use oblikovati_model::marking_menu::MarkingMenuDisplay;
 #[derive(Clone, Debug, PartialEq)]
 pub enum GuiShellAction {
     OpenTeamWebInBrowser(&'static str),
+    OpenDocumentFolder(u64),
     SetMarkingMenu(oblikovati_api::wire::SetMarkingMenuArgs),
     SetMarkingMenuPreferences(Vec<MarkingMenuView>, MarkingMenuDisplay),
     SetKeymap(oblikovati_model::keymap::KeymapPreferences),

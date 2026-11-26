@@ -418,6 +418,13 @@ pub trait HeadWork: HeadSketchWork {
             "save path for document {document}, selection {selected:?}: expected a document-save owner"
         ))
     }
+    /// Read the saved path without converting its platform components to display text.
+    /// Example: `work.saved_document_path(document)?` before opening its containing folder.
+    fn saved_document_path(&self, document: u64) -> Result<&std::path::Path, String> {
+        Err(format!(
+            "document {document}: expected a saved file location"
+        ))
+    }
     /// Copy bounded command metadata on the owner; example: `work.gui_command_state()?` after polling.
     fn gui_command_state(&mut self) -> Result<oblikovati_gui::GuiCommandState, String> {
         Ok(Default::default())

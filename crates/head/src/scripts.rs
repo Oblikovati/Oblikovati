@@ -175,6 +175,9 @@ impl<D: ScriptDocumentOwner> HeadWork for DesktopScripts<D> {
     fn select_theme_from_gui(&mut self, name: &str) -> Result<bool, String> {
         self.owner.select_theme_from_gui(name)
     }
+    fn saved_document_path(&self, document: u64) -> Result<&std::path::Path, String> {
+        self.owner.saved_document_path(document)
+    }
     fn gui_command_state(&mut self) -> Result<oblikovati_gui::GuiCommandState, String> {
         self.owner.gui_command_state()
     }

@@ -50,6 +50,7 @@ pub(super) fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
         | GuiShellAction::CaptureIsometricPreview { .. }
         | GuiShellAction::Exit
         | GuiShellAction::OpenTeamWebInBrowser(_)
+        | GuiShellAction::OpenDocumentFolder(_)
         | GuiShellAction::EditThemeColor { .. }
         | GuiShellAction::DuplicateTheme { .. }
         | GuiShellAction::DeleteTheme { .. }

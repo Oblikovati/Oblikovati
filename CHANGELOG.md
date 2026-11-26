@@ -4,6 +4,7 @@
 
 ### Added
 
+- Enabled Open File Location for a saved Model Browser document, opening its containing folder in the system file manager. (#4116)
 - Enabled Make New Folder in the project wizard and selected the created folder for workspace confirmation. Finish saved the new project with the chosen reference libraries. Enabled Browse to load a project, Apply to activate it and refresh the template chooser, and Save to commit edited project settings. (#3895)
 - Added Home and End navigation to the staged Ribbon Customization list. Advanced the available command selection after a single transfer and kept Space on Add after a mouse edit to Large or Text. (#3856)
 - Added named native templates from the active project's root, Metric, and English folders to the desktop chooser. The chooser shows Part materials, previews drawing sheets, and restores the selected template after restart. Populated drawing layouts accept a Part, warn when its previous evaluated geometry is used, and show its authored parts list. (#3899)
@@ -493,7 +494,6 @@ Model tree reads reuse current part results and refresh them after edits. (#4079
 
 - Show the model's reason when a sketch dimension value is refused. (#3855)
 
-- Reject driving dimension values that fail the sketch constraint's target
-  checks, including a zero radius, before saving the edit. (#3855)
+- Reject driving dimension values that fail the sketch constraint's target checks, including a zero radius, before saving the edit. (#3855)
 
 - Resolved viewport body colors from document and catalog appearances. (#3859)

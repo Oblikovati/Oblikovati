@@ -13,6 +13,7 @@ pub struct HeadSummary {
 }
 mod gui;
 mod ready_motion;
+pub(crate) mod resource_browser;
 pub use gui::HeadGuiUpdate;
 mod window;
 pub use window::{HeadOrientationFitFrame, HeadWindow};

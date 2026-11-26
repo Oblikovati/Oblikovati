@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Actions and readings shared by the document scenarios: they use real input and rendered output.
+#[cfg(target_os = "linux")]
+#[path = "backend_input.rs"]
+mod backend_input;
 use super::{ApplicationWorld, diagnostics, world::squeezed};
 use crate::HeadWork;
 use oblikovati_viewport::{

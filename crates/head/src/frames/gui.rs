@@ -1,12 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use super::{HeadWindow, HeadWork, ViewportEvent, synchronize_sketch_view};
+use super::{HeadWindow, HeadWork, ViewportEvent, resource_browser, synchronize_sketch_view};
 use oblikovati_gui::GuiShellAction;
 use oblikovati_viewport::ViewportInput;
 use std::time::Duration;
 #[path = "gui_action_key.rs"]
 mod action_key;
-#[path = "resource_browser.rs"]
-mod resource_browser;
 use action_key::action_key;
 #[path = "gui_authoring.rs"]
 mod authoring;
@@ -295,6 +293,15 @@ pub(super) fn dispatch_gui_action(
         GuiShellAction::Exit => return window.request_close(),
         GuiShellAction::OpenTeamWebInBrowser(url) => {
             return report_authoring_result(window, resource_browser::open(url).map(|()| true));
+        }
+        GuiShellAction::OpenDocumentFolder(document) => {
+            let result = owner.saved_document_path(*document).and_then(|file| {
+                let directory = file
+                    .parent()
+                    .ok_or_else(|| format!("file {file:?} has no parent"))?;
+                window.open_directory(directory).map(|()| true)
+            });
+            return report_authoring_result(window, result);
         }
         GuiShellAction::OrientView {
             command,

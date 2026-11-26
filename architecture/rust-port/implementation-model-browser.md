@@ -143,3 +143,7 @@ See the [grouped input regression](receipts/2026-11-24-model-state-x11-focus-389
 The [earlier published feature-wide run](receipts/2026-11-24-model-browser-full-3896/README.md)
 recorded 54 passes, 44 scenarios that stopped at undefined steps, and two
 Favorites failures. It used the application revision before these fixes.
+
+The [root and origin context menu runs](receipts/2026-11-26-browser-context-file-location-4116/README.md)
+exercise Model Browser context menus on Wayland and X11. Open File Location
+uses the saved document owner's original path to open its containing folder.

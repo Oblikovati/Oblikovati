@@ -171,6 +171,9 @@ impl<D: ScriptDocumentOwner, W: DispatchWakeup + 'static> HeadWork
     fn startup_ready(&self) -> bool {
         self.owner.startup_ready() && self.startup.as_ref().is_none_or(NativeStartupPlan::ready)
     }
+    fn saved_document_path(&self, document: u64) -> Result<&Path, String> {
+        self.owner.saved_document_path(document)
+    }
     fn complete_save_path(
         &mut self,
         document: u64,
