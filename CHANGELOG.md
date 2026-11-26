@@ -256,7 +256,7 @@ Model tree reads reuse current part results and refresh them after edits. (#4079
 
 - Refresh camera depth when an edited model would be clipped. (#4044)
 
-- Preserve body-relative face orientation in prism presentation. (#4044)
+- Preserve body-relative face orientation in prism presentation. Added the typed viewport normal-debug mode for inspecting triangle winding. (#4044)
 
 - Reduced repeated sketch point projection work during pointer interaction and context picking. (#4035)
 

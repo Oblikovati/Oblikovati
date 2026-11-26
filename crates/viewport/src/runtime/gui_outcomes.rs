@@ -4,19 +4,24 @@ use super::{Viewport, ViewportOptions, next_generation};
 use martensite_tkernel::standard::Handle;
 use martensite_vulkan::{
     Graphic3dRenderDriver, RenderError, RenderGuiFreshPacket, RenderGuiSurfaceChange,
-    RenderGuiSurfaceOutcome, RenderGuiSurfacePolicy, VulkanOptions,
+    RenderGuiSurfaceOutcome, RenderGuiSurfacePolicy, RenderPipelinePolicies,
+    RenderUnlitFaceColorPolicy, VulkanOptions,
 };
 
 /// Select checked native GUI publication; example: `native_gui_driver(options)?`.
 pub(super) fn native_gui_driver(
     options: ViewportOptions,
 ) -> Result<Handle<Graphic3dRenderDriver>, String> {
-    Graphic3dRenderDriver::with_gui_surface_policy(
+    Graphic3dRenderDriver::with_pipeline_configuration(
         VulkanOptions {
             validation: options.validation,
             device_index: options.physical_device,
         },
-        RenderGuiSurfacePolicy::CheckedV2,
+        RenderPipelinePolicies {
+            gui_surface: RenderGuiSurfacePolicy::CheckedV2,
+            unlit_faces: RenderUnlitFaceColorPolicy::SideColorsV2,
+            ..Default::default()
+        },
     )
     .map_err(|error| error.to_string())
 }

@@ -37,6 +37,7 @@ pub(crate) struct RenderView {
     pub view: Handle<dyn V3dViewSource>,
     pub renderer: Handle<Graphic3dRenderView>,
     structures: Vec<Handle<Graphic3dStructure>>,
+    pub(super) normal_debug: bool,
     datums: datum_plane::DatumOverlay,
     status: status_text::StatusTextOverlay,
     preview: sketch_preview::SketchPreviewOverlay,
@@ -67,6 +68,7 @@ impl RenderView {
                 &oblikovati_model::theme::ThemeDefinition::dark()?,
             ),
             structures: Vec::new(),
+            normal_debug: false,
             datums: Default::default(),
             status: Default::default(),
             preview: Default::default(),
@@ -98,8 +100,25 @@ impl RenderView {
     }
     pub fn submit(&mut self, scene: &ViewportScene) -> Result<(), String> {
         scene.validate()?;
-        let structures = crate::scene::build_scene(&self.viewer, &scene.triangles)?;
+        let structures =
+            crate::scene::build_scene(&self.viewer, &scene.triangles, self.normal_debug)?;
         background::apply_scene_background(&self.view, self.background, scene.background)?;
+        self.replace_structures(structures);
+        Ok(())
+    }
+    pub(super) fn set_normal_debug(
+        &mut self,
+        scene: Option<&ViewportScene>,
+        on: bool,
+    ) -> Result<(), String> {
+        if let Some(scene) = scene {
+            let structures = crate::scene::build_scene(&self.viewer, &scene.triangles, on)?;
+            self.replace_structures(structures);
+        }
+        self.normal_debug = on;
+        Ok(())
+    }
+    fn replace_structures(&mut self, structures: Vec<Handle<Graphic3dStructure>>) {
         for old in self.structures.drain(..) {
             old.remove();
         }
@@ -107,7 +126,6 @@ impl RenderView {
             structure.display();
         }
         self.structures = structures;
-        Ok(())
     }
     pub fn set_background(&mut self, background: crate::ViewportBackground) -> Result<(), String> {
         background::apply_background(&self.view, background)?;

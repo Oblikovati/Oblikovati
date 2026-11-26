@@ -323,6 +323,9 @@ impl HeadWindow for NativeHeadWindow {
     fn model_pixel(&self, point: [f64; 3]) -> Result<[i32; 2], String> {
         self.view.model_pixel(point)
     }
+    fn set_normal_debug(&mut self, on: bool) -> Result<bool, String> {
+        self.view.set_normal_debug(self.current_scene.as_ref(), on)
+    }
     fn wire_camera(&self, slot: u64) -> Result<oblikovati_api::wire::CameraView, String> {
         self.camera_for_slot(slot)
     }

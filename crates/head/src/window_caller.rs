@@ -52,7 +52,7 @@ impl<C: Caller> Caller for WindowCaller<'_, C> {
             return reply;
         }
         if let Some(reply) = crate::viewport_automation::apply(&mut **window, method, request) {
-            if reply.is_ok() && capture_method(method) {
+            if reply.is_ok() && updates_window(method) {
                 self.window_changed.set(true);
             }
             return reply;
@@ -61,10 +61,11 @@ impl<C: Caller> Caller for WindowCaller<'_, C> {
     }
 }
 
-fn capture_method(method: &str) -> bool {
+fn updates_window(method: &str) -> bool {
     matches!(
         method,
         oblikovati_api::wire::METHOD_VIEWPORT_CAPTURE
             | oblikovati_api::wire::METHOD_VIEWPORT_CAPTURE_WINDOW
+            | oblikovati_api::wire::METHOD_VIEWPORT_SET_NORMAL_DEBUG
     )
 }

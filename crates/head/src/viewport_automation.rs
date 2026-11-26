@@ -20,9 +20,16 @@ pub(crate) fn apply(
         METHOD_VIEWPORT_CLICK => click(window, method, bytes),
         METHOD_VIEWPORT_KEY => key(window, method, bytes),
         METHOD_VIEWPORT_SCROLL => scroll(window, method, bytes),
+        METHOD_VIEWPORT_SET_NORMAL_DEBUG => normal_debug(window, method, bytes),
         _ => return None,
     };
     Some(result)
+}
+
+fn normal_debug(window: &mut dyn HeadWindow, method: &str, bytes: &[u8]) -> Result<Vec<u8>, Error> {
+    let args: SetNormalDebugArgs = decode_wire_arguments(method, bytes)?;
+    window.set_normal_debug(args.on).map_err(Error)?;
+    encode_wire_reply(&NormalDebugResult { on: args.on })
 }
 
 fn capture(window: &mut dyn HeadWindow, method: &str, bytes: &[u8]) -> Result<Vec<u8>, Error> {

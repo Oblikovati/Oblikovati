@@ -472,3 +472,7 @@ pub(super) fn assert_same_native_pixels(actual: &ViewportCapture, expected: &Vie
 
 #[path = "native_scene/depth.rs"]
 mod depth;
+
+#[cfg(target_os = "linux")]
+#[path = "native_scene/normal_debug.rs"]
+mod normal_debug;
