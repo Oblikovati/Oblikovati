@@ -362,10 +362,11 @@ fn application_document_context(ui: &Ui, state: &GuiCommandState, home: bool, he
     let [width, text_height] = ui.calc_text_size(&title);
     if right > left + width {
         let x = (screen_center - width / 2.).clamp(left, right - width);
-        ui.get_window_draw_list().add_text(
+        crate::widget_abi::literal_text(
+            ui,
             [x, (height - text_height) / 2.],
             ui.style_color(imgui::StyleColor::Text),
-            title,
+            &title,
         );
     }
 }
