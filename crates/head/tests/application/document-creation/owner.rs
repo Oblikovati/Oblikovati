@@ -472,3 +472,6 @@ mod drawing_replay;
 
 #[path = "drawing_view_collection.rs"]
 mod drawing_view_collection;
+
+#[path = "drawing_sheet_collection.rs"]
+mod drawing_sheet_collection;

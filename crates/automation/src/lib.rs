@@ -315,6 +315,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver> Caller for SessionQueryHost<'
 
 mod derived_edit;
 mod drawing_reference;
+mod drawing_sheets;
 mod drawing_views;
 pub use drawing_views::{
     DRAWING_COMMAND_METHODS, DrawingViewProjectionAccess, prepare_base_view,

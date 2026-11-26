@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
+use super::spelling::{sheet_orientation, sheet_size, title_block_location};
 use super::{DrawingError, DrawingSheetRecipe};
 use oblikovati_api::types::*;
 const STANDARD_MM: &[(SheetSize, [f64; 2])] = &[
@@ -29,6 +30,57 @@ impl DrawingSheetRecipe {
             revision: String::new(),
             views: Vec::new(),
             annotations: Vec::new(),
+        }
+    }
+    /// Prepare a bordered paper format from canonical names.
+    /// Example: `DrawingSheetRecipe::with_paper("Sheet:2", "a4", "portrait", [0.; 2])?`.
+    pub fn with_paper(
+        name: &str,
+        size: &str,
+        orientation: &str,
+        dimensions: [f64; 2],
+    ) -> Result<Self, DrawingError> {
+        let mut sheet = Self::a3_landscape(name);
+        sheet.size =
+            sheet_size::parse(if size.is_empty() { "custom" } else { size }).ok_or_else(|| {
+                DrawingError(format!(
+                    "sheet size {size:?}: expected a standard size or custom"
+                ))
+            })?;
+        sheet.orientation = sheet_orientation::parse(if orientation.is_empty() {
+            "portrait"
+        } else {
+            orientation
+        })
+        .ok_or_else(|| {
+            DrawingError(format!(
+                "sheet orientation {orientation:?}: expected portrait or landscape"
+            ))
+        })?;
+        if sheet.size == SHEET_SIZE_CUSTOM {
+            [sheet.width_mm, sheet.height_mm] = dimensions;
+        }
+        sheet.dimensions_mm()?;
+        Ok(sheet)
+    }
+    /// Report authored format names, with an empty corner for a sheet without a title block.
+    /// Example: `DrawingSheetRecipe::a3_landscape("Sheet:1").paper_spelling()?`.
+    pub fn paper_spelling(&self) -> Result<[&'static str; 3], DrawingError> {
+        let values = [
+            sheet_size::name(&self.size),
+            sheet_orientation::name(&self.orientation),
+            if self.title_block.is_empty() {
+                Some("")
+            } else {
+                title_block_location::name(&self.title_block_at)
+            },
+        ];
+        match values {
+            [Some(size), Some(orientation), Some(corner)] => Ok([size, orientation, corner]),
+            _ => Err(DrawingError(format!(
+                "sheet {:?} format {:?}/{:?}/{:?}: expected canonical paper format names",
+                self.name, self.size, self.orientation, self.title_block_at
+            ))),
         }
     }
     /// Return laid-out millimeter dimensions; custom dimensions are already orientation-applied.

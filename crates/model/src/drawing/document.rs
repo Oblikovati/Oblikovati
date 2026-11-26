@@ -44,6 +44,14 @@ impl DrawingDocument {
     pub fn active_sheet(&self) -> usize {
         self.recipe.active_sheet
     }
+    /// Resolve a named sheet to its current index. Example: `drawing.sheet_index("Sheet:1")?`.
+    pub fn sheet_index(&self, name: &str) -> Result<usize, DrawingError> {
+        self.recipe
+            .sheets
+            .iter()
+            .position(|sheet| sheet.name == name)
+            .ok_or_else(|| DrawingError(format!("sheet {name:?}: expected a sheet in the drawing")))
+    }
     /// Read the unresolved document reference; example: `drawing.model_reference()` for workspace resolution.
     pub fn model_reference(&self) -> &str {
         &self.recipe.model_reference
@@ -99,6 +107,19 @@ impl DrawingDocument {
         }
         self.recipe.sheets.push(sheet);
         self.recipe.active_sheet = self.recipe.sheets.len() - 1;
+        Ok(())
+    }
+    /// Remove a named sheet and keep the active index in range.
+    /// Example: `drawing.remove_sheet("Sheet:2")?`.
+    pub fn remove_sheet(&mut self, name: &str) -> Result<(), DrawingError> {
+        let index = self.sheet_index(name)?;
+        if self.recipe.sheets.len() == 1 {
+            return Err(DrawingError(format!(
+                "sheet {name:?}: expected at least one sheet to remain after removal"
+            )));
+        }
+        self.recipe.sheets.remove(index);
+        self.recipe.active_sheet = self.recipe.active_sheet.min(self.recipe.sheets.len() - 1);
         Ok(())
     }
     /// Append an authored base-view definition; the host must project real geometry before presenting it.

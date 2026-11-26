@@ -352,6 +352,9 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext
         if crate::DRAWING_COMMAND_METHODS.contains(&method) {
             return self.drawing_view_command(method, request);
         }
+        if crate::drawing_sheets::SHEET_METHODS.contains(&method) {
+            return crate::drawing_sheets::apply(self.files, method, request);
+        }
         if method == METHOD_FEATURES_ADD {
             return self.add_feature(request);
         }

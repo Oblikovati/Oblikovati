@@ -14,9 +14,12 @@ macro_rules! recipe_spelling {
             pub fn name(value: &$kind) -> Option<&'static str> {
                 VALUES.iter().find(|(kind, _)| kind == value).map(|(_, text)| *text)
             }
+            pub fn parse(name: &str) -> Option<$kind> {
+                VALUES.iter().find(|(_, text)| *text == name).map(|(kind, _)| *kind)
+            }
             pub fn deserialize<'de, D: serde::Deserializer<'de>>(input: D) -> Result<$kind, D::Error> {
                 let name = <String as serde::Deserialize>::deserialize(input)?;
-                VALUES.iter().find(|(_, text)| *text == name).map(|(kind, _)| *kind)
+                parse(&name)
                     .ok_or_else(|| serde::de::Error::custom(format!("drawing enum {name:?}: expected one of {VALUES:?}")))
             }
         }
