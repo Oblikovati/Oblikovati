@@ -266,7 +266,7 @@ fn file_properties_docks_and_returns_to_the_selected_file() {
         click_before_dock_frame(&mut world, title, "Cancel");
         assert_closed_with_visible_tab(&mut world, title, MATERIAL_BROWSER);
         picker::settle(&mut world);
-        picker::expect_name_and_preview(&mut world, picker::PART_FILE);
+        picker::expect_name_and_preview(&world, picker::PART_FILE);
         open_file_properties(&mut world);
     }
     world.expect_active(part);

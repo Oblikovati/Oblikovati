@@ -224,7 +224,7 @@ fn finish_creates_a_project_and_preserves_an_existing_file() {
     choose_button(&mut world, "Next");
     choose_button(&mut world, "Finish");
     world.expect_no_text("Select Libraries");
-    expect_projects_dialog(&mut world);
+    expect_projects_dialog(&world);
     assert_project_saved(&mut world, &documents.join("Design Office.opj"));
     world.close();
 }
