@@ -22,9 +22,7 @@ pub(in super::super) fn details_heading(ui: &Ui) -> bool {
     ui.text("Type");
     ui.same_line_with_pos(SIZE_COLUMN);
     ui.text("Size");
-    let pressed = ui.is_item_clicked();
-    ui.separator();
-    pressed
+    ui.is_item_clicked()
 }
 pub(in super::super) fn details_row(ui: &Ui, row: &FolderEntry, highlighted: bool) -> RowHit {
     let chosen = crate::widget_abi::dialog_selectable(ui, &row_label(row), highlighted);
@@ -85,7 +83,7 @@ impl FileCell {
         }
     }
 }
-/// One file in a picture view; its name is clipped to the cell so neighbours stay readable.
+/// Keep every tile in the layout, drawing pictures only where the listing can show them.
 pub(in super::super) fn cell_row(
     ui: &Ui,
     row: &FolderEntry,
@@ -99,6 +97,9 @@ pub(in super::super) fn cell_row(
         .selected(highlighted)
         .size(cell.size)
         .build();
+    if !ui.is_item_visible() {
+        return chosen;
+    }
     let minimum = ui.item_rect_min();
     let maximum = ui.item_rect_max();
     if let Some(picture) = picture {

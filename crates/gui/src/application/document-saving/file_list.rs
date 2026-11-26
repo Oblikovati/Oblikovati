@@ -55,21 +55,41 @@ impl FolderBrowser {
     }
     pub(super) fn listing_rows(&mut self, ui: &Ui, filter: FileFilter) -> ListingOutcome {
         let mut outcome = ListingOutcome::default();
-        ui.child_window("##folder-listing")
-            .size([0., LISTING_HEIGHT])
-            .border(true)
-            // A press on empty space starts a selection rectangle, not a move of the dialog.
-            .flags(imgui::WindowFlags::NO_MOVE)
-            .build(|| self.listing_contents(ui, filter, &mut outcome));
+        ui.group(|| {
+            let top = ui.cursor_screen_pos()[1];
+            if self.view == FileListView::Details {
+                self.listing_headings(ui);
+            }
+            let used = ui.cursor_screen_pos()[1] - top;
+            ui.child_window("##folder-listing")
+                .size([0., LISTING_HEIGHT - used])
+                .border(true)
+                // A press on empty space starts a selection rectangle.
+                .flags(imgui::WindowFlags::NO_MOVE)
+                .build(|| self.listing_contents(ui, filter, &mut outcome));
+        });
         outcome
+    }
+    fn listing_headings(&mut self, ui: &Ui) {
+        let height = ui.text_line_height() + 2. * ui.clone_style().window_padding[1];
+        ui.child_window("##folder-list-headings")
+            .size([0., height])
+            .border(true)
+            .flags(
+                imgui::WindowFlags::NO_MOVE
+                    | imgui::WindowFlags::NO_SCROLLBAR
+                    | imgui::WindowFlags::NO_SCROLL_WITH_MOUSE,
+            )
+            .build(|| {
+                if details_heading(ui) {
+                    self.toggle_size_order();
+                }
+            });
     }
     fn listing_contents(&mut self, ui: &Ui, filter: FileFilter, outcome: &mut ListingOutcome) {
         if let Err(cause) = &self.listing {
             ui.text_disabled(cause);
             return;
-        }
-        if self.view == FileListView::Details && details_heading(ui) {
-            self.toggle_size_order();
         }
         let rows: Vec<FolderEntry> = self.sorted_rows(filter).into_iter().cloned().collect();
         let mut over_a_row = false;

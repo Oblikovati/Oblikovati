@@ -20,7 +20,9 @@ const SORT_FILES: [&str; 3] = [
 ];
 
 fn rows_in_order(world: &ApplicationWorld, names: &[&str]) -> Vec<String> {
-    let listing = world.run("Date modified").list;
+    let listing = super::super::diagnostics::child_scroll("Open", "##folder-listing")
+        .expect("expected the Open file listing")
+        .list;
     let mut rows: Vec<_> = world
         .frame
         .runs

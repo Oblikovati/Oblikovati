@@ -150,6 +150,39 @@ mod tests {
     }
 
     #[test]
+    fn owner_context_captures_a_draw_list_past_the_single_index_range() {
+        const CELLS: usize = 17_000;
+        let _lease = crate::test_context::acquire();
+        let mut context = crate::context_owner::create_owner_context().unwrap();
+        let atlas = crate::engine::configure_owner_context(&mut context).unwrap();
+        let resources = GuiTextureResources::new(atlas, []).unwrap();
+        context.io_mut().display_size = [64., 64.];
+        {
+            let list = context.frame().get_background_draw_list();
+            for row in 0..CELLS {
+                let x = if row == CELLS - 1 { 12. } else { 2. };
+                list.add_rect([x, 2.], [x + 1., 3.], [1., 1., 1., 1.])
+                    .filled(true)
+                    .build();
+            }
+        }
+        let frame = capture_frame(context.render(), [64, 64], &resources).unwrap();
+        let total_indices: usize = frame.batches.iter().map(|batch| batch.indices.len()).sum();
+        assert_eq!(total_indices, CELLS * 6);
+        assert_eq!(
+            frame
+                .batches
+                .last()
+                .unwrap()
+                .vertices
+                .last()
+                .unwrap()
+                .position[0],
+            12.
+        );
+    }
+
+    #[test]
     fn adjacent_commands_remap_repeated_indices_independently() {
         let mut context = crate::test_context::create();
         context.set_ini_filename(None);

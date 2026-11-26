@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Inspect files before opening a document: mnt/vininas-projects/MCAD-Scenarios/features/application/document-opening/document-opening.feature" package="testsuite/Feature: Inspect files before opening a document: mnt/vininas-projects/MCAD-Scenarios/features/application/document-opening/document-opening.feature" tests="2" errors="0" failures="0" hostname="localhost" timestamp="2026-11-26T00:39:23.11804525Z" time="71.949911662"><testcase name="Scenario: Switch between details and thumbnail file views: mnt/vininas-projects/MCAD-Scenarios/features/application/document-opening/document-opening.feature:87:3" time="31.039155704"><system-out><![CDATA[  Scenario: Switch between details and thumbnail file views
+   ✔  Given the Open dialog is open in the MCAD Software
+   ✔  And a saved part with a preview is selected in the detailed file list
+   ✔  And `fixtures/cad/extrusion/extrusion-rect-8mm.opd` is selected in the detailed file list
+   ✔  When the user chooses the thumbnail view control
+   ✔  Then files are displayed as thumbnail tiles
+   ✔  And the selected part remains selected with its file name and preview displayed
+   ✔  When the user chooses the details view control
+   ✔  Then files are displayed in rows with Name, Date modified, Type and Size columns
+   ✔  And the selected part remains selected with its file name and preview displayed
+]]></system-out></testcase><testcase name="Scenario: Change the selected document in thumbnail view: mnt/vininas-projects/MCAD-Scenarios/features/application/document-opening/document-opening.feature:310:3" time="40.910755958"><system-out><![CDATA[  Scenario: Change the selected document in thumbnail view
+   ✔  Given writable copies of `fixtures/cad/document-opening/OpenDrawingA.odd`, `OpenDrawingB.odd` and `OpenPart.opd` are staged in the same working folder
+   ✔  And the user opens and saves each drawing to establish its sheet preview, then closes the drawings
+   ✔  Given the Open dialog in the MCAD Software displays a saved drawing and a saved part as thumbnails
+   ✔  And the drawing thumbnail is selected with its sheet preview displayed
+   ✔  And the Options pane shows the drawing loading choices
+   ✔  And the working folder contains `OpenDrawingA.odd` and `OpenPart.opd` as thumbnails
+   ✔  When the user selects the part thumbnail
+   ✔  Then the part thumbnail is highlighted
+   ✔  And the file name field identifies the part
+   ✔  And the separate preview displays the part geometry
+   ✔  And the Options pane displays Model State and Design View controls
+   ✔  And the dialog remains open
+]]></system-out></testcase></testsuite></testsuites>

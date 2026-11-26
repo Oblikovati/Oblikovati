@@ -9,7 +9,13 @@ pub(crate) fn create_owner_context() -> Result<imgui::Context, String> {
             "GUI context occupied: expected exclusive owner activation before creation".into(),
         );
     }
-    Ok(imgui::Context::create())
+    let mut context = imgui::Context::create();
+    // Frame capture applies each command's vertex offset before remapping its indices.
+    context
+        .io_mut()
+        .backend_flags
+        .insert(imgui::BackendFlags::RENDERER_HAS_VTX_OFFSET);
+    Ok(context)
 }
 
 /// Queue focus with the other input so Dear ImGui releases its held state in order.

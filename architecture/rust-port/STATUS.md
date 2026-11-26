@@ -50,7 +50,7 @@ using this status; the live scenario directory can change.
   `receipts/2026-11-21-document-tabs-r0-3900/`.
   Strict verification remains blocked by #3978.
 - Home Recent Documents (#3898) passed all [35 current scenarios and 394 steps](receipts/2026-11-25-home-recent-current-3898/README.md).
-- Document Opening (#3889) passed all [27 scenarios and 315 steps in the isolated fixture tree](receipts/2026-11-25-document-opening-current-3889/README.md). The [Home opening scenario](receipts/2026-11-26-document-opening-scroll-3889/README.md) also passed in the full shared tree on Wayland and X11.
+- Document Opening (#3889) passed all [27 scenarios and 315 steps in the isolated fixture tree](receipts/2026-11-25-document-opening-current-3889/README.md). [Home opening](receipts/2026-11-26-document-opening-scroll-3889/README.md) and [thumbnail switching](receipts/2026-11-26-file-picker-thumbnails-3889/README.md) passed in the full shared tree on Wayland and X11.
 - Ribbon Display (#3856) passed [48 dependency-ready scenarios and 556 steps](receipts/2026-11-25-ribbon-display-current-3856/README.md). Two Shell cases require Martensite #554.
 - Ribbon Panel Visibility (#3856) passed [43 of 55 current cases and 508 steps](receipts/2026-11-25-ribbon-panel-visibility-current-3856/README.md). Twelve cases remain open across panel inventory, Shell preview, and the User Commands specification.
 - Ribbon Panel Expansion (#3856) passed [59 of 67 cases and 668 steps](receipts/2026-11-25-ribbon-panel-expansion-current-3856/README.md) in the previous full run. [Highlight New](receipts/2026-11-25-highlight-new-3856/README.md) passed separately. Seven cases in the full run required Shell previews.
