@@ -62,21 +62,43 @@ fn windows_popup_closed(world: &mut ApplicationWorld) {
 
 #[then("the Tools ribbon groups are displayed")]
 fn tools_groups_visible(world: &mut ApplicationWorld) {
+    world.save_capture("tools-after-closing-view");
     let row = super::super::diagnostics::child_scroll("##application-ribbon", "##ribbon-panels")
         .expect("expected the ribbon command row");
     for name in ["Measure", "Material and Appearance"] {
-        assert!(
-            world.frame.runs.iter().any(|run| {
-                run.list == row.list
-                    && super::super::diagnostics::panel_caption_matches(&run.text, name)
-            }),
-            "expected {name} in the visible Tools command row"
-        );
+        confirm_tools_group(world, row.list, name);
     }
     assert_eq!(
         ribbon_tab_underlines(world, ["Sketch", "Tools"]),
         [false, true]
     );
+}
+
+fn confirm_tools_group(world: &mut ApplicationWorld, list: usize, name: &str) {
+    use super::super::{desktop_input, diagnostics, world::squeezed};
+    let expected = squeezed(name);
+    let group = world
+        .frame
+        .runs
+        .iter()
+        .find(|run| {
+            run.list == list
+                && (diagnostics::panel_caption_matches(&run.text, name)
+                    || run
+                        .text
+                        .strip_suffix("...")
+                        .is_some_and(|prefix| !prefix.is_empty() && expected.starts_with(prefix)))
+        })
+        .unwrap_or_else(|| {
+            panic!(
+                "expected {name} in the visible Tools command row: {:?}",
+                world.text()
+            )
+        });
+    if group.text.ends_with("...") {
+        desktop_input::hover(world, diagnostics::pointer_pixels(group.center()));
+        world.expect_text(&format!("Show {name} commands"));
+    }
 }
 
 #[then("the View ribbon groups are displayed")]
