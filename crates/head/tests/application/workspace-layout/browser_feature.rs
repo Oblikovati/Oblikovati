@@ -281,7 +281,7 @@ fn part_with_sketch(world: &mut ApplicationWorld) {
 }
 #[given("the extrusion branch is collapsed in the model browser")]
 fn extrusion_collapsed(world: &mut ApplicationWorld) {
-    click_branch_arrow(world, FEATURE);
+    super::browser_branch_scenario::click_feature_chevron(world, FEATURE);
     world.expect_no_text(SKETCH);
 }
 #[when("I right-click the extrusion and choose Expand All Children")]
@@ -307,7 +307,7 @@ fn extrusion_expanded(world: &mut ApplicationWorld) {
     let sketch = super::native_part::fixture_sketch(world);
     if !world.shows(&sketch.name) {
         let extrusion = super::native_part::single_extrusion_name(world);
-        click_branch_arrow(world, &extrusion);
+        super::browser_branch_scenario::click_feature_chevron(world, &extrusion);
     }
     world.expect_text(&sketch.name);
 }
@@ -338,16 +338,19 @@ fn sketch_row_highlighted(world: &mut ApplicationWorld) {
     let sketch = super::native_part::fixture_sketch(world);
     let browser = world.state().browser.expect("expected a model browser");
     assert!(browser.selected_sketches.contains(&sketch.id));
-    let row = world.run(&sketch.name).clone();
-    // The open context menu covers the right side of this row.
-    let x = (row.minimum[0] as usize).saturating_sub(3);
-    let (position, size) =
-        super::super::diagnostics::window_geometry("Model").expect("expected the browser");
-    let background_y = (position[1] + size[1] - 12.) as usize;
-    assert_ne!(
-        world.pixel_at([x, row.center()[1] as usize]),
-        world.pixel_at([x, background_y])
-    );
+    let [row, background] = sketch_row_fill_colors(world, &sketch.name);
+    assert_ne!(row, background, "expected a highlighted sketch row");
+}
+
+fn sketch_row_fill_colors(world: &mut ApplicationWorld, name: &str) -> [[u8; 4]; 2] {
+    use super::super::diagnostics::{pointer_pixels, window_geometry};
+    let row = world.run(name);
+    // The DOF badge and the open context menu can cover the right side of this row.
+    let x = row.minimum[0] - 3.;
+    let y = row.center()[1];
+    let (position, size) = window_geometry("Model").expect("expected the browser");
+    [y, position[1] + size[1] - 12.]
+        .map(|y| world.pixel_at(pointer_pixels([x, y]).map(|value| value as usize)))
 }
 fn sketch_dimension_texts(world: &mut ApplicationWorld) -> Vec<String> {
     let annotations =
@@ -381,10 +384,10 @@ fn sketch_remains(world: &mut ApplicationWorld) {
 #[then("the sketch row is no longer highlighted")]
 fn sketch_row_plain(world: &mut ApplicationWorld) {
     let sketch = super::native_part::fixture_sketch(world);
-    assert!(
-        !world.row_highlighted(&sketch.name),
-        "expected the sketch row plain"
-    );
+    let browser = world.state().browser.expect("expected a model browser");
+    assert!(!browser.selected_sketches.contains(&sketch.id));
+    let [row, background] = sketch_row_fill_colors(world, &sketch.name);
+    assert_eq!(row, background, "expected the sketch row plain");
 }
 #[then("the highlighted sketch geometry and dimensions disappear from the viewport")]
 fn sketch_gone(world: &mut ApplicationWorld) {

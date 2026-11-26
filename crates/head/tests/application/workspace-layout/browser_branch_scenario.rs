@@ -20,7 +20,7 @@ fn expanded_named_extrusion(world: &mut ApplicationWorld) {
 fn expand_extrusion_row(world: &mut ApplicationWorld) {
     world.expect_text("Extrusion1");
     if !world.shows("Sketch1") {
-        browser_feature::click_branch_arrow(world, "Extrusion1");
+        toggle_feature_branch(world);
     }
     world.expect_text("Sketch1");
 }
@@ -39,7 +39,30 @@ fn sketch_child_visible(world: &mut ApplicationWorld) {
 #[when("the user collapses the Extrusion1 branch")]
 #[when("the user expands the Extrusion1 branch")]
 fn toggle_feature_branch(world: &mut ApplicationWorld) {
-    browser_feature::click_branch_arrow(world, "Extrusion1");
+    click_feature_chevron(world, "Extrusion1");
+}
+
+pub(super) fn click_feature_chevron(world: &mut ApplicationWorld, label: &str) {
+    let row = world.run_in_window("Model", label);
+    let [left, _] = row.minimum;
+    let y = row.center()[1];
+    let arrow = world
+        .frame
+        .marks
+        .iter()
+        .find(|mark| {
+            let [x, at_y] = mark.position;
+            mark.list == row.list
+                && mark.bright
+                && (left - 52. ..left - 12.).contains(&x)
+                && (at_y - y).abs() < 6.
+        })
+        .unwrap_or_else(|| panic!("expected the rendered chevron left of {label:?}"));
+    world.click(super::super::diagnostics::pointer_pixels([
+        arrow.position[0],
+        y,
+    ]));
+    world.pump(Vec::new());
 }
 
 #[then("the Sketch1 child is hidden from the browser")]

@@ -176,6 +176,6 @@ fn axis_no_longer_visible(world: &mut ApplicationWorld) {
     );
 }
 
-fn axis_highlight_visible(world: &mut ApplicationWorld) -> bool {
+pub(super) fn axis_highlight_visible(world: &mut ApplicationWorld) -> bool {
     super::browser_feature::colored_pixels(world, [64, 153, 255]) > 0
 }

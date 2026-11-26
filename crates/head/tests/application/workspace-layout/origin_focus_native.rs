@@ -36,12 +36,15 @@ fn focus_outline_pixels(world: &mut ApplicationWorld, label: &str) -> usize {
     let min = super::super::diagnostics::pointer_pixels([row.minimum[0] - 5., row.minimum[1] - 5.]);
     let max =
         super::super::diagnostics::pointer_pixels([row.maximum[0] + 25., row.maximum[1] + 5.]);
+    let outline =
+        unsafe { imgui::sys::igGetColorU32_Col(imgui::sys::ImGuiCol_NavHighlight as i32, 1.) }
+            .to_le_bytes();
     let mut count = 0;
     for y in min[1].max(0)..max[1].min(capture.extent[1] as i32) {
         for x in min[0].max(0)..max[0].min(capture.extent[0] as i32) {
             let index = (y as usize * capture.extent[0] as usize + x as usize) * 4;
             let pixel = &capture.rgba[index..index + 4];
-            if pixel[2] > pixel[0].saturating_add(40) && pixel[1] > pixel[0].saturating_add(20) {
+            if pixel[..3] == outline[..3] {
                 count += 1;
             }
         }

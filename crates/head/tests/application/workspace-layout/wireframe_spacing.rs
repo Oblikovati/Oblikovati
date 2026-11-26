@@ -62,24 +62,50 @@ fn assert_near(first: u32, second: u32) {
 #[then("controls within each region use a consistent inset from that region's border")]
 fn controls_stay_inside_regions(world: &mut ApplicationWorld) {
     let file = world.run("File").minimum;
-    let (model, _) = diagnostics::window_dock_tab_bounds("Model").unwrap();
     let [home_x, home_y] = world.expect_tab("Home").minimum;
     // The Home control starts with a 14 px glyph and a 5 px gap before its caption.
     let home = [home_x - 19., home_y];
-    let prompt = status_prompt(world);
+    let (model, model_end) = diagnostics::window_dock_tab_bounds("Model").unwrap();
+    let browser_origin = window_geometry("Model").unwrap().0;
+    let browser_menu = leading_mark(
+        world,
+        [browser_origin[0], model[1]],
+        [model[0], model_end[1]],
+    );
+    let (status_origin, status_size) = window_geometry(STATUS).unwrap();
+    let status_mark = leading_mark(
+        world,
+        [status_origin[0], status_origin[1] + 4.],
+        [
+            status_prompt(world)[0],
+            status_origin[1] + status_size[1] - 4.,
+        ],
+    );
     let insets = [
         (file, RIBBON),
-        (model, "Model"),
+        (browser_menu, "Model"),
         (home, TABS),
-        (prompt, STATUS),
+        (status_mark, STATUS),
     ]
     .map(|(anchor, region)| leading_inset(anchor, bounds(region)));
     let file_bottom = diagnostics::pointer_pixels(world.run("File").maximum)[1];
     let line_height = file_bottom - diagnostics::pointer_pixels(file)[1];
     assert!(
         insets.iter().max().unwrap() - insets.iter().min().unwrap() <= line_height as u32,
-        "leading text insets {insets:?}: expected consistent spacing within one glyph height"
+        "leading control insets {insets:?}: expected consistent spacing within one glyph height"
     );
+}
+
+fn leading_mark(world: &ApplicationWorld, low: [f32; 2], high: [f32; 2]) -> [f32; 2] {
+    world
+        .frame
+        .marks
+        .iter()
+        .filter(|mark| mark.bright)
+        .map(|mark| mark.position)
+        .filter(|point| (0..2).all(|axis| low[axis] < point[axis] && point[axis] < high[axis]))
+        .min_by(|a, b| a[0].total_cmp(&b[0]))
+        .unwrap_or_else(|| panic!("expected a leading control between {low:?} and {high:?}"))
 }
 
 fn status_prompt(world: &ApplicationWorld) -> [f32; 2] {
@@ -110,10 +136,11 @@ fn leading_inset(anchor: [f32; 2], rect: [u32; 4]) -> u32 {
 fn command_groups_use_even_spacing(world: &mut ApplicationWorld) {
     let row = diagnostics::pointer_pixels(world.run("Extrude").center())[1] as u32;
     let ribbon = bounds(RIBBON);
-    let last_control = diagnostics::pointer_pixels(world.run("Simplify").maximum)[0] as u32;
-    let background_x = last_control.midpoint(ribbon[2]);
+    let commands = diagnostics::child_scroll(RIBBON, "##ribbon-panels").unwrap();
+    // The dividers extend below the command buttons into the panel title area.
+    let divider_y = diagnostics::pointer_pixels([0., commands.origin[1] + 69.])[1] as u32;
     let capture = capture_framebuffer(&mut world.app().window.native);
-    let gaps = ribbon_gaps(&capture, ribbon[0], background_x, row);
+    let gaps = ribbon_gaps(&capture, ribbon[0], ribbon[2] - 4, [row, divider_y]);
     let (min, max) = (gaps.iter().min(), gaps.iter().max());
     assert!(
         matches!((min, max), (Some(min), Some(max)) if gaps.len() >= 3 && max - min <= 2),
@@ -121,10 +148,12 @@ fn command_groups_use_even_spacing(world: &mut ApplicationWorld) {
     );
 }
 
-fn ribbon_gaps(image: &ViewportCapture, left: u32, end: u32, y: u32) -> Vec<u32> {
-    let row = (y * image.extent[0] + left) as usize * 4;
+fn ribbon_gaps(image: &ViewportCapture, left: u32, end: u32, rows: [u32; 2]) -> Vec<u32> {
     let span = (end - left + 1) as usize * 4;
-    let pixels = &image.rgba[row..row + span];
+    let [pixels, divider_pixels] = rows.map(|y| {
+        let start = (y * image.extent[0] + left) as usize * 4;
+        &image.rgba[start..start + span]
+    });
     let background = &pixels[span - 4..span];
     let samples = pixels
         .as_chunks::<4>()
@@ -148,11 +177,29 @@ fn ribbon_gaps(image: &ViewportCapture, left: u32, end: u32, y: u32) -> Vec<u32>
         .iter()
         .rposition(|&is_background| !is_background)
         .unwrap();
+    let mut index = first + 2;
     samples[first..=last]
         .chunk_by(|a, b| a == b)
-        .filter(|run| run[0])
-        .map(|run| run.len() as u32)
+        .filter_map(|run| {
+            let range = index..index + run.len();
+            index = range.end;
+            (run[0] && has_divider(range, pixels, divider_pixels, background))
+                .then_some(run.len() as u32)
+        })
         .collect()
+}
+
+fn has_divider(
+    mut range: std::ops::Range<usize>,
+    pixels: &[u8],
+    lower_row: &[u8],
+    background: &[u8],
+) -> bool {
+    range.any(|x| {
+        let offset = x * 4..(x + 1) * 4;
+        let pixel = &pixels[offset.clone()];
+        pixel != background && pixel == &lower_row[offset]
+    })
 }
 
 #[then("the browser, viewport, document tabs and status area align to their shared edges")]

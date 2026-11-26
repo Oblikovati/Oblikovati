@@ -98,12 +98,13 @@ pub(super) fn click_panel_action(world: &mut ApplicationWorld, center: [f32; 2])
     let point = super::super::diagnostics::pointer_pixels(center);
     #[cfg(target_os = "linux")]
     if !world.app().window.native.view.uses_wayland() {
-        super::super::x11_input::focus_window();
+        // Leave popup focus in place while moving and clicking its rendered row.
+        super::super::x11_input::move_pointer(point);
+        world.pump(Vec::new());
         super::super::x11_input::click(point);
-    } else {
-        world.click(point);
+        world.pump(Vec::new());
+        return;
     }
-    #[cfg(not(target_os = "linux"))]
     world.click(point);
     world.pump(Vec::new());
 }
@@ -146,6 +147,10 @@ pub(in super::super) fn add_log(world: &mut ApplicationWorld) {
     open_plus(world);
     let center = world.run("Log Panel").center();
     click_panel_action(world, center);
+    // Docking and focus are applied on the frame after the menu action.
+    for _ in 0..3 {
+        world.pump(Vec::new());
+    }
 }
 fn expect_log_area(world: &mut ApplicationWorld) {
     world.expect_text("Application messages");
@@ -184,8 +189,10 @@ fn select_dock_tab(world: &mut ApplicationWorld, name: &str) {
 #[when("I close the log panel tab")]
 #[when("the user closes the log panel tab")]
 fn close_log_tab(world: &mut ApplicationWorld) {
-    world.click_run_close_mark("Log");
-    world.pump(Vec::new());
+    let (start, end) = super::super::diagnostics::window_dock_tab_bounds("Log")
+        .expect("expected the active Log dock tab");
+    let half_height = (end[1] - start[1]) * 0.5;
+    click_panel_action(world, [end[0] - half_height, start[1] + half_height]);
 }
 #[then("the Model browser is displayed")]
 fn model_displayed_again(world: &mut ApplicationWorld) {

@@ -174,16 +174,10 @@ fn unfiltered(world: &mut ApplicationWorld) {
 #[then("the browser search field is hidden")]
 fn search_hidden(world: &mut ApplicationWorld) {
     world.expect_text("Origin");
-    let (position, size) = browser_geometry();
-    let hint = world
-        .frame
-        .runs
-        .iter()
-        .filter(|run| run.text == "Search")
-        .count();
-    assert_eq!(
-        hint, 1,
-        "expected only the Search button in {position:?} {size:?}"
+    let body = world.window_text("Model");
+    assert!(
+        !body.contains("TypeKeyword") && !body.contains('×'),
+        "expected no search field or clear control in {body:?}"
     );
 }
 #[when("I enter a query that matches no browser entry")]

@@ -2,8 +2,8 @@
 //! The Origin branch's menus, and what a chosen plane or axis shows in the view.
 use super::super::ApplicationWorld;
 use super::browser_feature::{
-    choose_menu_row, click_branch_arrow, expect_menu_beside, expect_outline, expect_rows,
-    open_extruded_part, right_click_row,
+    choose_menu_row, click_branch_arrow, expect_menu_beside, expect_rows, open_extruded_part,
+    right_click_row,
 };
 use cucumber::{given, then, when};
 
@@ -162,16 +162,16 @@ fn axis_row(world: &mut ApplicationWorld) {
 }
 #[then("the corresponding axis is highlighted in the viewport")]
 fn axis_shown(world: &mut ApplicationWorld) {
-    expect_outline(world, true);
+    assert!(super::browser_search_axes::axis_highlight_visible(world));
 }
 #[then("the axis row and axis remain highlighted")]
 fn axis_remains(world: &mut ApplicationWorld) {
     expect_row_accent(world, "Y Axis", true);
-    expect_outline(world, true);
+    axis_shown(world);
 }
 #[then("the axis is no longer highlighted in the viewport")]
 fn axis_gone(world: &mut ApplicationWorld) {
-    expect_outline(world, false);
+    assert!(!super::browser_search_axes::axis_highlight_visible(world));
 }
 #[then("the axis row no longer has the filled selection highlight")]
 fn axis_plain(world: &mut ApplicationWorld) {

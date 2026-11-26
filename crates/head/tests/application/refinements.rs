@@ -360,8 +360,7 @@ fn activate_close(world: &mut ApplicationWorld) {
 }
 #[then("the search text is cleared")]
 fn search_cleared(world: &mut ApplicationWorld) {
-    // The field and its opener have distinct labels when the query is cleared.
-    world.expect_text("Search");
+    // The empty field shows its placeholder, even with the icon-only dock opener.
     world.expect_text("Type Keyword");
 }
 #[then("the search query remains visible in the field")]
