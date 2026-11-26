@@ -346,9 +346,9 @@ using this status; the live scenario directory can change.
   two capture-only cases were excluded. Input was mixed X11 and scripted events,
   and the unversioned source prevents verified acceptance. See
   `receipts/2026-11-17-p0-dock-lifecycle-4073/diagnostic.json`.
-- The GUI library passed 587 tests during the P0 work. A full all-target run
-  reported 22 integration failures across four targets; triage is #4078. That
-  run preceded the final dock lifecycle change and is not a current green suite.
+- All 104 checks in the four GUI groups from #4078 passed in the
+  [current rerun](receipts/2026-11-26-gui-integration-targets-4078/README.md).
+  Document tab checks now run as GUI unit tests.
 - The head part-scene suite passed 134 of 135 tests; a modified body click
   selection test fails on both this work and clean parent `7ebc06bdb` (#4091).
 - A focused X11 mouse and keyboard test creates a parameter-driven, fully
@@ -483,8 +483,7 @@ Work dependency-ready application scenarios one at a time, then sketch and model
    Inventor-file, assembly, and 3D-sketch scenarios.
 2. Complete the evaluation owner and safe dirty-prefix replay in #4079, with
    generation, policy, invalidation, naming, and replay-count evidence.
-3. Repair and verify the GUI integration targets in #4078. The separate
-   first-interaction row movement is #4077.
+3. Track the separate browser row movement diagnostic in #4077.
 4. Complete the dock lifecycle checks still listed in #4073.
 5. Continue ledger baseline and milestone exit work in #3865, #3861, and #3860.
 6. Recheck scenario changes through the scheduled sync; the source may be edited
