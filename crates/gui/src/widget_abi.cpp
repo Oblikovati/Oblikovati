@@ -148,14 +148,16 @@ std::uint32_t oblikovati_gui_outer_dockspace(float width, float height, bool see
         ImGui::DockBuilderAddNode(id, ImGuiDockNodeFlags_DockSpace);
         ImGui::DockBuilderSetNodeSize(id, ImVec2(width, height));
         ImGuiID center = id;
-        const float initial_side = ImMin(260.0f, width * (seed_asset_dock ? 0.225f : 0.45f));
-        const ImGuiID left = ImGui::DockBuilderSplitNode(center, ImGuiDir_Left, initial_side / width, nullptr, &center);
+        // Seed a quarter-width Model browser when the asset dock and viewport have room.
+        const float assets = seed_asset_dock ? ImMin(260.0f, width * 0.225f) : 0.0f;
+        const float model = ImMin(ImClamp(width * 0.25f, 260.0f, 480.0f), width * 0.45f - assets);
+        const ImGuiID left = ImGui::DockBuilderSplitNode(center, ImGuiDir_Left, model / width, nullptr, &center);
         ImGui::DockBuilderDockWindow("Model", left);
         ImGui::DockBuilderDockWindow("Log", left);
         ImGui::DockBuilderDockWindow("Favorites", left);
         if (seed_asset_dock) {
             const ImGuiID right = ImGui::DockBuilderSplitNode(center, ImGuiDir_Right,
-                initial_side / ImMax(1.0f, width - initial_side - 2.0f), nullptr, &center);
+                assets / ImMax(1.0f, width - model - outer_splitter_width), nullptr, &center);
             ImGui::DockBuilderDockWindow("Material Browser", right);
             ImGui::DockBuilderDockWindow("Appearance Browser", right);
         }

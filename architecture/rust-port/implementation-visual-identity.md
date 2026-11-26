@@ -12,6 +12,8 @@ values come from the same handoff.
   Selected ribbon and document tabs have an indigo underline.
 - The Model, Material Browser, and Appearance Browser use the same chrome when
   docked. Theme changes schedule the frame needed to refresh native dock tabs.
+  A fresh Model dock takes about a quarter of a regular desktop workspace.
+  The initial width stays within the dock budget and caps at 480 logical px.
   When the Part workspace narrows, side docks preserve their 180 logical px
   minimum where it fits alongside the reserved viewport width. Widening the
   workspace restores the user's preferred dock sizes. The last resized dock
