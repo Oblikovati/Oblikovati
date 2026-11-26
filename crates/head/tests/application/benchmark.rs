@@ -205,6 +205,7 @@ mod home_recent_documents;
 mod linux_dpi;
 #[path = "model-browser/steps.rs"]
 mod model_browser;
+mod object_visibility;
 #[cfg(test)]
 mod offset_plane_native;
 mod offset_plane_overlay;

@@ -112,8 +112,8 @@ impl GuiFrameEngine {
             band_height,
             seed_asset_dock,
         );
-        let dimension_positions =
-            crate::dimension_labels::dimension_label_layout(ui, request, area);
+        let visibility = &self.workspace.object_visibility;
+        let dimension_positions = visibility.dimension_positions(ui, request, area);
         let constraint_hover =
             crate::sketch::draw_viewport_overlays(ui, request, &dimension_positions);
         let over_fields = crate::sketch::line::hud_panel(ui, request);

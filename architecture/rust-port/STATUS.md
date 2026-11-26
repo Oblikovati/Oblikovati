@@ -23,10 +23,10 @@ using this status; the live scenario directory can change.
   See the [current run](receipts/2026-11-26-file-menu-visual-contract-3894/README.md)
   and the [pinned run](receipts/2026-11-21-file-menu-r0-3894/README.md).
 - Quick Access Toolbar (#3955) passed [all 25 cases and 268 steps on Wayland and X11](receipts/2026-11-26-quick-access-wayland-3955/README.md).
+- Object Visibility (#3897) passed [all four published checklist scenarios and 29 steps](receipts/2026-11-26-object-visibility-3897/README.md) on Wayland and X11. Native checks also covered rendered origin axes and sketch dimensions.
 - Body Properties (#3954) passed all six current scenarios and 69 steps on Wayland and X11.
   The published Part verified calculated values, appearance changes, and
-  dismissal without applying pending changes. See the
-  [current runs](receipts/2026-11-26-body-properties-wayland-3954/README.md).
+  dismissal without applying pending changes. See the [current runs](receipts/2026-11-26-body-properties-wayland-3954/README.md).
 - Viewport Pan (#3881): all four pinned scenarios and 32 steps passed
   under Xvfb. Two X11 input tests also passed. The four declarations now
   have R0 records. The live feature requires a native Part fixture, and strict

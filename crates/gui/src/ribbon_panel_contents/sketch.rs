@@ -117,11 +117,32 @@ pub(super) fn sketch_create_controls(
     drop(disabled);
 }
 
-/// Show or hide every sketch at once through the owner's per-sketch command.
+/// The View checklist and the existing command to show or hide every sketch.
 pub(super) fn visibility_controls(
+    ui: &Ui,
+    origin: [f32; 2],
+    state: &GuiCommandState,
+    owners: &mut crate::ribbon_panels::RibbonPanelOwners<'_>,
+    actions: &mut Vec<GuiShellAction>,
+) {
+    let icons = owners.icons;
+    let (_, mut size) = icons.appearance.cell(0);
+    if icons.appearance == crate::ribbon_command_layout::RibbonAppearance::Normal {
+        size[0] = 140.;
+    }
+    let disabled = ui.begin_disabled(state.document.is_none());
+    owners.workspace.pending_layout |= owners.workspace.object_visibility.ribbon(ui, icons, size);
+    drop(disabled);
+    let (position, size) = icons.appearance.cell(1);
+    icons.cursor(ui, origin, position);
+    sketch_visibility(ui, state, icons, size, actions);
+}
+
+fn sketch_visibility(
     ui: &Ui,
     state: &GuiCommandState,
     icons: &crate::icons::GuiRibbonIcons,
+    size: [f32; 2],
     actions: &mut Vec<GuiShellAction>,
 ) {
     let sketches = state
@@ -135,7 +156,6 @@ pub(super) fn visibility_controls(
     } else {
         "Show Sketches"
     };
-    let size = icons.appearance.single_cell();
     let pressed = icons.button(ui, label, crate::icons::IconGlyph::SketchVisibility, size);
     drop(disabled);
     let Some(document) = state.document.filter(|_| pressed) else {

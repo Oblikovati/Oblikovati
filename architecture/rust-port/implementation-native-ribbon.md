@@ -21,6 +21,12 @@ and Project Geometry use full-height buttons in Normal appearance. The View
 theme and colour-scheme selectors place their captions before their controls,
 matching the material and appearance selectors in Tools.
 
+The View ribbon Object Visibility checklist keeps its popup open while
+categories change. All Workfeatures changes the origin, user work-feature,
+and UCS checks together. Origin plane and axis overlays and sketch
+dimensions follow their switches. The active sketch keeps its dimensions
+available for editing. [Native checks](receipts/2026-11-26-object-visibility-3897/README.md)
+
 Home keeps Get Started, Tools, and the display controls while it covers an
 open document. The ribbon suspends document commands and closes temporary
 panels at the workspace boundary. Returning to the document restores its

@@ -179,7 +179,7 @@ pub(crate) fn draw_panel_content(
             }
             return appearance_controls(ui, state, owners.editor, owners.icons, actions);
         }
-        RibbonPanel::Visibility => sketch::visibility_controls(ui, state, owners.icons, actions),
+        RibbonPanel::Visibility => sketch::visibility_controls(ui, origin, state, owners, actions),
         RibbonPanel::Windows => appearance_view::windows(ui, origin, state, owners, actions),
         RibbonPanel::PartPrimitives => muted_icon_commands(
             ui,
