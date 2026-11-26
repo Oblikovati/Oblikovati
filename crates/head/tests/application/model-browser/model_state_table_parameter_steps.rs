@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Native steps for model-state parameter columns (#4119).
+use super::model_state_suppression::activate_state_row;
 use super::model_state_table_extra::{click, grid_run, open, row_run};
 use super::*;
 use oblikovati_api::{client::Client, wire::CreateModelStateArgs};
@@ -301,10 +302,7 @@ pub(super) fn tree_expression(world: &ApplicationWorld, expression: &str) {
 #[when("the user closes the table and activates Primary")]
 fn close_table_and_activate_primary(world: &mut ApplicationWorld) {
     click(world, "Cancel");
-    let point = diagnostics::pointer_pixels(world.run("Primary").center());
-    super::super::x11_input::click(point);
-    super::super::x11_input::click(point);
-    world.pump(Vec::new());
+    activate_state_row(world, "Primary");
 }
 
 pub(super) fn persist_parameter_column(world: &mut ApplicationWorld) {

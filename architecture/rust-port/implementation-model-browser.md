@@ -27,6 +27,9 @@ Apply and Cancel. The test verifies the feature state and the rendered face.
 Native checks on Wayland and X11 verify the inactive member rename, the
 duplicate warning and both responses, and cancellation of an empty name.
 [Model State member-name checks](receipts/2026-11-26-model-browser-member-names-3896/README.md)
+Switching to Primary refreshes the parameter tree to that member's value
+while the table retains distinct values for the other members.
+[Model State parameter values](receipts/2026-11-26-model-state-distinct-parameters-3896/README.md)
 
 A double-click sends the document and sketch IDs to the existing owner edit
 operation. The same operation remains available through script and add-in owner
