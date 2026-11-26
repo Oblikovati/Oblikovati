@@ -1,0 +1,851 @@
+[
+  {
+    "uri": "mnt/vininas-projects/MCAD-Scenarios/features/application/document-creation/document-creation-basic-native.feature",
+    "keyword": "Feature",
+    "name": "Create basic documents from native templates",
+    "tags": [
+      {
+        "name": "application",
+        "line": 2
+      },
+      {
+        "name": "documents",
+        "line": 2
+      },
+      {
+        "name": "fixture_variation",
+        "line": 2
+      }
+    ],
+    "elements": [
+      {
+        "after": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 264469146
+            }
+          }
+        ],
+        "before": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 2077602305
+            }
+          }
+        ],
+        "keyword": "Scenario",
+        "type": "scenario",
+        "id": "create-basic-documents-from-native-templates/create-a-standard-metric-part",
+        "line": 9,
+        "name": "Create a standard metric part",
+        "tags": [
+          {
+            "name": "cross_cutting",
+            "line": 9
+          },
+          {
+            "name": "common_document_creation",
+            "line": 9
+          }
+        ],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "line": 10,
+            "name": "`fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software",
+            "result": {
+              "status": "passed",
+              "duration": 1087505310
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 11,
+            "name": "the user presses Control+N to open the new-document template chooser",
+            "result": {
+              "status": "passed",
+              "duration": 201608804
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 12,
+            "name": "the new-document template chooser is open in the MCAD Software",
+            "result": {
+              "status": "passed",
+              "duration": 4653915
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 13,
+            "name": "the user selects the metric template folder",
+            "result": {
+              "status": "passed",
+              "duration": 214999652
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 14,
+            "name": "the user selects the standard metric part template",
+            "result": {
+              "status": "passed",
+              "duration": 214492843
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 15,
+            "name": "the user chooses Create",
+            "result": {
+              "status": "passed",
+              "duration": 158622189
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 16,
+            "name": "a new part document becomes active",
+            "result": {
+              "status": "passed",
+              "duration": 9827101
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 17,
+            "name": "its viewport contains no visible model geometry",
+            "result": {
+              "status": "passed",
+              "duration": 140607252
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 18,
+            "name": "its model browser displays an origin and an end-of-part marker",
+            "result": {
+              "status": "passed",
+              "duration": 8016449
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 19,
+            "name": "a new document tab is visible",
+            "result": {
+              "status": "passed",
+              "duration": 6728625
+            }
+          }
+        ]
+      },
+      {
+        "keyword": "Background",
+        "type": "background",
+        "id": "create-basic-documents-from-native-templates/create-a-standard-metric-part",
+        "line": 9,
+        "name": "Create a standard metric part",
+        "tags": [
+          {
+            "name": "cross_cutting",
+            "line": 9
+          },
+          {
+            "name": "common_document_creation",
+            "line": 9
+          }
+        ],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "line": 5,
+            "name": "a fresh MCAD Software session loads `fixtures/cad/document-creation-native-candidate.opj` as its active project",
+            "result": {
+              "status": "passed",
+              "duration": 66120568
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 6,
+            "name": "its Metric catalog contains the native standard part, assembly, drawing, sheet-metal and presentation templates",
+            "result": {
+              "status": "passed",
+              "duration": 2616985
+            }
+          }
+        ]
+      },
+      {
+        "after": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 325716442
+            }
+          }
+        ],
+        "before": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 2139287973
+            }
+          }
+        ],
+        "keyword": "Scenario",
+        "type": "scenario",
+        "id": "create-basic-documents-from-native-templates/create-a-standard-metric-assembly",
+        "line": 23,
+        "name": "Create a standard metric assembly",
+        "tags": [
+          {
+            "name": "cross_cutting",
+            "line": 23
+          },
+          {
+            "name": "common_assembly_document_creation",
+            "line": 23
+          }
+        ],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "line": 24,
+            "name": "`fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software",
+            "result": {
+              "status": "passed",
+              "duration": 1075827824
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 25,
+            "name": "the user presses Control+N to open the new-document template chooser",
+            "result": {
+              "status": "passed",
+              "duration": 243270094
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 26,
+            "name": "the new-document template chooser is open in the MCAD Software",
+            "result": {
+              "status": "passed",
+              "duration": 4817748
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 27,
+            "name": "the user selects the metric template folder",
+            "result": {
+              "status": "passed",
+              "duration": 232621712
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 28,
+            "name": "the user selects the standard metric assembly template",
+            "result": {
+              "status": "passed",
+              "duration": 232726506
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 29,
+            "name": "the template details identify an assembly with millimeter units",
+            "result": {
+              "status": "passed",
+              "duration": 8012633
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 30,
+            "name": "the user chooses Create",
+            "result": {
+              "status": "passed",
+              "duration": 158149776
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 31,
+            "name": "a new assembly document becomes active",
+            "result": {
+              "status": "passed",
+              "duration": 10022093
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 32,
+            "name": "its viewport contains no visible components",
+            "result": {
+              "status": "passed",
+              "duration": 158310472
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 33,
+            "name": "its model browser shows representations, relationships and origin entries",
+            "result": {
+              "status": "passed",
+              "duration": 7397333
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 34,
+            "name": "the assembly ribbon offers commands to place and create components",
+            "result": {
+              "status": "passed",
+              "duration": 7548763
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 35,
+            "name": "a new document tab is visible",
+            "result": {
+              "status": "passed",
+              "duration": 8694385
+            }
+          }
+        ]
+      },
+      {
+        "keyword": "Background",
+        "type": "background",
+        "id": "create-basic-documents-from-native-templates/create-a-standard-metric-assembly",
+        "line": 23,
+        "name": "Create a standard metric assembly",
+        "tags": [
+          {
+            "name": "cross_cutting",
+            "line": 23
+          },
+          {
+            "name": "common_assembly_document_creation",
+            "line": 23
+          }
+        ],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "line": 5,
+            "name": "a fresh MCAD Software session loads `fixtures/cad/document-creation-native-candidate.opj` as its active project",
+            "result": {
+              "status": "passed",
+              "duration": 81108682
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 6,
+            "name": "its Metric catalog contains the native standard part, assembly, drawing, sheet-metal and presentation templates",
+            "result": {
+              "status": "passed",
+              "duration": 2816855
+            }
+          }
+        ]
+      },
+      {
+        "after": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 486553782
+            }
+          }
+        ],
+        "before": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1870495464
+            }
+          }
+        ],
+        "keyword": "Scenario",
+        "type": "scenario",
+        "id": "create-basic-documents-from-native-templates/create-a-drawing-from-a-sheet-template",
+        "line": 37,
+        "name": "Create a drawing from a sheet template",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "line": 38,
+            "name": "`fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software",
+            "result": {
+              "status": "passed",
+              "duration": 1155983121
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 39,
+            "name": "the user presses Control+N to open the new-document template chooser",
+            "result": {
+              "status": "passed",
+              "duration": 208278199
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 40,
+            "name": "the new-document template chooser is open in the MCAD Software",
+            "result": {
+              "status": "passed",
+              "duration": 4399935
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 41,
+            "name": "a drawing template with a border and title block is available",
+            "result": {
+              "status": "passed",
+              "duration": 4827827
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 42,
+            "name": "the user selects the drawing template",
+            "result": {
+              "status": "passed",
+              "duration": 217997611
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 43,
+            "name": "the user chooses its Use Template preview",
+            "result": {
+              "status": "passed",
+              "duration": 223919764
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 44,
+            "name": "the user chooses Create",
+            "result": {
+              "status": "passed",
+              "duration": 147393615
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 45,
+            "name": "a new drawing document becomes active",
+            "result": {
+              "status": "passed",
+              "duration": 9966179
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 46,
+            "name": "its viewport displays a sheet with a border and title block",
+            "result": {
+              "status": "passed",
+              "duration": 55424708
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 47,
+            "name": "the drawing browser lists the sheet and its border",
+            "result": {
+              "status": "passed",
+              "duration": 9472465
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 48,
+            "name": "the ribbon offers drawing view commands",
+            "result": {
+              "status": "passed",
+              "duration": 9400752
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 49,
+            "name": "a new document tab is visible",
+            "result": {
+              "status": "passed",
+              "duration": 9574243
+            }
+          }
+        ]
+      },
+      {
+        "keyword": "Background",
+        "type": "background",
+        "id": "create-basic-documents-from-native-templates/create-a-drawing-from-a-sheet-template",
+        "line": 37,
+        "name": "Create a drawing from a sheet template",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "line": 5,
+            "name": "a fresh MCAD Software session loads `fixtures/cad/document-creation-native-candidate.opj` as its active project",
+            "result": {
+              "status": "passed",
+              "duration": 68999437
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 6,
+            "name": "its Metric catalog contains the native standard part, assembly, drawing, sheet-metal and presentation templates",
+            "result": {
+              "status": "passed",
+              "duration": 3308435
+            }
+          }
+        ]
+      },
+      {
+        "after": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 255486307
+            }
+          }
+        ],
+        "before": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 2067200580
+            }
+          }
+        ],
+        "keyword": "Scenario",
+        "type": "scenario",
+        "id": "create-basic-documents-from-native-templates/create-a-metric-sheet-metal-part",
+        "line": 51,
+        "name": "Create a metric sheet-metal part",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "line": 52,
+            "name": "`fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software",
+            "result": {
+              "status": "passed",
+              "duration": 1299833317
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 53,
+            "name": "the user presses Control+N to open the new-document template chooser",
+            "result": {
+              "status": "passed",
+              "duration": 219511683
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 54,
+            "name": "the new-document template chooser is open in the MCAD Software",
+            "result": {
+              "status": "passed",
+              "duration": 5758820
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 55,
+            "name": "the user selects the metric template folder",
+            "result": {
+              "status": "passed",
+              "duration": 284817914
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 56,
+            "name": "the user selects the metric sheet-metal part template",
+            "result": {
+              "status": "passed",
+              "duration": 243169728
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 57,
+            "name": "the template details identify a part with millimeter units",
+            "result": {
+              "status": "passed",
+              "duration": 8881831
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 58,
+            "name": "the user chooses Create",
+            "result": {
+              "status": "passed",
+              "duration": 167381434
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 59,
+            "name": "a new part document becomes active",
+            "result": {
+              "status": "passed",
+              "duration": 9434875
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 60,
+            "name": "its viewport contains no visible model geometry",
+            "result": {
+              "status": "passed",
+              "duration": 128753770
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 61,
+            "name": "the browser shows a folded model and its origin",
+            "result": {
+              "status": "passed",
+              "duration": 6817560
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 62,
+            "name": "the sheet-metal ribbon is active",
+            "result": {
+              "status": "passed",
+              "duration": 7516554
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 63,
+            "name": "a new document tab is visible",
+            "result": {
+              "status": "passed",
+              "duration": 8948866
+            }
+          }
+        ]
+      },
+      {
+        "keyword": "Background",
+        "type": "background",
+        "id": "create-basic-documents-from-native-templates/create-a-metric-sheet-metal-part",
+        "line": 51,
+        "name": "Create a metric sheet-metal part",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "line": 5,
+            "name": "a fresh MCAD Software session loads `fixtures/cad/document-creation-native-candidate.opj` as its active project",
+            "result": {
+              "status": "passed",
+              "duration": 70052696
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 6,
+            "name": "its Metric catalog contains the native standard part, assembly, drawing, sheet-metal and presentation templates",
+            "result": {
+              "status": "passed",
+              "duration": 3315697
+            }
+          }
+        ]
+      },
+      {
+        "after": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 169221871
+            }
+          }
+        ],
+        "before": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1867608250
+            }
+          }
+        ],
+        "keyword": "Scenario",
+        "type": "scenario",
+        "id": "create-basic-documents-from-native-templates/create-a-presentation-and-cancel-initial-model-insertion",
+        "line": 65,
+        "name": "Create a presentation and cancel initial model insertion",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "line": 66,
+            "name": "`fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software",
+            "result": {
+              "status": "passed",
+              "duration": 1066044804
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 67,
+            "name": "the user presses Control+N to open the new-document template chooser",
+            "result": {
+              "status": "passed",
+              "duration": 212601873
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 68,
+            "name": "the new-document template chooser is open in the MCAD Software",
+            "result": {
+              "status": "passed",
+              "duration": 4321840
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 69,
+            "name": "the user selects the metric presentation template",
+            "result": {
+              "status": "passed",
+              "duration": 242906381
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 70,
+            "name": "the user chooses Create",
+            "result": {
+              "status": "passed",
+              "duration": 177531493
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 71,
+            "name": "a new presentation document becomes active",
+            "result": {
+              "status": "passed",
+              "duration": 10331405
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 72,
+            "name": "an Insert dialog opens for an assembly file",
+            "result": {
+              "status": "passed",
+              "duration": 8349746
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 73,
+            "name": "the user cancels the Insert dialog",
+            "result": {
+              "status": "passed",
+              "duration": 111199735
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 74,
+            "name": "the presentation remains open with an empty viewport",
+            "result": {
+              "status": "passed",
+              "duration": 79417422
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 75,
+            "name": "the browser shows a scene",
+            "result": {
+              "status": "passed",
+              "duration": 6857635
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 76,
+            "name": "the workspace displays a storyboard timeline and snapshot views panel",
+            "result": {
+              "status": "passed",
+              "duration": 7112716
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 77,
+            "name": "the presentation ribbon offers Insert Model",
+            "result": {
+              "status": "passed",
+              "duration": 229972027
+            }
+          }
+        ]
+      },
+      {
+        "keyword": "Background",
+        "type": "background",
+        "id": "create-basic-documents-from-native-templates/create-a-presentation-and-cancel-initial-model-insertion",
+        "line": 65,
+        "name": "Create a presentation and cancel initial model insertion",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "line": 5,
+            "name": "a fresh MCAD Software session loads `fixtures/cad/document-creation-native-candidate.opj` as its active project",
+            "result": {
+              "status": "passed",
+              "duration": 73113833
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 6,
+            "name": "its Metric catalog contains the native standard part, assembly, drawing, sheet-metal and presentation templates",
+            "result": {
+              "status": "passed",
+              "duration": 2891742
+            }
+          }
+        ]
+      }
+    ]
+  }
+]

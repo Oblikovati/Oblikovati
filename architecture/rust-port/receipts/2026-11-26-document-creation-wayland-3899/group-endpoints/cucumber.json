@@ -1,0 +1,231 @@
+[
+  {
+    "uri": "mnt/vininas-projects/MCAD-Scenarios/features/application/document-creation/document-creation.feature",
+    "keyword": "Feature",
+    "name": "Create a document from a template",
+    "tags": [
+      {
+        "name": "application",
+        "line": 2
+      },
+      {
+        "name": "documents",
+        "line": 2
+      },
+      {
+        "name": "fixture_variation",
+        "line": 2
+      }
+    ],
+    "elements": [
+      {
+        "after": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 409324782
+            }
+          }
+        ],
+        "before": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1976113326
+            }
+          }
+        ],
+        "keyword": "Scenario",
+        "type": "scenario",
+        "id": "create-a-document-from-a-template/navigate-to-template-group-endpoints-with-home-and-end",
+        "line": 9,
+        "name": "Navigate to template group endpoints with Home and End",
+        "tags": [
+          {
+            "name": "fixture_variation",
+            "line": 9
+          }
+        ],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "line": 10,
+            "name": "`fixtures/cad/workspace-layout-native.opd` is active with `Sketch1` visible in the MCAD Software",
+            "result": {
+              "status": "passed",
+              "duration": 1126953755
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 11,
+            "name": "the template chooser shows the metric folder grouped by type using Medium icons",
+            "result": {
+              "status": "passed",
+              "duration": 1314129831
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 12,
+            "name": "the Part group begins with Sheet Metal (DIN) and ends with Standard (mm)",
+            "result": {
+              "status": "passed",
+              "duration": 473009220
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 13,
+            "name": "the Assembly group begins with Mold Design (DIN) and ends with Weldment (JIS)",
+            "result": {
+              "status": "passed",
+              "duration": 493760773
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 14,
+            "name": "the user selects Sheet Metal (mm) in the Part group",
+            "result": {
+              "status": "passed",
+              "duration": 475200907
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 15,
+            "name": "the user presses Home",
+            "result": {
+              "status": "passed",
+              "duration": 235009873
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 16,
+            "name": "Sheet Metal (DIN) is selected and identified in the details pane",
+            "result": {
+              "status": "passed",
+              "duration": 7816469
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 17,
+            "name": "the user presses End",
+            "result": {
+              "status": "passed",
+              "duration": 220451724
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 18,
+            "name": "Standard (mm) is selected and identified in the details pane",
+            "result": {
+              "status": "passed",
+              "duration": 8162700
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 19,
+            "name": "the user selects Mold Design (mm) in the Assembly group",
+            "result": {
+              "status": "passed",
+              "duration": 689200828
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 20,
+            "name": "the user presses End",
+            "result": {
+              "status": "passed",
+              "duration": 234089590
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 21,
+            "name": "Weldment (JIS) is selected and identified in the details pane",
+            "result": {
+              "status": "passed",
+              "duration": 7848349
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 22,
+            "name": "the user presses Home",
+            "result": {
+              "status": "passed",
+              "duration": 216735194
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 23,
+            "name": "Mold Design (DIN) is selected and identified in the details pane",
+            "result": {
+              "status": "passed",
+              "duration": 5622178
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 24,
+            "name": "the user presses Escape",
+            "result": {
+              "status": "passed",
+              "duration": 315710751
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 25,
+            "name": "the chooser closes and the original part remains active",
+            "result": {
+              "status": "passed",
+              "duration": 10913392
+            }
+          }
+        ]
+      },
+      {
+        "keyword": "Background",
+        "type": "background",
+        "id": "create-a-document-from-a-template/navigate-to-template-group-endpoints-with-home-and-end",
+        "line": 9,
+        "name": "Navigate to template group endpoints with Home and End",
+        "tags": [
+          {
+            "name": "fixture_variation",
+            "line": 9
+          }
+        ],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "line": 5,
+            "name": "a fresh MCAD Software session loads `fixtures/cad/document-creation-group-endpoints-candidate.opj` as its active project",
+            "result": {
+              "status": "passed",
+              "duration": 66819241
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 6,
+            "name": "its native catalog contains the named part and assembly templates used below",
+            "result": {
+              "status": "passed",
+              "duration": 3721900
+            }
+          }
+        ]
+      }
+    ]
+  }
+]

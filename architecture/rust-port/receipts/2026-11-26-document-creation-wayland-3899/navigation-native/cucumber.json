@@ -1,0 +1,629 @@
+[
+  {
+    "uri": "mnt/vininas-projects/MCAD-Scenarios/features/application/document-creation/document-creation-navigation-native.feature",
+    "keyword": "Feature",
+    "name": "Navigate named native part templates",
+    "tags": [
+      {
+        "name": "application",
+        "line": 2
+      },
+      {
+        "name": "documents",
+        "line": 2
+      },
+      {
+        "name": "fixture_variation",
+        "line": 2
+      }
+    ],
+    "elements": [
+      {
+        "after": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 277002660
+            }
+          }
+        ],
+        "before": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1782263014
+            }
+          }
+        ],
+        "keyword": "Scenario",
+        "type": "scenario",
+        "id": "navigate-named-native-part-templates/reverse-the-template-name-order-in-grouped-details-view",
+        "line": 10,
+        "name": "Reverse the template name order in grouped Details view",
+        "tags": [
+          {
+            "name": "fixture_variation",
+            "line": 10
+          }
+        ],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "line": 11,
+            "name": "`fixtures/cad/workspace-layout-native.opd` is active with `Sketch1` visible in the MCAD Software",
+            "result": {
+              "status": "passed",
+              "duration": 993268186
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 12,
+            "name": "the user selects the standard inch part in the English folder",
+            "result": {
+              "status": "passed",
+              "duration": 570438877
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 13,
+            "name": "the user switches to the metric folder and displays grouped Details view",
+            "result": {
+              "status": "passed",
+              "duration": 985003294
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 14,
+            "name": "the previously selected standard inch part is displayed in the details pane",
+            "result": {
+              "status": "passed",
+              "duration": 3909869
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 15,
+            "name": "the visible part section lists two Sheet Metal entries before two Standard entries",
+            "result": {
+              "status": "passed",
+              "duration": 1338859
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 16,
+            "name": "the user clicks the Name column header",
+            "result": {
+              "status": "passed",
+              "duration": 377862556
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 17,
+            "name": "the visible part section lists the Standard entries before the Sheet Metal entries",
+            "result": {
+              "status": "passed",
+              "duration": 7927988
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 18,
+            "name": "the details pane still identifies the standard inch part and inch units",
+            "result": {
+              "status": "passed",
+              "duration": 5914801
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 19,
+            "name": "the user clicks the Name column header again",
+            "result": {
+              "status": "passed",
+              "duration": 363907168
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 20,
+            "name": "the visible part section lists the Sheet Metal entries before the Standard entries",
+            "result": {
+              "status": "passed",
+              "duration": 5830114
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 21,
+            "name": "the details pane still identifies the standard inch part and inch units",
+            "result": {
+              "status": "passed",
+              "duration": 1479850
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 22,
+            "name": "the user restores Medium icons and cancels the chooser",
+            "result": {
+              "status": "passed",
+              "duration": 878478431
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 23,
+            "name": "the chooser closes and the original part remains active",
+            "result": {
+              "status": "passed",
+              "duration": 10281416
+            }
+          }
+        ]
+      },
+      {
+        "keyword": "Background",
+        "type": "background",
+        "id": "navigate-named-native-part-templates/reverse-the-template-name-order-in-grouped-details-view",
+        "line": 10,
+        "name": "Reverse the template name order in grouped Details view",
+        "tags": [
+          {
+            "name": "fixture_variation",
+            "line": 10
+          }
+        ],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "line": 5,
+            "name": "a fresh MCAD Software session loads `fixtures/cad/document-creation-navigation-candidate.opj` as its active project",
+            "result": {
+              "status": "passed",
+              "duration": 54391311
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 6,
+            "name": "its Metric folder contains exactly the four named native part templates used below",
+            "result": {
+              "status": "passed",
+              "duration": 3036992
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 7,
+            "name": "its English folder contains the standard inch part template",
+            "result": {
+              "status": "passed",
+              "duration": 3078820
+            }
+          }
+        ]
+      },
+      {
+        "after": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 319014303
+            }
+          }
+        ],
+        "before": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1793241379
+            }
+          }
+        ],
+        "keyword": "Scenario",
+        "type": "scenario",
+        "id": "navigate-named-native-part-templates/navigate-adjacent-part-templates-with-arrow-keys",
+        "line": 26,
+        "name": "Navigate adjacent part templates with arrow keys",
+        "tags": [
+          {
+            "name": "fixture_variation",
+            "line": 26
+          }
+        ],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "line": 27,
+            "name": "`fixtures/cad/workspace-layout-native.opd` is active with `Sketch1` visible in the MCAD Software",
+            "result": {
+              "status": "passed",
+              "duration": 936501236
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 28,
+            "name": "the new-document chooser shows the metric folder grouped by type using Medium icons",
+            "result": {
+              "status": "passed",
+              "duration": 1097183617
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 29,
+            "name": "the part group displays Sheet Metal (mm) immediately before Standard (DIN)",
+            "result": {
+              "status": "passed",
+              "duration": 1371335921
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 30,
+            "name": "the user selects the Sheet Metal (mm) part template",
+            "result": {
+              "status": "passed",
+              "duration": 440108159
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 31,
+            "name": "its tile is selected and its details identify millimeter units",
+            "result": {
+              "status": "passed",
+              "duration": 9907994
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 32,
+            "name": "the user presses Right",
+            "result": {
+              "status": "passed",
+              "duration": 449584113
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 33,
+            "name": "the Standard (DIN) part tile is selected",
+            "result": {
+              "status": "passed",
+              "duration": 9508174
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 34,
+            "name": "the details identify Standard (DIN) and millimeter units",
+            "result": {
+              "status": "passed",
+              "duration": 6381184
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 35,
+            "name": "the user presses Left",
+            "result": {
+              "status": "passed",
+              "duration": 386872617
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 36,
+            "name": "the Sheet Metal (mm) part tile is selected again",
+            "result": {
+              "status": "passed",
+              "duration": 9448493
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 37,
+            "name": "its sheet-metal details are displayed",
+            "result": {
+              "status": "passed",
+              "duration": 5839661
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 38,
+            "name": "the user presses Down",
+            "result": {
+              "status": "passed",
+              "duration": 193275906
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 39,
+            "name": "the template gallery scrolls down",
+            "result": {
+              "status": "passed",
+              "duration": 187317655
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 40,
+            "name": "Sheet Metal (mm) remains selected with its details displayed",
+            "result": {
+              "status": "passed",
+              "duration": 7932497
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 41,
+            "name": "the user presses Escape",
+            "result": {
+              "status": "passed",
+              "duration": 282647031
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 42,
+            "name": "the chooser closes and the original part remains active",
+            "result": {
+              "status": "passed",
+              "duration": 11359671
+            }
+          }
+        ]
+      },
+      {
+        "keyword": "Background",
+        "type": "background",
+        "id": "navigate-named-native-part-templates/navigate-adjacent-part-templates-with-arrow-keys",
+        "line": 26,
+        "name": "Navigate adjacent part templates with arrow keys",
+        "tags": [
+          {
+            "name": "fixture_variation",
+            "line": 26
+          }
+        ],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "line": 5,
+            "name": "a fresh MCAD Software session loads `fixtures/cad/document-creation-navigation-candidate.opj` as its active project",
+            "result": {
+              "status": "passed",
+              "duration": 53792814
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 6,
+            "name": "its Metric folder contains exactly the four named native part templates used below",
+            "result": {
+              "status": "passed",
+              "duration": 3084410
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 7,
+            "name": "its English folder contains the standard inch part template",
+            "result": {
+              "status": "passed",
+              "duration": 1485390
+            }
+          }
+        ]
+      },
+      {
+        "after": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 538937766
+            }
+          }
+        ],
+        "before": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 2039690823
+            }
+          }
+        ],
+        "keyword": "Scenario",
+        "type": "scenario",
+        "id": "navigate-named-native-part-templates/use-horizontal-arrows-at-part-template-group-boundaries",
+        "line": 45,
+        "name": "Use horizontal arrows at Part template group boundaries",
+        "tags": [
+          {
+            "name": "fixture_variation",
+            "line": 45
+          }
+        ],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "line": 46,
+            "name": "`fixtures/cad/workspace-layout-native.opd` is active with `Sketch1` visible in the MCAD Software",
+            "result": {
+              "status": "passed",
+              "duration": 1201456732
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 47,
+            "name": "the template chooser shows the metric folder grouped by type using Medium icons",
+            "result": {
+              "status": "passed",
+              "duration": 1252041166
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 48,
+            "name": "the user sizes the chooser so the gallery has a horizontal scrollbar and moves it to its leftmost position",
+            "result": {
+              "status": "passed",
+              "duration": 1358168864
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 49,
+            "name": "the Part group begins with Sheet Metal (DIN) and ends with Standard (mm)",
+            "result": {
+              "status": "passed",
+              "duration": 378554617
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 50,
+            "name": "the user selects Standard (mm) and presses Right",
+            "result": {
+              "status": "passed",
+              "duration": 1853248428
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 51,
+            "name": "Standard (mm) remains selected and identified in the details pane",
+            "result": {
+              "status": "passed",
+              "duration": 7661205
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 52,
+            "name": "the gallery scroll position advances within the Part group",
+            "result": {
+              "status": "passed",
+              "duration": 3293968
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 53,
+            "name": "the user presses Left",
+            "result": {
+              "status": "passed",
+              "duration": 381917263
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 54,
+            "name": "Standard (DIN) is selected and identified in the details pane",
+            "result": {
+              "status": "passed",
+              "duration": 9197489
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 55,
+            "name": "the user presses Home and then Left",
+            "result": {
+              "status": "passed",
+              "duration": 785262958
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 56,
+            "name": "Sheet Metal (DIN) remains selected and identified in the details pane",
+            "result": {
+              "status": "passed",
+              "duration": 6783529
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 57,
+            "name": "the gallery returns to its leftmost horizontal position",
+            "result": {
+              "status": "passed",
+              "duration": 7920464
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 58,
+            "name": "the user presses Escape",
+            "result": {
+              "status": "passed",
+              "duration": 318192250
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 59,
+            "name": "the chooser closes and the original part remains active",
+            "result": {
+              "status": "passed",
+              "duration": 9065394
+            }
+          }
+        ]
+      },
+      {
+        "keyword": "Background",
+        "type": "background",
+        "id": "navigate-named-native-part-templates/use-horizontal-arrows-at-part-template-group-boundaries",
+        "line": 45,
+        "name": "Use horizontal arrows at Part template group boundaries",
+        "tags": [
+          {
+            "name": "fixture_variation",
+            "line": 45
+          }
+        ],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "line": 5,
+            "name": "a fresh MCAD Software session loads `fixtures/cad/document-creation-navigation-candidate.opj` as its active project",
+            "result": {
+              "status": "passed",
+              "duration": 54613072
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 6,
+            "name": "its Metric folder contains exactly the four named native part templates used below",
+            "result": {
+              "status": "passed",
+              "duration": 3585799
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 7,
+            "name": "its English folder contains the standard inch part template",
+            "result": {
+              "status": "passed",
+              "duration": 1837021
+            }
+          }
+        ]
+      }
+    ]
+  }
+]

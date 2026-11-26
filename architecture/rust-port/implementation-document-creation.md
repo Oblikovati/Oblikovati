@@ -83,6 +83,13 @@ catalog contains that exact path. Switching between loaded projects or
 rebuilding an active catalog resets the chooser's project selection.
 [Native restart verification](receipts/2026-11-26-template-selection-after-home-3899/README.md)
 
+## Current native scenarios
+
+All 39 published Document Creation scenarios and 572 steps passed on Wayland.
+The runs covered five document types, catalog navigation, project selection,
+restart, template geometry, and populated drawing layouts.
+[Run reports and input hashes](receipts/2026-11-26-document-creation-wayland-3899/README.md)
+
 ## Remaining creation work
 
 Port subtype registration and flavor setup;
