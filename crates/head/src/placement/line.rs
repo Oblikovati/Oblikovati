@@ -100,12 +100,13 @@ impl SketchPlacementState {
         let start = self.line.start?;
         let [length, angle] = self.fields.line_values();
         let cursor = self.cursor_point.unwrap_or(start);
+        if length.is_none() && angle.is_none() {
+            return (cursor != start).then_some(cursor);
+        }
         let delta = [cursor[0] - start[0], cursor[1] - start[1]];
         let direction = angle.unwrap_or_else(|| delta[1].atan2(delta[0]));
-        let reach = length.unwrap_or_else(|| match angle {
-            Some(angle) => delta[0] * angle.cos() + delta[1] * angle.sin(),
-            None => delta[0].hypot(delta[1]),
-        });
+        let reach =
+            length.unwrap_or_else(|| delta[0] * direction.cos() + delta[1] * direction.sin());
         let end = [
             start[0] + reach * direction.cos(),
             start[1] + reach * direction.sin(),
@@ -133,6 +134,9 @@ impl SketchPlacementState {
     }
     /// The closing edge from the current end back to the chain's first point.
     pub(crate) fn line_close_input(&self) -> Option<SketchLineChainCreation> {
+        if !self.line_close_available() {
+            return None;
+        }
         let (first, first_vertex) = self.line.first?;
         self.line_segment_to(first, Some(first_vertex))
     }

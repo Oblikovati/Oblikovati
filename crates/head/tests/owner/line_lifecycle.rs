@@ -141,6 +141,7 @@ fn a_zero_length_closing_edge_is_refused_and_the_command_can_continue() {
         ],
     );
     let lines = line_tool_geometry(&owner, document, sketch).lines().len();
+    assert_eq!(lines, 2);
     assert!(
         owner
             .line_command_from_gui(oblikovati_gui::GuiLineCommand::Close)
@@ -150,5 +151,13 @@ fn a_zero_length_closing_edge_is_refused_and_the_command_can_continue() {
     assert_eq!(
         line_tool_geometry(&owner, document, sketch).lines().len(),
         lines
+    );
+    deliver(
+        &mut owner,
+        &[button([80, 90], true), button([80, 90], false)],
+    );
+    assert_eq!(
+        line_tool_geometry(&owner, document, sketch).lines().len(),
+        lines + 1
     );
 }

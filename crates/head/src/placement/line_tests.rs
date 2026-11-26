@@ -36,6 +36,9 @@ fn the_pending_end_follows_the_pointer_from_the_start_point() {
     assert_eq!(input.joins, [None, None]);
     state.line_cursor(Some([1., 2.]));
     assert!(state.line_input().is_none(), "a zero-length end is no end");
+    state.line_start_on([50., 20.], None, None).unwrap();
+    state.line_cursor(Some([0., 0.]));
+    assert_eq!(state.line_end(), Some([0., 0.]));
 }
 #[test]
 fn typed_length_and_angle_replace_the_pointer_and_become_locks() {
@@ -149,6 +152,7 @@ fn close_needs_two_segments_and_joins_the_first_vertex() {
     assert!(state.line_close_input().is_none());
     state.accept_line_segment(&report([1, 2]), [5., 0.], Some([200, 100]), 3);
     assert!(!state.line_close_available());
+    assert!(state.line_close_input().is_none());
     state.accept_line_segment(&report([2, 3]), [5., 5.], Some([200, 200]), 4);
     assert!(state.line_close_available());
     let close = state.line_close_input().unwrap();
