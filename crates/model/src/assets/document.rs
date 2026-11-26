@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 mod assign;
 mod effects;
+mod texture;
 use super::{AppearanceAsset, AssetAssignments, AssetCollection, MaterialAsset};
 pub use assign::{AppearanceAssignmentTarget, MaterialAssignmentTarget};
 pub use effects::{
@@ -10,6 +11,7 @@ use oblikovati_api::{
     contract::{Appearance, Material},
     types::{ASSET_BUILTIN, ASSET_DOCUMENT},
 };
+pub use texture::{AppearanceChecker, TextureRepeat};
 /// Application-owned information and Generic editor settings for one document appearance.
 #[derive(Clone, Debug, Default, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
 #[serde(default)]
@@ -23,6 +25,8 @@ pub struct AppearanceMetadata {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "genericEffects")]
     pub generic_effects: Option<GenericAppearanceEffects>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub checker: Option<AppearanceChecker>,
 }
 
 /// Generic appearance reflection strengths as percentages.
@@ -179,6 +183,11 @@ impl DocumentAssets {
         }
         if let Some(effects) = &metadata.generic_effects {
             effects
+                .validate()
+                .map_err(|cause| format!("appearance {id:?}: {cause}"))?;
+        }
+        if let Some(checker) = metadata.checker {
+            checker
                 .validate()
                 .map_err(|cause| format!("appearance {id:?}: {cause}"))?;
         }

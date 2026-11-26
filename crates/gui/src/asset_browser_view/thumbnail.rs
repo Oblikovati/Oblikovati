@@ -4,7 +4,7 @@ use super::{AssetRows, GuiAssetChoice};
 use imgui::{DrawListMut, StyleColor, Ui};
 use oblikovati_model::assets::AppearanceReflectivity;
 
-mod transmission;
+mod sampled_surface;
 
 pub(super) fn grid(ui: &Ui, assets: &[&GuiAssetChoice], selection: &mut AssetRows<'_>, size: f32) {
     let width = ui.content_region_avail()[0].max(1.);
@@ -69,32 +69,34 @@ pub(crate) fn paint_preview(
     let Some(finish) = asset.appearance_preview else {
         return;
     };
-    let mut base = asset
+    let base = asset
         .swatch
         .unwrap_or([128; 3])
         .map(|v| f32::from(v) / 255.);
-    if let Some(effects) = asset
-        .appearance_metadata
-        .as_ref()
-        .and_then(|metadata| metadata.generic_effects.as_ref())
-    {
-        base = preview_effect_color(base, effects);
-    }
     let metalness = f32::from(finish.metalness) / 255.;
     let roughness = f32::from(finish.roughness) / 255.;
-    let reflectivity = asset
-        .appearance_metadata
-        .as_ref()
+    let metadata = asset.appearance_metadata.as_ref();
+    let reflectivity = metadata
         .and_then(|metadata| metadata.reflectivity)
         .filter(|effect| effect.enabled);
-    if let Some(effect) = asset
-        .appearance_metadata
-        .as_ref()
+    let effects = metadata.and_then(|metadata| metadata.generic_effects.as_ref());
+    let transparency = metadata
         .and_then(|metadata| metadata.transparency)
-        .filter(|effect| effect.enabled && effect.amount > 0)
-    {
-        transmission::paint(draw, center, radius, base, reflectivity, effect);
+        .filter(|effect| effect.enabled && effect.amount > 0);
+    let checker = metadata
+        .and_then(|metadata| metadata.checker)
+        .filter(|texture| texture.fade > 0);
+    if transparency.is_some() || checker.is_some() {
+        let material = sampled_surface::PreviewSurface::new(
+            base,
+            reflectivity,
+            transparency,
+            checker,
+            effects,
+        );
+        sampled_surface::paint(draw, center, radius, &material);
     } else {
+        let base = effects.map_or(base, |effects| preview_effect_color(base, effects));
         paint_surface(draw, center, radius, base, metalness, reflectivity);
     }
     paint_reflection(

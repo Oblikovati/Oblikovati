@@ -134,6 +134,15 @@ fn document_appearance_information_round_trips_and_clears() {
     let information = AppearanceMetadata {
         description: "Metallic finish\nFinish per drawing".into(),
         keywords: "metal, finition".into(),
+        checker: Some(oblikovati_model::assets::AppearanceChecker {
+            size_mm: [18, 32],
+            rotation_degrees: 45,
+            repeat: [
+                oblikovati_model::assets::TextureRepeat::Mirror,
+                oblikovati_model::assets::TextureRepeat::Clamp,
+            ],
+            ..Default::default()
+        }),
         generic_effects: Some(oblikovati_model::assets::GenericAppearanceEffects {
             cutouts_enabled: true,
             bump: oblikovati_model::assets::AppearanceBump {

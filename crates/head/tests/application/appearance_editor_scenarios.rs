@@ -406,3 +406,4 @@ fn document_appearance_information_survives_reopening_the_part() {
 }
 
 mod effects;
+mod texture;

@@ -6,7 +6,9 @@ use imgui::{Condition, Ui, WindowFlags};
 use oblikovati_model::assets::AppearanceMetadata;
 
 mod optional_effects;
+mod texture;
 mod transparency;
+pub(crate) use texture::CheckerSampler;
 
 /// One document appearance edit; example: `GuiAppearanceChange::Create { id, name }`.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -38,6 +40,7 @@ pub(crate) struct AppearanceEditor {
     draft: Option<AppearanceDraft>,
     color_dialog: ColorDialog,
     confirm_close: bool,
+    texture_open: bool,
     close_after_apply: bool,
 }
 
@@ -183,7 +186,9 @@ impl AppearanceEditor {
                     (ui.content_region_avail()[1] - ui.frame_height_with_spacing()).max(1.);
                 ui.child_window("##appearance-properties")
                     .size([0., height])
-                    .build(|| draw_properties(ui, draft, &mut self.color_dialog));
+                    .build(|| {
+                        draw_properties(ui, draft, &mut self.color_dialog, &mut self.texture_open)
+                    });
                 let changed = draft != original;
                 let editable = changed && !draft.name.trim().is_empty() && !read_only;
                 exit = editor_buttons(ui, editable);
@@ -191,6 +196,7 @@ impl AppearanceEditor {
                     exit = confirm_exit(ui, editable);
                 }
             });
+        texture::window(ui, &mut draft.metadata.checker, &mut self.texture_open);
         if !open {
             if draft == original {
                 exit = EditorExit::Discard;
@@ -218,6 +224,7 @@ impl AppearanceEditor {
         self.target = None;
         self.draft = None;
         self.confirm_close = false;
+        self.texture_open = false;
         self.close_after_apply = false;
     }
 }
@@ -251,6 +258,7 @@ fn draw_preview(ui: &Ui, asset: &GuiAssetChoice, draft: &AppearanceDraft) {
         .get_or_insert_with(Default::default);
     preview_metadata.reflectivity = draft.metadata.reflectivity;
     preview_metadata.transparency = draft.metadata.transparency;
+    preview_metadata.checker = draft.metadata.checker;
     preview_metadata
         .generic_effects
         .clone_from(&draft.metadata.generic_effects);
@@ -269,7 +277,12 @@ fn draw_preview(ui: &Ui, asset: &GuiAssetChoice, draft: &AppearanceDraft) {
     );
 }
 
-fn draw_properties(ui: &Ui, draft: &mut AppearanceDraft, color_dialog: &mut ColorDialog) {
+fn draw_properties(
+    ui: &Ui,
+    draft: &mut AppearanceDraft,
+    color_dialog: &mut ColorDialog,
+    texture_open: &mut bool,
+) {
     if let Some(_information) = ui.tree_node_config("Information").push() {
         ui.input_text("Name##information", &mut draft.name).build();
         ui.input_text_multiline("Description", &mut draft.metadata.description, [0., 48.])
@@ -288,8 +301,7 @@ fn draw_properties(ui: &Ui, draft: &mut AppearanceDraft, color_dialog: &mut Colo
         if let Some(ColorAnswer::Chosen(color)) = color_dialog.panel(ui) {
             draft.color = color;
         }
-        ui.text_disabled("Image");
-        ui.text_disabled("Image Fade");
+        texture::slot(ui, &mut draft.metadata.checker, texture_open);
         let mut gloss = 255 - draft.roughness;
         ui.slider("Glossiness", 0, 255, &mut gloss);
         draft.roughness = 255 - gloss;

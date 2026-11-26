@@ -110,3 +110,9 @@ and document unchanged. Enabled Tint and Self Illumination change the
 preview, and Apply stores the authored settings with the Part. The
 Cutouts and Bump image slots remain inactive pending texture editing.
 See the [native optional-effects receipt](receipts/2026-11-26-optional-appearance-effects-3563/README.md).
+
+The Generic Image menu opens the Checker Texture Editor. The editor
+changes the draft colors, softness, sample size, transforms, and repeat
+modes. Image Fade controls the blend between the base color and texture.
+Apply stores the Checker in the Part, and the Asset Browser uses it in
+the saved appearance thumbnail. See the [native Checker receipt](receipts/2026-11-26-appearance-checker-3563/README.md).
