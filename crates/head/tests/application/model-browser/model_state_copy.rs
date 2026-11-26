@@ -87,6 +87,6 @@ fn copy_active(world: &mut ApplicationWorld) {
 
 #[then("the Model State branch, browser root and document tab identify the duplicate")]
 fn copy_identified(world: &mut ApplicationWorld) {
-    assert!((world.run("<Small>").center()[1] - world.run("Model State").center()[1]).abs() < 3.);
+    super::model_states::expect_branch_member(world, "Small");
     super::model_states::expect_state_caption(world, "Small");
 }

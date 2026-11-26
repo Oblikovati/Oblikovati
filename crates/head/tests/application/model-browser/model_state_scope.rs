@@ -42,15 +42,39 @@ fn single_scope(world: &mut ApplicationWorld) {
 #[when("I click the edit-scope control again")]
 #[when("the user clicks the edit-scope control again")]
 fn toggle_scope(world: &mut ApplicationWorld) {
-    let scope = world
+    let scope = edit_scope(world);
+    world.click(scope_badge(world, scope == AllMembers));
+    world.pump(Vec::new());
+    assert_ne!(edit_scope(world), scope);
+    world.hover(scope_badge(world, scope == SingleMember));
+}
+
+fn edit_scope(world: &mut ApplicationWorld) -> oblikovati_model::model_state::ModelStateEditScope {
+    world
         .state()
         .browser
         .unwrap()
         .model_states
         .unwrap()
-        .edit_scope();
-    world.click_text(if scope == SingleMember { "1" } else { "All" });
-    world.pump(Vec::new());
+        .edit_scope()
+}
+
+fn scope_badge(world: &ApplicationWorld, all: bool) -> [i32; 2] {
+    let branch = world.run_in_window("Model", "ModelState");
+    let label = if all { "All" } else { "1" };
+    let suffix = format!(">{label}");
+    let run = world
+        .frame
+        .runs
+        .iter()
+        .find(|run| {
+            run.list == branch.list
+                && (run.center()[1] - branch.center()[1]).abs() < 3.
+                && run.minimum[0] > branch.maximum[0]
+                && (run.text == label || run.text.ends_with(&suffix))
+        })
+        .expect("expected the scope badge on the Model State branch");
+    diagnostics::pointer_pixels([run.maximum[0] - 3., run.center()[1]])
 }
 #[then("its tooltip identifies All Members as the edit scope")]
 fn all_scope_tooltip(world: &mut ApplicationWorld) {

@@ -104,9 +104,22 @@ fn rename_state(world: &mut ApplicationWorld) {
 #[then("the new name appears in the model-state row and branch label")]
 fn renamed_row_and_branch(world: &mut ApplicationWorld) {
     world.expect_text("Large (Active)");
-    assert!((world.run("<Large>").center()[1] - world.run("Model State").center()[1]).abs() < 3.);
+    expect_branch_member(world, "Large");
 }
 
+pub(super) fn expect_branch_member(world: &ApplicationWorld, name: &str) {
+    let branch = world.run_in_window("Model", "ModelState");
+    let caption = format!("<{name}>");
+    assert!(
+        world.frame.runs.iter().any(|run| {
+            run.list == branch.list
+                && (run.center()[1] - branch.center()[1]).abs() < 3.
+                && run.minimum[0] > branch.maximum[0]
+                && run.text.contains(&caption)
+        }),
+        "expected {caption} on the Model State branch"
+    );
+}
 #[then("the browser root and document tab identify the new state")]
 fn large_caption(world: &mut ApplicationWorld) {
     expect_state_caption(world, "Large");
@@ -256,7 +269,7 @@ fn created_model_state_name_can_be_edited_or_cancelled() {
     world.key(oblikovati_viewport::ViewportPhysicalKey::Enter, false);
     world.pump(Vec::new());
     world.expect_text("Large (Active)");
-    assert!((world.run("<Large>").center()[1] - world.run("Model State").center()[1]).abs() < 3.);
+    expect_branch_member(&world, "Large");
     world.expect_text("Part1 <Large>");
     assert_eq!(
         world
