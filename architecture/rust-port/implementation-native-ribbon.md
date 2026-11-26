@@ -85,6 +85,9 @@ selection, so repeated Remove clicks continue in order.
 Applying the removal of the last custom command hides the User Commands
 panel with Customize still open. While Shell is active, the empty panel
 stays visible until Customize closes.
+Native icon checks cover small icons beside labels, large icons above
+labels, and large icons with labels hidden.
+[Current Ribbon Customization runs](receipts/2026-11-26-ribbon-customization-current-3856/README.md)
 The [consecutive Remove scenario](receipts/2026-11-26-ribbon-pdf-removal-3856/README.md)
 checks the next row after each click and the pending marker after the
 last command leaves the draft.

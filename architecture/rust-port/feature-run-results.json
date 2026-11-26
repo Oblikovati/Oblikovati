@@ -2705,12 +2705,12 @@
       "16d62fc6baa947530187d44abc4101416b12ba80df1d93caf3cca54d31cfb4b4": {
         "feature_sha256": "16d62fc6baa947530187d44abc4101416b12ba80df1d93caf3cca54d31cfb4b4",
         "supporting_files": {
-          "features/application/ribbon-customization/BLOCKERS.md": "d0870fcb9d2b412e3881b84a3166e85f4718b2bb96c60397551402dc16187fb8",
+          "features/application/ribbon-customization/BLOCKERS.md": "3eeab5f5d29bfe54019155e275c3713e330a99b5cbbcf816e373f6cc5bbb3009",
           "features/application/ribbon-customization/CUSTOMIZATION-LIFECYCLE.md": "239967753537099454b8b37f0d3104ac760735a8029efab4d4b4ae5ffbd1acab",
           "features/application/ribbon-customization/FIXTURES.md": "aaf2225afe07db7ec2f5509ae41e69c5725fdf5638bbdb738b30f8aa8c83aa35",
           "features/application/ribbon-customization/FUNCTIONAL.md": "3266b25aa0ff123f14610bed0f1981dd364623dc653cbe5a3a3e4c59c5265600",
-          "features/application/ribbon-customization/VISUAL.md": "24404eae8e0fdca227ad570cb794dccabaaec8b53733d2bf68a5cdcabc518905",
-          "features/application/ribbon-customization/action-symbols.svg": "cdf51110f8f334f761571239a0824fc9ff91b69f1c23888826906d6019df3a70",
+          "features/application/ribbon-customization/VISUAL.md": "505ae237868016fbfe6b13e983400634da6c503193665dee983284b96663cede",
+          "features/application/ribbon-customization/action-symbols.svg": "8002a666d2215ade45a372b98efafa6ab2d845d424493f725ea584b1cc2a1e2d",
           "features/application/ribbon-customization/apply-customization-during-command.svg": "a226bca67441bb7c5353125004887e58c6b65feef0ac7f96a7753169cd063749",
           "features/application/ribbon-customization/available-command-selection.svg": "156f22b67e508ed29ce71a01f1187e4ffaf12eafbede66fd46ff37815ff6449c",
           "features/application/ribbon-customization/button-size-tab-retention.svg": "b1688b619d95e33cd4fac65d1b2de8f11c50cc08b831dc445f4520d877f62fbe",
@@ -2783,18 +2783,18 @@
           "fixtures/cad/blank-metric-part.opd": "9d7241298fc443d96557325cfea9ad6b6d8ad6f1f49dd80d910346c1952c2e5c",
           "fixtures/cad/docking-visible-solid-current.opd": "54a6f807b8084cc19061bce4079aaee3d4cefc03eaad2ac33123544997999f8a",
           "fixtures/cad/planar-sketch-empty-xy.opd": "d936ef6b165b4bcbe14e04ac1b08bb5b16c81fddb597e70acb781e753c07e9a8",
-          "fixtures/cad/workspace-layout-native.opd": "58aafeb5ffcba693695903b57e8541178a77e27f7e0a45c27c1f680eb225b1f9"
+          "fixtures/cad/workspace-layout-native.opd": "d85db64234c40a7bb09268f57abbd97aaa33c7542a81a022f385e8d590bae2ac"
         },
-        "cucumber": "architecture/rust-port/receipts/2026-11-25-ribbon-customization-current-3856/cucumber.json",
-        "cucumber_sha256": "a6bf51134ec7e4e31ea83800ddcb5ca0596d6cfdb2976fdb10cd02dad582e0d1",
+        "cucumber": "architecture/rust-port/receipts/2026-11-26-ribbon-customization-current-3856/full-wayland-report.json",
+        "cucumber_sha256": "b8a319c3c2d5cdae9b9bb7d07b7a4c94b6b6ec0a5ed92f34d973f3668d25f9d5",
         "scenario_inventory": "architecture/rust-port/receipts/2026-11-25-ribbon-customization-current-3856/scenario-inventory.json",
         "scenario_inventory_sha256": "f5ffc92a1596db2741aa0edaa272a340c62c06d16219090977ee0a0bceb4302c",
-        "scenario_arguments": "architecture/rust-port/receipts/2026-11-25-ribbon-customization-current-3856/scenario-arguments.json",
-        "scenario_arguments_sha256": "6244738be94af673b7d42729529dbdbc29190c7c12de1aa2655120ea4e0d68b0",
-        "application_commit": "5fc7a5f62efc5654ea1f5cb4722bcc0c083c0b59",
-        "command": "OBK_BDD_AREA=application OBK_BDD_FEATURE=ribbon-customization OBK_BDD_SCENARIO=<case> <head-test-binary> application_scenarios_use_the_native_window --nocapture",
-        "environment": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe",
-        "notes": "Current diagnostic checkpoint. 108 native executions and 1475 steps in passing cases. 104 of 122 declarations passed, counting each outline only after every example passed. Individual receipts identify the builds and existing local GUI changes. Strict provenance remains open under #3978."
+        "scenario_arguments": "architecture/rust-port/receipts/2026-11-26-ribbon-customization-current-3856/full-wayland-arguments.json",
+        "scenario_arguments_sha256": "9ef18b6679d15cf69338ada521937e5a60831cdcd630d9dcf0c62895d4152cbe",
+        "application_commit": "a98ccab593687cbe0c7deba16467d1408783dd59",
+        "command": "OBK_BDD_AREA=application OBK_BDD_FEATURE=ribbon-customization <head-test-binary> application_scenarios_use_the_native_window --test-threads=1 --nocapture",
+        "environment": "Linux Wayland with nested Weston 13, Xvfb and Vulkan Lavapipe.",
+        "notes": "107 of 126 executions and 1516 steps in passing cases on the current inputs. Panel retirement and icon presentation were covered by later focused reports. Strict build and runtime provenance remains open under #3978."
       }
     }
   }
