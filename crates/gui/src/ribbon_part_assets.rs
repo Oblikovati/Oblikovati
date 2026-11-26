@@ -98,7 +98,11 @@ pub(crate) fn dock_asset_combo(
     selected: Option<&str>,
     choices: &[crate::GuiAssetChoice],
 ) -> Option<String> {
-    asset_combo_at_width(ui, label, selected, choices, None, false)
+    ui.align_text_to_frame_padding();
+    ui.text(label);
+    ui.same_line();
+    let _id = ui.push_id(label);
+    asset_combo_at_width(ui, "##selection", selected, choices, None, false)
 }
 fn asset_combo_at_width(
     ui: &Ui,
@@ -120,17 +124,24 @@ fn asset_combo_at_width(
         }
         ui.same_line();
     }
-    ui.set_next_item_width(width.unwrap_or_else(|| dock_asset_combo_width(ui, label)));
-    let _list = ui.begin_combo(label, preview)?;
+    let available = width.unwrap_or_else(|| ui.content_region_avail()[0].clamp(1., 150.));
+    let shown = if width.is_none() {
+        use crate::application::home_recent_documents::recent_rows::fit_recent_cell;
+        let value_width = available - ui.frame_height() - 2. * ui.clone_style().frame_padding[0];
+        fit_recent_cell(preview, value_width, |text| ui.calc_text_size(text)[0])
+    } else {
+        preview.into()
+    };
+    ui.set_next_item_width(available);
+    let list = ui.begin_combo(label, &*shown);
+    if list.is_none() && shown != preview && ui.is_item_hovered() {
+        ui.tooltip_text(preview);
+    }
+    let _list = list?;
     choices
         .iter()
         .find(|asset| select_asset(ui, asset, selected))
         .map(|asset| asset.id.clone())
-}
-fn dock_asset_combo_width(ui: &Ui, label: &str) -> f32 {
-    let caption = ui.calc_text_size(label)[0] + ui.clone_style().item_inner_spacing[0];
-    let available = ui.content_region_avail()[0] - caption;
-    available.max(ui.frame_height()).min(150.)
 }
 fn row_choices(
     browser: &crate::GuiModelBrowser,

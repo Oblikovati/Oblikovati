@@ -33,7 +33,7 @@ fn check_narrow_asset_selector(world: &mut ApplicationWorld, panel: &str, label:
         "{panel} clipped caption at {:?}, dock {position:?} + {size:?}",
         caption.maximum
     );
-    let arrow = [caption.minimum[0] - 12., caption.center()[1]];
+    let arrow = super::selector_chevron(world, caption);
     open_narrow_asset_choices(world, panel, arrow);
 }
 
@@ -297,7 +297,7 @@ fn select_material(world: &mut ApplicationWorld) {
     select_tab(world, MATERIAL);
 }
 
-fn select_tab(world: &mut ApplicationWorld, panel: &str) {
+pub(super) fn select_tab(world: &mut ApplicationWorld, panel: &str) {
     let (min, max) = diagnostics::window_dock_tab_bounds(panel).unwrap();
     world.click(diagnostics::pointer_pixels([
         (min[0] + max[0]) * 0.5,

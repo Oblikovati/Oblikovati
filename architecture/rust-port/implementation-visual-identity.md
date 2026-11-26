@@ -17,8 +17,9 @@ values come from the same handoff.
   workspace restores the user's preferred dock sizes. The last resized dock
   gets priority within the available width, including after a restart. The
   viewport width limit also applies while the user holds a splitter.
-  The asset selectors shrink inside narrow docks to keep their captions
-  and dropdown arrows visible beside the swatches. The Model browser’s
+  Docked asset selectors keep the caption on the left and shorten the
+  value before the dropdown arrow. Inactive dock tabs use readable text
+  with the accent underline reserved for the active tab. The Model browser’s
   search field encloses its clear control, sketch badges use 10 px mono,
   and the dashed rollback marker uses the theme’s strong border color.
 - The camera projects into the live document area as the window and docks

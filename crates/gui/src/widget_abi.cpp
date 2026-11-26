@@ -354,10 +354,9 @@ std::uint32_t oblikovati_gui_draw_dock_tab_actions() {
         const ImGuiTabItem* selected = ImGui::TabBarFindTabByID(node->TabBar, node->TabBar->VisibleTabId);
         const ImGuiWindow* selected_window = selected ? selected->Window : nullptr;
         const ImGuiID text_role_id = ImHashStr("##studio-dock-text-color");
+        // Inactive tabs remain available. The underline, rather than disabled ink, marks selection.
+        const ImU32 ink = ImGui::GetColorU32(ImGuiCol_Text);
         for (ImGuiWindow* window : node->Windows) {
-            const ImGuiCol role = selected_window == window
-                ? ImGuiCol_Text : ImGuiCol_TextDisabled;
-            const ImU32 ink = ImGui::GetColorU32(role);
             const int previous = window->StateStorage.GetInt(text_role_id, -1);
             if (previous != static_cast<int>(ink)) {
                 window->StateStorage.SetInt(text_role_id, static_cast<int>(ink));

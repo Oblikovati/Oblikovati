@@ -19,6 +19,9 @@ mod float_scenario;
 mod floating_appearance_scenario;
 #[path = "preview_scenario.rs"]
 mod preview_scenario;
+#[path = "resize_visual.rs"]
+mod resize_visual;
+pub(super) use resize_visual::selector_chevron;
 #[path = "restart_scenario.rs"]
 mod restart_scenario;
 #[path = "retention_scenario.rs"]

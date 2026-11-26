@@ -134,7 +134,8 @@ fn material_browser_assigns_and_undoes_a_catalog_material() {
         .expect("expected two catalog materials");
     let (material, name) = (choice.id.clone(), choice.name.clone());
     let field = world.run_in_window("Material Browser", "Material").clone();
-    world.click([(field.minimum[0] - 40.) as i32, field.center()[1] as i32]);
+    let arrow = super::super::docking_system::selector_chevron(&world, &field);
+    world.click(super::super::diagnostics::pointer_pixels(arrow));
     world.click_text(&name);
     world.click_text("Assign to part");
     assert_eq!(

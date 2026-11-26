@@ -14,7 +14,7 @@ fn restart_fixture(world: &mut ApplicationWorld) {
 #[given(
     "Model Browser is docked on the left and Appearance Browser and Material Browser share a right dock as tabs"
 )]
-fn arrange_tabbed_panels(world: &mut ApplicationWorld) {
+pub(super) fn arrange_tabbed_panels(world: &mut ApplicationWorld) {
     super::open_docking_fixture(world);
     panel_docked(world);
     super::super::workspace_layout::dockspace_native::open_toolbar_tool(world, APPEARANCE);
