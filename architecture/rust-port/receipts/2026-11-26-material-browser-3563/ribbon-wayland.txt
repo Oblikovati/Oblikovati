@@ -1,0 +1,7 @@
+running 4 tests
+test native::gui_loop_tests::application_bdd::ribbon_customization::native_tests::part_assets_native::asset_assignment_refuses_stale_documents_and_unknown_assets ... ok
+test native::gui_loop_tests::application_bdd::ribbon_customization::native_tests::part_assets_native::assigning_material_updates_the_visible_solid_to_its_catalog_appearance ... ok
+test native::gui_loop_tests::application_bdd::ribbon_customization::native_tests::part_assets_native::assigning_part_appearance_refreshes_the_visible_solid ... ok
+test native::gui_loop_tests::application_bdd::ribbon_customization::native_tests::part_assets_native::part_material_and_appearance_choices_use_host_history ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 1736 filtered out; finished in 16.35s

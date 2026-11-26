@@ -7,7 +7,7 @@ use oblikovati_api::{
     wire::{AssignAppearanceArgs, AssignMaterialArgs},
 };
 use oblikovati_gui::{GuiMaterialChoice, GuiPartAssetKind};
-use oblikovati_model::assets::MaterialAsset;
+use oblikovati_model::assets::{DocumentAssets, MaterialAsset, ScopedAssets};
 
 impl<
     O: TransactionObserver,
@@ -70,6 +70,30 @@ impl<
                 }
             },
         ))
+    }
+
+    pub(super) fn gui_part_material_appearance(
+        &self,
+        document: &DocumentAssets,
+    ) -> Result<Option<String>, String> {
+        let Some(id) = document.assignments.part_material_id() else {
+            return Ok(None);
+        };
+        let empty = Default::default();
+        let catalog = self.files.builtin_catalog()?;
+        let scopes = ScopedAssets {
+            document: document.materials(),
+            project: self
+                .files
+                .active_project()
+                .map_or(&empty, |project| project.assets.materials()),
+            builtin: catalog.materials(),
+        };
+        Ok(scopes
+            .resolve(id)
+            .ok()
+            .map(Material::appearance_id)
+            .filter(|id| !id.is_empty()))
     }
 
     pub(super) fn assign_part_asset(

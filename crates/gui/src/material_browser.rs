@@ -105,7 +105,7 @@ impl MaterialBrowser {
         };
         if self.appearance_browser {
             self.browser_view
-                .draw(ui, &browser.appearances, &mut self.appearance);
+                .draw(ui, &browser.appearances, &mut self.appearance, None);
             asset_tab(
                 ui,
                 state,
@@ -116,8 +116,18 @@ impl MaterialBrowser {
                 actions,
             );
         } else {
-            self.browser_view
-                .draw(ui, &browser.materials, &mut self.material);
+            let can_assign = browser.root_selected && !state.transaction_open;
+            if let Some(id) =
+                self.browser_view
+                    .draw(ui, &browser.materials, &mut self.material, Some(can_assign))
+            {
+                crate::ribbon_part_assets::queue_asset(
+                    state,
+                    GuiPartAssetKind::Material,
+                    &id,
+                    actions,
+                );
+            }
             asset_tab(
                 ui,
                 state,

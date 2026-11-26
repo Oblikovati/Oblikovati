@@ -59,3 +59,11 @@ edits, occurrence publication, and foreground MCPBridge acceptance remain open.
 The current native verifier covers the retained sketch-prism capability and does
 not claim unsupported feature families. No kernel geometry algorithm or public
 wire definition is introduced.
+
+## Material Browser
+
+The library-row context menu assigns a material to the selected Part root
+through the existing document assignment command. The Material selector
+shows the assigned asset and the Appearance selector displays the
+material's appearance until the user sets an explicit override.
+See the [native Material Browser receipt](receipts/2026-11-26-material-browser-3563/README.md).

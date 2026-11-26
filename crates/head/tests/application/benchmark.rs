@@ -204,6 +204,7 @@ mod file_menu;
 mod home_recent_documents;
 #[cfg(target_os = "linux")]
 mod linux_dpi;
+mod material_browser_scenarios;
 #[path = "model-browser/steps.rs"]
 mod model_browser;
 mod object_visibility;

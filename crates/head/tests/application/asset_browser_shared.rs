@@ -9,7 +9,7 @@ const SEARCH: &str = "Searchassets";
 const TERM: &str = "aluminum";
 
 #[given("an asset browser is open over the workspace")]
-fn open_browser(world: &mut ApplicationWorld) {
+pub(super) fn open_browser(world: &mut ApplicationWorld) {
     let document = world.active_id();
     let catalog = oblikovati_persistence::assets::load_builtin_catalog().unwrap();
     let oak = catalog
@@ -79,7 +79,7 @@ fn document_assets(world: &mut ApplicationWorld) {
 
 #[then("its lower region contains a library selector, category tree and asset view")]
 #[then("the lower region returns to library browsing")]
-fn library_assets(world: &mut ApplicationWorld) {
+pub(super) fn library_assets(world: &mut ApplicationWorld) {
     label(world, "Alllibraries");
     let categories = label(world, "Allcategories");
     let names = world
@@ -170,11 +170,11 @@ fn clear_search(world: &mut ApplicationWorld) {
 }
 
 #[when("I open the document region display menu")]
-fn document_display(world: &mut ApplicationWorld) {
+pub(super) fn document_display(world: &mut ApplicationWorld) {
     click_label(world, "Documentview");
 }
 
-fn inspect_options(world: &mut ApplicationWorld, current: &str, expected: &[&str]) {
+pub(super) fn inspect_options(world: &mut ApplicationWorld, current: &str, expected: &[&str]) {
     world.click_text(current);
     world.pump(Vec::new());
     for label in expected {
@@ -225,7 +225,7 @@ fn browser_closed(_: &mut ApplicationWorld) {
     assert!(diagnostics::window_geometry(TITLE).is_none());
 }
 
-fn label<'a>(world: &'a ApplicationWorld, name: &str) -> &'a diagnostics::RenderedRun {
+pub(super) fn label<'a>(world: &'a ApplicationWorld, name: &str) -> &'a diagnostics::RenderedRun {
     world.run_in_window(TITLE, name)
 }
 

@@ -20,13 +20,25 @@ struct DisplayOptions {
     thumbnail: usize,
 }
 
+struct AssetRows<'a> {
+    selected: &'a mut Option<String>,
+    library_assignment_enabled: Option<bool>,
+    assignment: Option<String>,
+}
+
 impl AssetBrowserView {
     pub(crate) fn draw(
         &mut self,
         ui: &Ui,
         choices: &[GuiAssetChoice],
         selected: &mut Option<String>,
-    ) {
+        library_assignment_enabled: Option<bool>,
+    ) -> Option<String> {
+        let mut selection = AssetRows {
+            selected,
+            library_assignment_enabled: None,
+            assignment: None,
+        };
         self.search(ui);
         let query = self.query.trim().to_lowercase();
         let matches = |entry: &&GuiAssetChoice| {
@@ -38,7 +50,7 @@ impl AssetBrowserView {
         self.document_region(
             ui,
             choices.iter().filter(|row| row.document).filter(matches),
-            selected,
+            &mut selection,
             height,
             &query,
         );
@@ -47,7 +59,9 @@ impl AssetBrowserView {
             .filter(|row| row.library.is_some())
             .filter(matches)
             .collect();
-        self.library_region(ui, &library, selected, !query.is_empty());
+        selection.library_assignment_enabled = library_assignment_enabled;
+        self.library_region(ui, &library, &mut selection, !query.is_empty());
+        selection.assignment
     }
 
     fn search(&mut self, ui: &Ui) {
@@ -70,7 +84,7 @@ impl AssetBrowserView {
         &mut self,
         ui: &Ui,
         rows: impl Iterator<Item = &'a GuiAssetChoice>,
-        selected: &mut Option<String>,
+        selection: &mut AssetRows<'_>,
         height: f32,
         query: &str,
     ) {
@@ -88,7 +102,7 @@ impl AssetBrowserView {
                         "No matching document assets"
                     });
                 } else {
-                    self.document.rows(ui, rows, selected, false);
+                    self.document.rows(ui, rows, selection, false);
                 }
             });
     }
@@ -97,7 +111,7 @@ impl AssetBrowserView {
         &mut self,
         ui: &Ui,
         rows: &[&GuiAssetChoice],
-        selected: &mut Option<String>,
+        selection: &mut AssetRows<'_>,
         searching: bool,
     ) {
         self.library_selector(ui);
@@ -109,13 +123,29 @@ impl AssetBrowserView {
             .filter(|row| self.source.is_none() || row.library == self.source)
             .collect();
         let height = (ui.content_region_avail()[1] - ui.frame_height_with_spacing() * 2.).max(64.);
-        let tree_width = (ui.content_region_avail()[0] * 0.32).clamp(80., 155.);
+        let width = ui.content_region_avail()[0];
+        let stack_results = searching && width < 310.;
+        let (tree_width, tree_height) = if stack_results {
+            (
+                0.,
+                (height / 3.).min(6. * ui.text_line_height_with_spacing()),
+            )
+        } else {
+            ((width * 0.32).clamp(80., 155.), height)
+        };
         ui.child_window("##asset-categories")
-            .size([tree_width, height])
+            .size([tree_width, tree_height])
             .build(|| self.category_tree(ui, &rows));
-        ui.same_line();
+        if !stack_results {
+            ui.same_line();
+        }
+        let list_height = if stack_results {
+            height - tree_height - ui.clone_style().item_spacing[1]
+        } else {
+            height
+        };
         ui.child_window("##library-assets")
-            .size([0., height])
+            .size([0., list_height])
             .build(|| {
                 let rows: Vec<_> = rows
                     .into_iter()
@@ -128,7 +158,7 @@ impl AssetBrowserView {
                 if rows.is_empty() {
                     ui.text("No matching library assets");
                 } else {
-                    self.library.rows(ui, rows, selected, searching);
+                    self.library.rows(ui, rows, selection, searching);
                 }
             });
     }
@@ -246,7 +276,7 @@ impl DisplayOptions {
         &self,
         ui: &Ui,
         mut rows: Vec<&GuiAssetChoice>,
-        selected: &mut Option<String>,
+        selection: &mut AssetRows<'_>,
         show_library: bool,
     ) {
         rows.sort_by(|a, b| {
@@ -259,10 +289,10 @@ impl DisplayOptions {
             .then_with(|| a.id.cmp(&b.id))
         });
         if self.presentation == 0 {
-            self.table(ui, &rows, selected, show_library);
+            self.table(ui, &rows, selection, show_library);
         } else {
             for row in imgui::ListClipper::new(rows.len() as i32).begin(ui).iter() {
-                self.asset_row(ui, rows[row as usize], selected);
+                self.asset_row(ui, rows[row as usize], selection);
             }
         }
     }
@@ -271,7 +301,7 @@ impl DisplayOptions {
         &self,
         ui: &Ui,
         rows: &[&GuiAssetChoice],
-        selected: &mut Option<String>,
+        selection: &mut AssetRows<'_>,
         show_library: bool,
     ) {
         let Some(_table) = ui.begin_table("##asset-list", if show_library { 3 } else { 2 }) else {
@@ -279,18 +309,17 @@ impl DisplayOptions {
         };
         let mut name = imgui::TableColumnSetup::new("Name");
         name.flags = imgui::TableColumnFlags::WIDTH_STRETCH;
-        name.init_width_or_weight = 2.5;
         ui.table_setup_column_with(name);
         if show_library {
-            ui.table_setup_column("Library");
+            asset_column(ui, "Library", "Built-in");
         }
-        ui.table_setup_column("Category");
+        asset_column(ui, "Category", "Category");
         ui.table_headers_row();
         for index in imgui::ListClipper::new(rows.len() as i32).begin(ui).iter() {
             let asset = rows[index as usize];
             ui.table_next_row();
             ui.table_next_column();
-            self.asset_row(ui, asset, selected);
+            self.asset_row(ui, asset, selection);
             if show_library {
                 ui.table_next_column();
                 ui.text(if asset.library == Some(GuiAssetLibrary::Project) {
@@ -304,7 +333,7 @@ impl DisplayOptions {
         }
     }
 
-    fn asset_row(&self, ui: &Ui, asset: &GuiAssetChoice, selected: &mut Option<String>) {
+    fn asset_row(&self, ui: &Ui, asset: &GuiAssetChoice, selection: &mut AssetRows<'_>) {
         let _id = ui.push_id(&asset.id);
         if self.presentation == 1
             && let Some([r, g, b]) = asset.swatch
@@ -319,15 +348,46 @@ impl DisplayOptions {
                 .size([size, size])
                 .build()
             {
-                *selected = Some(asset.id.clone());
+                *selection.selected = Some(asset.id.clone());
             }
         }
         if ui
             .selectable_config(&asset.name)
-            .selected(selected.as_deref() == Some(&asset.id))
+            .selected(selection.selected.as_deref() == Some(&asset.id))
             .build()
         {
-            *selected = Some(asset.id.clone());
+            *selection.selected = Some(asset.id.clone());
+        }
+        selection.library_context_menu(ui, asset);
+    }
+}
+
+fn asset_column(ui: &Ui, heading: &str, sample: &str) {
+    let mut column = imgui::TableColumnSetup::new(heading);
+    column.flags = imgui::TableColumnFlags::WIDTH_FIXED;
+    column.init_width_or_weight =
+        ui.calc_text_size(heading)[0].max(ui.calc_text_size(sample)[0]) + 4.;
+    ui.table_setup_column_with(column);
+}
+
+impl AssetRows<'_> {
+    fn library_context_menu(&mut self, ui: &Ui, asset: &GuiAssetChoice) {
+        let Some(can_assign) = self.library_assignment_enabled else {
+            return;
+        };
+        let Some(_popup) = ui.begin_popup_context_item() else {
+            return;
+        };
+        if ui
+            .menu_item_config("Assign to Selection")
+            .enabled(can_assign)
+            .build()
+        {
+            *self.selected = Some(asset.id.clone());
+            self.assignment = Some(asset.id.clone());
+        }
+        for name in ["Rename", "Delete", "Add to"] {
+            ui.menu_item_config(name).enabled(false).build();
         }
     }
 }

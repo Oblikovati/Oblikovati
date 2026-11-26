@@ -55,6 +55,8 @@ pub struct GuiModelBrowser {
     pub materials: Vec<GuiMaterialChoice>,
     pub part_material: Option<String>,
     pub part_appearance: Option<String>,
+    /// Appearance implied by the assigned part material.
+    pub part_material_appearance: Option<String>,
 }
 /// Current authored inputs for a supported extrusion distance draft.
 #[derive(Clone, Debug, PartialEq, Eq)]

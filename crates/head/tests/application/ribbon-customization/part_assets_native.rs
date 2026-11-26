@@ -53,9 +53,32 @@ fn choose_first_appearance(world: &mut ApplicationWorld) -> String {
     id
 }
 fn choose_asset(world: &mut ApplicationWorld, label: &str, name: &str) {
-    let field = world.run(label).clone();
-    world.click([(field.minimum[0] - 40.) as i32, field.center()[1] as i32]);
-    world.click_text(name);
+    let field = world.run_in_window("##application-ribbon", label);
+    let preview = world
+        .frame
+        .runs
+        .iter()
+        .filter(|run| {
+            run.list == field.list
+                && run.minimum[0] > field.maximum[0]
+                && (run.center()[1] - field.center()[1]).abs() < 4.
+        })
+        .min_by(|a, b| a.minimum[0].total_cmp(&b.minimum[0]))
+        .expect("expected the ribbon selector preview after its label");
+    world.click(diagnostics::pointer_pixels(preview.center()));
+    let expected = super::super::super::world::squeezed(name);
+    let choice = world
+        .frame
+        .runs
+        .iter()
+        .find(|run| run.text == expected && world.frame.is_popup_row(run))
+        .unwrap_or_else(|| {
+            panic!(
+                "expected {expected} in the ribbon selector: {}",
+                world.text()
+            )
+        });
+    world.click(diagnostics::pointer_pixels(choice.center()));
 }
 fn assert_material(world: &mut ApplicationWorld, id: &str) {
     assert_eq!(

@@ -92,6 +92,8 @@ impl<
                 .assignments
                 .part_material_id()
                 .map(str::to_owned);
+            browser.part_material_appearance =
+                self.gui_part_material_appearance(&snapshot.assets)?;
             browser.part_appearance = snapshot
                 .assets
                 .assignments

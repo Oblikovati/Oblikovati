@@ -66,7 +66,10 @@ fn asset_row(
     let choice = asset_combo_at_width(
         ui,
         "##asset",
-        selected,
+        AssetComboSelection {
+            assigned: selected,
+            shown: effective_asset(browser, kind, selected),
+        },
         choices,
         Some(icons.cell([150., 0.])[0]),
         true,
@@ -95,7 +98,7 @@ pub(crate) fn document_asset_summary(ui: &Ui, state: &GuiCommandState) {
         let (label, selected, choices) = row_choices(browser, kind);
         ui.text(format!(
             "Part {label}: {}",
-            asset_preview(choices, selected)
+            asset_preview(choices, effective_asset(browser, kind, selected))
         ));
     }
 }
@@ -111,20 +114,35 @@ pub(crate) fn dock_asset_combo(
     ui.text(label);
     ui.same_line();
     let _id = ui.push_id(label);
-    asset_combo_at_width(ui, "##selection", selected, choices, None, false)
+    asset_combo_at_width(
+        ui,
+        "##selection",
+        AssetComboSelection {
+            assigned: selected,
+            shown: selected,
+        },
+        choices,
+        None,
+        false,
+    )
 }
+struct AssetComboSelection<'a> {
+    assigned: Option<&'a str>,
+    shown: Option<&'a str>,
+}
+
 fn asset_combo_at_width(
     ui: &Ui,
     label: &str,
-    selected: Option<&str>,
+    selection: AssetComboSelection<'_>,
     choices: &[crate::GuiAssetChoice],
     width: Option<f32>,
     reserve_swatch: bool,
 ) -> Option<String> {
-    let preview = asset_preview(choices, selected);
+    let preview = asset_preview(choices, selection.shown);
     let swatch = choices
         .iter()
-        .find(|asset| Some(asset.id.as_str()) == selected)
+        .find(|asset| Some(asset.id.as_str()) == selection.shown)
         .and_then(|asset| asset.swatch);
     if reserve_swatch || swatch.is_some() {
         ui.dummy([16., ui.frame_height()]);
@@ -149,7 +167,7 @@ fn asset_combo_at_width(
     let _list = list?;
     choices
         .iter()
-        .find(|asset| select_asset(ui, asset, selected))
+        .find(|asset| select_asset(ui, asset, selection.assigned))
         .map(|asset| asset.id.clone())
 }
 fn row_choices(
@@ -167,6 +185,16 @@ fn row_choices(
             browser.part_appearance.as_deref(),
             &browser.appearances,
         ),
+    }
+}
+fn effective_asset<'a>(
+    browser: &'a crate::GuiModelBrowser,
+    kind: GuiPartAssetKind,
+    assigned: Option<&'a str>,
+) -> Option<&'a str> {
+    match kind {
+        GuiPartAssetKind::Material => assigned,
+        GuiPartAssetKind::Appearance => assigned.or(browser.part_material_appearance.as_deref()),
     }
 }
 fn select_asset(ui: &Ui, asset: &crate::GuiAssetChoice, selected: Option<&str>) -> bool {
