@@ -1625,7 +1625,7 @@
           "features/application/model-browser/BLOCKERS.md": "25505ac7e9fbbee4c87df6ccec0fffcc5c75afdbfce46bb43d8dc1a6b5875362",
           "features/application/model-browser/FIXTURES.md": "e94b894288706536365210f8b5aed85550549bea9f18b6e861cdc9e850a3cd62",
           "features/application/model-browser/FUNCTIONAL.md": "91b46e91ae272dc628f41622e64a418fd3a0d8946333d6796cd3ade3f84b5178",
-          "features/application/model-browser/VISUAL.md": "26acfaf9d685843fb5319c734baa82de69ccae874851a2265c97382555575c96",
+          "features/application/model-browser/VISUAL.md": "b26a58aa281fc785bc51d90812d75379dce702cdca1d4fd1fca76da6c66705cb",
           "features/application/model-browser/annotation-scale-wireframe.svg": "442200a11d070ffca685c341e728b8c0d1f544ed58cb726a1603d01b5a327543",
           "features/application/model-browser/browser-docking-wireframe.svg": "cb29742bec38d7133a77eb87929ef61aca08dc3dac538681f4672d1904635a32",
           "features/application/model-browser/browser-resize-wireframe.svg": "a2ed8246203002f09618b7946fa72354db5ee0922ded4f1621ea616945c48fed",
@@ -1645,19 +1645,19 @@
           "features/application/model-browser/relationships-wireframe.svg": "d2c550f636d567ba5b3ecf2271d55b4b3ae54f60ddbd264baee9ecfd7052a004",
           "features/application/model-browser/saved-search-wireframe.svg": "3cdf64adeeabd3e0fa1d35db52af8230fbc60d190213dd7ecc0e39fd64e211a9",
           "fixtures/cad/blank-metric-part.opd": "9d7241298fc443d96557325cfea9ad6b6d8ad6f1f49dd80d910346c1952c2e5c",
-          "fixtures/cad/workspace-layout-native.opd": "58aafeb5ffcba693695903b57e8541178a77e27f7e0a45c27c1f680eb225b1f9"
+          "fixtures/cad/workspace-layout-native.opd": "d85db64234c40a7bb09268f57abbd97aaa33c7542a81a022f385e8d590bae2ac"
         },
-        "cucumber": "architecture/rust-port/receipts/2026-11-25-model-browser-current-3896/cucumber.json",
-        "cucumber_sha256": "0405c83ba56920b6547be12d8c335ef76fba20766972921c266a9873e7d4f21d",
+        "cucumber": "architecture/rust-port/receipts/2026-11-26-model-browser-states-and-views-3896/full-wayland.json",
+        "cucumber_sha256": "9478e6342cf76013344648bf089d6df37be23dba8e77ec57d111ab7db5dbcf5a",
         "scenario_inventory": "architecture/rust-port/receipts/2026-11-25-model-browser-current-3896/scenario-inventory.json",
         "scenario_inventory_sha256": "f697986fed0f42f9d01ea764edec0e9370f4b7ea978c96e726962fbab6be1879",
-        "scenario_arguments": "architecture/rust-port/receipts/2026-11-25-model-browser-current-3896/scenario-arguments.json",
-        "scenario_arguments_sha256": "d4c3ab723bd3bafc926a8e98a5c2db7087d49d76fe9d4f7adc0dc4e1b444597f",
-        "application_commit": "0625241f3fc92f74791aeb5d22d7448e070b73d6",
-        "command": "OBK_BDD_AREA=application OBK_BDD_FEATURE=model-browser OBK_BDD_SCENARIO=<case> <head-test-binary> application_scenarios_use_the_native_window --nocapture",
-        "environment": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe",
+        "scenario_arguments": "architecture/rust-port/receipts/2026-11-26-model-browser-states-and-views-3896/full-wayland-arguments.json",
+        "scenario_arguments_sha256": "90f75410b5f18ba19f7556cdd9111594996a3051159156f32aa279e145fc5145",
+        "application_commit": "96b2086bbc58e3849efdb3a842b2d92093706069",
+        "command": "OBK_BDD_AREA=application OBK_BDD_FEATURE=model-browser <head-test-binary> application_scenarios_use_the_native_window --test-threads=1 --nocapture",
+        "environment": "Linux Wayland with nested Weston 13, Xvfb and Vulkan Lavapipe.",
         "blocker": "Four scenarios require a validated per-member tapered extrusion (Oblikovati #4127 and Martensite #463).",
-        "notes": "96 of 100 current native cases passed. The four remaining cases require the extrusion-owned taper angle. The individual receipts identify the test builds and the existing local GUI changes. Strict build and runtime provenance remains open under #3978."
+        "notes": "Full diagnostic run before the focused fixes. 74 of 100 published scenarios passed. Twelve failures came from X11-only test input and four from the taper fixture. Later focused runs cover disclosure, resize, line properties, model-state branch and view visibility. Strict provenance remains open under #3978."
       }
     }
   },
