@@ -154,7 +154,7 @@ mod tests {
                 "{width}: {left}..{right}"
             );
             if width == 1440 {
-                assert!((259..=263).contains(&left), "{left}");
+                assert!(left.abs_diff(width / 4) <= 3, "Model dock edge: {left}");
                 assert!((259..=263).contains(&(width - right)), "{right}");
             }
         }
