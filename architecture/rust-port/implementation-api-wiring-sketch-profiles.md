@@ -216,3 +216,28 @@ implementation. The wheel's cut still stops at the source sketch on a
 face-offset work plane. The typed extrusion returns `expected an
 available current plane` before it creates the seed for the wheel's
 circular pattern.
+
+## Extrusion profiles on face-offset work planes
+
+Typed extrusion now obtains the document owner's current datum
+evaluation before discovering a profile on a sketch supported by a
+named face. It validates the snapshot against that evaluation.
+Validation of a private extrusion, pattern, or blend candidate
+recomputes dependent sketches in feature order before requiring a
+healthy result.
+
+The original wheel driver now reaches planar-region certification
+for its 3 mm hole. `BuildPlanarRegions` reports
+`Joins: PairUnavailable` for region sources 2 and 4. The original
+wheel case remains open.
+
+A diagnostic run changed only the wheel's hole radius to 2.5 mm. On
+Wayland, the Cut, five-hole circular pattern, and final fillet all
+completed. Before filleting, the volume fell from 28.274 cm³ to
+27.293 cm³, matching the analytic five-hole volume at the driver's
+display precision.
+
+The desktop regression cuts a square through a block from a sketch on
+the offset face, checks the analytic volume after resizing the block,
+and verifies it again after reopening the part. All 39 desktop
+extrusion tests passed.

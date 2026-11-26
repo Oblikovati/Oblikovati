@@ -1,7 +1,29 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Bind ordered Part replay to the certified solid adapter.
 use super::*;
-use oblikovati_model::feature::part::{PartBlendKind, PartFeatureEvaluator};
+use oblikovati_model::{
+    feature::part::{
+        PartBlendKind, PartFeatureEvaluation, PartFeatureEvaluator, PartFeatureProgramError,
+    },
+    history::DocumentSnapshot,
+};
+
+impl CertifiedNamedSolidEvaluator<'_> {
+    /// Replay a private candidate, recomputing sketches that depend on Part datums.
+    /// Example: `evaluator.evaluate_private_candidate(candidate)?`.
+    pub fn evaluate_private_candidate(
+        &mut self,
+        candidate: &DocumentSnapshot,
+    ) -> Result<PartFeatureEvaluation<NamedSolid, EvaluationFailure>, PartFeatureProgramError> {
+        if candidate.sketches.requires_part_dependency_recompute() {
+            candidate
+                .recompute_part_with_sketches(self, Default::default())
+                .map(|(part, _)| part)
+        } else {
+            candidate.evaluate_part_features(self)
+        }
+    }
+}
 
 impl PartFeatureEvaluator for CertifiedNamedSolidEvaluator<'_> {
     type Body = NamedSolid;

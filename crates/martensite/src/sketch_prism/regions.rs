@@ -2,7 +2,10 @@
 //! Certified sketch regions reported with source curve identities rather than native handles.
 use super::*;
 use martensite_tkbo::profile_extrusion::{PlanarRegion, ProfileLoop, build_planar_regions};
-use oblikovati_model::sketch::SketchEntityId;
+use oblikovati_model::{
+    feature::work_geometry::WorkGeometryEvaluation, history::ResolvedDocumentSketch,
+    sketch::SketchEntityId,
+};
 #[path = "region_input.rs"]
 pub(super) mod input;
 
@@ -87,10 +90,33 @@ pub fn certified_sketch_regions_with_policy(
     sketch_id: DocumentSketchId,
     policy: crate::PrismResolutionPolicy,
 ) -> Result<Vec<SketchRegionBoundary>, EvaluationFailure> {
-    map_regions(document, sketch_id, policy, |region| SketchRegionBoundary {
+    map_regions(
+        resolve_sketch(document, sketch_id, None)?,
+        policy,
+        region_boundary,
+    )
+}
+
+/// Discover profiles on a sketch supported by current named Part geometry.
+/// Example: `certified_sketch_regions_with_datums(document, id, policy, datums)?`.
+pub fn certified_sketch_regions_with_datums(
+    document: &DocumentSnapshot,
+    sketch_id: DocumentSketchId,
+    policy: crate::PrismResolutionPolicy,
+    datums: &WorkGeometryEvaluation,
+) -> Result<Vec<SketchRegionBoundary>, EvaluationFailure> {
+    map_regions(
+        resolve_sketch(document, sketch_id, Some(datums))?,
+        policy,
+        region_boundary,
+    )
+}
+
+fn region_boundary(region: &PlanarRegion) -> SketchRegionBoundary {
+    SketchRegionBoundary {
         outer: boundary(region.outer()),
         holes: region.holes().iter().map(boundary).collect(),
-    })
+    }
 }
 
 /// Area in database square centimetres and hole count of a certified bounded region.
@@ -107,25 +133,38 @@ pub fn certified_sketch_region_measures(
     sketch_id: DocumentSketchId,
     policy: crate::PrismResolutionPolicy,
 ) -> Result<Vec<SketchRegionMeasure>, EvaluationFailure> {
-    map_regions(document, sketch_id, policy, |region| SketchRegionMeasure {
-        area: region.area().value,
-        holes: region.holes().len(),
+    map_regions(
+        resolve_sketch(document, sketch_id, None)?,
+        policy,
+        |region| SketchRegionMeasure {
+            area: region.area().value,
+            holes: region.holes().len(),
+        },
+    )
+}
+
+fn resolve_sketch<'a>(
+    document: &'a DocumentSnapshot,
+    sketch_id: DocumentSketchId,
+    datums: Option<&WorkGeometryEvaluation>,
+) -> Result<ResolvedDocumentSketch<'a>, EvaluationFailure> {
+    match datums {
+        Some(datums) => document.require_converged_resolved_sketch_with_datums(sketch_id, datums),
+        None => document.require_converged_resolved_sketch(sketch_id),
+    }
+    .map_err(|cause| {
+        Phase::Input
+            .refused(Kind::InvalidInput, Entity::Body, cause.to_string())
+            .with_sketch_identity(sketch_id)
     })
 }
 
 fn map_regions<T>(
-    document: &DocumentSnapshot,
-    sketch_id: DocumentSketchId,
+    sketch: ResolvedDocumentSketch<'_>,
     policy: crate::PrismResolutionPolicy,
     project: impl FnMut(&PlanarRegion) -> T,
 ) -> Result<Vec<T>, EvaluationFailure> {
-    let sketch = document
-        .require_converged_resolved_sketch(sketch_id)
-        .map_err(|cause| {
-            Phase::Input
-                .refused(Kind::InvalidInput, Entity::Body, cause.to_string())
-                .with_sketch_identity(sketch_id)
-        })?;
+    let sketch_id = sketch.sketch.id();
     let policy = policy.validate().map_err(|cause| {
         Phase::Input
             .refused(Kind::InvalidInput, Entity::Body, cause)

@@ -219,3 +219,83 @@ fn reopen_extent_document(owner: &mut TestOwner, document: u64) {
         })
         .unwrap();
 }
+
+#[test]
+fn typed_cut_discovers_the_profile_on_a_named_face_offset() {
+    let (owner, _) = owner();
+    let mut owner = owner
+        .with_extrusion_policy(crate::part_scene::resolution_policy::desktop_policy())
+        .unwrap();
+    let document = open_sketch(&mut owner);
+    add_distance_source(&mut owner);
+    let face = distal_face_key(&mut owner);
+    let client = Client::new(owner.document_host());
+    let plane = client
+        .work_planes()
+        .create(&CreateWorkPlaneArgs {
+            kind: "plane-offset".into(),
+            refs: Some(vec![face]),
+            offset: "5 mm".into(),
+            ..Default::default()
+        })
+        .unwrap();
+    assert!(plane.healthy);
+    let sketch_index = client
+        .sketch()
+        .create(&CreateSketchArgs {
+            work_plane_index: Some(Box::new(plane.index)),
+            ..Default::default()
+        })
+        .unwrap()
+        .sketch_index;
+    owner.take_scene().unwrap();
+    let session = owner.documents().workspace().session(document).unwrap();
+    let snapshot = session.snapshot();
+    let sketch = snapshot.sketches.sketches()[sketch_index as usize].id();
+    let datums = owner
+        .part_scenes
+        .current(session)
+        .unwrap()
+        .datum_evaluation();
+    let frame = snapshot
+        .resolve_sketch_plane_with_datums(sketch, &datums)
+        .unwrap()
+        .recipe();
+    let from_origin = [0.5 - frame.origin[0], 0.5 - frame.origin[1], 0.];
+    let center = [frame.x_axis, frame.y_axis].map(|axis| {
+        std::iter::zip(axis, from_origin)
+            .map(|(a, b)| a * b)
+            .sum::<f64>()
+    });
+    let client = Client::new(owner.document_host());
+    client
+        .sketch()
+        .add_entity(&AddSketchEntityArgs {
+            sketch_index,
+            kind: "rectangle".into(),
+            points: Some(vec![
+                Some(center.map(|part| part - 0.125).to_vec()),
+                Some(center.map(|part| part + 0.125).to_vec()),
+            ]),
+            ..Default::default()
+        })
+        .unwrap();
+    let reply = client
+        .features()
+        .add_feature(&Extrude {
+            sketch_index,
+            operation: "cut".into(),
+            extent: "through-all".into(),
+            direction: "symmetric".into(),
+            ..Default::default()
+        })
+        .unwrap()
+        .0
+        .unwrap();
+    assert_eq!(reply["bodies"], 1);
+    assert_extent_body(&mut owner, 0, 1125., 6.);
+    set_size(&mut owner, "12 mm");
+    assert_extent_body(&mut owner, 0, 1653., 6.);
+    reopen_extent_document(&mut owner, document);
+    assert_extent_body(&mut owner, 0, 1653., 6.);
+}

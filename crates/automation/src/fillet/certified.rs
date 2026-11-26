@@ -274,10 +274,8 @@ impl CertifiedFilletValidation {
             self.policy,
         );
         count_replay(replay_count);
-        let result = history
-            .history()
-            .snapshot()
-            .evaluate_part_features(&mut evaluator)
+        let result = evaluator
+            .evaluate_private_candidate(history.history().snapshot())
             .map_err(|cause| cause.to_string())?;
         if result.body_from_source(feature).is_err() {
             return Err(format!(

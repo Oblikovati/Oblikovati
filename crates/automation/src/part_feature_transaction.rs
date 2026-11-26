@@ -58,10 +58,8 @@ fn validate_candidate(
     }
     let replay = SnapshotReplay::new(candidate).map_err(api_error)?;
     let mut evaluator = CertifiedNamedSolidEvaluator::with_policy(replay.history(), guid, policy);
-    let result = replay
-        .history()
-        .snapshot()
-        .evaluate_part_features(&mut evaluator)
+    let result = evaluator
+        .evaluate_private_candidate(replay.history().snapshot())
         .map_err(api_error)?;
     if result.body_from_source(feature).is_err() {
         return Err(Error(format!(

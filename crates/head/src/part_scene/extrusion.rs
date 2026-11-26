@@ -2,11 +2,14 @@
 //! Owner-thread bridge from typed commands to certified profile operations.
 use oblikovati_automation::ExtrudeRegionAccess;
 use oblikovati_martensite::{
-    CertifiedNamedSolidEvaluator, PrismResolutionPolicy, certified_sketch_regions_with_policy,
+    CertifiedNamedSolidEvaluator, PrismResolutionPolicy, SketchRegionBoundary,
+    certified_sketch_regions_with_datums, certified_sketch_regions_with_policy,
 };
 use oblikovati_model::{
     document_sketch::DocumentSketchId,
-    feature::{FeatureId, sketch_prism::SketchPrismSelection},
+    feature::{
+        FeatureId, sketch_prism::SketchPrismSelection, work_geometry::WorkGeometryEvaluation,
+    },
     history::{DocumentSnapshot, SnapshotReplay},
     identity::DocumentGuid,
 };
@@ -21,26 +24,18 @@ impl ExtrudeRegionAccess for CertifiedExtrudeAccess {
     ) -> Result<SketchPrismSelection, String> {
         let regions = certified_sketch_regions_with_policy(snapshot, sketch, self.0)
             .map_err(|cause| cause.to_string())?;
-        let region = regions.get(index).ok_or_else(|| {
-            format!(
-                "profile index {index}: expected an index in 0..{}",
-                regions.len()
-            )
-        })?;
-        let convert = |uses: &[oblikovati_martensite::SketchRegionCurveUse]| {
-            uses.iter()
-                .map(
-                    |item| oblikovati_model::feature::sketch_prism::SketchDirectedCurve {
-                        curve: item.curve,
-                        reversed: item.reversed,
-                    },
-                )
-                .collect()
-        };
-        Ok(SketchPrismSelection {
-            outer: convert(&region.outer),
-            holes: region.holes.iter().map(|hole| convert(hole)).collect(),
-        })
+        selection(&regions, index)
+    }
+    fn region_with_datums(
+        &self,
+        snapshot: &DocumentSnapshot,
+        sketch: DocumentSketchId,
+        index: usize,
+        datums: &WorkGeometryEvaluation,
+    ) -> Result<SketchPrismSelection, String> {
+        let regions = certified_sketch_regions_with_datums(snapshot, sketch, self.0, datums)
+            .map_err(|cause| cause.to_string())?;
+        selection(&regions, index)
     }
     fn validate(
         &self,
@@ -51,8 +46,8 @@ impl ExtrudeRegionAccess for CertifiedExtrudeAccess {
         let history = candidate_history(candidate)?;
         let mut backend =
             CertifiedNamedSolidEvaluator::with_policy(history.history(), document, self.0);
-        let replay = candidate
-            .evaluate_part_features(&mut backend)
+        let replay = backend
+            .evaluate_private_candidate(candidate)
             .map_err(|cause| cause.to_string())?;
         if replay.body(feature).is_none() {
             return Err(format!(
@@ -114,4 +109,30 @@ impl ExtrudeRegionAccess for CertifiedExtrudeAccess {
 
 fn candidate_history(candidate: &DocumentSnapshot) -> Result<SnapshotReplay, String> {
     SnapshotReplay::new(candidate).map_err(|cause| cause.to_string())
+}
+
+fn selection(
+    regions: &[SketchRegionBoundary],
+    index: usize,
+) -> Result<SketchPrismSelection, String> {
+    let region = regions.get(index).ok_or_else(|| {
+        format!(
+            "profile index {index}: expected an index in 0..{}",
+            regions.len()
+        )
+    })?;
+    let convert = |uses: &[oblikovati_martensite::SketchRegionCurveUse]| {
+        uses.iter()
+            .map(
+                |item| oblikovati_model::feature::sketch_prism::SketchDirectedCurve {
+                    curve: item.curve,
+                    reversed: item.reversed,
+                },
+            )
+            .collect()
+    };
+    Ok(SketchPrismSelection {
+        outer: convert(&region.outer),
+        holes: region.holes.iter().map(|hole| convert(hole)).collect(),
+    })
 }

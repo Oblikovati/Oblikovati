@@ -188,6 +188,18 @@ impl DocumentSnapshot {
             .map_err(DocumentSketchPlacementError::Sketch)?;
         self.verified_sketch(id, plane, points, RequiredSolve::Converged)
     }
+    /// Resolve converged geometry with the current named Part placement.
+    /// Example: `snapshot.require_converged_resolved_sketch_with_datums(id, datums)?`.
+    pub fn require_converged_resolved_sketch_with_datums(
+        &self,
+        id: DocumentSketchId,
+        datums: &WorkPlaneEvaluation,
+    ) -> Result<ResolvedDocumentSketch<'_>, DocumentSketchPlacementError> {
+        datums
+            .require_frame_source(self, id)
+            .map_err(DocumentSketchPlacementError::Sketch)?;
+        self.require_converged_sketch_with_datums(id, datums)
+    }
     pub(crate) fn require_converged_sketch_with_datums(
         &self,
         id: DocumentSketchId,

@@ -12,17 +12,22 @@ use oblikovati_model::{
         sketch_prism::{
             PrismBoolean, SketchPrismDefinition, SketchPrismDirection, SketchPrismSelection,
         },
-        work_geometry::DatumLength,
+        work_geometry::{DatumLength, WorkGeometryEvaluation},
     },
     history::{DocumentSnapshot, RecipeReservations},
     identity::DocumentGuid,
     quantity::Dimension,
 };
 use oblikovati_persistence::file_access::DocumentFiles;
-use oblikovati_session::{TransactionObserver, files::FileWorkspace, workspace::WorkspaceObserver};
+use oblikovati_session::{
+    TransactionObserver, files::FileWorkspace, part_evaluation::CurrentPartDatums,
+    workspace::WorkspaceObserver,
+};
 
 mod boolean;
 mod extent;
+mod region_access;
+pub use region_access::ExtrudeRegionAccess;
 mod replay;
 use replay::{ExtrudeProjection, adopt_extrude_candidate, prepare_owned_prefix};
 
@@ -40,62 +45,10 @@ type PolicyExtrudePrefix = (
     ExtrudeReplayPrefix,
 );
 
-/// Geometry capability used before committing an Extrude command.
-pub trait ExtrudeRegionAccess {
-    /// Resolve a current profile index to durable authored lineage; example: `backend.region(snapshot, sketch, 0)?`.
-    fn region(
-        &self,
-        snapshot: &DocumentSnapshot,
-        sketch: DocumentSketchId,
-        index: usize,
-    ) -> Result<SketchPrismSelection, String>;
-    /// Validate the solved candidate and return the current body count; example: `backend.validate(candidate, feature)?`.
-    fn validate(
-        &self,
-        candidate: &DocumentSnapshot,
-        document: DocumentGuid,
-        feature: FeatureId,
-    ) -> Result<usize, String>;
-    /// Report a policy only when this validator can certify retained replay.
-    /// Example: `backend.replay_policy()` before acquiring a prefix.
-    fn replay_policy(&self) -> Option<oblikovati_martensite::PrismResolutionPolicy> {
-        None
-    }
-    /// Validate a candidate against its current retained prefix when supported.
-    /// Example: `backend.capture_with_prefix(history, document, candidate, feature, prefix)?`.
-    fn capture_with_prefix(
-        &self,
-        _history: &oblikovati_model::history::DocumentEditHistory,
-        _document: DocumentGuid,
-        _candidate: &DocumentSnapshot,
-        _feature: FeatureId,
-        _prefix: &ExtrudeReplayPrefix,
-    ) -> Result<Option<ExtrudePrefixReplay>, String> {
-        Ok(None)
-    }
-    /// Opt into projecting feature health from document-owned checkpoints under this policy.
-    /// Example: `backend.checkpoint_health_policy()` before a suppression edit.
-    fn checkpoint_health_policy(&self) -> Option<oblikovati_martensite::PrismResolutionPolicy> {
-        None
-    }
-    /// Replay a feature and return its failure reason, or an empty string when healthy or suppressed.
-    /// Example: `backend.feature_health(candidate, feature)?`.
-    fn feature_health(
-        &self,
-        _candidate: &DocumentSnapshot,
-        _document: DocumentGuid,
-        feature: FeatureId,
-    ) -> Result<String, String> {
-        Err(format!(
-            "feature {feature:?}: expected a feature replay service"
-        ))
-    }
-}
-
 pub(crate) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     files: &mut FileWorkspace<O, W, F>,
     backend: Option<&dyn ExtrudeRegionAccess>,
-    replay: Option<&mut dyn crate::PartUpdateAccess<O, W, F>>,
+    mut replay: Option<&mut dyn crate::PartUpdateAccess<O, W, F>>,
     encoded: &[u8],
 ) -> Result<Vec<u8>, Error> {
     let request: wire::AddFeatureArgs = crate::decode(wire::METHOD_FEATURES_ADD, encoded)?;
@@ -104,18 +57,51 @@ pub(crate) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
     let backend = backend.ok_or_else(|| {
         Error("extrude: expected an injected certified profile and validation service".into())
     })?;
+    let profile_datums = match replay.as_mut() {
+        Some(owner) => current_profile_datums(files, document, &input, &mut **owner)?,
+        None => None,
+    };
     let target = boolean::operation(&input)
         .map(|operation| {
             boolean::target(files, document, replay, operation).map(|key| (operation, key))
         })
         .transpose()?;
+    let session = files.workspace().session(document).map_err(api_error)?;
+    let datums = profile_datums
+        .as_ref()
+        .map(|current| current.current(session))
+        .transpose()
+        .map_err(api_error)?;
+    let prepared =
+        prepare_extrusion_for_target(session.snapshot(), backend, &input, target, datums)?;
+    create(files, document, backend, prepared)
+}
+
+fn current_profile_datums<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+    files: &mut FileWorkspace<O, W, F>,
+    document: u64,
+    input: &Extrude,
+    owner: &mut dyn crate::PartUpdateAccess<O, W, F>,
+) -> Result<Option<CurrentPartDatums>, Error> {
     let snapshot = files
         .workspace()
         .session(document)
         .map_err(api_error)?
         .snapshot();
-    let prepared = prepare_extrusion_for_target(snapshot, backend, &input, target)?;
-    create(files, document, backend, prepared)
+    if !crate::requires_part_replay(snapshot) {
+        return Ok(None);
+    }
+    let sketch = sketch_index(snapshot, input.sketch_index)?;
+    if !snapshot
+        .sketch_inspection_needs_work_geometry(sketch)
+        .map_err(api_error)?
+    {
+        return Ok(None);
+    }
+    owner
+        .current_part_datums(files, document)
+        .map(Some)
+        .map_err(Error)
 }
 
 /// Validated authored inputs shared by preview and commit.
@@ -186,7 +172,7 @@ pub fn prepare_extrusion(
     backend: &dyn ExtrudeRegionAccess,
     input: &Extrude,
 ) -> Result<PreparedExtrusion, Error> {
-    prepare_extrusion_for_target(snapshot, backend, input, None)
+    prepare_extrusion_for_target(snapshot, backend, input, None, None)
 }
 
 fn prepare_extrusion_for_target(
@@ -194,6 +180,7 @@ fn prepare_extrusion_for_target(
     backend: &dyn ExtrudeRegionAccess,
     input: &Extrude,
     target: Option<(PrismBoolean, Vec<u8>)>,
+    datums: Option<&WorkGeometryEvaluation>,
 ) -> Result<PreparedExtrusion, Error> {
     require_supported(input)?;
     if let Some(operation) = boolean::operation(input).filter(|_| target.is_none()) {
@@ -201,7 +188,7 @@ fn prepare_extrusion_for_target(
             "extrude {operation}: expected a named target body"
         )));
     }
-    let mut prepared = prepare_prism(snapshot, backend, input)?;
+    let mut prepared = prepare_prism(snapshot, backend, input, datums)?;
     if let Some((operation, key)) = target {
         prepared.definition = prepared
             .definition
@@ -215,6 +202,7 @@ fn prepare_prism(
     snapshot: &DocumentSnapshot,
     backend: &dyn ExtrudeRegionAccess,
     input: &Extrude,
+    datums: Option<&WorkGeometryEvaluation>,
 ) -> Result<PreparedExtrusion, Error> {
     let extent = extent::reference_extent(snapshot, input)?;
     let sketch = sketch_index(snapshot, input.sketch_index)?;
@@ -224,7 +212,13 @@ fn prepare_prism(
             input.profile_index
         ))
     })?;
-    let resolve_profile = || backend.region(snapshot, sketch, index).map_err(Error);
+    let resolve_profile = || {
+        match datums {
+            Some(datums) => backend.region_with_datums(snapshot, sketch, index, datums),
+            None => backend.region(snapshot, sketch, index),
+        }
+        .map_err(Error)
+    };
     if let Some(extent) = extent {
         return Ok(PreparedExtrusion {
             name: next_name(snapshot)?,
