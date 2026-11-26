@@ -53,6 +53,43 @@ fn active_child_at(parent: &str, point: [f32; 2]) -> (*mut sys::ImDrawList, [f32
         .unwrap_or_else(|| panic!("expected active child at {point:?} in {parent:?}"))
 }
 
+#[derive(Clone, Copy)]
+pub(super) struct ChildScroll {
+    pub list: usize,
+    pub center: [f32; 2],
+    pub offset: f32,
+    pub limit: f32,
+}
+
+/// Read the scroll range and draw list of a named child in the completed frame.
+pub(super) fn child_scroll(parent: &str, label: &str) -> Option<ChildScroll> {
+    let name = CString::new(parent).ok()?;
+    let label = CString::new(label).ok()?;
+    // The GUI owner owns these pointers until the next frame. No reference escapes.
+    let window = unsafe { sys::igFindWindowByName(name.as_ptr()) };
+    let owner = unsafe { window.as_ref() }?;
+    if !owner.Active || owner.DC.ChildWindows.Size <= 0 {
+        return None;
+    }
+    let id = unsafe { sys::ImGuiWindow_GetID_Str(window, label.as_ptr(), std::ptr::null()) };
+    let children = &owner.DC.ChildWindows;
+    let children = unsafe { std::slice::from_raw_parts(children.Data, children.Size as usize) };
+    let child = children
+        .iter()
+        .filter_map(|ptr| unsafe { ptr.as_ref() })
+        .find(|child| child.Active && child.ChildId == id)?;
+    let bounds = child.OuterRectClipped;
+    Some(ChildScroll {
+        list: rendered_draw_list_index(child.DrawList)?,
+        center: [
+            (bounds.Min.x + bounds.Max.x) * 0.5,
+            (bounds.Min.y + bounds.Max.y) * 0.5,
+        ],
+        offset: child.Scroll.y,
+        limit: child.ScrollMax.y,
+    })
+}
+
 fn rendered_draw_list_index(target: *mut sys::ImDrawList) -> Option<usize> {
     let frame = unsafe { sys::igGetDrawData().as_ref() }?;
     if frame.CmdListsCount < 1 {

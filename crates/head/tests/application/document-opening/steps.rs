@@ -18,6 +18,9 @@ mod drawing_fixture;
 mod drawing_options;
 #[path = "express_fixture.rs"]
 mod express_fixture;
+#[path = "file_listing.rs"]
+mod file_listing;
+pub(super) use file_listing::select_row;
 #[path = "lists.rs"]
 mod lists;
 #[cfg(target_os = "linux")]
@@ -123,11 +126,6 @@ pub(super) fn browse_assembly_component(world: &mut ApplicationWorld) {
 }
 pub(super) fn look_in(world: &mut ApplicationWorld, folder: &Path) {
     world.enter_in_field("Look in", folder.to_str().unwrap());
-    settle(world);
-}
-pub(super) fn select_row(world: &mut ApplicationWorld, file: &str) {
-    let at = world.run(file).center().map(|value| value as i32);
-    world.click(at);
     settle(world);
 }
 pub(super) fn choose_open(world: &mut ApplicationWorld) {
