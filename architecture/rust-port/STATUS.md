@@ -36,7 +36,7 @@ using this status; the live scenario directory can change.
   See the [current receipt](receipts/2026-11-26-viewcube-hud-3961/README.md).
   The [20 pinned declarations](receipts/2026-11-20-viewport-orientation-r0-3961/) have R0 records.
   Strict build and runtime verification remains open under #3978.
-- Workspace Layout (#3897) passed all [53 current cases and 523 steps](receipts/2026-11-25-workspace-layout-current-3897/README.md).
+- Workspace Layout (#3897) passed all [53 current cases and 523 steps on Wayland and X11](receipts/2026-11-26-workspace-layout-current-3897/README.md).
   The 52 declarations include two examples in one outline. The older
   foreground X11 check captured the View checklist and Mini-Toolbar with
   MCPBridge. Rule Log and Rule Automation are disabled under #4185.
