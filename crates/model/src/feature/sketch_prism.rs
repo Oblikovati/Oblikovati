@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Authored prism inputs, separate from kernel results and the complete extrude feature contract.
-mod cut;
+mod boolean;
 mod error;
 mod extent;
 mod recipe;
@@ -8,7 +8,7 @@ mod resolve;
 pub(crate) mod validation;
 use super::work_geometry::DatumLength;
 use crate::{document_sketch::DocumentSketchId, sketch::SketchEntityId};
-pub use cut::SketchPrismCutTarget;
+pub use boolean::{PrismBoolean, SketchPrismTarget};
 pub use error::{SketchPrismCause, SketchPrismError};
 pub use extent::{SketchPrismExtent, ThroughAllDirection};
 pub use recipe::SketchPrismRecipe;
@@ -37,7 +37,7 @@ pub struct SketchPrismDefinition {
     direction: SketchPrismDirection,
     second_depth: Option<DatumLength>,
     extent: Option<SketchPrismExtent>,
-    cut_target: Option<SketchPrismCutTarget>,
+    boolean_target: Option<SketchPrismTarget>,
 }
 /// Placement of the extrusion span relative to the source sketch plane.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -63,7 +63,7 @@ impl SketchPrismDefinition {
             direction: SketchPrismDirection::Positive,
             second_depth: None,
             extent: None,
-            cut_target: None,
+            boolean_target: None,
         };
         validation::validate_sources(&definition).map_err(|cause| definition.decline(cause))?;
         Ok(definition)
@@ -120,7 +120,7 @@ impl SketchPrismDefinition {
             && self.selection == other.selection
             && self.direction == other.direction
             && self.extent == other.extent
-            && self.cut_target == other.cut_target
+            && self.boolean_target == other.boolean_target
             && match (self.second_depth, other.second_depth) {
                 (None, None) => true,
                 (Some(a), Some(b)) => a.same_recipe(b),

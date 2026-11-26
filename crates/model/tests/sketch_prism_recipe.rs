@@ -178,3 +178,33 @@ fn through_all_recipe_requires_the_body_its_extent_depends_on() {
     assert_eq!(restored.extent(), Some(&extent));
     assert_eq!(restored.cut_target().unwrap().key(), key);
 }
+
+#[test]
+fn join_recipe_preserves_the_target_and_refuses_conflicting_operations() {
+    use oblikovati_model::{
+        feature::{FeatureId, sketch_prism::PrismBoolean},
+        identity::{SketchPrismReferenceRole, sketch_prism_reference_name},
+    };
+    let document = "11111111-2222-3333-4444-555555555555".parse().unwrap();
+    let key = sketch_prism_reference_name(
+        document,
+        FeatureId(42),
+        SKETCH,
+        SketchPrismReferenceRole::Body,
+    )
+    .unwrap();
+    let original = driven_definition()
+        .with_boolean_target(PrismBoolean::Join, key.clone())
+        .unwrap();
+    let mut recipe = original.recipe();
+    assert_eq!(recipe.join_target.as_deref(), Some(key.as_slice()));
+    assert!(recipe.cut_target.is_none());
+    let restored = SketchPrismDefinition::from_recipe(&recipe).unwrap();
+    assert!(original.same_recipe(&restored));
+    assert_eq!(
+        restored.boolean_target().unwrap().operation(),
+        PrismBoolean::Join
+    );
+    recipe.cut_target = Some(key);
+    assert!(SketchPrismDefinition::from_recipe(&recipe).is_err());
+}

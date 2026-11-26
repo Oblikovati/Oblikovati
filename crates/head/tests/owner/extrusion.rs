@@ -472,5 +472,5 @@ mod edit;
 #[path = "extrusion_replay.rs"]
 mod replay;
 
-#[path = "extrusion_cut.rs"]
-mod cut;
+#[path = "extrusion_boolean.rs"]
+mod boolean;

@@ -114,3 +114,16 @@ mirror, circular pattern, rectangular pattern, and Join, respectively.
 Three cases exposed unresolved split or merged topology names and three
 hit profile certification limits. Two Through All requests timed out.
 Ziptie timed out during its initial New Solid request on the fresh host.
+
+## Join with a single target body
+
+The typed Extrude request accepts Join for a part with one current solid.
+Join stores the exact target body and reuses the ordered replacement path
+used by Cut. It fuses the certified prism and validates one solid with
+increased analytic volume. The resulting topology must meet both operand
+tolerance caps and retain the target body key.
+
+The desktop-owner regression joins a boss supported by a parametric work
+plane and checks analytic volume and body identity after resize, undo,
+redo, and reopen. A separate regression checks rejection of a disconnected
+tool and preservation of the prior body and visible sketch.

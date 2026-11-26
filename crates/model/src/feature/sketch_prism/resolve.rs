@@ -162,7 +162,7 @@ impl SketchPrismDefinition {
             )
             .chain(self.extent.iter().flat_map(SketchPrismExtent::reads))
             .chain(
-                self.cut_target()
+                self.boolean_target()
                     .map(|target| FeatureReadKey::Feature(target.source())),
             );
         FeatureReadFootprint::new(keys, false)

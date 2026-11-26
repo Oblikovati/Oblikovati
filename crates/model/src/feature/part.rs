@@ -13,7 +13,7 @@ mod body_dependencies;
 mod body_lineage;
 mod body_resolution;
 mod checkpoints;
-mod cut_evaluation;
+
 mod hole_evaluation;
 mod move_body_evaluation;
 pub use checkpoints::{CheckpointedPart, PartReplayCheckpoints};
@@ -28,6 +28,7 @@ pub use evaluate::{
 };
 pub use evaluator::PartFeatureEvaluator;
 mod prefix_replay;
+mod prism_replacement;
 mod reads;
 mod resolver;
 mod transfer;

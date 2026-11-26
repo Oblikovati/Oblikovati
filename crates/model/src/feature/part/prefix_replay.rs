@@ -95,14 +95,15 @@ where
     ) -> Result<(f64, f64), String> {
         self.0.prism_through_all_span(body.get(), plane, direction)
     }
-    fn evaluate_prism_cut(
+    fn evaluate_prism_boolean(
         &mut self,
         feature: FeatureId,
         body: &Self::Body,
         input: ResolvedSketchPrism<'_>,
+        operation: crate::feature::sketch_prism::PrismBoolean,
     ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
         self.0
-            .evaluate_prism_cut(feature, body.get(), input)
+            .evaluate_prism_boolean(feature, body.get(), input, operation)
             .map(PrefixBody::Created)
     }
     fn evaluate_prism(

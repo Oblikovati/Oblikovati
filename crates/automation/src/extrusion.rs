@@ -9,7 +9,9 @@ use oblikovati_model::{
     expression::Expression,
     feature::{
         FeatureId,
-        sketch_prism::{SketchPrismDefinition, SketchPrismDirection, SketchPrismSelection},
+        sketch_prism::{
+            PrismBoolean, SketchPrismDefinition, SketchPrismDirection, SketchPrismSelection,
+        },
         work_geometry::DatumLength,
     },
     history::{DocumentSnapshot, RecipeReservations},
@@ -19,7 +21,7 @@ use oblikovati_model::{
 use oblikovati_persistence::file_access::DocumentFiles;
 use oblikovati_session::{TransactionObserver, files::FileWorkspace, workspace::WorkspaceObserver};
 
-mod cut;
+mod boolean;
 mod extent;
 mod replay;
 use replay::{ExtrudeProjection, adopt_extrude_candidate, prepare_owned_prefix};
@@ -102,11 +104,11 @@ pub(crate) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
     let backend = backend.ok_or_else(|| {
         Error("extrude: expected an injected certified profile and validation service".into())
     })?;
-    let target = if input.operation.trim().eq_ignore_ascii_case("cut") {
-        Some(cut::target(files, document, replay)?)
-    } else {
-        None
-    };
+    let target = boolean::operation(&input)
+        .map(|operation| {
+            boolean::target(files, document, replay, operation).map(|key| (operation, key))
+        })
+        .transpose()?;
     let snapshot = files
         .workspace()
         .session(document)
@@ -191,17 +193,19 @@ fn prepare_extrusion_for_target(
     snapshot: &DocumentSnapshot,
     backend: &dyn ExtrudeRegionAccess,
     input: &Extrude,
-    target: Option<Vec<u8>>,
+    target: Option<(PrismBoolean, Vec<u8>)>,
 ) -> Result<PreparedExtrusion, Error> {
     require_supported(input)?;
-    if input.operation.trim().eq_ignore_ascii_case("cut") && target.is_none() {
-        return Err(Error("extrude Cut: expected a named target body".into()));
+    if let Some(operation) = boolean::operation(input).filter(|_| target.is_none()) {
+        return Err(Error(format!(
+            "extrude {operation}: expected a named target body"
+        )));
     }
     let mut prepared = prepare_prism(snapshot, backend, input)?;
-    if let Some(key) = target {
+    if let Some((operation, key)) = target {
         prepared.definition = prepared
             .definition
-            .with_cut_target(key)
+            .with_boolean_target(operation, key)
             .map_err(api_error)?;
     }
     Ok(prepared)
@@ -326,7 +330,7 @@ fn require_supported(input: &Extrude) -> Result<(), Error> {
         (
             "operation",
             input.operation.as_str(),
-            &["new", "newbody", "new-body", "cut"][..],
+            &["new", "newbody", "new-body", "cut", "join"][..],
         ),
         (
             "direction",

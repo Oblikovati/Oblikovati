@@ -1,41 +1,44 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//! Validate detached solid subtraction and carry input lineage into the result.
+//! Validate detached solid Booleans and carry input lineage into the result.
 use super::*;
-use martensite_tkbo::brep_algo_api::BRepAlgoAPICut;
+use martensite_tkbo::{bop_algo::Operation, brep_algo_api::BRepAlgoAPIBooleanOperation};
 use martensite_tkbrep::{topexp, toptools::IndexedMapOfShape};
+use martensite_tkernel::ncollection::List;
 use martensite_tkg3d::top_abs::ShapeEnum;
 use martensite_tkgeombase::gprop::GProps;
 use martensite_tktopalgo::brep_gprop::BRepGProp;
+use oblikovati_model::feature::sketch_prism::PrismBoolean;
 
-pub(super) struct SubtractionTool<'a> {
+pub(super) struct BooleanTool<'a> {
     pub shape: &'a Shape,
     pub sources: Vec<(Vec<u8>, Shape)>,
     pub resolution: Option<PrismResolution>,
 }
 
-pub(super) fn build_subtraction_candidate(
+pub(super) fn build_boolean_candidate(
     input: BlendInputTopology<'_>,
     history: &DocumentEditHistory,
     document: DocumentGuid,
-    tool: SubtractionTool<'_>,
+    tool: BooleanTool<'_>,
+    kind: PrismBoolean,
     operation: &str,
 ) -> Result<BlendCandidate, String> {
     let mut copier = crate::checked_shape::copy_shape(input.body, &format!("{operation} input"))
         .map_err(|error| error.to_string())?;
     let copied = copy_named_sources(&mut copier, input.source)?;
     let target = copier.shape().map_err(|error| error.to_string())?;
-    let cut = BRepAlgoAPICut::from_shapes(target, tool.shape).map_err(|error| {
-        format!("{operation} cut: expected completed Boolean operation: {error}")
-    })?;
-    let (shape, achieved_tolerance) = checked_cut(
+    let boolean = performed_boolean(target, tool.shape, kind)
+        .map_err(|error| format!("{operation}: expected completed Boolean operation: {error}"))?;
+    let (shape, achieved_tolerance) = checked_boolean(
         target,
-        &cut,
+        &boolean,
         input.resolution,
         tool.resolution.map(|policy| (tool.shape, policy)),
+        kind,
         operation,
     )?;
-    let mut records = cut_history(&cut, copied, false)?;
-    records.extend(cut_history(&cut, tool.sources, true)?);
+    let mut records = boolean_history(&boolean, copied, false)?;
+    records.extend(boolean_history(&boolean, tool.sources, true)?);
     Ok(BlendCandidate {
         resolution: input.resolution,
         achieved_tolerance: Some(achieved_tolerance),
@@ -50,38 +53,63 @@ pub(super) fn build_subtraction_candidate(
     })
 }
 
-fn checked_cut(
+fn performed_boolean(
     target: &Shape,
-    cut: &BRepAlgoAPICut,
+    tool: &Shape,
+    kind: PrismBoolean,
+) -> Result<BRepAlgoAPIBooleanOperation, martensite_tkernel::standard::Failure> {
+    let mut boolean = BRepAlgoAPIBooleanOperation::new();
+    let mut arguments = List::default();
+    arguments.append(target.clone());
+    let mut tools = List::default();
+    tools.append(tool.clone());
+    boolean.set_arguments(&arguments);
+    boolean.set_tools(&tools);
+    boolean.set_operation(match kind {
+        PrismBoolean::Cut => Operation::Cut,
+        PrismBoolean::Join => Operation::Fuse,
+    });
+    boolean.build()?;
+    Ok(boolean)
+}
+
+fn checked_boolean(
+    target: &Shape,
+    boolean: &BRepAlgoAPIBooleanOperation,
     resolution: Option<PrismResolution>,
     tool: Option<(&Shape, PrismResolution)>,
+    kind: PrismBoolean,
     operation: &str,
 ) -> Result<(Shape, PrismAchievedTolerance), String> {
-    if !cut.is_done() || cut.has_errors() || cut.has_warnings() {
+    if !boolean.is_done() || boolean.has_errors() || boolean.has_warnings() {
         return Err(format!(
-            "{operation} cut: expected a completed Boolean without errors or warnings (done={}, errors={}, warnings={})",
-            cut.is_done(),
-            cut.has_errors(),
-            cut.has_warnings()
+            "{operation}: expected a completed Boolean without errors or warnings (done={}, errors={}, warnings={})",
+            boolean.is_done(),
+            boolean.has_errors(),
+            boolean.has_warnings()
         ));
     }
-    let result = single_solid(cut.shape(), operation)?;
+    let result = single_solid(boolean.shape(), operation)?;
     crate::checked_shape::require_geometry(&result, &format!("{operation} result"))
         .map_err(|error| error.to_string())?;
     validate_result_faces(&result, operation)?;
     let achieved = match tool {
-        Some((tool, policy)) => {
-            tolerances::check_two_operand_cut(target, tool, &result, resolution, policy, operation)?
-        }
+        Some((tool, policy)) => tolerances::check_two_operand_boolean(
+            target, tool, &result, resolution, policy, operation,
+        )?,
         None => tolerances::check(target, &result, resolution, operation)?,
     };
     let before = crate::checked_shape::analytic_properties(target, &format!("{operation} input"))
         .map_err(|error| error.to_string())?;
     let after = crate::checked_shape::analytic_properties(&result, &format!("{operation} result"))
         .map_err(|error| error.to_string())?;
-    if after.volume <= 0. || after.volume >= before.volume {
+    let changed = match kind {
+        PrismBoolean::Cut => after.volume > 0. && after.volume < before.volume,
+        PrismBoolean::Join => after.volume > before.volume,
+    };
+    if !changed {
         return Err(format!(
-            "{operation} volume {} from {}: expected a nonempty reduced body",
+            "{operation} volume {} from {}: expected a nonempty solid with material changed by {kind}",
             after.volume, before.volume
         ));
     }
@@ -146,8 +174,8 @@ pub(super) fn entities(shape: &Shape, kind: ShapeEnum) -> Result<Vec<Shape>, Str
         .collect()
 }
 
-fn cut_history(
-    cut: &BRepAlgoAPICut,
+fn boolean_history(
+    boolean: &BRepAlgoAPIBooleanOperation,
     sources: Vec<(Vec<u8>, Shape)>,
     transient: bool,
 ) -> Result<Vec<BlendHistoryRecord>, String> {
@@ -155,9 +183,15 @@ fn cut_history(
         .into_iter()
         .map(|(name, source)| {
             Ok(BlendHistoryRecord {
-                generated: cut.generated(&source).map_err(|error| error.to_string())?,
-                modified: cut.modified(&source).map_err(|error| error.to_string())?,
-                deleted: cut.is_deleted(&source).map_err(|error| error.to_string())?,
+                generated: boolean
+                    .generated(&source)
+                    .map_err(|error| error.to_string())?,
+                modified: boolean
+                    .modified(&source)
+                    .map_err(|error| error.to_string())?,
+                deleted: boolean
+                    .is_deleted(&source)
+                    .map_err(|error| error.to_string())?,
                 source,
                 name,
                 transient,
@@ -194,20 +228,28 @@ mod tests {
             display_angular: 0.1,
             maximum_tolerance: 1e-5,
         };
-        let cut = BRepAlgoAPICut::from_shapes(&target, &tool).unwrap();
-        let result = single_solid(cut.shape(), "square prism").unwrap();
+        let boolean = performed_boolean(&target, &tool, PrismBoolean::Cut).unwrap();
+        let result = single_solid(boolean.shape(), "square prism").unwrap();
         crate::checked_shape::require_geometry(&result, "cut result").unwrap();
-        let decline =
-            checked_cut(&target, &cut, Some(resolution), None, "square prism").unwrap_err();
+        let decline = checked_boolean(
+            &target,
+            &boolean,
+            Some(resolution),
+            None,
+            PrismBoolean::Cut,
+            "square prism",
+        )
+        .unwrap_err();
         assert!(
             decline.contains("square prism vertex tolerance"),
             "{decline}"
         );
-        let (_, tolerance) = checked_cut(
+        let (_, tolerance) = checked_boolean(
             &target,
-            &cut,
+            &boolean,
             Some(resolution),
             Some((&tool, resolution)),
+            PrismBoolean::Cut,
             "square prism",
         )
         .unwrap();
@@ -217,11 +259,12 @@ mod tests {
             ..resolution
         };
         assert!(
-            checked_cut(
+            checked_boolean(
                 &target,
-                &cut,
+                &boolean,
                 Some(resolution),
                 Some((&tool, tight_tool)),
+                PrismBoolean::Cut,
                 "square prism",
             )
             .is_err()

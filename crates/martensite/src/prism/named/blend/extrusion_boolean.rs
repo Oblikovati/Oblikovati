@@ -1,39 +1,42 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use super::{subtraction::SubtractionTool, *};
+use super::{solid_boolean::BooleanTool, *};
+use oblikovati_model::feature::sketch_prism::PrismBoolean;
 
 impl NamedSolid {
-    pub(in crate::prism::named) fn extrusion_cut_candidate(
+    pub(in crate::prism::named) fn extrusion_boolean_candidate(
         &self,
         history: &DocumentEditHistory,
         document: DocumentGuid,
         tool: &NamedPrismSnapshot,
+        kind: PrismBoolean,
     ) -> Result<BlendCandidate, String> {
         let resolution = tool
             .certification
             .as_ref()
-            .ok_or("extrude Cut: expected a certified tool prism")?
+            .ok_or("extrude Boolean: expected a certified tool prism")?
             .resolution;
-        let tool = SubtractionTool {
+        let tool = BooleanTool {
             shape: &tool.snapshot.shape,
             sources: tool.blend_sources(history, document)?,
             resolution: Some(resolution),
         };
         match self {
-            Self::Prism(body) => body.extrusion_cut_candidate(history, document, tool),
-            Self::Derived(body) => body.extrusion_cut_candidate(history, document, tool),
+            Self::Prism(body) => body.extrusion_boolean_candidate(history, document, tool, kind),
+            Self::Derived(body) => body.extrusion_boolean_candidate(history, document, tool, kind),
         }
     }
 }
 
 impl NamedPrismSnapshot {
-    fn extrusion_cut_candidate(
+    fn extrusion_boolean_candidate(
         &self,
         history: &DocumentEditHistory,
         document: DocumentGuid,
-        tool: SubtractionTool<'_>,
+        tool: BooleanTool<'_>,
+        kind: PrismBoolean,
     ) -> Result<BlendCandidate, String> {
         let body = self.body_reference_key(history, document)?.to_vec();
-        super::subtraction::build_subtraction_candidate(
+        super::solid_boolean::build_boolean_candidate(
             BlendInputTopology {
                 body: &self.snapshot.shape,
                 source: self.blend_sources(history, document)?,
@@ -46,7 +49,8 @@ impl NamedPrismSnapshot {
             history,
             document,
             tool,
-            "extrude Cut",
+            kind,
+            &format!("extrude {kind}"),
         )
     }
 }

@@ -329,11 +329,10 @@ fn extended_feature_name(
     let SketchPrism(definition) = feature.definition() else {
         return None;
     };
-    let operation = if definition.cut_target().is_some() {
-        "Cut"
-    } else {
-        "New Solid"
-    };
+    let operation = definition.boolean_target().map_or_else(
+        || "New Solid".to_owned(),
+        |target| target.operation().to_string(),
+    );
     if let Some(extent) = definition.extent() {
         use oblikovati_model::feature::sketch_prism::SketchPrismExtent;
         let label = match extent {

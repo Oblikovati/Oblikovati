@@ -446,8 +446,8 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
         feature: &crate::feature::AuthoredFeature<PartFeatureDefinition>,
         definition: &crate::feature::sketch_prism::SketchPrismDefinition,
     ) -> Result<(), PartFeatureFailure<Failure>> {
-        if let Some(target) = definition.cut_target() {
-            return self.cut_prism(snapshot, backend, feature.id(), target, definition);
+        if let Some(target) = definition.boolean_target() {
+            return self.replace_with_prism(snapshot, backend, feature.id(), target, definition);
         }
         let resolve_face =
             |reference: &_| resolve_body_face(&self.bodies, &self.body_lineage, backend, reference);

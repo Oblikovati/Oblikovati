@@ -6,7 +6,7 @@ use super::{
 use crate::{
     feature::{
         FeatureId,
-        sketch_prism::{SketchPrismCutTarget, SketchPrismDefinition},
+        sketch_prism::{SketchPrismDefinition, SketchPrismTarget},
         work_geometry::DatumFaceResolver,
         work_plane::WorkPlaneFaceReference,
     },
@@ -14,12 +14,12 @@ use crate::{
 };
 
 impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
-    pub(super) fn cut_prism<B: PartFeatureEvaluator<Body = Body, Failure = Failure>>(
+    pub(super) fn replace_with_prism<B: PartFeatureEvaluator<Body = Body, Failure = Failure>>(
         &mut self,
         snapshot: &DocumentSnapshot,
         backend: &mut B,
         feature: FeatureId,
-        target: &SketchPrismCutTarget,
+        target: &SketchPrismTarget,
         definition: &SketchPrismDefinition,
     ) -> Result<(), PartFeatureFailure<Failure>> {
         let slot = resolve_body_slot(
@@ -42,7 +42,7 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
                 backend.prism_through_all_span(body, plane, direction)
             })
             .map_err(PartFeatureFailure::Inputs)?;
-        let result = backend.evaluate_prism_cut(feature, body, input)?;
+        let result = backend.evaluate_prism_boolean(feature, body, input, target.operation())?;
         backend
             .verify_body_reference(&result, target.key())
             .map_err(PartFeatureFailure::BodyReference)?;

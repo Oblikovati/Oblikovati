@@ -56,7 +56,7 @@ impl SketchPrismDefinition {
             direction: SketchPrismDirection::Positive,
             second_depth: None,
             extent: Some(extent),
-            cut_target: None,
+            boolean_target: None,
         };
         validation::validate_sources(&definition).map_err(|cause| definition.decline(cause))?;
         Ok(definition)

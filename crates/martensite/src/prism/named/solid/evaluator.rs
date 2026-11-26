@@ -46,13 +46,14 @@ impl PartFeatureEvaluator for CertifiedNamedSolidEvaluator<'_> {
     ) -> Result<(f64, f64), String> {
         self.named_prism_through_all_span(body, plane, direction)
     }
-    fn evaluate_prism_cut(
+    fn evaluate_prism_boolean(
         &mut self,
         feature: FeatureId,
         body: &NamedSolid,
         input: ResolvedSketchPrism<'_>,
+        kind: oblikovati_model::feature::sketch_prism::PrismBoolean,
     ) -> Result<NamedSolid, PartFeatureFailure<EvaluationFailure>> {
-        self.evaluate_named_prism_cut(feature, body, input)
+        self.evaluate_named_prism_boolean(feature, body, input, kind)
     }
     fn evaluate_blend(
         &mut self,

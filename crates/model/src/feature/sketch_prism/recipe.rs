@@ -18,6 +18,8 @@ pub struct SketchPrismRecipe {
     pub extent: Option<SketchPrismExtent>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cut_target: Option<Vec<u8>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub join_target: Option<Vec<u8>>,
 }
 impl SketchPrismDefinition {
     /// Capture only authored inputs; example: `serde_json::to_string(&definition.recipe())?`.
@@ -32,6 +34,10 @@ impl SketchPrismDefinition {
             second_depth: self.second_depth,
             extent: self.extent.clone(),
             cut_target: self.cut_target().map(|target| target.key().to_vec()),
+            join_target: self
+                .boolean_target()
+                .filter(|target| target.operation() == PrismBoolean::Join)
+                .map(|target| target.key().to_vec()),
         }
     }
     /// Validate the saved version and sources before adoption; example: `SketchPrismDefinition::from_recipe(&recipe)?`.
@@ -49,18 +55,23 @@ impl SketchPrismDefinition {
             Some(extent) => Self::from_plane_recipe(recipe, extent),
             None => Self::from_distance_recipe(recipe),
         }?;
-        match &recipe.cut_target {
-            Some(key) => definition.with_cut_target(key.clone()),
-            None if matches!(
-                definition.extent(),
-                Some(SketchPrismExtent::ThroughAll { .. })
-            ) =>
+        match (&recipe.cut_target, &recipe.join_target) {
+            (Some(key), None) => definition.with_cut_target(key.clone()),
+            (None, Some(key)) => definition.with_boolean_target(PrismBoolean::Join, key.clone()),
+            (Some(_), Some(_)) => Err(definition.decline(SketchPrismCause::Definition(
+                "extrude recipe: expected only one Boolean target".into(),
+            ))),
+            (None, None)
+                if matches!(
+                    definition.extent(),
+                    Some(SketchPrismExtent::ThroughAll { .. })
+                ) =>
             {
                 Err(definition.decline(SketchPrismCause::Definition(
                     "through-all extent: expected a saved target body".into(),
                 )))
             }
-            None => Ok(definition),
+            (None, None) => Ok(definition),
         }
     }
     fn from_distance_recipe(recipe: &SketchPrismRecipe) -> Result<Self, SketchPrismError> {

@@ -60,15 +60,16 @@ pub(super) fn build_hole_candidate(
     let mut maker = cylinder(axis, diameter, depth)?;
     let tool = maker.shape().map_err(|error| error.to_string())?.clone();
     let tool_faces = tool_faces(&mut maker, document, feature, face_key)?;
-    super::subtraction::build_subtraction_candidate(
+    super::solid_boolean::build_boolean_candidate(
         input,
         history,
         document,
-        super::subtraction::SubtractionTool {
+        super::solid_boolean::BooleanTool {
             shape: &tool,
             sources: tool_faces,
             resolution: None,
         },
+        oblikovati_model::feature::sketch_prism::PrismBoolean::Cut,
         "hole",
     )
 }

@@ -7,11 +7,11 @@ use martensite_tkfillet::{
 };
 use martensite_tktopalgo::brep_builder_api::{BRepBuilderAPICopy, BRepBuilderAPIMakeShape};
 use oblikovati_model::identity::ReferenceEnvelope;
-mod extrusion_cut;
+mod extrusion_boolean;
 mod hole;
 mod rigid_motion;
 mod shell;
-mod subtraction;
+mod solid_boolean;
 mod tolerances;
 pub use rigid_motion::RigidMotion;
 mod naming;

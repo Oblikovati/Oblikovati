@@ -1,16 +1,18 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use super::super::subtraction::SubtractionTool;
+use super::super::solid_boolean::BooleanTool;
 use super::*;
+use oblikovati_model::feature::sketch_prism::PrismBoolean;
 
 impl BlendNamedTopology {
-    pub(in crate::prism::named::blend) fn extrusion_cut_candidate(
+    pub(in crate::prism::named::blend) fn extrusion_boolean_candidate(
         &self,
         history: &DocumentEditHistory,
         document: DocumentGuid,
-        tool: SubtractionTool<'_>,
+        tool: BooleanTool<'_>,
+        kind: PrismBoolean,
     ) -> Result<BlendCandidate, String> {
         let input = self.source_topology(history, document)?;
-        super::super::subtraction::build_subtraction_candidate(
+        super::super::solid_boolean::build_boolean_candidate(
             BlendInputTopology {
                 body: &input.body,
                 source: input.entities,
@@ -23,7 +25,8 @@ impl BlendNamedTopology {
             history,
             document,
             tool,
-            "extrude Cut",
+            kind,
+            &format!("extrude {kind}"),
         )
     }
 }

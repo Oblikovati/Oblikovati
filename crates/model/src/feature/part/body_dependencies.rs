@@ -52,7 +52,7 @@ fn track_replacement(
     definition: &PartFeatureDefinition,
 ) {
     let source = match definition {
-        PartFeatureDefinition::SketchPrism(prism) => match prism.cut_target() {
+        PartFeatureDefinition::SketchPrism(prism) => match prism.boolean_target() {
             Some(target) => target.source(),
             None => {
                 owners.insert(id, id);

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Reject a Boolean or shell result whose entity tolerances exceed the source and configured cap.
-use super::{PrismAchievedTolerance, PrismResolution, Shape, subtraction::entities};
+use super::{PrismAchievedTolerance, PrismResolution, Shape, solid_boolean::entities};
 use martensite_tkbrep::{brep::BRepTool, topods};
 use martensite_tkg3d::top_abs::ShapeEnum;
 
@@ -29,7 +29,7 @@ pub(super) fn check(
     }
     Ok(after)
 }
-pub(super) fn check_two_operand_cut(
+pub(super) fn check_two_operand_boolean(
     target: &Shape,
     tool: &Shape,
     result: &Shape,
