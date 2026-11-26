@@ -95,7 +95,9 @@ fn compact_group_icon(panel: RibbonPanel) -> crate::icons::IconGlyph {
         RibbonPanel::DrawingViews => IconGlyph::DrawingBase,
         RibbonPanel::DrawingModify => IconGlyph::DrawingBreak,
         RibbonPanel::DrawingSheets => IconGlyph::DrawingSheet,
-        RibbonPanel::AnnotateDimension | RibbonPanel::PartToleranceAnalysis => IconGlyph::Dimension,
+        RibbonPanel::AnnotateDimension
+        | RibbonPanel::PartToleranceAnalysis
+        | RibbonPanel::PartSimulation => IconGlyph::Dimension,
         RibbonPanel::AnnotateText | RibbonPanel::PartNotes | RibbonPanel::PartGeneralAnnotation => {
             IconGlyph::Annotation
         }

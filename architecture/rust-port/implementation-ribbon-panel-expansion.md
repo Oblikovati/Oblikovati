@@ -75,6 +75,12 @@ unavailability when hovered. Space toggles the panel while keeping the
 selector open and the same row focused.
 [Native keyboard toggle](receipts/2026-11-26-ribbon-primitives-space-3856/README.md)
 
+Simulation starts visible on the 3D Model ribbon. Show Panels can hide
+or restore it while the ribbon is minimized. The temporary ribbon
+uses the same panel visibility. Stress Analysis is disabled while its
+analysis backend is unavailable.
+[Minimized ribbon visibility](receipts/2026-11-26-ribbon-simulation-3856/README.md)
+
 Showing Primitives moves Modify and its open additional command area together
 to the right. Hiding Primitives restores both positions. The selector stays open
 after each click.

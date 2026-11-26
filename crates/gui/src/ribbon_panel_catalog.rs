@@ -46,6 +46,7 @@ pub(crate) enum RibbonPanel {
     PartWorkFeatures,
     PartPattern,
     PartSimplification,
+    PartSimulation,
     PartNotes,
     PartShapeGenerator,
     PartFreeform,
@@ -97,6 +98,7 @@ impl RibbonPanel {
             Self::PartToleranceAnalysis => "Tolerance Analysis",
             Self::PartPattern => "Pattern",
             Self::PartSimplification => "Simplification",
+            Self::PartSimulation => "Simulation",
             Self::DrawingSketch => "Sketch",
             Self::DrawingSheets => "Sheets",
             Self::AnnotateDimension => "Dimension",
@@ -149,6 +151,7 @@ impl RibbonPanel {
             | Self::PartWorkFeatures
             | Self::PartPattern
             | Self::PartSimplification
+            | Self::PartSimulation
             | Self::PartNotes
             | Self::PartShapeGenerator
             | Self::PartFreeform
@@ -233,6 +236,7 @@ pub(crate) fn panels_for(tab: RibbonTab, state: &GuiCommandState) -> Vec<RibbonP
             PartPattern,
             PartSimplification,
             Parameters,
+            PartSimulation,
         ],
         RibbonTab::SheetMetal => vec![SheetMetalTools, Sketch],
         RibbonTab::Assemble => vec![Component],

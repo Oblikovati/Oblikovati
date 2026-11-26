@@ -3,6 +3,8 @@
 use super::*;
 use cucumber::{given, then, when};
 
+const SIMULATION: &str = "Simulation";
+
 #[given("the top-docked ribbon is minimized to tabs with 3D Model active")]
 fn minimized_model(world: &mut ApplicationWorld) {
     super::super::ribbon_display::click_display_menu(world);
@@ -102,4 +104,48 @@ fn full_ribbon(world: &mut ApplicationWorld) {
 #[then("the Parameters panel is visible")]
 fn parameters_visible(world: &mut ApplicationWorld) {
     expect_parameters_panel(world);
+}
+
+#[given("the Simulation panel is enabled for 3D Model")]
+fn simulation_enabled(world: &mut ApplicationWorld) {
+    right_click_model(world);
+    open_show_panels(world);
+    simulation_checked(world);
+    escape_twice(world);
+}
+
+#[then("Simulation is checked in the panel list")]
+fn simulation_checked(world: &mut ApplicationWorld) {
+    world.expect_text(SIMULATION);
+    assert!(world.checked(SIMULATION));
+}
+
+#[then("Simulation is unchecked")]
+fn simulation_unchecked(world: &mut ApplicationWorld) {
+    world.expect_text(SIMULATION);
+    assert!(!world.checked(SIMULATION));
+}
+
+#[when("the user selects Simulation")]
+fn select_simulation(world: &mut ApplicationWorld) {
+    world.click_text(SIMULATION);
+}
+
+#[then("the temporary ribbon opens without a Simulation panel")]
+fn temporary_ribbon_omits_simulation(world: &mut ApplicationWorld) {
+    temporary_tab_open(world);
+    world.expect_no_text(SIMULATION);
+}
+
+#[then("the menus and temporary ribbon close")]
+fn menus_and_temporary_ribbon_close(world: &mut ApplicationWorld) {
+    menus_close_without_expanding(world);
+    assert!(super::super::diagnostics::window_geometry("##ribbon-temporary-panel").is_none());
+}
+
+#[then("the full ribbon is visible with the Simulation panel")]
+fn full_ribbon_shows_simulation(world: &mut ApplicationWorld) {
+    full_ribbon(world);
+    assert!(ribbon_runs(world, SIMULATION).next().is_some());
+    world.expect_text("Stress Analysis");
 }

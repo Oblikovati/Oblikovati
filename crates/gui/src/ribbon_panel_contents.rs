@@ -221,6 +221,15 @@ pub(crate) fn draw_panel_content(
                 owners.icons.appearance.single_cell(),
             );
         }
+        RibbonPanel::PartSimulation => muted::muted_command(
+            ui,
+            "Stress Analysis",
+            NOT_PORTED,
+            owners.icons,
+            Some(crate::icons::IconGlyph::Dimension),
+            false,
+            owners.icons.appearance.single_cell(),
+        ),
         RibbonPanel::PartWorkFeatures => {
             use crate::icons::IconGlyph;
             let (position, _) = owners.icons.appearance.cell(0);

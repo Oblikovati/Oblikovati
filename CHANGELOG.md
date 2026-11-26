@@ -12,7 +12,7 @@
 - Expanded the desktop parameter tolerance editor with tolerance formats, precision, evaluated size, and ISO fit classes. (#3893)
 - Added analytic solid-edge lengths to the Part Measure panel. (#3967)
 - Added Zoom, Zoom All, Zoom Selected, and Zoom Window to ribbon customization. (#3856)
-- Added Show Panels instructions, F1 help, and a visibility toggle for the Primitives panel on the 3D Model ribbon. (#3856)
+- Added Show Panels instructions, F1 help, and visibility toggles for the Primitives and Simulation panels on the 3D Model ribbon. (#3856)
 - Added an Explore panel with Measure to the 3D Model ribbon. (#3856)
 - Added the Standard overview and Units tab to Document Settings. (#3856)
 - Added the Exit 2D Sketch Tab category and source paging. Transfers after Ctrl+A put the focused command first. Up and Down select staged rows without reordering them. (#3856)

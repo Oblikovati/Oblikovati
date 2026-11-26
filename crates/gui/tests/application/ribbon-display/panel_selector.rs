@@ -161,12 +161,12 @@ fn keyboard_wraps_from_first_to_last_panel() {
     press_key(&mut owner, &mut request, GuiKey::UpArrow);
     press_key(&mut owner, &mut request, GuiKey::Space);
     assert!(
-        !owner
+        owner
             .ribbon
             .display
             .hidden_panels
-            .contains(&(RibbonTab::Model, RibbonPanel::Parameters)),
-        "expected last panel to be selected"
+            .contains(&(RibbonTab::Model, RibbonPanel::PartSimulation)),
+        "expected the last panel to be hidden after wrapping focus"
     );
     assert!(owner.popup_was_open);
 }

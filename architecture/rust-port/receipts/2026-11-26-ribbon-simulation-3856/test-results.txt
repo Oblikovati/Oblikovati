@@ -1,0 +1,50 @@
+45 of 55 cases passed with 540 steps in passing cases
+Retain panel visibility while switching tabs and parts | the user selects the View ribbon tab
+Hide and restore a panel while its expansion is pinned | the Modify panel returns to the ribbon
+Switch ribbon tabs while the direct panel list is open | the user selects the View ribbon tab
+Dismiss the panel selector and expansion with Escape | the Modify additional command area is open
+Wrap keyboard focus at the ends of the panel list | the Sketch row is the first row and 3D Print is the last row
+Hide and restore the panel of an active modeling command | the Shell properties panel and model preview appear
+Cancel an active command while the panel selector is open | the Shell properties panel and model preview appear
+Show and hides the Parameters panel during sketch editing | the Parameters panel appears after Format and before Exit
+List visible panels from the Manage ribbon context menu | the list contains Update, Parameters, Manage, Styles and Standards, Insert, Point Cloud, Layout, Author, iLogic and Content Center
+List 3D Model panels from the side-docked tab menu | the submenu lists Sketch, Primitives, Create, Modify, Explore, Work Features, Pattern, Create Freeform, Surface, Parameters, Simplification, Plastic Part, Measure, Insert, Harness, iPart/Assembly, Simulation, Convert and 3D Print
+
+Simulation on wayland
+1 scenario (1 passed)
+17 steps (17 passed)
+
+parameters on wayland
+1 scenario (1 passed)
+13 steps (13 passed)
+
+compact on wayland
+1 scenario (1 passed)
+10 steps (10 passed)
+
+side on wayland
+1 scenario (1 passed)
+12 steps (12 passed)
+
+Simulation on x11
+1 scenario (1 passed)
+17 steps (17 passed)
+
+parameters on x11
+1 scenario (1 passed)
+13 steps (13 passed)
+
+compact on x11
+1 scenario (1 passed)
+10 steps (10 passed)
+
+side on x11
+1 scenario (1 passed)
+12 steps (12 passed)
+
+GUI selector tests and GUI library suite
+test result: ok. 838 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 160.80s
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 831 filtered out; finished in 17.86s
+
+Head and GUI Clippy
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 28.43s
