@@ -539,6 +539,40 @@
         "environment": "Linux Wayland with nested Weston 13 and Vulkan Lavapipe. X11 cross-check used Xvfb and Openbox.",
         "notes": "34 of 35 scenarios passed on both backends, including the corrected row-hover assertion. The separate full-width startup test passed.",
         "blocker": "The published startup scenario expects empty document docks. The requested Home design hides them under GAP-20."
+      },
+      "3557f65318775afcd0b9f806639d7aa50be56558142129b23fe9c2aa8cb05cf3": {
+        "feature_sha256": "3557f65318775afcd0b9f806639d7aa50be56558142129b23fe9c2aa8cb05cf3",
+        "supporting_files": {
+          "features/application/home-recent-documents/BLOCKERS.md": "cecded35bef46668792dc3e314194400b1e48693271c4112504c8ac918c92cef",
+          "features/application/home-recent-documents/FIXTURES.md": "374580ce01054fe995e5a4999a60385b9dc8652cc1f599b269791388a8731416",
+          "features/application/home-recent-documents/FUNCTIONAL.md": "96637b41c8a3245fdd9e79c80628022ac694c10bc411693075559c15cf021485",
+          "features/application/home-recent-documents/VISUAL.md": "ebe54a2a7a8f169365ea18158639435dfcd1389a9bc402834c5d1ba80ccd9256",
+          "features/application/home-recent-documents/home-recent-wireframe.svg": "4ed0788a73bd7d5abd832038a8a555a30324f65dfdc8adca15fb9431c6cfd6b6",
+          "features/application/home-recent-documents/recent-document-icons.svg": "c208f0398fb84381c44e28f341e3e59aca28c2d455b178b46f1bef6b19c35e96",
+          "features/application/home-recent-documents/recent-filter-selection.svg": "516a4be372ee38fd2fd305c2e5a61018230a12b9d2409f6a22e3e6b7bbb4f007",
+          "features/application/home-recent-documents/recent-no-results.svg": "8a13cb1b6fb743f770a7bd559bab8f0a604e7c1b91033f465c04118e4f1bf87f",
+          "features/application/home-recent-documents/recent-open-options.svg": "49dac3d091ebe314d30ae0f4b8afdc0764ed1343daaf9a2317232734ad6412f0",
+          "fixtures/cad/docking-visible-solid-current.opd": "54a6f807b8084cc19061bce4079aaee3d4cefc03eaad2ac33123544997999f8a",
+          "fixtures/cad/home-recent-native/Part23.opd": "73003b89deb3012faebdcd883caa1b002a91c263e057595130ae722d42abdfcc",
+          "fixtures/cad/home-recent-native/Part2.opd": "3254a06e5bc9129b9e8a953f7e67e35ffb04a2d942dcb5bcecfbb2f6012e81ac",
+          "fixtures/cad/home-recent-native/Part26.opd": "f2e5ee2570abeacbd9778c8ed2d07c9fe9d906d4611024ccbf6a701193f4b5b9",
+          "fixtures/cad/home-recent-native/README.md": "8ee6ae6f00142d3616e6d1e07d7087aed23a0df79149c3280169554d5f272958",
+          "fixtures/cad/home-recent-native/RecentAssembly.oad": "b84e9f6b20458422b573055a60a082c8528f42646449af211c377ec563cba71b",
+          "fixtures/cad/home-recent-native/RecentDrawing.odd": "e517e702c0179a868bf4db9aee3be9bc63998e71d91960c1d82fe3a850a184d0",
+          "fixtures/cad/home-recent-native/create-profile.py": "09f6ca232e8f81df4317be4ae6e1bbba0fa686bc6970710e08b8299d8417afbe",
+          "fixtures/cad/home-recent-native/extrusion/extrusion-rect-8mm.opd": "9a0b8d7801110aab5306cc2ec4431c8b802ce838cbea757ee57571d03eccca79",
+          "fixtures/cad/home-recent-native/generate.py": "43833a1aa1a1c67207febd24b27ca636cb0ba0410f5e08985dc5f25ca17f0887",
+          "fixtures/cad/home-recent-native/inspect-assembly.lua": "8b5158c513259e24f26cf2c2b96fea43f127a351f1830ad3f18cd1020e3b2595",
+          "fixtures/cad/home-recent-native/prepare-session.py": "d9aa2fb79fafce4e5cf15fdacb7a3de1f8134277b77115ea986132886c643a32"
+        },
+        "application_commit": "e604c19055a40a29e0968dda832b8cd3c3f1cc19",
+        "command": "OBK_BDD_ROOT=<published-scenarios> OBK_BDD_AREA=application OBK_BDD_FEATURE=home-recent-documents OBK_BDD_SCENARIO=<case> <head-test-binary> application_scenarios_use_the_native_window --test-threads=1 --nocapture",
+        "environment": "Linux Wayland with nested Weston 13, Xvfb, and Vulkan Lavapipe.",
+        "notes": "36 of 37 amended scenarios passed on Wayland with 403 steps in passing cases. The two Home chrome cases passed on Wayland and X11. The remaining resize scenario is unbound.",
+        "cucumber": "architecture/rust-port/receipts/2026-11-26-home-workspace-chrome-4063/home-wayland.json",
+        "cucumber_sha256": "9d27b88110761866d62782e27a66db13384b98fb2cb51ce4950d4075b9cb4a06",
+        "scenario_arguments": "architecture/rust-port/receipts/2026-11-26-home-workspace-chrome-4063/home-wayland-arguments.json",
+        "scenario_arguments_sha256": "474ed742f2637c415f3cb337d6f7c712ab6ac5badfafcd41bed082436962c00d"
       }
     }
   },
@@ -1191,14 +1225,14 @@
           "fixtures/cad/planar-sketch-empty-xy.opd": "d936ef6b165b4bcbe14e04ac1b08bb5b16c81fddb597e70acb781e753c07e9a8",
           "fixtures/cad/workspace-layout-native.opd": "d85db64234c40a7bb09268f57abbd97aaa33c7542a81a022f385e8d590bae2ac"
         },
-        "cucumber": "architecture/rust-port/receipts/2026-11-26-ribbon-options-title-3856/wayland.json",
-        "cucumber_sha256": "44fcdbfab8247aa02313f26ea06cecc2687546d25c55f001ac26e0a7e1b781fe",
-        "scenario_arguments": "architecture/rust-port/receipts/2026-11-26-ribbon-options-title-3856/wayland-arguments.json",
-        "scenario_arguments_sha256": "16b9881b0a3baf1ef9ec781f35b65654dc910f7ee6720a7af0b291b3dde82985",
-        "application_commit": "2351cd2bce5c3596e3ec1ef05d6dcbbdecdd0441",
+        "cucumber": "architecture/rust-port/receipts/2026-11-26-home-workspace-chrome-4063/ribbon-wayland.json",
+        "cucumber_sha256": "1ef19a8b04ca9dce9e4f1062045fd3bea2ba279b9372a79f3c5cbaac97b825f5",
+        "scenario_arguments": "architecture/rust-port/receipts/2026-11-26-home-workspace-chrome-4063/ribbon-wayland-arguments.json",
+        "scenario_arguments_sha256": "6410a9a85920e6fefc281af9de792caa7093bd1bdb5131f2dd8803c892f6efbb",
+        "application_commit": "e604c19055a40a29e0968dda832b8cd3c3f1cc19",
         "command": "OBK_BDD_ROOT=<published-scenarios> OBK_BDD_AREA=application OBK_BDD_FEATURE=ribbon-display OBK_BDD_SCENARIO=<case> <head-test-binary> application_scenarios_use_the_native_window --test-threads=1 --nocapture",
         "environment": "Linux Wayland with nested Weston 13, Xvfb, and Vulkan Lavapipe.",
-        "notes": "44 of 52 amended scenarios passed on Wayland with 496 steps in passing cases. The four compact Options cases passed 42 steps on Wayland and X11."
+        "notes": "48 of 52 amended scenarios passed on Wayland with 551 steps in passing cases. All four Home transition cases passed on Wayland and X11."
       }
     }
   },
