@@ -7,6 +7,25 @@ use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind", deny_unknown_fields)]
 pub enum DrawingAnnotationDefinition {
+    #[serde(rename = "featureControlFrame")]
+    FeatureControlFrame {
+        name: String,
+        #[serde(rename = "xmm", default)]
+        x_mm: f64,
+        #[serde(rename = "ymm", default)]
+        y_mm: f64,
+        #[serde(with = "super::spelling::geometric_characteristic")]
+        characteristic: oblikovati_api::types::GeometricCharacteristic,
+        tolerance: String,
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        datums: Vec<String>,
+        #[serde(
+            rename = "materialRemoval",
+            default,
+            skip_serializing_if = "Option::is_none"
+        )]
+        material_removal: Option<String>,
+    },
     #[serde(rename = "surfaceTexture")]
     SurfaceTexture {
         name: String,
@@ -182,7 +201,8 @@ impl DrawingAnnotationDefinition {
             | Self::RevisionTag { name, .. }
             | Self::DatumFeature { name, .. }
             | Self::RevisionCloud { name, .. }
-            | Self::SurfaceTexture { name, .. } => name,
+            | Self::SurfaceTexture { name, .. }
+            | Self::FeatureControlFrame { name, .. } => name,
         }
     }
     /// Check whether a definition requires a model, as a parts list does.
@@ -193,6 +213,12 @@ impl DrawingAnnotationDefinition {
         self.validate_content()?;
         require_label("annotation name", self.name())?;
         let (point, leader, characteristic, material_removal) = match self {
+            Self::FeatureControlFrame {
+                x_mm,
+                y_mm,
+                material_removal,
+                ..
+            } => ([*x_mm, *y_mm], [0., 0.], None, material_removal.as_deref()),
             Self::SurfaceTexture {
                 x_mm,
                 y_mm,
@@ -277,6 +303,12 @@ impl DrawingAnnotationDefinition {
 
     fn validate_content(&self) -> Result<(), DrawingError> {
         match self {
+            Self::FeatureControlFrame {
+                characteristic,
+                tolerance,
+                datums,
+                ..
+            } => super::feature_control_frame::validate_frame(*characteristic, tolerance, datums),
             Self::SurfaceTexture {
                 roughness, removal, ..
             } => super::surface_texture::validate_texture(roughness, *removal),

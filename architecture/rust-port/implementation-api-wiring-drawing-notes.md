@@ -94,3 +94,22 @@ reopening. The native Wayland MCP run placed all three variants on
 one sheet with no referenced model. Their respective wire curve
 counts were 3, 4, and 27. Undo, redo, reopening, and deletion matched
 the expected sheet captures pixel for pixel.
+
+## Feature control frames
+
+`drawingAnnotations.addFeatureControlFrame` places the top-left corner
+of a frame at the requested sheet point. It stores one canonical
+geometric characteristic, the tolerance text, and the ordered datum
+references. The frame has a compartment for each value. It uses
+the Go reference's eight line-drawn glyphs and its text abbreviations
+for the other characteristics.
+
+The model test checks the glyph segment counts and that their geometry
+fits inside the symbol cell. The owner test checks invalid requests,
+the diameter tolerance and datum order, the profile abbreviation,
+history, save and reopen, and deletion.
+
+The native Wayland MCP run placed a position frame with `⌀0.2` and
+datum references B then A, followed by a line-profile frame with
+`0.5`. Their wire curve counts were 33 and 5. Undo, redo, reopening,
+and deletion produced the expected sheet pixels in each capture.

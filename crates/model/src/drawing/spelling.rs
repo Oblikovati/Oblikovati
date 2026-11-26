@@ -59,3 +59,17 @@ recipe_spelling!(material_removal, MaterialRemoval, {
     MATERIAL_REMOVAL_ANY => "any", MATERIAL_REMOVAL_REQUIRED => "required",
     MATERIAL_REMOVAL_PROHIBITED => "prohibited", MATERIAL_REMOVAL_ANY => ""
 });
+
+recipe_spelling!(geometric_characteristic, GeometricCharacteristic, {
+    CHARACTERISTIC_STRAIGHTNESS => "straightness", CHARACTERISTIC_FLATNESS => "flatness",
+    CHARACTERISTIC_CIRCULARITY => "circularity", CHARACTERISTIC_PROFILE_OF_ANY_LINE => "profileOfAnyLine",
+    CHARACTERISTIC_PROFILE_OF_ANY_SURFACE => "profileOfAnySurface", CHARACTERISTIC_ANGULARITY => "angularity",
+    CHARACTERISTIC_PERPENDICULARITY => "perpendicularity", CHARACTERISTIC_PARALLELISM => "parallelism",
+    CHARACTERISTIC_POSITION => "position", CHARACTERISTIC_CONCENTRICITY => "concentricity",
+    CHARACTERISTIC_CIRCULAR_RUNOUT => "circularRunout", CHARACTERISTIC_SYMMETRY => "symmetry",
+    CHARACTERISTIC_TOTAL_RUNOUT => "totalRunout", CHARACTERISTIC_CYLINDRICITY => "cylindricity",
+    CHARACTERISTIC_PARALLEL_PROFILE => "parallelProfile", CHARACTERISTIC_AXIS_INTERSECTION => "axisIntersection",
+    CHARACTERISTIC_CIRCULAR_RUNOUT_FILLED => "circularRunoutFilled",
+    CHARACTERISTIC_TOTAL_RUNOUT_FILLED => "totalRunoutFilled",
+    CHARACTERISTIC_PROFILE_OF_A_SECTION => "profileOfASection", CHARACTERISTIC_AXIALITY => "axiality"
+});

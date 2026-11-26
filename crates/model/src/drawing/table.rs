@@ -55,6 +55,22 @@ impl DrawingDocument {
 impl DrawingAnnotationDefinition {
     /// Lay out a sheet table with authored cells, e.g. `annotation.authored_table_presentation()`.
     pub fn authored_table_presentation(&self) -> Option<DrawingTablePresentation> {
+        if let Self::FeatureControlFrame {
+            x_mm,
+            y_mm,
+            characteristic,
+            tolerance,
+            datums,
+            ..
+        } = self
+        {
+            return Some(super::feature_control_frame::frame_presentation(
+                [*x_mm, *y_mm],
+                *characteristic,
+                tolerance,
+                datums,
+            ));
+        }
         if let Self::RevisionTable {
             x_mm,
             y_mm,

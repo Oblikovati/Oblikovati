@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::{
     DrawingAnnotationDefinition, DrawingDocument, DrawingError, annotation::unique_name, spelling,
+    symbols::circle_segments,
 };
 use oblikovati_api::types::{
     MATERIAL_REMOVAL_PROHIBITED, MATERIAL_REMOVAL_REQUIRED, MaterialRemoval,
 };
-use std::f64::consts::TAU;
 
 /// The roughness label and symbol outline in sheet millimetres.
 pub struct DrawingSurfaceTexturePresentation<'a> {
@@ -67,7 +67,7 @@ impl DrawingAnnotationDefinition {
         let mut segments = vec![[[x, y], left], [[x, y], right], [right, end]];
         match *removal {
             MATERIAL_REMOVAL_REQUIRED => segments.push([left, right]),
-            MATERIAL_REMOVAL_PROHIBITED => segments.extend(vertex_circle([x, y])),
+            MATERIAL_REMOVAL_PROHIBITED => segments.extend(circle_segments([x, y + 1.8], 1.8)),
             _ => {}
         }
         Some(DrawingSurfaceTexturePresentation {
@@ -76,19 +76,6 @@ impl DrawingAnnotationDefinition {
             segments_mm: segments,
         })
     }
-}
-
-fn vertex_circle([x, y]: [f64; 2]) -> impl Iterator<Item = [[f64; 2]; 2]> {
-    const SEGMENTS: u32 = 24;
-    const RADIUS_MM: f64 = 1.8;
-    let point = move |index: u32| {
-        let angle = TAU * f64::from(index % SEGMENTS) / f64::from(SEGMENTS);
-        [
-            x + RADIUS_MM * angle.cos(),
-            y + RADIUS_MM * (1. + angle.sin()),
-        ]
-    };
-    (0..SEGMENTS).map(move |index| [point(index), point(index + 1)])
 }
 
 pub(super) fn validate_texture(

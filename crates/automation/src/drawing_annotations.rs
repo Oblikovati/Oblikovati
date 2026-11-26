@@ -3,20 +3,23 @@ use oblikovati_api::{
     Error,
     types::DOCUMENT_PART,
     wire::{
-        self, AddCustomTableArgs, AddDatumFeatureArgs, AddDrawingNoteArgs, AddRevisionCloudArgs,
-        AddRevisionTableArgs, AddRevisionTagArgs, AddSurfaceTextureArgs, AnnotationResult,
-        DeleteAnnotationArgs, DrawingAnnotationInfo, ListDrawingAnnotationsResult,
+        self, AddCustomTableArgs, AddDatumFeatureArgs, AddDrawingNoteArgs,
+        AddFeatureControlFrameArgs, AddRevisionCloudArgs, AddRevisionTableArgs, AddRevisionTagArgs,
+        AddSurfaceTextureArgs, AnnotationResult, DeleteAnnotationArgs, DrawingAnnotationInfo,
+        ListDrawingAnnotationsResult,
     },
 };
 use oblikovati_model::drawing::{
     DrawingAnnotationDefinition, DrawingDocument, DrawingPartsListPresentation,
-    DrawingPartsListRow, DrawingPartsListSource, DrawingRevisionRow, parse_material_removal,
+    DrawingPartsListRow, DrawingPartsListSource, DrawingRevisionRow,
+    parse_geometric_characteristic, parse_material_removal,
 };
 use oblikovati_model::property::{DESIGN_TRACKING, DocumentProperties};
 use oblikovati_persistence::file_access::DocumentFiles;
 use oblikovati_session::{TransactionObserver, files::FileWorkspace, workspace::WorkspaceObserver};
 
-pub(super) const ANNOTATION_METHODS: [&str; 9] = [
+pub(super) const ANNOTATION_METHODS: [&str; 10] = [
+    wire::METHOD_DRAWING_ANNOTATIONS_ADD_FCF,
     wire::METHOD_DRAWING_ANNOTATIONS_ADD_SURFACE_TEXT,
     wire::METHOD_DRAWING_ANNOTATIONS_ADD_DATUM,
     wire::METHOD_DRAWING_ANNOTATIONS_ADD_NOTE,
@@ -50,6 +53,20 @@ pub(super) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
         )));
     }
     match method {
+        wire::METHOD_DRAWING_ANNOTATIONS_ADD_FCF => {
+            let args: AddFeatureControlFrameArgs = crate::decode(method, request)?;
+            let characteristic =
+                parse_geometric_characteristic(&args.characteristic).map_err(api_error)?;
+            add_annotation(files, owner, "Add Feature Control Frame", |drawing| {
+                drawing.add_feature_control_frame(
+                    &args.name,
+                    [args.xmm, args.ymm],
+                    characteristic,
+                    &args.tolerance,
+                    args.datums.unwrap_or_default(),
+                )
+            })
+        }
         wire::METHOD_DRAWING_ANNOTATIONS_ADD_SURFACE_TEXT => {
             let args: AddSurfaceTextureArgs = crate::decode(method, request)?;
             let removal = parse_material_removal(&args.material_removal).map_err(api_error)?;
@@ -231,6 +248,12 @@ fn annotation_details<'a>(
     table: Option<&DrawingPartsListPresentation>,
 ) -> (&'static str, &'a str, usize, usize) {
     match annotation {
+        DrawingAnnotationDefinition::FeatureControlFrame { .. } => {
+            let curves = annotation
+                .authored_table_presentation()
+                .map_or(0, |frame| frame.lines.len());
+            ("featureControlFrame", "", curves, 0)
+        }
         DrawingAnnotationDefinition::SurfaceTexture { roughness, .. } => {
             let curves = annotation
                 .surface_texture_presentation()

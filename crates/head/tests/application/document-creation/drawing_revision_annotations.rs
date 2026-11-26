@@ -4,8 +4,9 @@ use oblikovati_api::{
     client::Caller,
     json::EmptyObject,
     wire::{
-        AddDatumFeatureArgs, AddRevisionCloudArgs, AddRevisionTableArgs, AddRevisionTagArgs,
-        AddSurfaceTextureArgs, DeleteAnnotationArgs, DrawingAnnotationInfo, RevisionTableRow,
+        AddDatumFeatureArgs, AddFeatureControlFrameArgs, AddRevisionCloudArgs,
+        AddRevisionTableArgs, AddRevisionTagArgs, AddSurfaceTextureArgs, DeleteAnnotationArgs,
+        DrawingAnnotationInfo, RevisionTableRow,
     },
 };
 use oblikovati_gui::{GuiDocumentTemplate, GuiTemplateKind, GuiTemplateUnits};
@@ -40,6 +41,92 @@ fn drawing_owner() -> (TestOwner, u64) {
         .unwrap();
     let drawing = owner.documents().workspace().active_document().unwrap();
     (owner, drawing)
+}
+
+#[test]
+fn drawing_feature_control_frames_keep_characteristics_and_ordered_cells() {
+    let (mut owner, drawing) = drawing_owner();
+    let client = Client::new(owner.document_host());
+    let [position, profile] = add_control_frames(&client);
+    client.transactions().undo().unwrap();
+    assert_eq!(listed(&client).as_slice(), std::slice::from_ref(&position));
+    client.transactions().redo().unwrap();
+    let reopened =
+        super::drawing_custom_table::reopen(&client, drawing, "/memory/control-frames.odd");
+    assert_eq!(listed(&client), [position.clone(), profile.clone()]);
+    drop(client);
+    let state = owner.gui_command_state().unwrap();
+    let sheet = &state.drawing_documents[&reopened].sheets()[0];
+    assert_frame_cells(&sheet.annotations);
+    let client = Client::new(owner.document_host());
+    let deleted = client
+        .drawing_annotations()
+        .delete(&DeleteAnnotationArgs { name: profile.name })
+        .unwrap();
+    assert_eq!(
+        deleted.annotations.as_deref(),
+        Some(std::slice::from_ref(&position))
+    );
+}
+
+fn add_control_frames(client: &Client<impl Caller>) -> [DrawingAnnotationInfo; 2] {
+    let annotations = client.drawing_annotations();
+    let position = AddFeatureControlFrameArgs {
+        xmm: 60.,
+        ymm: 100.,
+        characteristic: "position".into(),
+        tolerance: "⌀0.2".into(),
+        datums: Some(vec!["B".into(), "A".into()]),
+        ..Default::default()
+    };
+    for request in [
+        AddFeatureControlFrameArgs {
+            characteristic: "unknown".into(),
+            ..position.clone()
+        },
+        AddFeatureControlFrameArgs {
+            tolerance: String::new(),
+            ..position.clone()
+        },
+    ] {
+        assert!(annotations.add_feature_control_frame(&request).is_err());
+    }
+    let profile = AddFeatureControlFrameArgs {
+        characteristic: "profileOfAnyLine".into(),
+        tolerance: "0.5".into(),
+        datums: None,
+        ..position.clone()
+    };
+    [position, profile].map(|request| {
+        let result = annotations
+            .add_feature_control_frame(&request)
+            .unwrap()
+            .annotation;
+        assert_eq!(result.kind, "featureControlFrame");
+        result
+    })
+}
+
+fn assert_frame_cells(annotations: &[DrawingAnnotationDefinition]) {
+    let position = annotations[0].authored_table_presentation().unwrap();
+    let profile = annotations[1].authored_table_presentation().unwrap();
+    assert_eq!(position.lines.len(), 33);
+    assert_eq!(profile.lines.len(), 5);
+    assert_eq!(position.lines[0].start, [60., 100.]);
+    assert_eq!(position.lines[0].end, [93.6, 100.]);
+    let cells: Vec<_> = position
+        .labels
+        .iter()
+        .map(|cell| cell.text.as_str())
+        .collect();
+    assert_eq!(cells, ["", "⌀0.2", "B", "A"]);
+    assert_eq!(profile.labels[0].text, "PROL");
+    assert_eq!(profile.labels[1].text, "0.5");
+    assert!(position.lines[7..].iter().all(|line| {
+        [line.start, line.end]
+            .iter()
+            .all(|[x, y]| (60.0..68.).contains(x) && (92.0..100.).contains(y))
+    }));
 }
 
 #[test]
