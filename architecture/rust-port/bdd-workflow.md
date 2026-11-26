@@ -239,6 +239,14 @@ to its source before building the compositor for the overshoot scenario.
 The separate `native_close_at_minimum_size_exits_with_a_clean_part` test
 drags directly to the minimum dimensions and runs on stock Weston.
 
+For the desktop Close shortcut on Wayland, run
+`crates/head/tests/application/main-window-frame/labwc_run.sh` with Labwc
+available. The runner opens a private nested Labwc session and binds
+Alt+F4 to the compositor's Close action. Set `WAYLAND_DEBUG=client` to
+record the incoming `xdg_toplevel.close` event. For Application Closing
+scenarios that use Alt+F4, set `OBK_BDD_FEATURE=application-closing`
+and select the case with `OBK_BDD_SCENARIO`.
+
 The Linux docking-system restart scenario also starts the desktop executable
 twice. Build `oblikovati` from the same source as the test, and set
 `OBK_BDD_DESKTOP_BINARY` to its absolute path. Run with an X11 window manager,

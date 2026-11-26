@@ -63,6 +63,42 @@ pub(in super::super) fn switch_fullscreen_wayland_task() {
     );
 }
 
+pub(in super::super) fn press_labwc_close_shortcut() {
+    assert_eq!(
+        std::env::var("OBK_BDD_LABWC_NESTED_X11").as_deref(),
+        Ok("1"),
+        "run the desktop Close scenario with the private labwc runner"
+    );
+    let (connection, screen) = x11rb::connect(None).expect("expected the labwc host display");
+    let root = connection.setup().roots[screen].root;
+    let children = connection
+        .query_tree(root)
+        .unwrap()
+        .reply()
+        .unwrap()
+        .children;
+    let [output] = children.as_slice() else {
+        panic!("expected one private labwc output window, found {children:?}");
+    };
+    focus_target(&connection, *output);
+    send_alt_f4(&connection, root);
+}
+
+pub(super) fn send_alt_f4(connection: &RustConnection, root: Window) {
+    let alt = keyboard_keycode(connection, 0xffe9);
+    let f4 = keyboard_keycode(connection, 0xffc1);
+    send_key_sequence(
+        connection,
+        root,
+        &[
+            (KEY_PRESS_EVENT, alt),
+            (KEY_PRESS_EVENT, f4),
+            (KEY_RELEASE_EVENT, f4),
+            (KEY_RELEASE_EVENT, alt),
+        ],
+    );
+}
+
 fn fullscreen_pointer_event([x, y]: [i32; 2], event: u8, detail: u8) {
     let (connection, screen) =
         x11rb::connect(None).expect("X11: expected a private nested display");

@@ -180,18 +180,7 @@ pub(super) fn press_escape() {
 
 pub(super) fn press_alt_f4() {
     let (connection, root) = keyboard_target();
-    let alt = keyboard_keycode(&connection, 0xffe9);
-    let f4 = keyboard_keycode(&connection, 0xffc1);
-    send_key_sequence(
-        &connection,
-        root,
-        &[
-            (KEY_PRESS_EVENT, alt),
-            (KEY_PRESS_EVENT, f4),
-            (KEY_RELEASE_EVENT, f4),
-            (KEY_RELEASE_EVENT, alt),
-        ],
-    );
+    window_targets::send_alt_f4(&connection, root);
 }
 
 pub(super) fn press_control_o() {
