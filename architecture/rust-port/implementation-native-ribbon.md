@@ -38,6 +38,9 @@ command list. Ctrl+A then selects rows in that list.
 Removing a staged range preserves the next surviving command's
 selection, so repeated Remove clicks continue in order.
 [Native removal checks](receipts/2026-11-26-ribbon-removal-next-3856/README.md)
+The [consecutive Remove scenario](receipts/2026-11-26-ribbon-pdf-removal-3856/README.md)
+checks the next row after each click and the pending marker after the
+last command leaves the draft.
 All Commands lists 3D PDF and 3D PDF Export as two configurable entries
 with disabled ribbon buttons. Repeated Add clicks advance from the staged
 3D PDF command to 3D PDF Export in the available list.
