@@ -73,6 +73,7 @@ mod work_part_view;
 mod work_project;
 #[cfg(any(target_os = "linux", target_os = "windows"))]
 mod work_shell_feature;
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 mod work_sweep;
 #[cfg(any(target_os = "linux", target_os = "windows"))]
 #[macro_use]
