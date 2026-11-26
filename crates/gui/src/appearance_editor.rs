@@ -5,13 +5,14 @@ use crate::{GuiAssetChoice, GuiCommandState, GuiShellAction};
 use imgui::{Condition, Ui, WindowFlags};
 use oblikovati_model::assets::AppearanceMetadata;
 
+mod ceramic;
 mod optional_effects;
 mod preview_options;
 mod texture;
 mod transparency;
 pub(crate) use texture::CheckerSampler;
 
-/// One document appearance edit; example: `GuiAppearanceChange::Create { id, name }`.
+/// One document appearance edit; example: `GuiAppearanceChange::Create { id, name, template }`.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct GuiAppearanceEdit {
     pub document: u64,
@@ -24,6 +25,7 @@ pub enum GuiAppearanceChange {
     Create {
         id: String,
         name: String,
+        template: AppearanceTemplate,
     },
     Apply {
         id: String,
@@ -33,6 +35,29 @@ pub enum GuiAppearanceChange {
         highlights: Option<u8>,
         metadata: Option<AppearanceMetadata>,
     },
+}
+
+/// Select a document appearance's initial property set when creating it.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum AppearanceTemplate {
+    Generic,
+    Ceramic,
+}
+
+impl AppearanceTemplate {
+    fn label(self) -> &'static str {
+        match self {
+            Self::Generic => "Generic",
+            Self::Ceramic => "Ceramic",
+        }
+    }
+
+    fn id_suffix(self) -> &'static str {
+        match self {
+            Self::Generic => "generic",
+            Self::Ceramic => "ceramic",
+        }
+    }
 }
 
 #[derive(Default)]
@@ -110,17 +135,23 @@ impl AppearanceEditor {
             self.target = Some((document, asset.id.clone()));
         }
         drop(read_only);
-        if let Some(_popup) = ui.begin_popup("##new-appearance")
-            && ui.menu_item("New Generic Appearance")
-        {
-            let (id, name) = available_identity(&browser.appearances);
-            *selected = Some(id.clone());
-            self.target = Some((document, id.clone()));
-            actions.push(GuiShellAction::EditDocumentAppearance(GuiAppearanceEdit {
-                document,
-                change: GuiAppearanceChange::Create { id, name },
-            }));
-        }
+        let Some(_popup) = ui.begin_popup("##new-appearance") else {
+            return;
+        };
+        let template = if ui.menu_item("New Generic Appearance") {
+            AppearanceTemplate::Generic
+        } else if ui.menu_item("Ceramic") {
+            AppearanceTemplate::Ceramic
+        } else {
+            return;
+        };
+        let (id, name) = available_identity(&browser.appearances, template);
+        *selected = Some(id.clone());
+        self.target = Some((document, id.clone()));
+        actions.push(GuiShellAction::EditDocumentAppearance(GuiAppearanceEdit {
+            document,
+            change: GuiAppearanceChange::Create { id, name, template },
+        }));
     }
 
     pub(crate) fn panel(
@@ -232,16 +263,15 @@ impl AppearanceEditor {
     }
 }
 
-fn available_identity(assets: &[GuiAssetChoice]) -> (String, String) {
+fn available_identity(assets: &[GuiAssetChoice], template: AppearanceTemplate) -> (String, String) {
+    let base_id = format!("default-{}", template.id_suffix());
+    let base_name = format!("Default {}", template.label());
     let mut index = 1;
     loop {
         let (id, name) = if index == 1 {
-            ("default-generic".into(), "Default Generic".into())
+            (base_id.clone(), base_name.clone())
         } else {
-            (
-                format!("default-generic-{index}"),
-                format!("Default Generic {index}"),
-            )
+            (format!("{base_id}-{index}"), format!("{base_name} {index}"))
         };
         if !assets
             .iter()
@@ -256,15 +286,7 @@ fn available_identity(assets: &[GuiAssetChoice]) -> (String, String) {
 fn preview_asset(asset: &GuiAssetChoice, draft: &AppearanceDraft) -> GuiAssetChoice {
     let mut preview = asset.clone();
     preview.swatch = Some(draft.color);
-    let preview_metadata = preview
-        .appearance_metadata
-        .get_or_insert_with(Default::default);
-    preview_metadata.reflectivity = draft.metadata.reflectivity;
-    preview_metadata.transparency = draft.metadata.transparency;
-    preview_metadata.checker = draft.metadata.checker;
-    preview_metadata
-        .generic_effects
-        .clone_from(&draft.metadata.generic_effects);
+    preview.appearance_metadata = Some(draft.metadata.clone());
     if let Some(finish) = &mut preview.appearance_preview {
         finish.roughness = draft.roughness;
         finish.highlights = draft.highlights;
@@ -278,24 +300,18 @@ fn draw_properties(
     color_dialog: &mut ColorDialog,
     texture_open: &mut bool,
 ) {
-    if let Some(_information) = ui.tree_node_config("Information").push() {
-        ui.input_text("Name##information", &mut draft.name).build();
-        ui.input_text_multiline("Description", &mut draft.metadata.description, [0., 48.])
-            .build();
-        ui.input_text("Keywords", &mut draft.metadata.keywords)
-            .build();
-        ui.text("Type: Generic");
-        ui.text("Source: Document");
+    let template = if draft.metadata.ceramic.is_some() {
+        AppearanceTemplate::Ceramic
+    } else {
+        AppearanceTemplate::Generic
+    };
+    draw_information(ui, draft, template);
+    if template == AppearanceTemplate::Ceramic {
+        ceramic::draw(ui, draft, color_dialog);
+        return;
     }
     if let Some(_generic) = ui.tree_node_config("Generic").default_open(true).push() {
-        let [r, g, b] = draft.color;
-        if ui.button(format!("Color  {r}, {g}, {b}###editor-color")) {
-            color_dialog.begin_with_color(Some(draft.color));
-            ui.open_popup(color_dialog::TITLE);
-        }
-        if let Some(ColorAnswer::Chosen(color)) = color_dialog.panel(ui) {
-            draft.color = color;
-        }
+        base_color(ui, &mut draft.color, color_dialog);
         texture::slot(ui, &mut draft.metadata.checker, texture_open);
         let mut gloss = 255 - draft.roughness;
         ui.slider("Glossiness", 0, 255, &mut gloss);
@@ -305,6 +321,30 @@ fn draw_properties(
     draw_reflectivity(ui, &mut draft.metadata);
     transparency::draw(ui, &mut draft.metadata);
     optional_effects::draw(ui, &mut draft.metadata);
+}
+
+fn draw_information(ui: &Ui, draft: &mut AppearanceDraft, template: AppearanceTemplate) {
+    let Some(_information) = ui.tree_node_config("Information").push() else {
+        return;
+    };
+    ui.input_text("Name##information", &mut draft.name).build();
+    ui.input_text_multiline("Description", &mut draft.metadata.description, [0., 48.])
+        .build();
+    ui.input_text("Keywords", &mut draft.metadata.keywords)
+        .build();
+    ui.text(format!("Type: {}", template.label()));
+    ui.text("Source: Document");
+}
+
+fn base_color(ui: &Ui, color: &mut [u8; 3], dialog: &mut ColorDialog) {
+    let [r, g, b] = *color;
+    if ui.button(format!("Color  {r}, {g}, {b}###editor-color")) {
+        dialog.begin_with_color(Some(*color));
+        ui.open_popup(color_dialog::TITLE);
+    }
+    if let Some(ColorAnswer::Chosen(chosen)) = dialog.panel(ui) {
+        *color = chosen;
+    }
 }
 
 fn draw_reflectivity(ui: &Ui, metadata: &mut AppearanceMetadata) {

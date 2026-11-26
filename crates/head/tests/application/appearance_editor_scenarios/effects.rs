@@ -100,7 +100,10 @@ fn transparency_unchecked(world: &mut ApplicationWorld) {
     clean_dialog(world);
 }
 
-fn effect_checkbox<'a>(world: &'a ApplicationWorld, title: &str) -> &'a diagnostics::RenderedRun {
+pub(super) fn effect_checkbox<'a>(
+    world: &'a ApplicationWorld,
+    title: &str,
+) -> &'a diagnostics::RenderedRun {
     let header = world.run_in_window(EDITOR, title);
     world
         .frame

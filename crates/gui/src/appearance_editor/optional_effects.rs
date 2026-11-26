@@ -32,7 +32,7 @@ pub(super) fn draw(ui: &Ui, metadata: &mut AppearanceMetadata) {
     }
 }
 
-fn section(ui: &Ui, title: &str, enabled: &mut bool, controls: impl FnOnce()) {
+pub(super) fn section(ui: &Ui, title: &str, enabled: &mut bool, controls: impl FnOnce()) {
     let _id = ui.push_id(title);
     let expanded = ui.tree_node_config(title).push();
     ui.same_line();
@@ -96,7 +96,7 @@ fn preset_value(
         .build(value);
 }
 
-fn edit_effect_color(ui: &Ui, label: &str, color: &mut [u8; 3]) {
+pub(super) fn edit_effect_color(ui: &Ui, label: &str, color: &mut [u8; 3]) {
     let mut components = color.map(|channel| f32::from(channel) / 255.);
     if ui.color_edit3(label, &mut components) {
         *color = components.map(|channel| (channel.clamp(0., 1.) * 255.).round() as u8);

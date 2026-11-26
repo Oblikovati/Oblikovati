@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0-only
 mod assign;
+mod ceramic;
 mod effects;
 mod texture;
 use super::{AppearanceAsset, AssetAssignments, AssetCollection, MaterialAsset};
 pub use assign::{AppearanceAssignmentTarget, MaterialAssignmentTarget};
+pub use ceramic::{CeramicAppearance, CeramicFinish, CeramicKind};
 pub use effects::{
     AppearanceBump, AppearanceIllumination, AppearanceTint, GenericAppearanceEffects,
 };
@@ -12,7 +14,7 @@ use oblikovati_api::{
     types::{ASSET_BUILTIN, ASSET_DOCUMENT},
 };
 pub use texture::{AppearanceChecker, TextureRepeat};
-/// Application-owned information and Generic editor settings for one document appearance.
+/// Application-owned information and editor settings for one document appearance.
 #[derive(Clone, Debug, Default, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
 #[serde(default)]
 pub struct AppearanceMetadata {
@@ -27,6 +29,8 @@ pub struct AppearanceMetadata {
     pub generic_effects: Option<GenericAppearanceEffects>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub checker: Option<AppearanceChecker>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub ceramic: Option<CeramicAppearance>,
 }
 
 /// Generic appearance reflection strengths as percentages.
@@ -188,6 +192,11 @@ impl DocumentAssets {
         }
         if let Some(checker) = metadata.checker {
             checker
+                .validate()
+                .map_err(|cause| format!("appearance {id:?}: {cause}"))?;
+        }
+        if let Some(ceramic) = metadata.ceramic {
+            ceramic
                 .validate()
                 .map_err(|cause| format!("appearance {id:?}: {cause}"))?;
         }

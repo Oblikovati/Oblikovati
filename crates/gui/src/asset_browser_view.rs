@@ -310,10 +310,7 @@ impl DisplayOptions {
             match (self.appearance, self.sort) {
                 (false, 1) | (true, 2) => a.swatch.cmp(&b.swatch),
                 (false, 2) | (true, 3) => a.category.cmp(&b.category),
-                (true, 1) => a
-                    .appearance_preview
-                    .is_some()
-                    .cmp(&b.appearance_preview.is_some()),
+                (true, 1) => a.appearance_type().cmp(b.appearance_type()),
                 _ => std::cmp::Ordering::Equal,
             }
             .then_with(|| a.name.cmp(&b.name))
@@ -348,7 +345,7 @@ impl DisplayOptions {
             asset_column(ui, "Library", "Built-in");
         }
         if self.appearance {
-            asset_column(ui, "Type", "Generic");
+            asset_column(ui, "Type", "Ceramic");
         }
         asset_column(
             ui,
@@ -375,7 +372,7 @@ impl DisplayOptions {
             }
             if self.appearance {
                 ui.table_next_column();
-                ui.text("Generic");
+                ui.text(asset.appearance_type());
             }
             ui.table_next_column();
             ui.text(asset_category(asset));

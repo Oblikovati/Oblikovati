@@ -6,8 +6,13 @@ use oblikovati_api::{
     contract::{Appearance, Material},
     wire::{AssignAppearanceArgs, AssignMaterialArgs},
 };
-use oblikovati_gui::{GuiMaterialChoice, GuiPartAssetKind};
-use oblikovati_model::assets::{DocumentAssets, MaterialAsset, ScopedAssets};
+use oblikovati_gui::{
+    AppearanceTemplate, GuiAppearanceChange, GuiMaterialChoice, GuiPartAssetKind,
+};
+use oblikovati_model::assets::{
+    AppearanceAsset, AppearanceMetadata, CeramicAppearance, DocumentAssets, MaterialAsset,
+    ScopedAssets,
+};
 
 macro_rules! owned_part_asset_work_methods {
     () => {
@@ -135,8 +140,9 @@ impl<
             ));
         }
         let name = match &edit.change {
-            oblikovati_gui::GuiAppearanceChange::Create { name, .. }
-            | oblikovati_gui::GuiAppearanceChange::Apply { name, .. } => name,
+            GuiAppearanceChange::Create { name, .. } | GuiAppearanceChange::Apply { name, .. } => {
+                name
+            }
         };
         if name.trim().is_empty() {
             return Err(format!(
@@ -144,24 +150,10 @@ impl<
             ));
         }
         let created = match &edit.change {
-            oblikovati_gui::GuiAppearanceChange::Create { id, name } => {
-                if self
-                    .gui_appearance_choices(document, None)?
-                    .iter()
-                    .any(|asset| asset.id == *id)
-                {
-                    return Err(format!("appearance {id:?}: expected a new asset identity"));
-                }
-                let catalog = self.files.builtin_catalog()?;
-                let base = catalog
-                    .appearances()
-                    .get(oblikovati_model::assets::DEFAULT_APPEARANCE_ID)
-                    .ok_or_else(|| {
-                        "appearance: expected the neutral built-in definition".to_owned()
-                    })?;
-                Some(base.duplicate(id, name, oblikovati_api::types::ASSET_DOCUMENT)?)
+            GuiAppearanceChange::Create { id, name, template } => {
+                Some(self.new_document_appearance(document, id, name, *template)?)
             }
-            oblikovati_gui::GuiAppearanceChange::Apply { .. } => None,
+            GuiAppearanceChange::Apply { .. } => None,
         };
         let label = if created.is_some() {
             "Create document appearance"
@@ -176,6 +168,32 @@ impl<
             })
             .map_err(|err| err.to_string())?;
         Ok(true)
+    }
+
+    fn new_document_appearance(
+        &self,
+        document: u64,
+        id: &str,
+        name: &str,
+        template: AppearanceTemplate,
+    ) -> Result<AppearanceAsset, String> {
+        if self
+            .gui_appearance_choices(document, None)?
+            .iter()
+            .any(|asset| asset.id == id)
+        {
+            return Err(format!("appearance {id:?}: expected a new asset identity"));
+        }
+        let catalog = self.files.builtin_catalog()?;
+        let base = catalog
+            .appearances()
+            .get(oblikovati_model::assets::DEFAULT_APPEARANCE_ID)
+            .ok_or_else(|| "appearance: expected the neutral built-in definition".to_owned())?;
+        let mut asset = base.duplicate(id, name, oblikovati_api::types::ASSET_DOCUMENT)?;
+        if template == AppearanceTemplate::Ceramic {
+            initialize_ceramic_surface(&mut asset)?;
+        }
+        Ok(asset)
     }
 
     pub(super) fn assign_part_asset(
@@ -211,12 +229,25 @@ impl<
     }
 }
 
+fn initialize_ceramic_surface(asset: &mut AppearanceAsset) -> Result<(), String> {
+    let [roughness, weight] = CeramicAppearance::default().finish.surface();
+    let mut record = asset.info();
+    [
+        record.base.color.r,
+        record.base.color.g,
+        record.base.color.b,
+    ] = [1.; 3];
+    record.specular.roughness = f32::from(roughness) / 255.;
+    record.specular.weight = f32::from(weight) / 255.;
+    asset.edit(record)?;
+    Ok(())
+}
+
 fn commit_appearance_edit(
     assets: &mut DocumentAssets,
-    edit: &oblikovati_gui::GuiAppearanceChange,
-    created: Option<&oblikovati_model::assets::AppearanceAsset>,
+    edit: &GuiAppearanceChange,
+    created: Option<&AppearanceAsset>,
 ) -> Result<bool, String> {
-    use oblikovati_gui::GuiAppearanceChange;
     let GuiAppearanceChange::Apply {
         id,
         name,
@@ -226,9 +257,7 @@ fn commit_appearance_edit(
         metadata,
     } = edit
     else {
-        let created =
-            created.ok_or_else(|| "appearance: expected a new document definition".to_owned())?;
-        return assets.embed_appearance(created);
+        return embed_new_appearance(assets, edit, created);
     };
     let mut asset = assets
         .appearances()
@@ -254,6 +283,31 @@ fn commit_appearance_edit(
     let embedded = assets.embed_appearance(&asset)?;
     if let Some(metadata) = metadata {
         assets.set_appearance_metadata(id, metadata.clone())?;
+    }
+    Ok(embedded)
+}
+
+fn embed_new_appearance(
+    assets: &mut DocumentAssets,
+    edit: &GuiAppearanceChange,
+    created: Option<&AppearanceAsset>,
+) -> Result<bool, String> {
+    let created =
+        created.ok_or_else(|| "appearance: expected a new document definition".to_owned())?;
+    let embedded = assets.embed_appearance(created)?;
+    if let GuiAppearanceChange::Create {
+        id,
+        template: AppearanceTemplate::Ceramic,
+        ..
+    } = edit
+    {
+        assets.set_appearance_metadata(
+            id,
+            AppearanceMetadata {
+                ceramic: Some(CeramicAppearance::default()),
+                ..Default::default()
+            },
+        )?;
     }
     Ok(embedded)
 }

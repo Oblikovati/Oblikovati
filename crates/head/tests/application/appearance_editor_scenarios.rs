@@ -405,6 +405,7 @@ fn document_appearance_information_survives_reopening_the_part() {
     clean_dialog(&mut world);
 }
 
+mod ceramic;
 mod effects;
 mod preview;
 mod texture;

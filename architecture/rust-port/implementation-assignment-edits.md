@@ -121,3 +121,10 @@ Preview Options switches the sample between Sphere and Cube and exposes
 Grid Light, Plaza, Snowfield, and Warm Light. Quick is the active render
 setting. Scene and lighting choices live in the open editor and do not
 mark the appearance draft dirty. See the [native preview receipt](receipts/2026-11-26-appearance-preview-3563/README.md).
+
+The Appearance Browser creates a document-owned Ceramic appearance with
+a white glazed Porcelain finish. The shared editor exposes Ceramic and
+Porcelain types, the base color, and Glazed, Satin, and Matte finishes.
+Type and finish are stored in the Part recipe alongside the common
+surface parameters. Ceramic also has independent Finish Bumps, Relief
+Pattern, and Tint sections. See the [native Ceramic receipt](receipts/2026-11-26-appearance-ceramic-3563/README.md).

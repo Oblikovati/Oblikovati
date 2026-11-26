@@ -14,6 +14,20 @@ pub struct GuiAssetChoice {
     pub library: Option<GuiAssetLibrary>,
 }
 
+impl GuiAssetChoice {
+    pub(crate) fn appearance_type(&self) -> &'static str {
+        if self
+            .appearance_metadata
+            .as_ref()
+            .is_some_and(|metadata| metadata.ceramic.is_some())
+        {
+            "Ceramic"
+        } else {
+            "Generic"
+        }
+    }
+}
+
 /// Asset source shown in the browser's library region.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum GuiAssetLibrary {

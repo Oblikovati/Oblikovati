@@ -18,7 +18,7 @@ mod asset_choice;
 pub use asset_choice::{GuiAppearancePreview, GuiAssetChoice, GuiAssetLibrary};
 mod appearance_editor;
 mod asset_browser_view;
-pub use appearance_editor::{GuiAppearanceChange, GuiAppearanceEdit};
+pub use appearance_editor::{AppearanceTemplate, GuiAppearanceChange, GuiAppearanceEdit};
 mod browser;
 pub use browser::{
     GuiBrowserBlockInstance, GuiBrowserBody, GuiBrowserFeature, GuiBrowserKind,
