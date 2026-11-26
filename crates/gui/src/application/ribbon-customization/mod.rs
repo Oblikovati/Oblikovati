@@ -23,7 +23,6 @@ use category::Category;
 use imgui::{FocusedWidget, Ui};
 use state::{Command, Draft};
 pub use store::GuiRibbonSettingsStore;
-
 #[derive(Clone, Copy)]
 enum ListFocus {
     Source,
@@ -50,6 +49,7 @@ pub(crate) struct RibbonCustomization {
     visible_source: Vec<Command>,
     visible_target_rows: usize,
     source_scroll_ratio: Option<f32>,
+    source_sort_scroll_pending: bool,
     scroll_target_to_selection: bool,
     focus_add_after_option: bool,
     settings: settings_dialog::SettingsDialog,
@@ -87,7 +87,6 @@ impl RibbonCustomization {
             self.open(tab);
         }
     }
-
     pub(crate) fn register_dockable(
         &self,
         registry: &mut crate::dockable_lifecycle::DockRegistry,
@@ -121,6 +120,7 @@ impl RibbonCustomization {
             && self.ribbon_tab_active
             && (self.focus_add_after_option
                 || self.navigation_consumed
+                || self.source_sort_scroll_pending
                 || self.source_scroll_ratio.is_some() && self.draft.source.is_some())
     }
     pub(crate) fn expanded_command_count(&self, tab: RibbonTab) -> usize {
@@ -170,6 +170,7 @@ impl RibbonCustomization {
     ) {
         self.escape_consumed = false;
         self.navigation_consumed = false;
+        self.source_sort_scroll_pending = false;
         self.command_error_popup(ui);
         if !self.open.is_open() {
             return;
@@ -228,13 +229,19 @@ impl RibbonCustomization {
         if let Some(_category) = category {
             self.category_menu(ui);
         }
-        if ui.small_button("Name##available-sort") {
+        let reverse = ui.small_button("Name##available-sort");
+        if reverse {
             self.draft.reverse_source_order();
+            self.source_scroll_ratio = None;
         }
         ui.child_window("##custom-available")
             .size(size)
             .border(true)
             .build(|| {
+                self.source_sort_scroll_pending = reverse && ui.scroll_y() > 0.;
+                if self.source_sort_scroll_pending {
+                    ui.set_scroll_y(0.);
+                }
                 self.visible_source.clear();
                 let mut transfer = None;
                 for command in self.draft.available_commands() {
@@ -487,7 +494,6 @@ impl RibbonCustomization {
         }
     }
 }
-
 #[cfg(test)]
 #[path = "store_tests.rs"]
 mod store_tests;

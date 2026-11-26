@@ -4,12 +4,13 @@ use super::transaction_steps::{add_command, target_is_empty, target_rows};
 use super::*;
 
 const ASCENDING: [&str; 4] = ["<Separator>", "2-DDrawing", "2DSketches", "3DAnnotations"];
-const DESCENDING: [&str; 5] = [
+const DESCENDING: [&str; 6] = [
     "<Separator>",
     "ZoomWindow",
     "ZoomSelected",
     "ZoomAll",
     "Zoom",
+    "ZParallel",
 ];
 
 pub(super) fn source_rows(world: &ApplicationWorld) -> Vec<&diagnostics::RenderedRun> {
@@ -95,6 +96,25 @@ fn reverse_source(world: &mut ApplicationWorld) {
     click_in_customize(world, "Name");
 }
 
+#[test]
+fn reversing_available_command_order_returns_to_top_and_keeps_selection() {
+    let mut world = ApplicationWorld::new();
+    world.add_part();
+    open_tools_customization(&mut world);
+    click_in_customize(&mut world, "2DSketches");
+    world.key(oblikovati_viewport::ViewportPhysicalKey::End, false);
+    world.pump(Vec::new());
+    assert_ne!(source_rows(&world)[0].text, "<Separator>");
+    reverse_source(&mut world);
+    world.pump(Vec::new());
+    expect_source_prefix(&world, &DESCENDING);
+    target_is_empty(&world);
+    assert!(!world.run_is_enabled("Apply"));
+    transfer(&mut world);
+    assert_eq!(target_rows(&world), ["ZoomWindow"]);
+    world.close();
+}
+
 #[given(
     "`fixtures/cad/blank-metric-part.opd` is open and ribbon customization is open with All Commands selected"
 )]
@@ -116,7 +136,9 @@ fn all_commands_ascending(world: &mut ApplicationWorld) {
 #[then("the available commands remain in descending name order")]
 fn all_commands_descending(world: &mut ApplicationWorld) {
     transaction_steps::all_commands(world);
-    expect_name_order(world, true);
+    // Rendered text omits spaces. Sorting "ZParallel" as a single word would
+    // incorrectly put it before "Zoom"; verify their actual visible order.
+    expect_source_prefix(world, &DESCENDING);
 }
 
 #[when("the user selects the Sketch Tab command category")]

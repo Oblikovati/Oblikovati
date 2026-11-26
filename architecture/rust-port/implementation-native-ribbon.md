@@ -14,6 +14,9 @@ The [customizable Zoom commands](receipts/2026-11-24-ribbon-customization-zoom-3
 use the same viewport navigation handler as the navigation bar.
 The source list includes 2-D Drawing as a configurable entry. The ascending
 source-list scenario also expects an unlabeled row whose command is unidentified.
+Reversing the available command order returns the list to its first row
+and keeps the selected command available for transfer.
+[Native sort and selection checks](receipts/2026-11-26-ribbon-source-sort-scroll-3856/README.md)
 The Large and Text headings align with their checkboxes across font widths.
 Home and End select the first or last staged row when the target list has focus.
 The [native edit and import scenarios](receipts/2026-11-24-ribbon-customization-edits-3856/README.md)
