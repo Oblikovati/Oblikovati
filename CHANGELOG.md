@@ -376,7 +376,7 @@ Model tree reads reuse current part results and refresh them after edits. (#4079
 
 - Allow Fillet and Chamfer creation after model-state changes and reopening a part. (#4080)
 
-- Preserved dock tabs when tool windows close, suspend, or reopen. Restored input for docked Projects and returned to the selected template on close. (#4073)
+- Preserved dock tabs when tool windows close, suspend, or reopen. Restored input for docked Projects and returned to the selected template on close. Fixed a docking crash when switching rapidly between Part and Drawing. (#4073)
 
 - Replayed fillets and chamfers consistently in drawing, feature health, and extrusion preview. (#4074)
 

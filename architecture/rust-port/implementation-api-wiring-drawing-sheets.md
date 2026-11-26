@@ -35,9 +35,31 @@ sheet reproduced the original crop pixel for pixel. Removing and redoing
 the removal reproduced the A4 crop. A fresh native process reopened the
 saved drawing and reported the A4 sheet as active.
 
-Rapid close and reopen in one native process triggered the ImGui
-`TabBarCalcTabID` docking assertion. A control run reproduced the
-assertion using only create, save, close, and open on a default drawing.
+## Docking during document changes
+
+The initial rapid close and reopen run triggered the ImGui
+`TabBarCalcTabID` assertion. A control run also reproduced the crash
+when switching directly from a new Part to a new Drawing. The debugger
+traced it to the Material Browser's suspension at frame start. Its dock
+node already owned a tab bar, but Dear ImGui had yet to mark the bar as
+a docking bar.
+
+The native close notification now queues removal on the docked window
+and removes the tab immediately when the tab bar has been initialized.
+The GUI regression runs the first Home, Part, and Drawing frames in
+order. The unfixed implementation aborted at the same ImGui assertion.
+
+```sh
+cargo test --locked -p oblikovati-gui --test dock_workspace_switch --test dock_idle
+cargo test --locked -p oblikovati-gui --lib dock
+```
+
+Both integration tests and 58 docking-related unit tests passed. Through
+MCP Bridge on native Wayland, the Part-to-Drawing control, 12 repeated
+same-process drawing reopen cycles, and the full sheet workflow all
+completed. The full workflow verified the surviving A4 sheet after
+closing and reopening it in the same process. The existing source
+inventory guard still reports unregistered Appearance Editor windows.
 
 ## Drawing curve gap
 

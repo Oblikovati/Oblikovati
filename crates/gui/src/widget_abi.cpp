@@ -280,6 +280,18 @@ void oblikovati_gui_fit_dialog(const unsigned char* title, float x, float y, flo
 
 bool oblikovati_gui_window_is_docked() { return ImGui::IsWindowDocked(); }
 
+void oblikovati_gui_close_dock_tab(const char* title) {
+    ImGuiWindow* window = ImGui::FindWindowByName(title);
+    if (!window || !window->DockIsActive || !window->DockNode) return;
+
+    // A workspace change can suspend a window before its rebuilt tab bar is drawn.
+    // Queue removal on the window even when the bar is not ready for immediate removal.
+    ImGuiTabBar* bar = window->DockNode->TabBar;
+    if (bar && (bar->Flags & ImGuiTabBarFlags_DockNode))
+        ImGui::TabBarRemoveTab(bar, window->TabId);
+    window->DockTabWantClose = true;
+}
+
 bool oblikovati_gui_window_has_dock(const unsigned char* title) {
     const char* name = reinterpret_cast<const char*>(title);
     const ImGuiWindow* window = ImGui::FindWindowByName(name);

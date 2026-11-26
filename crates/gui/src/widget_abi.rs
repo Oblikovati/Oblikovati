@@ -65,6 +65,7 @@ unsafe extern "C" {
     fn oblikovati_gui_begin_scroll_region(identity: *const u8, width: f32, height: f32) -> bool;
     fn oblikovati_gui_dummy(width: f32, height: f32);
     fn oblikovati_gui_window_is_docked() -> bool;
+    fn oblikovati_gui_close_dock_tab(title: *const std::ffi::c_char);
     fn oblikovati_gui_window_has_dock(title: *const u8) -> bool;
     fn oblikovati_gui_fit_viewport_properties(
         title: *const u8,
@@ -475,7 +476,8 @@ pub(crate) fn dock_window_identity(title: &std::ffi::CStr) -> u32 {
 /// Notify ImGui of a validated programmatic dock tab closure (#4073).
 /// Example: `close_dock_tab(ui, c"Tool")` after the owner closes.
 pub(crate) fn close_dock_tab(_ui: &Ui, title: &std::ffi::CStr) {
-    unsafe { imgui::sys::igSetTabItemClosed(title.as_ptr()) };
+    // The live Ui owns the context, and C++ checks the window and tab bar's readiness.
+    unsafe { oblikovati_gui_close_dock_tab(title.as_ptr()) };
 }
 
 /// Find the active draw-list clip bottom; example: align a label within the window clip.
