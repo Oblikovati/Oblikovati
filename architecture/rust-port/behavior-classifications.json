@@ -15110,8 +15110,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/chrome_ribbon.go; ../Oblikovati/head/ui/ribbon_collapse.go",
-      "mapping_reason": "Desktop ribbon panel visibility and its interaction with active commands."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a app/ribbon_registry_test.go and head/ui/ribbon_collapse_test.go.",
+      "mapping_reason": "Desktop ribbon panel visibility and its interaction with active commands.",
+      "go_test_premise": "TestPartRibbonWhenPartActive checks Part tab context, and TestRibbonPanelWidthKeyIsPerTab checks that measured panel widths are scoped to a tab. The pinned scenario specifies the side-docked menu inventory and check states.",
+      "api_revision": "c8200b2da97c9a7dde43afb25debc977ff23b2fd",
+      "kernel_revision": "d463526642b7bf950ba33c7ab4a4c9bc97caffaf",
+      "kernel_capabilities": "Render the fixture Part with a visible extruded solid.",
+      "platforms": "Linux X11 under Xvfb with Vulkan Lavapipe.",
+      "kernel_integration": "The host loads and renders the solid Part. The ribbon menu reads visibility without editing the model.",
+      "rust_tests": "crates/head/tests/application/ribbon-panel-expansion/steps.rs supplies the solid Part. crates/head/tests/application/ribbon-panel-visibility/panel_inventory.rs checks the side-docked tab menu.",
+      "oracle": "Compare the rendered Show Panels item order and check states while the 3D Model ribbon remains active and docked on the left. See receipts/2026-11-26-pinned-ci-docking-4184/panel-inventory-cucumber.json.",
+      "expected_result": "The menu lists all 19 specified 3D Model panels in order with their expected check states and keeps the left dock and active tab.",
+      "baseline_source_sha256": "2a475fd633348f2ab3bc100be152dde52c2ef0d548947de439f50b8fa379c7ab"
     },
     {
       "id": "scenario:678a88251928f6caadc2d2d7eaa51d0d05296ef0f78327a0607109a0784eff73",

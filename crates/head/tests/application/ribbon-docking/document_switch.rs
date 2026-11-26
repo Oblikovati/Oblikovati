@@ -110,6 +110,7 @@ fn assembly_tabs(world: &mut ApplicationWorld) {
     world.expect_text("Component");
 }
 #[when("I activate the sheet-metal part")]
+#[when("the user activates the sheet-metal part")]
 #[when("the user activates `native-sheet-metal.opd`")]
 fn activate_sheet_metal(world: &mut ApplicationWorld) {
     let sheet_metal = *world.parts.last().expect("expected the sheet-metal part");

@@ -61,6 +61,7 @@ const WINDOW: &str = "##ribbon-additional-PartModify";
 const SIMPLIFICATION: &str = "##ribbon-additional-PartSimplification";
 
 #[given("a part containing a solid is active in the MCAD Software")]
+#[given("a part containing a solid block is active in the MCAD Software")]
 #[given("a part containing visible solid bodies is active in the MCAD Software")]
 #[given("a part with a visible solid is active in the MCAD Software")]
 fn solid_part(world: &mut ApplicationWorld) {

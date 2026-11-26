@@ -16,6 +16,17 @@ use oblikovati_gui::GuiAuthoringContext;
 fn open_top_docked_sketch(world: &mut ApplicationWorld) {
     let path = super::super::scenario_root().join("fixtures/cad/planar-sketch-empty-xy.opd");
     world.open_fixture(&path);
+    edit_top_docked_sketch(world);
+}
+
+#[given("an existing sketch is being edited with the ribbon docked at the top")]
+fn edit_existing_top_docked_sketch(world: &mut ApplicationWorld) {
+    world.add_part();
+    world.add_finished_sketch();
+    edit_top_docked_sketch(world);
+}
+
+fn edit_top_docked_sketch(world: &mut ApplicationWorld) {
     world.previous_document = Some(world.active_id());
     super::super::workspace_layout::browser_feature::right_click_row(world, "Sketch1");
     super::super::workspace_layout::browser_feature::choose_menu_row(world, "Edit Sketch");
