@@ -183,6 +183,8 @@ pub(crate) fn action_glyph(action: &GuiShellAction) -> Option<IconGlyph> {
         GuiShellAction::Inspect(crate::GuiInspectAction::StartMeasure) => IconGlyph::Measure,
         GuiShellAction::Home => IconGlyph::Home,
         GuiShellAction::Save => IconGlyph::Save,
+        GuiShellAction::UpdatePart => IconGlyph::Update,
+        GuiShellAction::OpenIProperties => IconGlyph::Preferences,
         GuiShellAction::Undo => IconGlyph::Undo,
         GuiShellAction::Redo => IconGlyph::Redo,
         GuiShellAction::OpenShellFeature => IconGlyph::Shell,

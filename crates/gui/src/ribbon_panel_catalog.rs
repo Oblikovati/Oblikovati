@@ -16,7 +16,15 @@ pub(crate) enum RibbonPanel {
     Modify,
     SketchPattern,
     Insert,
+    ManageUpdate,
+    ManageDocument,
+    ManageStyles,
     ManageInsert,
+    ManagePointCloud,
+    ManageLayout,
+    ManageAuthor,
+    ManageRules,
+    ManageContentCenter,
     Format,
     Parameters,
     ToolOptions,
@@ -70,6 +78,14 @@ impl RibbonPanel {
             Self::Modify => "Modify",
             Self::SketchPattern => "Pattern",
             Self::Insert | Self::ManageInsert => "Insert",
+            Self::ManageUpdate => "Update",
+            Self::ManageDocument => "Manage",
+            Self::ManageStyles => "Styles and Standards",
+            Self::ManagePointCloud => "Point Cloud",
+            Self::ManageLayout => "Layout",
+            Self::ManageAuthor => "Author",
+            Self::ManageRules => "iLogic",
+            Self::ManageContentCenter => "Content Center",
             Self::Format => "Format",
             Self::Parameters => "Parameters",
             Self::ToolOptions => "Options",
@@ -116,6 +132,8 @@ impl RibbonPanel {
             Self::Exit => ("Finish Sketch", GuiShellAction::FinishSketch),
             Self::Modify => ("Delete", GuiShellAction::DeleteSketchSelection),
             Self::Navigate => ("Home", GuiShellAction::Home),
+            Self::ManageUpdate => ("Update", GuiShellAction::UpdatePart),
+            Self::ManageDocument => ("iProperties", GuiShellAction::OpenIProperties),
             Self::ToolMeasure | Self::PartExplore => (
                 "Measure",
                 GuiShellAction::Inspect(crate::GuiInspectAction::StartMeasure),
@@ -123,6 +141,12 @@ impl RibbonPanel {
             Self::SketchPattern
             | Self::Insert
             | Self::ManageInsert
+            | Self::ManageStyles
+            | Self::ManagePointCloud
+            | Self::ManageLayout
+            | Self::ManageAuthor
+            | Self::ManageRules
+            | Self::ManageContentCenter
             | Self::Create
             | Self::Constrain
             | Self::Layout
@@ -262,7 +286,18 @@ pub(crate) fn panels_for(tab: RibbonTab, state: &GuiCommandState) -> Vec<RibbonP
             panels
         }
         RibbonTab::Manage if state.document_type == Some(oblikovati_api::types::DOCUMENT_PART) => {
-            vec![Parameters, ManageInsert]
+            vec![
+                ManageUpdate,
+                Parameters,
+                ManageDocument,
+                ManageStyles,
+                ManageInsert,
+                ManagePointCloud,
+                ManageLayout,
+                ManageAuthor,
+                ManageRules,
+                ManageContentCenter,
+            ]
         }
         RibbonTab::Manage => vec![Parameters],
         RibbonTab::Tools => vec![

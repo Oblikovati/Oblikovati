@@ -66,6 +66,24 @@ fn manage_panels_checked(world: &mut ApplicationWorld) {
     expect_checks(world, &MANAGE_PANELS, true);
 }
 
+#[test]
+fn manage_ribbon_opens_active_part_properties_and_updates() {
+    let mut world = ApplicationWorld::new();
+    let part = world.add_part();
+    activate_manage(&mut world);
+    world.click_text("Update");
+    world.expect_active(part);
+    world.click_text("iProperties");
+    let (position, size) =
+        super::super::diagnostics::window_geometry("iProperties").expect("expected iProperties");
+    world.expect_text("Document properties");
+    let close = [position[0] + size[0] - 13., position[1] + 10.];
+    world.click(super::super::diagnostics::pointer_pixels(close));
+    assert!(super::super::diagnostics::window_geometry("iProperties").is_none());
+    world.expect_active(part);
+    world.close();
+}
+
 #[given("the 3D Model ribbon is active and docked at the left side")]
 fn dock_model_left(world: &mut ApplicationWorld) {
     world.click_text("3D Model");

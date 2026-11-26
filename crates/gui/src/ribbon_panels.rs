@@ -316,15 +316,9 @@ fn draw_row(
         &context.hidden,
         context.owners.customization,
     );
-    let minimum = collapsed::minimum_width(tab);
-    let caption_room = if context.owners.icons.appearance.command_height() >= 44. {
-        20.
-    } else {
-        34.
-    };
     let collapsed = panels
         .iter()
-        .map(|panel| (context.ui.calc_text_size(panel.label())[0] + caption_room).max(minimum))
+        .map(|panel| collapsed::caption_width(context, tab, *panel))
         .fold(0., f32::max);
     let factor = context.owners.icons.layout_factor();
     let expanded = layout.expanded_count(tab, &panels, collapsed, available, factor);
@@ -344,8 +338,13 @@ fn draw_row(
             layout.record_width(tab, panel, width);
             width
         } else {
-            draw_collapsed(context, tab, panel, [x, 0.], collapsed, layout);
-            collapsed
+            let width = if tab == RibbonTab::Manage {
+                collapsed::caption_width(context, tab, panel)
+            } else {
+                collapsed
+            };
+            draw_collapsed(context, tab, panel, [x, 0.], width, layout);
+            width
         };
         x += width + 8.;
     }

@@ -37,6 +37,19 @@ impl RibbonPanelLayout {
             .map(|panel| self.panel_width(tab, *panel, factor).unwrap_or(0.))
             .collect();
         let required = panels.iter().position(|panel| *panel == RibbonPanel::Exit);
+        if required.is_none()
+            && tab == RibbonTab::Manage
+            && let Some(insert) = panels
+                .iter()
+                .position(|panel| *panel == RibbonPanel::ManageInsert)
+        {
+            // Trailing groups can scroll offscreen instead of forcing Insert to collapse
+            // while the first five groups have room for their commands.
+            let fit = |widths: &[f32]| {
+                crate::ribbon_fit::expanded_panel_count(widths, 8., collapsed, available)
+            };
+            return fit(&widths).max(fit(&widths[..=insert]));
+        }
         if required.is_none() {
             return crate::ribbon_fit::expanded_panel_count(&widths, 8., collapsed, available);
         }

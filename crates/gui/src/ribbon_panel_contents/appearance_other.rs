@@ -120,6 +120,12 @@ fn unavailable(
             ("General Note", Some(Glyph::Annotation)),
             ("Leader Note", Some(Glyph::Annotation)),
         ],
+        RibbonPanel::ManageStyles => &[("Styles Editor", Some(Glyph::AppearanceBrowser))],
+        RibbonPanel::ManagePointCloud => &[("Attach", Some(Glyph::Point))],
+        RibbonPanel::ManageLayout => &[("Make Components", Some(Glyph::NewAssembly))],
+        RibbonPanel::ManageAuthor => &[("Create iPart", Some(Glyph::NewPart))],
+        RibbonPanel::ManageRules => &[("Add Rule", Some(Glyph::Parameters))],
+        RibbonPanel::ManageContentCenter => &[("Editor", Some(Glyph::InsertModel))],
         _ => return false,
     };
     muted_icon_commands(ui, origin, icons, entries, false);

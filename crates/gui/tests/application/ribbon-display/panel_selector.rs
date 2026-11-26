@@ -276,16 +276,38 @@ fn finish_panel_follows_the_sketch_context_on_each_part_tab() {
 }
 
 #[test]
-fn manage_insert_is_available_for_part_documents() {
+fn part_manage_has_its_own_panel_inventory() {
     let part = crate::GuiCommandState {
         document_type: Some(oblikovati_api::types::DOCUMENT_PART),
         ..Default::default()
     };
     let panels = crate::ribbon_panels::panels_for(RibbonTab::Manage, &part);
-    assert_eq!(panels, [RibbonPanel::Parameters, RibbonPanel::ManageInsert]);
-    let empty = crate::GuiCommandState::default();
+    let display = crate::application::ribbon_display::RibbonDisplayState::default();
     assert!(
-        !crate::ribbon_panels::panels_for(RibbonTab::Manage, &empty)
-            .contains(&RibbonPanel::ManageInsert)
+        panels
+            .iter()
+            .all(|panel| { !display.hidden_panels.contains(&(RibbonTab::Manage, *panel)) })
+    );
+    assert_eq!(
+        panels
+            .into_iter()
+            .map(RibbonPanel::label)
+            .collect::<Vec<_>>(),
+        [
+            "Update",
+            "Parameters",
+            "Manage",
+            "Styles and Standards",
+            "Insert",
+            "Point Cloud",
+            "Layout",
+            "Author",
+            "iLogic",
+            "Content Center",
+        ]
+    );
+    assert_eq!(
+        crate::ribbon_panels::panels_for(RibbonTab::Manage, &crate::GuiCommandState::default()),
+        [RibbonPanel::Parameters]
     );
 }

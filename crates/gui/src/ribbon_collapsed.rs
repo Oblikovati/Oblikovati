@@ -10,6 +10,19 @@ pub(super) fn minimum_width(tab: RibbonTab) -> f32 {
     }
 }
 
+pub(super) fn caption_width(
+    context: &PanelDrawContext<'_>,
+    tab: RibbonTab,
+    panel: RibbonPanel,
+) -> f32 {
+    let caption_room = if context.owners.icons.appearance.command_height() >= 44. {
+        20.
+    } else {
+        34.
+    };
+    (context.ui.calc_text_size(panel.label())[0] + caption_room).max(minimum_width(tab))
+}
+
 pub(super) fn collapsed_button(
     context: &PanelDrawContext<'_>,
     tab: RibbonTab,
@@ -76,7 +89,14 @@ fn compact_group_icon(panel: RibbonPanel) -> crate::icons::IconGlyph {
         RibbonPanel::Modify | RibbonPanel::PresentationModel => IconGlyph::Move,
         RibbonPanel::SketchPattern | RibbonPanel::PartPattern => IconGlyph::RectangularPattern,
         RibbonPanel::Insert => IconGlyph::InsertImage,
-        RibbonPanel::ManageInsert => IconGlyph::InsertModel,
+        RibbonPanel::ManageUpdate => IconGlyph::Update,
+        RibbonPanel::ManageDocument => IconGlyph::Preferences,
+        RibbonPanel::ManageStyles => IconGlyph::AppearanceBrowser,
+        RibbonPanel::ManageInsert | RibbonPanel::ManageContentCenter => IconGlyph::InsertModel,
+        RibbonPanel::ManagePointCloud => IconGlyph::Point,
+        RibbonPanel::ManageLayout => IconGlyph::NewAssembly,
+        RibbonPanel::ManageAuthor => IconGlyph::NewPart,
+        RibbonPanel::ManageRules => IconGlyph::Parameters,
         RibbonPanel::Format => IconGlyph::Construction,
         RibbonPanel::Parameters => IconGlyph::Parameters,
         RibbonPanel::ToolOptions => IconGlyph::Preferences,

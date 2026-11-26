@@ -86,6 +86,13 @@ and Down wrap between those rows without changing their check states.
 The 3D Print panel shows Export STL as unavailable.
 [Keyboard wrap on Wayland and X11](receipts/2026-11-26-ribbon-print-wrap-3856/README.md)
 
+On a Part's Manage tab, Show Panels lists all ten groups in ribbon
+order. Update and iProperties use the existing document actions.
+Commands without an implementation appear disabled. Insert keeps its
+commands inline when the leading groups fit, and opens from a compact
+button at narrower widths.
+[Manage panel inventory and compaction](receipts/2026-11-26-manage-panel-inventory-3856/README.md)
+
 The [Wayland and X11 visibility reruns](receipts/2026-11-26-ribbon-visibility-wayland-3856/README.md)
 cover switching tabs with the selector open, closing Modify's expanded
 commands, and restoring Parameters between Format and Exit.
