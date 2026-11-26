@@ -61,6 +61,7 @@ fn active_child_at(parent: &str, point: [f32; 2]) -> (*mut sys::ImDrawList, [f32
 pub(super) struct ChildScroll {
     pub list: usize,
     pub center: [f32; 2],
+    pub content_right: f32,
     pub offset: f32,
     pub limit: f32,
 }
@@ -89,6 +90,7 @@ pub(super) fn child_scroll(parent: &str, label: &str) -> Option<ChildScroll> {
             (bounds.Min.x + bounds.Max.x) * 0.5,
             (bounds.Min.y + bounds.Max.y) * 0.5,
         ],
+        content_right: child.InnerRect.Max.x,
         offset: child.Scroll.y,
         limit: child.ScrollMax.y,
     })

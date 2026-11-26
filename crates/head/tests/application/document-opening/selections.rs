@@ -255,11 +255,8 @@ fn context_part(world: &ApplicationWorld) -> &str {
 #[when("I right-click the part thumbnail")]
 #[when("the user right-clicks the part thumbnail")]
 fn right_click_tile(world: &mut ApplicationWorld) {
-    let at = world
-        .run(context_part(world))
-        .center()
-        .map(|value| value as i32);
-    world.right_click(at);
+    let at = world.run(context_part(world)).center();
+    world.right_click(super::super::diagnostics::pointer_pixels(at));
     settle(world);
 }
 #[then("a context menu appears with Open, Copy, Rename and Properties choices")]
@@ -271,9 +268,17 @@ fn tile_menu(world: &mut ApplicationWorld) {
 #[when("I click an empty area of the file list")]
 #[when("the user clicks an empty area of the file list")]
 fn click_empty_list(world: &mut ApplicationWorld) {
-    let tile = world.run(context_part(world)).clone();
-    world.click([tile.center()[0] as i32 + 120, tile.center()[1] as i32 + 90]);
+    use super::super::diagnostics::pointer_pixels;
+    let gutter = file_list_gutter();
+    world.click(pointer_pixels(gutter));
     settle(world);
+}
+
+fn file_list_gutter() -> [f32; 2] {
+    let list = super::super::diagnostics::child_scroll("Open", "##folder-listing")
+        .expect("expected the folder listing");
+    // The tile grid leaves padding before the scrollbar, even on a full screen of rows.
+    [list.content_right - 3., list.center[1]]
 }
 #[then("the selected-item count is cleared")]
 fn no_selected_items(world: &mut ApplicationWorld) {
@@ -281,8 +286,16 @@ fn no_selected_items(world: &mut ApplicationWorld) {
         !holds_text(world, "1 item selected"),
         "selection count remains"
     );
-    let name = context_part(world).to_owned();
-    assert!(!row_lit(world, &name), "part thumbnail remains selected");
+    let tile = world.run(context_part(world));
+    let y = tile.center()[1];
+    use super::super::diagnostics::pointer_pixels;
+    let row = pointer_pixels([tile.maximum[0] + 8., y]).map(|value| value as usize);
+    let plain = pointer_pixels([file_list_gutter()[0], y]).map(|value| value as usize);
+    assert_eq!(
+        world.pixel_at(row),
+        world.pixel_at(plain),
+        "part thumbnail remains selected"
+    );
 }
 #[then("the dialog remains open with the part name and preview displayed")]
 fn open_with_part(world: &mut ApplicationWorld) {

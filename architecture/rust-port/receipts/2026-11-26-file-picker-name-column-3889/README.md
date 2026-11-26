@@ -16,8 +16,9 @@ All 74 focused GUI tests passed.
 
 The earlier full Wayland run passed the first 11 scenarios and 115 steps.
 Weston then exited with a segmentation fault. The remaining 16 scenarios
-failed in window setup, beginning with `ERROR_SURFACE_LOST_KHR`. An isolated
-compositor run per scenario was started to verify the full feature again.
+failed in window setup, beginning with `ERROR_SURFACE_LOST_KHR`. The
+[isolated follow-up](../2026-11-26-file-picker-context-menu-3889/README.md)
+verified all 16 interrupted scenarios.
 
 The focused build used base `6b09676c5c640f9890fbd07eab669a22f7af29fd`, this
 change, and existing local GUI filesystem and test edits. Wayland used
