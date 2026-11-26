@@ -5,6 +5,8 @@ use crate::{GuiAssetChoice, GuiCommandState, GuiShellAction};
 use imgui::{Condition, Ui, WindowFlags};
 use oblikovati_model::assets::AppearanceMetadata;
 
+mod transparency;
+
 /// One document appearance edit; example: `GuiAppearanceChange::Create { id, name }`.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct GuiAppearanceEdit {
@@ -243,10 +245,11 @@ fn available_identity(assets: &[GuiAssetChoice]) -> (String, String) {
 fn draw_preview(ui: &Ui, asset: &GuiAssetChoice, draft: &AppearanceDraft) {
     let mut preview = asset.clone();
     preview.swatch = Some(draft.color);
-    preview
+    let preview_metadata = preview
         .appearance_metadata
-        .get_or_insert_with(Default::default)
-        .reflectivity = draft.metadata.reflectivity;
+        .get_or_insert_with(Default::default);
+    preview_metadata.reflectivity = draft.metadata.reflectivity;
+    preview_metadata.transparency = draft.metadata.transparency;
     if let Some(finish) = &mut preview.appearance_preview {
         finish.roughness = draft.roughness;
         finish.highlights = draft.highlights;
@@ -289,6 +292,7 @@ fn draw_properties(ui: &Ui, draft: &mut AppearanceDraft, color_dialog: &mut Colo
         ui.slider("Highlights", 0, 255, &mut draft.highlights);
     }
     draw_reflectivity(ui, &mut draft.metadata);
+    transparency::draw(ui, &mut draft.metadata);
 }
 
 fn draw_reflectivity(ui: &Ui, metadata: &mut AppearanceMetadata) {

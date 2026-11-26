@@ -134,6 +134,13 @@ fn document_appearance_information_round_trips_and_clears() {
     let information = AppearanceMetadata {
         description: "Metallic finish\nFinish per drawing".into(),
         keywords: "metal, finition".into(),
+        transparency: Some(oblikovati_model::assets::AppearanceTransparency {
+            enabled: true,
+            amount: 40,
+            translucency: 25,
+            refraction: oblikovati_model::assets::RefractionPreset::Custom,
+            custom_index_milli: 1800,
+        }),
         reflectivity: Some(oblikovati_model::assets::AppearanceReflectivity {
             enabled: false,
             direct: 28,

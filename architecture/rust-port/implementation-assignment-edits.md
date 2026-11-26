@@ -97,3 +97,9 @@ Oblique affect the apparent reflection in the editor preview and, after
 Apply, in the browser thumbnail. The document recipe keeps both
 percentages when the effect is disabled. See the
 [native Reflectivity receipt](receipts/2026-11-26-appearance-reflectivity-3563/README.md).
+
+Transparency previews the material over a refracted checkerboard. Amount
+sets the transmitted contribution and Translucency softens the contrast
+of the transmitted pattern. The selected preset and custom index are
+stored with the appearance. See the
+[native Transparency receipt](receipts/2026-11-26-appearance-transparency-3563/README.md).

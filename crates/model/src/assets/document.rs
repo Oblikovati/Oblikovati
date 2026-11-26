@@ -6,7 +6,7 @@ use oblikovati_api::{
     contract::{Appearance, Material},
     types::{ASSET_BUILTIN, ASSET_DOCUMENT},
 };
-/// Application-owned description and keywords for one document appearance.
+/// Application-owned information and Generic editor settings for one document appearance.
 #[derive(Clone, Debug, Default, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
 #[serde(default)]
 pub struct AppearanceMetadata {
@@ -14,6 +14,8 @@ pub struct AppearanceMetadata {
     pub keywords: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub reflectivity: Option<AppearanceReflectivity>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub transparency: Option<AppearanceTransparency>,
 }
 
 /// Generic appearance reflection strengths as percentages.
@@ -33,6 +35,58 @@ impl Default for AppearanceReflectivity {
             oblique: 50,
         }
     }
+}
+
+/// A Generic appearance's transmission settings, retained when disabled.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct AppearanceTransparency {
+    pub enabled: bool,
+    pub amount: u8,
+    pub translucency: u8,
+    pub refraction: RefractionPreset,
+    pub custom_index_milli: u16,
+}
+
+impl Default for AppearanceTransparency {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            amount: 30,
+            translucency: 0,
+            refraction: RefractionPreset::Glass,
+            custom_index_milli: 1520,
+        }
+    }
+}
+
+impl AppearanceTransparency {
+    /// Read the selected index; example: `effect.index_of_refraction()`.
+    pub fn index_of_refraction(self) -> f32 {
+        let milli = match self.refraction {
+            RefractionPreset::Air => 1000,
+            RefractionPreset::Water => 1330,
+            RefractionPreset::Alcohol => 1360,
+            RefractionPreset::Quartz => 1460,
+            RefractionPreset::Glass => 1520,
+            RefractionPreset::Diamond => 2300,
+            RefractionPreset::Custom => self.custom_index_milli,
+        };
+        f32::from(milli) / 1000.
+    }
+}
+
+/// The Generic Appearance Editor's refraction presets.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub enum RefractionPreset {
+    Air,
+    Water,
+    Alcohol,
+    Quartz,
+    Glass,
+    Diamond,
+    Custom,
 }
 
 /// A portable document owns asset snapshots and assignment intent together.
@@ -105,6 +159,15 @@ impl DocumentAssets {
         {
             return Err(format!(
                 "appearance {id:?} reflectivity {reflectivity:?}: expected percentages from 0 to 100"
+            ));
+        }
+        if let Some(transparency) = metadata.transparency
+            && (transparency.amount > 100
+                || transparency.translucency > 100
+                || !(1..=5000).contains(&transparency.custom_index_milli))
+        {
+            return Err(format!(
+                "appearance {id:?} transparency {transparency:?}: expected percentages from 0 to 100 and a custom index from 0.001 to 5.0"
             ));
         }
         if metadata == AppearanceMetadata::default() {
