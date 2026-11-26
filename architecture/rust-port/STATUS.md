@@ -57,8 +57,8 @@ using this status; the live scenario directory can change.
 - Model Browser (#3896) passed [96 of 100 current cases and 1,305 steps](receipts/2026-11-25-model-browser-current-3896/README.md). Four `d1` cases require the extrusion taper contract in #4127 and Martensite #463.
 - Ribbon Customization (#3856) passed 108 of 126 executions and 1,475 steps on an earlier snapshot. [Native report](receipts/2026-11-25-ribbon-customization-current-3856/README.md) The current [Part marking-menu profile](receipts/2026-11-25-ribbon-customization-part-marking-3856/README.md) passed on Wayland and X11.
 - Document Saving (#3888) passed 23 dependency-ready current scenarios and 260
-  steps. The generated Part requires Assembly Simplify (#3963). See the
-  [current run](receipts/2026-11-25-document-saving-current-3888/README.md).
+  steps on Wayland. The generated Part requires Assembly Simplify (#3963).
+  [Current run](receipts/2026-11-26-document-saving-wayland-3888/README.md)
   All 23 pinned scenarios and 218 steps passed in the
   [R0 run](receipts/2026-11-21-document-saving-r0-3888/README.md).
 - Project Dialog (#3895) passed all eight current scenarios and 110 steps on

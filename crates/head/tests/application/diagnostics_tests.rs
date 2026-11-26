@@ -60,6 +60,30 @@ fn pointer_pixels_follow_framebuffer_scale_on_each_axis() {
     context.io_mut().display_framebuffer_scale = [1.5, 2.];
     assert_eq!(pointer_pixels([20., 30.]), [30, 60]);
 }
+#[test]
+fn radio_probe_distinguishes_selected_rows_at_both_scales() {
+    for scale in [1., 1.5] {
+        let mut context = crate::test_context::create();
+        context.set_ini_filename(None);
+        context.fonts().build_rgba32_texture();
+        context.io_mut().display_size = [400., 300.];
+        context.io_mut().font_global_scale = scale;
+        context.io_mut().display_framebuffer_scale = [scale; 2];
+        context.io_mut().delta_time = 0.016;
+        let ui = context.frame();
+        ui.window("Radio probe")
+            .size([240., 160.], Condition::Always)
+            .build(|| {
+                ui.radio_button_bool("On", true);
+                ui.radio_button_bool("Off", false);
+            });
+        context.render();
+        let frame = rendered_frame();
+        let run = |label| frame.runs.iter().find(|run| run.text == label).unwrap();
+        assert!(radio_mark_rendered(run("On")));
+        assert!(!radio_mark_rendered(run("Off")));
+    }
+}
 /// Draw one headless frame with the named widgets; returns runs from its draw data.
 fn runs_of(build: impl FnOnce(&imgui::Ui), scale: f32) -> Vec<RenderedRun> {
     let mut context = crate::test_context::create();

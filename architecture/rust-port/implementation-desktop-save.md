@@ -57,6 +57,14 @@ its history. Other unsaved documents remain dirty and unbound. This is the owner
 completion path; it does not claim a native file picker, overwrite prompt, add-in
 dialog hook, thumbnail policy, or complete Go save-policy parity.
 
+## Wayland Save As scenarios
+
+All 23 dependency-ready Document Saving scenarios passed on Wayland. The
+native checks covered preview source changes, image browsing, current-window
+capture, and the exact 40 × 25 × 20 mm solid preview. The folder scenarios
+started in fresh writable copies of the published Save As package.
+[Run reports and fixture hashes](receipts/2026-11-26-document-saving-wayland-3888/README.md)
+
 ## Save-path request feedback
 
 When the GUI accepts a save-path request, it opens Save As and clears that

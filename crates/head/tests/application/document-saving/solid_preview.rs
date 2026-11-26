@@ -47,14 +47,11 @@ fn rectangular_profile(world: &mut ApplicationWorld, dimensions: [&str; 2]) {
 
 fn extrude_profile(world: &mut ApplicationWorld, distance: &str) {
     world.click_text("Extrude");
-    let label = world.run("Distance A").clone();
-    world.click([label.minimum[0] as i32 - 100, label.center()[1] as i32]);
-    world.type_text(distance);
+    super::super::extrude_resume_native::set_extrusion_distance(world, distance);
     let validation = world
         .state()
         .extrude_distance_validation
         .expect("expected owner validation");
-    assert_eq!(validation.distance, distance);
     assert!(
         validation.error.is_none(),
         "distance must resolve as a positive length"

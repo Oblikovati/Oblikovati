@@ -1,0 +1,3088 @@
+[
+  {
+    "uri": "mnt/vininas-projects/MCAD-Scenarios/features/application/document-saving/document-saving.feature",
+    "keyword": "Feature",
+    "name": "Save and reopen part documents",
+    "tags": [
+      {
+        "name": "application",
+        "line": 2
+      },
+      {
+        "name": "documents",
+        "line": 2
+      }
+    ],
+    "elements": [
+      {
+        "after": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 763621330
+            }
+          }
+        ],
+        "before": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1965835721
+            }
+          }
+        ],
+        "keyword": "Scenario",
+        "type": "scenario",
+        "id": "save-and-reopen-part-documents/open-and-cancel-the-first-save",
+        "line": 5,
+        "name": "Open and cancel the first save",
+        "tags": [
+          {
+            "name": "cross_cutting",
+            "line": 5
+          }
+        ],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "line": 6,
+            "name": "a new unsaved part is active in the MCAD Software",
+            "result": {
+              "status": "passed",
+              "duration": 156865147
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 7,
+            "name": "the user presses Control+S",
+            "result": {
+              "status": "passed",
+              "duration": 359796629
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 8,
+            "name": "a Save As dialog opens",
+            "result": {
+              "status": "passed",
+              "duration": 8942253
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 9,
+            "name": "a proposed document name is selected in the file name field",
+            "result": {
+              "status": "passed",
+              "duration": 2512419587
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 10,
+            "name": "a location, file type and preview options are displayed",
+            "result": {
+              "status": "passed",
+              "duration": 8447908
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 11,
+            "name": "the user cancels the dialog",
+            "result": {
+              "status": "passed",
+              "duration": 128743099
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 12,
+            "name": "the Save As dialog closes",
+            "result": {
+              "status": "passed",
+              "duration": 6760645
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 13,
+            "name": "the unsaved part remains active",
+            "result": {
+              "status": "passed",
+              "duration": 5152198
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 14,
+            "name": "the user presses Control+S again in the same session",
+            "result": {
+              "status": "passed",
+              "duration": 441756417
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 15,
+            "name": "the Save As dialog reopens with the same proposed document name selected",
+            "result": {
+              "status": "passed",
+              "duration": 2454453956
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 16,
+            "name": "the user cancels the dialog again",
+            "result": {
+              "status": "passed",
+              "duration": 123964193
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 17,
+            "name": "the unsaved part remains active",
+            "result": {
+              "status": "passed",
+              "duration": 7304832
+            }
+          }
+        ]
+      },
+      {
+        "after": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 959165607
+            }
+          }
+        ],
+        "before": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1868149833
+            }
+          }
+        ],
+        "keyword": "Scenario",
+        "type": "scenario",
+        "id": "save-and-reopen-part-documents/save-and-reopen-a-newly-created-empty-part",
+        "line": 20,
+        "name": "Save and reopen a newly created empty part",
+        "tags": [
+          {
+            "name": "cross_cutting",
+            "line": 20
+          }
+        ],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "line": 21,
+            "name": "a new unsaved empty part is active in the MCAD Software",
+            "result": {
+              "status": "passed",
+              "duration": 181367263
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 22,
+            "name": "the proposed file name does not already exist in the selected folder",
+            "result": {
+              "status": "passed",
+              "duration": 4004222
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 23,
+            "name": "the user presses Control+S",
+            "result": {
+              "status": "passed",
+              "duration": 331534953
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 24,
+            "name": "the user accepts the proposed file name in the Save As dialog",
+            "result": {
+              "status": "passed",
+              "duration": 1929710429
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 25,
+            "name": "the dialog closes",
+            "result": {
+              "status": "passed",
+              "duration": 233536777
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 26,
+            "name": "the active document tab displays the saved file name",
+            "result": {
+              "status": "passed",
+              "duration": 13441622
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 27,
+            "name": "the model browser root displays the saved file name",
+            "result": {
+              "status": "passed",
+              "duration": 9797356
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 28,
+            "name": "the user closes that document tab",
+            "result": {
+              "status": "passed",
+              "duration": 589100129
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 29,
+            "name": "the user opens the saved file from the same folder",
+            "result": {
+              "status": "passed",
+              "duration": 1738088142
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 30,
+            "name": "the saved part becomes active",
+            "result": {
+              "status": "passed",
+              "duration": 9464891
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 31,
+            "name": "its viewport contains no visible model geometry",
+            "result": {
+              "status": "passed",
+              "duration": 121112244
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 32,
+            "name": "its model browser displays the origin and end-of-part marker",
+            "result": {
+              "status": "passed",
+              "duration": 7903381
+            }
+          }
+        ]
+      },
+      {
+        "after": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 196903246
+            }
+          }
+        ],
+        "before": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1876686054
+            }
+          }
+        ],
+        "keyword": "Scenario",
+        "type": "scenario",
+        "id": "save-and-reopen-part-documents/save-changes-to-an-existing-part-and-reopen-its-sketch",
+        "line": 36,
+        "name": "Save changes to an existing part and reopen its sketch",
+        "tags": [
+          {
+            "name": "cross_cutting",
+            "line": 36
+          },
+          {
+            "name": "common_document_saving",
+            "line": 36
+          },
+          {
+            "name": "fixture_variation",
+            "line": 36
+          }
+        ],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "line": 37,
+            "name": "a writable copy of `fixtures/cad/blank-metric-part.opd` is open as a saved empty part in the MCAD Software",
+            "result": {
+              "status": "passed",
+              "duration": 1375208034
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 38,
+            "name": "the user creates a planar sketch with a rectangular profile",
+            "result": {
+              "status": "passed",
+              "duration": 1094705309
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 39,
+            "name": "the user finishes the sketch",
+            "result": {
+              "status": "passed",
+              "duration": 138548400
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 40,
+            "name": "the user presses Control+S",
+            "result": {
+              "status": "passed",
+              "duration": 464647973
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 41,
+            "name": "the existing document remains open without a Save As dialog",
+            "result": {
+              "status": "passed",
+              "duration": 11356022
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 42,
+            "name": "the user closes the document tab",
+            "result": {
+              "status": "passed",
+              "duration": 581781702
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 43,
+            "name": "the user opens the file-opening dialog in the same session",
+            "result": {
+              "status": "passed",
+              "duration": 1340869058
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 44,
+            "name": "the user selects the saved part",
+            "result": {
+              "status": "passed",
+              "duration": 3634615277
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 45,
+            "name": "the user opens the selected part",
+            "result": {
+              "status": "passed",
+              "duration": 655136153
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 46,
+            "name": "the model browser contains the sketch",
+            "result": {
+              "status": "passed",
+              "duration": 10922964
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 47,
+            "name": "the rectangular sketch profile is visible in the viewport",
+            "result": {
+              "status": "passed",
+              "duration": 62288727
+            }
+          }
+        ]
+      },
+      {
+        "after": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 701125061
+            }
+          }
+        ],
+        "before": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 2215815696
+            }
+          }
+        ],
+        "keyword": "Scenario",
+        "type": "scenario",
+        "id": "save-and-reopen-part-documents/toggle-the-preview-picture-controls-before-saving",
+        "line": 49,
+        "name": "Toggle the preview picture controls before saving",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "line": 50,
+            "name": "the user creates a new unsaved metric part in the MCAD Software",
+            "result": {
+              "status": "passed",
+              "duration": 146879242
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 51,
+            "name": "the user presses Control+S to open Save As",
+            "result": {
+              "status": "passed",
+              "duration": 330465073
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 52,
+            "name": "the Save As dialog is open for a new part in the MCAD Software",
+            "result": {
+              "status": "passed",
+              "duration": 4013570
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 53,
+            "name": "Save Preview Picture is selected",
+            "result": {
+              "status": "passed",
+              "duration": 1024797
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 54,
+            "name": "the user clears Save Preview Picture",
+            "result": {
+              "status": "passed",
+              "duration": 169649603
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 55,
+            "name": "the preview source choices are hidden",
+            "result": {
+              "status": "passed",
+              "duration": 9181366
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 56,
+            "name": "the preview area displays a placeholder",
+            "result": {
+              "status": "passed",
+              "duration": 5207420
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 57,
+            "name": "the user selects Save Preview Picture again",
+            "result": {
+              "status": "passed",
+              "duration": 175085986
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 58,
+            "name": "the preview source choices reappear",
+            "result": {
+              "status": "passed",
+              "duration": 7919801
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 59,
+            "name": "the user chooses Active Window on Save",
+            "result": {
+              "status": "passed",
+              "duration": 182235260
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 60,
+            "name": "that preview source is selected",
+            "result": {
+              "status": "passed",
+              "duration": 10344780
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 61,
+            "name": "Active Component Iso View on Save is not selected",
+            "result": {
+              "status": "passed",
+              "duration": 8083043
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 62,
+            "name": "the user chooses Active Component Iso View on Save",
+            "result": {
+              "status": "passed",
+              "duration": 203039151
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 63,
+            "name": "the user cancels the dialog",
+            "result": {
+              "status": "passed",
+              "duration": 137929916
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 64,
+            "name": "the unsaved part remains active",
+            "result": {
+              "status": "passed",
+              "duration": 7861383
+            }
+          }
+        ]
+      },
+      {
+        "after": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 392495189
+            }
+          }
+        ],
+        "before": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1930119496
+            }
+          }
+        ],
+        "keyword": "Scenario",
+        "type": "scenario",
+        "id": "save-and-reopen-part-documents/browse-for-a-preview-image-and-cancel-the-image-chooser",
+        "line": 66,
+        "name": "Browse for a preview image and cancel the image chooser",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "line": 67,
+            "name": "the user creates a new unsaved metric part in the MCAD Software",
+            "result": {
+              "status": "passed",
+              "duration": 147574168
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 68,
+            "name": "the user presses Control+S to open Save As",
+            "result": {
+              "status": "passed",
+              "duration": 339915487
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 69,
+            "name": "the Save As dialog is open for a new part in the MCAD Software",
+            "result": {
+              "status": "passed",
+              "duration": 4006336
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 70,
+            "name": "Save Preview Picture is selected",
+            "result": {
+              "status": "passed",
+              "duration": 1570306
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 71,
+            "name": "the user chooses Import From File as the preview source",
+            "result": {
+              "status": "passed",
+              "duration": 175560104
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 72,
+            "name": "a browse control appears beside that option",
+            "result": {
+              "status": "passed",
+              "duration": 8569553
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 73,
+            "name": "the preview area displays a placeholder",
+            "result": {
+              "status": "passed",
+              "duration": 8294063
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 74,
+            "name": "the user chooses the browse control",
+            "result": {
+              "status": "passed",
+              "duration": 189999252
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 75,
+            "name": "an image file chooser opens above the Save As dialog",
+            "result": {
+              "status": "passed",
+              "duration": 7844943
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 76,
+            "name": "the user cancels the image file chooser",
+            "result": {
+              "status": "passed",
+              "duration": 190871868
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 77,
+            "name": "the Save As dialog remains open",
+            "result": {
+              "status": "passed",
+              "duration": 7912236
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 78,
+            "name": "Import From File remains selected",
+            "result": {
+              "status": "passed",
+              "duration": 4687297
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 79,
+            "name": "the preview area still displays a placeholder",
+            "result": {
+              "status": "passed",
+              "duration": 4767055
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 80,
+            "name": "the user chooses Active Component Iso View on Save",
+            "result": {
+              "status": "passed",
+              "duration": 174497246
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 81,
+            "name": "the user cancels Save As",
+            "result": {
+              "status": "passed",
+              "duration": 134737767
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 82,
+            "name": "the unsaved part remains active",
+            "result": {
+              "status": "passed",
+              "duration": 7597313
+            }
+          }
+        ]
+      },
+      {
+        "after": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 396229869
+            }
+          }
+        ],
+        "before": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1821072852
+            }
+          }
+        ],
+        "keyword": "Scenario",
+        "type": "scenario",
+        "id": "save-and-reopen-part-documents/inspect-file-type-choices-when-saving-a-part",
+        "line": 84,
+        "name": "Inspect file type choices when saving a part",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "line": 85,
+            "name": "the user creates a new unsaved metric part in the MCAD Software",
+            "result": {
+              "status": "passed",
+              "duration": 166674638
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 86,
+            "name": "the user presses Control+S to open Save As",
+            "result": {
+              "status": "passed",
+              "duration": 334383380
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 87,
+            "name": "the Save As dialog is open for a new part in the MCAD Software",
+            "result": {
+              "status": "passed",
+              "duration": 3992873
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 88,
+            "name": "the user opens the file type list",
+            "result": {
+              "status": "passed",
+              "duration": 168820722
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 89,
+            "name": "the list offers the native part file type and an All Files filter",
+            "result": {
+              "status": "passed",
+              "duration": 8115636
+            }
+          }
+        ]
+      },
+      {
+        "after": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 511986572
+            }
+          }
+        ],
+        "before": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1968790060
+            }
+          }
+        ],
+        "keyword": "Scenario",
+        "type": "scenario",
+        "id": "save-and-reopen-part-documents/cancel-closing-a-modified-unsaved-part",
+        "line": 91,
+        "name": "Cancel closing a modified unsaved part",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "line": 92,
+            "name": "the user creates a new unsaved metric part in the MCAD Software",
+            "result": {
+              "status": "passed",
+              "duration": 226187205
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 93,
+            "name": "the user creates and finishes an empty sketch on the XY datum plane",
+            "result": {
+              "status": "passed",
+              "duration": 646801211
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 94,
+            "name": "the unsaved part containing that sketch is active",
+            "result": {
+              "status": "passed",
+              "duration": 4896085
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 95,
+            "name": "save-change prompts are configured to always show",
+            "result": {
+              "status": "passed",
+              "duration": 749618
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 96,
+            "name": "the user closes the document tab",
+            "result": {
+              "status": "passed",
+              "duration": 624969219
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 97,
+            "name": "a save-changes prompt offers Yes, No and Cancel",
+            "result": {
+              "status": "passed",
+              "duration": 8963556
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 98,
+            "name": "the user chooses Cancel",
+            "result": {
+              "status": "passed",
+              "duration": 138403524
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 99,
+            "name": "the part remains active",
+            "result": {
+              "status": "passed",
+              "duration": 9097314
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 100,
+            "name": "its sketch remains in the model browser",
+            "result": {
+              "status": "passed",
+              "duration": 7922308
+            }
+          }
+        ]
+      },
+      {
+        "after": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 746414214
+            }
+          }
+        ],
+        "before": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1813803523
+            }
+          }
+        ],
+        "keyword": "Scenario",
+        "type": "scenario",
+        "id": "save-and-reopen-part-documents/cancel-the-first-save-requested-while-closing-a-part",
+        "line": 102,
+        "name": "Cancel the first save requested while closing a part",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "line": 103,
+            "name": "the user creates a new unsaved metric part in the MCAD Software",
+            "result": {
+              "status": "passed",
+              "duration": 147988280
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 104,
+            "name": "the user creates and finishes an empty sketch on the XY datum plane",
+            "result": {
+              "status": "passed",
+              "duration": 660311956
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 105,
+            "name": "the unsaved part containing that sketch is active",
+            "result": {
+              "status": "passed",
+              "duration": 72412211
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 106,
+            "name": "save-change prompts are configured to always show",
+            "result": {
+              "status": "passed",
+              "duration": 3474533
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 107,
+            "name": "the user closes the document tab",
+            "result": {
+              "status": "passed",
+              "duration": 640855512
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 108,
+            "name": "the user chooses Yes in the save-changes prompt",
+            "result": {
+              "status": "passed",
+              "duration": 169362474
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 109,
+            "name": "the Save As dialog opens",
+            "result": {
+              "status": "passed",
+              "duration": 6515192
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 110,
+            "name": "the user cancels Save As",
+            "result": {
+              "status": "passed",
+              "duration": 146820487
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 111,
+            "name": "the part remains active",
+            "result": {
+              "status": "passed",
+              "duration": 8589223
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 112,
+            "name": "its sketch remains in the model browser",
+            "result": {
+              "status": "passed",
+              "duration": 6164384
+            }
+          }
+        ]
+      },
+      {
+        "after": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 734657747
+            }
+          }
+        ],
+        "before": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1954952500
+            }
+          }
+        ],
+        "keyword": "Scenario",
+        "type": "scenario",
+        "id": "save-and-reopen-part-documents/inspect-save-change-prompt-frequency-choices",
+        "line": 114,
+        "name": "Inspect save-change prompt frequency choices",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "line": 115,
+            "name": "the user creates a new unsaved metric part in the MCAD Software",
+            "result": {
+              "status": "passed",
+              "duration": 182419399
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 116,
+            "name": "the user creates and finishes an empty sketch on the XY datum plane",
+            "result": {
+              "status": "passed",
+              "duration": 652682260
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 117,
+            "name": "the unsaved modified part is active",
+            "result": {
+              "status": "passed",
+              "duration": 4984299
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 118,
+            "name": "save-change prompts are configured to always show",
+            "result": {
+              "status": "passed",
+              "duration": 3075444
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 119,
+            "name": "the user closes the document tab",
+            "result": {
+              "status": "passed",
+              "duration": 667653729
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 120,
+            "name": "the user opens the prompt-frequency list",
+            "result": {
+              "status": "passed",
+              "duration": 163686736
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 121,
+            "name": "the list offers always show, once per operation, suppress for this session and suppress permanently",
+            "result": {
+              "status": "passed",
+              "duration": 6534499
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 122,
+            "name": "the user dismisses the list without changing its selection",
+            "result": {
+              "status": "passed",
+              "duration": 259609136
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 123,
+            "name": "the user cancels the save-changes prompt",
+            "result": {
+              "status": "passed",
+              "duration": 134654562
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 124,
+            "name": "the part remains active",
+            "result": {
+              "status": "passed",
+              "duration": 8814781
+            }
+          }
+        ]
+      },
+      {
+        "after": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1008372499
+            }
+          }
+        ],
+        "before": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1800099720
+            }
+          }
+        ],
+        "keyword": "Scenario",
+        "type": "scenario",
+        "id": "save-and-reopen-part-documents/save-a-new-modified-part-while-closing-it",
+        "line": 127,
+        "name": "Save a new modified part while closing it",
+        "tags": [
+          {
+            "name": "fixture_variation",
+            "line": 127
+          }
+        ],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "line": 128,
+            "name": "`fixtures/cad/quick-access-toolbar/PartOne.opd` is open in the MCAD Software",
+            "result": {
+              "status": "passed",
+              "duration": 1567778628
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 129,
+            "name": "the user creates a new unsaved metric part",
+            "result": {
+              "status": "passed",
+              "duration": 100046807
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 130,
+            "name": "the user creates and finishes an empty sketch on the XY datum plane",
+            "result": {
+              "status": "passed",
+              "duration": 679674546
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 131,
+            "name": "the unsaved part containing that sketch is active",
+            "result": {
+              "status": "passed",
+              "duration": 5391422
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 132,
+            "name": "save-change prompts are configured to always show",
+            "result": {
+              "status": "passed",
+              "duration": 1368233
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 133,
+            "name": "another document is open",
+            "result": {
+              "status": "passed",
+              "duration": 629545
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 134,
+            "name": "the proposed file name does not exist in the selected folder",
+            "result": {
+              "status": "passed",
+              "duration": 1772712
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 135,
+            "name": "the user closes the document tab",
+            "result": {
+              "status": "passed",
+              "duration": 636999533
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 136,
+            "name": "the user chooses Yes in the save-changes prompt",
+            "result": {
+              "status": "passed",
+              "duration": 167774864
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 137,
+            "name": "the user accepts the proposed file name in Save As",
+            "result": {
+              "status": "passed",
+              "duration": 1571024438
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 138,
+            "name": "the document closes",
+            "result": {
+              "status": "passed",
+              "duration": 7000181
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 139,
+            "name": "another open document becomes active",
+            "result": {
+              "status": "passed",
+              "duration": 5406751
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 140,
+            "name": "the user reopens the newly saved part in the same session",
+            "result": {
+              "status": "passed",
+              "duration": 2801612208
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 141,
+            "name": "the part becomes active",
+            "result": {
+              "status": "passed",
+              "duration": 9569638
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 142,
+            "name": "its model browser contains the finished sketch",
+            "result": {
+              "status": "passed",
+              "duration": 7268919
+            }
+          }
+        ]
+      },
+      {
+        "after": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 737499535
+            }
+          }
+        ],
+        "before": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 2018461899
+            }
+          }
+        ],
+        "keyword": "Scenario",
+        "type": "scenario",
+        "id": "save-and-reopen-part-documents/capture-an-active-window-preview-before-saving",
+        "line": 144,
+        "name": "Capture an active window preview before saving",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "line": 145,
+            "name": "the user creates a new unsaved metric part in the MCAD Software",
+            "result": {
+              "status": "passed",
+              "duration": 161191245
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 146,
+            "name": "the user presses Control+S to open Save As",
+            "result": {
+              "status": "passed",
+              "duration": 371867223
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 147,
+            "name": "the Save As dialog is open for a new empty part in the MCAD Software",
+            "result": {
+              "status": "passed",
+              "duration": 4413029
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 148,
+            "name": "Save Preview Picture is selected",
+            "result": {
+              "status": "passed",
+              "duration": 2087535
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 149,
+            "name": "the user chooses Active Window as the preview source",
+            "result": {
+              "status": "passed",
+              "duration": 188206815
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 150,
+            "name": "a capture control appears beside Active Window",
+            "result": {
+              "status": "passed",
+              "duration": 10155980
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 151,
+            "name": "the preview area displays a placeholder",
+            "result": {
+              "status": "passed",
+              "duration": 9653650
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 152,
+            "name": "the user activates the capture control",
+            "result": {
+              "status": "passed",
+              "duration": 1128783692
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 153,
+            "name": "the preview area displays a dark image matching the empty workspace",
+            "result": {
+              "status": "passed",
+              "duration": 75565572
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 154,
+            "name": "the Save As dialog remains open",
+            "result": {
+              "status": "passed",
+              "duration": 8914432
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 155,
+            "name": "the user cancels the dialog",
+            "result": {
+              "status": "passed",
+              "duration": 169500727
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 156,
+            "name": "the unsaved part remains active",
+            "result": {
+              "status": "passed",
+              "duration": 8750689
+            }
+          }
+        ]
+      },
+      {
+        "after": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 318605840
+            }
+          }
+        ],
+        "before": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1944808978
+            }
+          }
+        ],
+        "keyword": "Scenario",
+        "type": "scenario",
+        "id": "save-and-reopen-part-documents/select-an-existing-part-in-the-first-save-dialog",
+        "line": 159,
+        "name": "Select an existing part in the first-save dialog",
+        "tags": [
+          {
+            "name": "fixture_variation",
+            "line": 159
+          }
+        ],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "line": 160,
+            "name": "the user creates a new unsaved metric part in the MCAD Software",
+            "result": {
+              "status": "passed",
+              "duration": 168726344
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 161,
+            "name": "the user presses Control+S to open Save As",
+            "result": {
+              "status": "passed",
+              "duration": 364968453
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 162,
+            "name": "the Save As dialog is open for a new part in the MCAD Software",
+            "result": {
+              "status": "passed",
+              "duration": 4927361
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 163,
+            "name": "the current folder is a writable copy of `fixtures/cad/document-saving/SaveAsNativeFolder` with its existing part files",
+            "result": {
+              "status": "passed",
+              "duration": 84916200
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 164,
+            "name": "the user selects `ExistingPart.opd` in the file list",
+            "result": {
+              "status": "passed",
+              "duration": 350868652
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 165,
+            "name": "the selected file row is highlighted",
+            "result": {
+              "status": "passed",
+              "duration": 132391243
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 166,
+            "name": "the file name field displays the selected file's name",
+            "result": {
+              "status": "passed",
+              "duration": 8984201
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 167,
+            "name": "the status area reports one selected item",
+            "result": {
+              "status": "passed",
+              "duration": 7864949
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 168,
+            "name": "the user cancels the dialog",
+            "result": {
+              "status": "passed",
+              "duration": 130349203
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 169,
+            "name": "the unsaved part remains active",
+            "result": {
+              "status": "passed",
+              "duration": 10089617
+            }
+          }
+        ]
+      },
+      {
+        "after": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 505639009
+            }
+          }
+        ],
+        "before": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 2053828930
+            }
+          }
+        ],
+        "keyword": "Scenario",
+        "type": "scenario",
+        "id": "save-and-reopen-part-documents/navigate-to-a-subfolder-and-back-while-choosing-a-save-location",
+        "line": 172,
+        "name": "Navigate to a subfolder and back while choosing a save location",
+        "tags": [
+          {
+            "name": "fixture_variation",
+            "line": 172
+          }
+        ],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "line": 173,
+            "name": "the user creates a new unsaved metric part in the MCAD Software",
+            "result": {
+              "status": "passed",
+              "duration": 175310246
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 174,
+            "name": "the user presses Control+S to open Save As",
+            "result": {
+              "status": "passed",
+              "duration": 384550314
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 175,
+            "name": "the Save As dialog is open for a new part in the MCAD Software",
+            "result": {
+              "status": "passed",
+              "duration": 4269746
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 176,
+            "name": "the initial folder is a writable copy of `fixtures/cad/document-saving/SaveAsNativeFolder` with its `Subfolder` child",
+            "result": {
+              "status": "passed",
+              "duration": 82900540
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 177,
+            "name": "the dialog displays a proposed file name",
+            "result": {
+              "status": "passed",
+              "duration": 5105162
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 178,
+            "name": "the user opens the subfolder",
+            "result": {
+              "status": "passed",
+              "duration": 172334877
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 179,
+            "name": "the location breadcrumb and file list show the subfolder",
+            "result": {
+              "status": "passed",
+              "duration": 8711660
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 180,
+            "name": "the proposed file name remains in the file name field",
+            "result": {
+              "status": "passed",
+              "duration": 6858258
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 181,
+            "name": "the user chooses Back",
+            "result": {
+              "status": "passed",
+              "duration": 179974823
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 182,
+            "name": "the initial folder and its file list are displayed",
+            "result": {
+              "status": "passed",
+              "duration": 10121720
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 183,
+            "name": "the proposed file name remains in the file name field",
+            "result": {
+              "status": "passed",
+              "duration": 258054688
+            }
+          }
+        ]
+      },
+      {
+        "after": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 317938542
+            }
+          }
+        ],
+        "before": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1876077844
+            }
+          }
+        ],
+        "keyword": "Scenario",
+        "type": "scenario",
+        "id": "save-and-reopen-part-documents/reopen-first-save-after-cancelling-in-a-subfolder",
+        "line": 186,
+        "name": "Reopen first save after cancelling in a subfolder",
+        "tags": [
+          {
+            "name": "fixture_variation",
+            "line": 186
+          }
+        ],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "line": 187,
+            "name": "the user creates a new unsaved metric part in the MCAD Software",
+            "result": {
+              "status": "passed",
+              "duration": 147014387
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 188,
+            "name": "the user presses Control+S to open Save As",
+            "result": {
+              "status": "passed",
+              "duration": 359219855
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 189,
+            "name": "the Save As dialog is open for a new part in the MCAD Software",
+            "result": {
+              "status": "passed",
+              "duration": 3983646
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 190,
+            "name": "the current folder is a writable copy of `fixtures/cad/document-saving/SaveAsNativeFolder`",
+            "result": {
+              "status": "passed",
+              "duration": 293770255
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 191,
+            "name": "the user has navigated from the initial folder into a subfolder",
+            "result": {
+              "status": "passed",
+              "duration": 192776856
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 192,
+            "name": "the user cancels the dialog",
+            "result": {
+              "status": "passed",
+              "duration": 159679236
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 193,
+            "name": "the user presses Control+S again for the same part",
+            "result": {
+              "status": "passed",
+              "duration": 320559275
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 194,
+            "name": "the Save As dialog opens in the initial folder",
+            "result": {
+              "status": "passed",
+              "duration": 9861248
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 195,
+            "name": "the original proposed file name is selected",
+            "result": {
+              "status": "passed",
+              "duration": 2521729456
+            }
+          }
+        ]
+      },
+      {
+        "after": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 356793723
+            }
+          }
+        ],
+        "before": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1864076954
+            }
+          }
+        ],
+        "keyword": "Scenario",
+        "type": "scenario",
+        "id": "save-and-reopen-part-documents/cancel-disabling-the-preview-picture",
+        "line": 197,
+        "name": "Cancel disabling the preview picture",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "line": 198,
+            "name": "the user creates a new unsaved metric part in the MCAD Software",
+            "result": {
+              "status": "passed",
+              "duration": 168133078
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 199,
+            "name": "the user presses Control+S to open Save As",
+            "result": {
+              "status": "passed",
+              "duration": 381791957
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 200,
+            "name": "the Save As dialog is open for a new part in the MCAD Software",
+            "result": {
+              "status": "passed",
+              "duration": 4172505
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 201,
+            "name": "Save Preview Picture is selected",
+            "result": {
+              "status": "passed",
+              "duration": 1464762
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 202,
+            "name": "the user clears Save Preview Picture",
+            "result": {
+              "status": "passed",
+              "duration": 189668391
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 203,
+            "name": "the user cancels the dialog",
+            "result": {
+              "status": "passed",
+              "duration": 144598353
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 204,
+            "name": "the user presses Control+S again for the same part",
+            "result": {
+              "status": "passed",
+              "duration": 350352337
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 205,
+            "name": "Save Preview Picture is selected",
+            "result": {
+              "status": "passed",
+              "duration": 7900318
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 206,
+            "name": "the preview source choices are displayed",
+            "result": {
+              "status": "passed",
+              "duration": 6997145
+            }
+          }
+        ]
+      },
+      {
+        "after": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 488714222
+            }
+          }
+        ],
+        "before": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 2029680787
+            }
+          }
+        ],
+        "keyword": "Scenario",
+        "type": "scenario",
+        "id": "save-and-reopen-part-documents/cancel-a-change-to-the-preview-source",
+        "line": 208,
+        "name": "Cancel a change to the preview source",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "line": 209,
+            "name": "the user creates a new unsaved metric part in the MCAD Software",
+            "result": {
+              "status": "passed",
+              "duration": 164980249
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 210,
+            "name": "the user presses Control+S to open Save As",
+            "result": {
+              "status": "passed",
+              "duration": 386142589
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 211,
+            "name": "the Save As dialog is open for a new part in the MCAD Software",
+            "result": {
+              "status": "passed",
+              "duration": 3888278
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 212,
+            "name": "Save Preview Picture is selected",
+            "result": {
+              "status": "passed",
+              "duration": 2576058
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 213,
+            "name": "Active Component Iso View on Save is selected",
+            "result": {
+              "status": "passed",
+              "duration": 2845177
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 214,
+            "name": "the user chooses Active Window on Save",
+            "result": {
+              "status": "passed",
+              "duration": 187243662
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 215,
+            "name": "the user cancels the dialog",
+            "result": {
+              "status": "passed",
+              "duration": 148581763
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 216,
+            "name": "the user presses Control+S again for the same part",
+            "result": {
+              "status": "passed",
+              "duration": 347612946
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 217,
+            "name": "Active Component Iso View on Save is selected",
+            "result": {
+              "status": "passed",
+              "duration": 8960237
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 218,
+            "name": "Active Window on Save is not selected",
+            "result": {
+              "status": "passed",
+              "duration": 4744472
+            }
+          }
+        ]
+      },
+      {
+        "after": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 588054712
+            }
+          }
+        ],
+        "before": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1854009244
+            }
+          }
+        ],
+        "keyword": "Scenario",
+        "type": "scenario",
+        "id": "save-and-reopen-part-documents/switch-save-dialog-navigation-modes",
+        "line": 221,
+        "name": "Switch save-dialog navigation modes",
+        "tags": [
+          {
+            "name": "fixture_variation",
+            "line": 221
+          }
+        ],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "line": 222,
+            "name": "the user creates a new unsaved metric part in the MCAD Software",
+            "result": {
+              "status": "passed",
+              "duration": 167350790
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 223,
+            "name": "the user presses Control+S to open Save As",
+            "result": {
+              "status": "passed",
+              "duration": 392112725
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 224,
+            "name": "the Save As dialog is open for a new part in the MCAD Software",
+            "result": {
+              "status": "passed",
+              "duration": 3956105
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 225,
+            "name": "the current folder is a writable copy of `fixtures/cad/document-saving/SaveAsNativeFolder`",
+            "result": {
+              "status": "passed",
+              "duration": 79390080
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 226,
+            "name": "the navigation pane shows libraries and recent folders",
+            "result": {
+              "status": "passed",
+              "duration": 4301064
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 227,
+            "name": "the dialog displays a current folder and proposed file name",
+            "result": {
+              "status": "passed",
+              "duration": 4250089
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 228,
+            "name": "the user switches to system-location navigation",
+            "result": {
+              "status": "passed",
+              "duration": 190904449
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 229,
+            "name": "the navigation pane displays system locations and drives",
+            "result": {
+              "status": "passed",
+              "duration": 9653503
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 230,
+            "name": "the current folder and proposed file name remain displayed",
+            "result": {
+              "status": "passed",
+              "duration": 6055451
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 231,
+            "name": "the preview settings remain displayed",
+            "result": {
+              "status": "passed",
+              "duration": 7371949
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 232,
+            "name": "the user switches back to recent-folder navigation",
+            "result": {
+              "status": "passed",
+              "duration": 186237218
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 233,
+            "name": "the navigation pane displays libraries and recent folders",
+            "result": {
+              "status": "passed",
+              "duration": 8512841
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 234,
+            "name": "the current folder and proposed file name remain displayed",
+            "result": {
+              "status": "passed",
+              "duration": 5589949
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 235,
+            "name": "the user cancels Save As",
+            "result": {
+              "status": "passed",
+              "duration": 148331526
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 236,
+            "name": "the unsaved part remains active",
+            "result": {
+              "status": "passed",
+              "duration": 11540378
+            }
+          }
+        ]
+      },
+      {
+        "after": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 518467461
+            }
+          }
+        ],
+        "before": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 2068179520
+            }
+          }
+        ],
+        "keyword": "Scenario",
+        "type": "scenario",
+        "id": "save-and-reopen-part-documents/reopen-save-as-after-switching-navigation-mode",
+        "line": 239,
+        "name": "Reopen Save As after switching navigation mode",
+        "tags": [
+          {
+            "name": "fixture_variation",
+            "line": 239
+          }
+        ],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "line": 240,
+            "name": "the user creates a new unsaved metric part in the MCAD Software",
+            "result": {
+              "status": "passed",
+              "duration": 160033251
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 241,
+            "name": "the user presses Control+S to open Save As",
+            "result": {
+              "status": "passed",
+              "duration": 376052771
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 242,
+            "name": "the Save As dialog is open for a new part in the MCAD Software",
+            "result": {
+              "status": "passed",
+              "duration": 4252523
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 243,
+            "name": "the current folder is a writable copy of `fixtures/cad/document-saving/SaveAsNativeFolder`",
+            "result": {
+              "status": "passed",
+              "duration": 152805359
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 244,
+            "name": "the navigation pane shows libraries and recent folders",
+            "result": {
+              "status": "passed",
+              "duration": 4008382
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 245,
+            "name": "the user switches to system-location navigation",
+            "result": {
+              "status": "passed",
+              "duration": 175828516
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 246,
+            "name": "the user cancels Save As",
+            "result": {
+              "status": "passed",
+              "duration": 149889731
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 247,
+            "name": "the user opens Save As again for the same part",
+            "result": {
+              "status": "passed",
+              "duration": 336608630
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 248,
+            "name": "the navigation pane shows libraries and recent folders",
+            "result": {
+              "status": "passed",
+              "duration": 9172503
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 249,
+            "name": "the proposed file name is selected",
+            "result": {
+              "status": "passed",
+              "duration": 2494635172
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 250,
+            "name": "the user cancels Save As",
+            "result": {
+              "status": "passed",
+              "duration": 133291479
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 251,
+            "name": "the unsaved part remains active",
+            "result": {
+              "status": "passed",
+              "duration": 10380810
+            }
+          }
+        ]
+      },
+      {
+        "after": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 348034274
+            }
+          }
+        ],
+        "before": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1981986394
+            }
+          }
+        ],
+        "keyword": "Scenario",
+        "type": "scenario",
+        "id": "save-and-reopen-part-documents/change-the-file-list-presentation-in-save-as",
+        "line": 254,
+        "name": "Change the file-list presentation in Save As",
+        "tags": [
+          {
+            "name": "fixture_variation",
+            "line": 254
+          }
+        ],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "line": 255,
+            "name": "the user creates a new unsaved metric part in the MCAD Software",
+            "result": {
+              "status": "passed",
+              "duration": 154151641
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 256,
+            "name": "the user presses Control+S to open Save As",
+            "result": {
+              "status": "passed",
+              "duration": 343674803
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 257,
+            "name": "the Save As dialog is open for a new part in the MCAD Software",
+            "result": {
+              "status": "passed",
+              "duration": 3976212
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 258,
+            "name": "the current folder is a writable copy of `fixtures/cad/document-saving/SaveAsNativeFolder` with its part files and subfolder",
+            "result": {
+              "status": "passed",
+              "duration": 76151815
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 259,
+            "name": "the file list is displayed in Details view",
+            "result": {
+              "status": "passed",
+              "duration": 2792951
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 260,
+            "name": "a proposed file name is displayed",
+            "result": {
+              "status": "passed",
+              "duration": 3078841
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 261,
+            "name": "the user activates the file-list view control",
+            "result": {
+              "status": "passed",
+              "duration": 174251025
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 262,
+            "name": "the file list displays thumbnail tiles with names and file information",
+            "result": {
+              "status": "passed",
+              "duration": 8368855
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 263,
+            "name": "the proposed file name and preview settings remain displayed",
+            "result": {
+              "status": "passed",
+              "duration": 7472805
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 264,
+            "name": "the user chooses the Details view shortcut",
+            "result": {
+              "status": "passed",
+              "duration": 195459042
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 265,
+            "name": "the file list displays rows with name, modification date, type and size columns",
+            "result": {
+              "status": "passed",
+              "duration": 7179754
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 266,
+            "name": "the proposed file name remains displayed",
+            "result": {
+              "status": "passed",
+              "duration": 8317971
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 267,
+            "name": "the user cancels Save As",
+            "result": {
+              "status": "passed",
+              "duration": 143965462
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 268,
+            "name": "the unsaved part remains active",
+            "result": {
+              "status": "passed",
+              "duration": 10586341
+            }
+          }
+        ]
+      },
+      {
+        "after": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1128795372
+            }
+          }
+        ],
+        "before": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 2013594065
+            }
+          }
+        ],
+        "keyword": "Scenario",
+        "type": "scenario",
+        "id": "save-and-reopen-part-documents/decline-replacing-an-existing-part-during-first-save",
+        "line": 271,
+        "name": "Decline replacing an existing part during first save",
+        "tags": [
+          {
+            "name": "fixture_variation",
+            "line": 271
+          }
+        ],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "line": 272,
+            "name": "the user creates a new unsaved metric part in the MCAD Software",
+            "result": {
+              "status": "passed",
+              "duration": 158187263
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 273,
+            "name": "the user presses Control+S to open Save As",
+            "result": {
+              "status": "passed",
+              "duration": 357902937
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 274,
+            "name": "the Save As dialog is open for a new part in the MCAD Software",
+            "result": {
+              "status": "passed",
+              "duration": 4184016
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 275,
+            "name": "the current folder is a writable copy of `fixtures/cad/document-saving/SaveAsNativeFolder` with its existing part files",
+            "result": {
+              "status": "passed",
+              "duration": 78947952
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 276,
+            "name": "the user selects `ExistingPart.opd`",
+            "result": {
+              "status": "passed",
+              "duration": 343304788
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 277,
+            "name": "the user chooses Save",
+            "result": {
+              "status": "passed",
+              "duration": 349488908
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 278,
+            "name": "a confirmation identifies the existing file and asks whether to replace it",
+            "result": {
+              "status": "passed",
+              "duration": 6972369
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 279,
+            "name": "the confirmation offers Yes and No",
+            "result": {
+              "status": "passed",
+              "duration": 4593665
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 280,
+            "name": "the Save As dialog remains behind the confirmation",
+            "result": {
+              "status": "passed",
+              "duration": 4280636
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 281,
+            "name": "the user chooses No",
+            "result": {
+              "status": "passed",
+              "duration": 350393041
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 282,
+            "name": "the confirmation closes",
+            "result": {
+              "status": "passed",
+              "duration": 6554356
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 283,
+            "name": "Save As remains open with the existing file name displayed",
+            "result": {
+              "status": "passed",
+              "duration": 15591909
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 284,
+            "name": "the user cancels Save As",
+            "result": {
+              "status": "passed",
+              "duration": 151053906
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 285,
+            "name": "the new unsaved part remains active",
+            "result": {
+              "status": "passed",
+              "duration": 10425353
+            }
+          }
+        ]
+      },
+      {
+        "after": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 453730521
+            }
+          }
+        ],
+        "before": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1871669752
+            }
+          }
+        ],
+        "keyword": "Scenario",
+        "type": "scenario",
+        "id": "save-and-reopen-part-documents/inspect-save-as-commands-for-a-saved-part",
+        "line": 288,
+        "name": "Inspect Save As commands for a saved part",
+        "tags": [
+          {
+            "name": "fixture_variation",
+            "line": 288
+          }
+        ],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "line": 289,
+            "name": "a writable copy of `fixtures/cad/blank-metric-part.opd` is open as a saved active part in the MCAD Software",
+            "result": {
+              "status": "passed",
+              "duration": 1228966459
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 290,
+            "name": "the user opens the application menu",
+            "result": {
+              "status": "passed",
+              "duration": 369817707
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 291,
+            "name": "the user expands Save As",
+            "result": {
+              "status": "passed",
+              "duration": 604051189
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 292,
+            "name": "the menu offers Save As and Save Copy As",
+            "result": {
+              "status": "passed",
+              "duration": 9423387
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 293,
+            "name": "it offers Save Copy As Template and Pack and Go",
+            "result": {
+              "status": "passed",
+              "duration": 7622673
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 294,
+            "name": "the Save Copy As description says the original file remains open",
+            "result": {
+              "status": "passed",
+              "duration": 5566877
+            }
+          }
+        ]
+      },
+      {
+        "after": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 389044160
+            }
+          }
+        ],
+        "before": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1874182019
+            }
+          }
+        ],
+        "keyword": "Scenario",
+        "type": "scenario",
+        "id": "save-and-reopen-part-documents/inspect-the-first-save-preview-of-a-solid-part",
+        "line": 297,
+        "name": "Inspect the first-save preview of a solid part",
+        "tags": [
+          {
+            "name": "fixture_variation",
+            "line": 297
+          }
+        ],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "line": 298,
+            "name": "the user creates a new unsaved metric part in the MCAD Software",
+            "result": {
+              "status": "passed",
+              "duration": 177486610
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 299,
+            "name": "the user sketches a 40 by 25 mm rectangle on the XY datum plane and extrudes it 20 mm",
+            "result": {
+              "status": "passed",
+              "duration": 3631201675
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 300,
+            "name": "the unsaved part containing that visible rectangular solid is active",
+            "result": {
+              "status": "passed",
+              "duration": 186863327
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 301,
+            "name": "the first-save preview settings are configured to save an isometric component view",
+            "result": {
+              "status": "passed",
+              "duration": 1367004860
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 302,
+            "name": "the user presses Control+S",
+            "result": {
+              "status": "passed",
+              "duration": 1053526020
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 303,
+            "name": "the Save As dialog opens with a proposed part filename selected",
+            "result": {
+              "status": "passed",
+              "duration": 2757075566
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 304,
+            "name": "Save Preview Picture is checked",
+            "result": {
+              "status": "passed",
+              "duration": 8713269
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 305,
+            "name": "Active Component Iso View on Save is selected",
+            "result": {
+              "status": "passed",
+              "duration": 8231597
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 306,
+            "name": "the preview area displays a shaded isometric block",
+            "result": {
+              "status": "passed",
+              "duration": 224075773
+            }
+          }
+        ]
+      },
+      {
+        "after": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 461884498
+            }
+          }
+        ],
+        "before": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 2024724843
+            }
+          }
+        ],
+        "keyword": "Scenario",
+        "type": "scenario",
+        "id": "save-and-reopen-part-documents/retain-a-selected-file-name-after-changing-the-file-list-selection",
+        "line": 309,
+        "name": "Retain a selected file name after changing the file-list selection",
+        "tags": [
+          {
+            "name": "fixture_variation",
+            "line": 309
+          }
+        ],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "line": 310,
+            "name": "the user creates a new unsaved metric part in the MCAD Software",
+            "result": {
+              "status": "passed",
+              "duration": 166621469
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 311,
+            "name": "the user presses Control+S to open Save As",
+            "result": {
+              "status": "passed",
+              "duration": 413897931
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 312,
+            "name": "the Save As dialog is open for a new part in the MCAD Software",
+            "result": {
+              "status": "passed",
+              "duration": 4014423
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 313,
+            "name": "the current folder is a writable copy of `fixtures/cad/document-saving/SaveAsNativeFolder` with its part file and subfolder",
+            "result": {
+              "status": "passed",
+              "duration": 80753455
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 314,
+            "name": "the user selects `ExistingPart.opd` in the file list",
+            "result": {
+              "status": "passed",
+              "duration": 638328924
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 315,
+            "name": "the file is highlighted and its name appears in the file name field",
+            "result": {
+              "status": "passed",
+              "duration": 124685715
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 316,
+            "name": "the user selects the subfolder with a single click",
+            "result": {
+              "status": "passed",
+              "duration": 539553973
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 317,
+            "name": "the subfolder is highlighted without opening",
+            "result": {
+              "status": "passed",
+              "duration": 67035456
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 318,
+            "name": "the file name field still displays the selected part file name",
+            "result": {
+              "status": "passed",
+              "duration": 8268369
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 319,
+            "name": "the user clicks empty space in the file list",
+            "result": {
+              "status": "passed",
+              "duration": 356528241
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 320,
+            "name": "no file or folder is highlighted",
+            "result": {
+              "status": "passed",
+              "duration": 66007222
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 321,
+            "name": "the file name field still displays the part file name",
+            "result": {
+              "status": "passed",
+              "duration": 213674978
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 322,
+            "name": "the user cancels Save As",
+            "result": {
+              "status": "passed",
+              "duration": 124217017
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 323,
+            "name": "the new unsaved part remains active",
+            "result": {
+              "status": "passed",
+              "duration": 10135857
+            }
+          }
+        ]
+      },
+      {
+        "after": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 398721802
+            }
+          }
+        ],
+        "before": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 2003190322
+            }
+          }
+        ],
+        "keyword": "Scenario",
+        "type": "scenario",
+        "id": "save-and-reopen-part-documents/save-a-generated-part-at-its-assigned-output-location",
+        "line": 327,
+        "name": "Save a generated part at its assigned output location",
+        "tags": [
+          {
+            "name": "cross_cutting",
+            "line": 327
+          },
+          {
+            "name": "common_document_saving",
+            "line": 327
+          },
+          {
+            "name": "fixture_variation",
+            "line": 327
+          },
+          {
+            "name": "needs_fixture",
+            "line": 327
+          }
+        ],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "line": 328,
+            "name": "a writable copy of `fixtures/cad/single-occurrence.oad` is staged in an isolated working folder",
+            "result": {
+              "status": "undefined",
+              "duration": 2875304,
+              "error_message": "Step doesn't match any function"
+            }
+          }
+        ]
+      }
+    ]
+  }
+]

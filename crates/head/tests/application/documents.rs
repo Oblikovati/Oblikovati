@@ -359,17 +359,9 @@ impl ApplicationWorld {
         let at = (position[1] * capture.extent[0] as usize + position[0]) * 4;
         std::array::from_fn(|channel| capture.rgba[at + channel])
     }
-    /// A selected radio button fills its centre; its rim keeps the frame colour.
-    pub fn radio_selected(&mut self, label: &str) -> bool {
-        let run = self.run(label).clone();
-        let y = run.center()[1] as usize;
-        let centre = run.minimum[0] as usize - 14;
-        let capture = super::capture_framebuffer(&mut self.app().window.native);
-        let sample = |x: usize| {
-            let offset = (y * capture.extent[0] as usize + x) * 4;
-            &capture.rgba[offset..offset + 4]
-        };
-        sample(centre) != sample(centre - 8)
+    /// A selected radio button draws a checkmark-coloured dot beside its label.
+    pub fn radio_selected(&self, label: &str) -> bool {
+        diagnostics::radio_mark_rendered(self.run(label))
     }
     /// Selected text sits on a highlight: the most common colour behind it differs from the field.
     pub fn text_is_selected(&mut self, text: &str) -> bool {

@@ -26,18 +26,13 @@ fn choose_active_window(world: &mut ApplicationWorld) {
 }
 #[then("a capture control appears beside Active Window")]
 fn capture_beside(world: &mut ApplicationWorld) {
-    let option = world.run(WINDOW).clone();
-    let capture = world.run("Capture").clone();
-    assert!(
-        capture.minimum[0] > option.maximum[0]
-            && (capture.center()[1] - option.center()[1]).abs() < 4.,
-        "capture {capture:?}: expected a control beside {option:?}"
-    );
+    preview_controls::position(world, WINDOW, "Capture");
 }
 #[when("I activate the capture control")]
 #[when("the user activates the capture control")]
 fn activate_capture(world: &mut ApplicationWorld) {
-    world.click_text("Capture");
+    let position = preview_controls::position(world, WINDOW, "Capture");
+    world.click(position);
     world.pump(Vec::new());
 }
 #[then("the preview area displays a dark image matching the empty workspace")]

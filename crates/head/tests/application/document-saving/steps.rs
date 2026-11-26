@@ -10,6 +10,8 @@ mod cancel_preview_regression;
 mod dialog_navigation;
 #[path = "native_fixtures.rs"]
 mod native_fixtures;
+#[path = "preview_controls.rs"]
+mod preview_controls;
 #[path = "solid_preview.rs"]
 mod solid_preview;
 const SAVE_IN: &str = "Save in";
@@ -319,18 +321,13 @@ fn choose_import(world: &mut ApplicationWorld) {
 }
 #[then("a browse control appears beside that option")]
 fn browse_beside(world: &mut ApplicationWorld) {
-    let option = world.run(IMPORT).clone();
-    let browse = world.run("Browse...").clone();
-    assert!(
-        browse.minimum[0] > option.maximum[0]
-            && (browse.center()[1] - option.center()[1]).abs() < 4.,
-        "browse {browse:?}: expected a control beside {option:?}"
-    );
+    preview_controls::position(world, IMPORT, "Browse...");
 }
 #[when("I choose the browse control")]
 #[when("the user chooses the browse control")]
 fn choose_browse(world: &mut ApplicationWorld) {
-    world.click_text("Browse...");
+    let position = preview_controls::position(world, IMPORT, "Browse...");
+    world.click(position);
 }
 #[then("an image file chooser opens above the Save As dialog")]
 fn chooser_above(world: &mut ApplicationWorld) {

@@ -106,6 +106,25 @@ fn rendered_draw_list_index(target: *mut sys::ImDrawList) -> Option<usize> {
     lists.iter().position(|&list| list == target)
 }
 
+pub(super) fn radio_mark_rendered(run: &RenderedRun) -> bool {
+    use imgui::internal::RawCast;
+    // The completed draw data and current style belong to the live test window.
+    let Some(raw) = (unsafe { sys::igGetDrawData().as_ref() }) else {
+        return false;
+    };
+    let draws = unsafe { imgui::DrawData::from_raw(raw) };
+    let accent =
+        unsafe { sys::igGetColorU32_Col(sys::ImGuiCol_CheckMark as i32, 1.) }.to_le_bytes();
+    let height = drawn_text::current_font_size();
+    draws.draw_lists().nth(run.list).is_some_and(|list| {
+        list.vtx_buffer().iter().any(|vertex| {
+            vertex.col == accent
+                && (0. ..height * 2.5).contains(&(run.minimum[0] - vertex.pos[0]))
+                && (run.center()[1] - vertex.pos[1]).abs() < height * 0.5
+        })
+    })
+}
+
 /// Check for a visible image beside a caption in the same draw list.
 #[cfg(target_os = "linux")]
 pub(super) fn has_caption_icon(run: &RenderedRun) -> bool {
