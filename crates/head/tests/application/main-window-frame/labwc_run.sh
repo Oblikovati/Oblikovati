@@ -1,12 +1,17 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-2.0-only
-# Exercise a desktop Close shortcut with a private native Wayland compositor.
+# Run native Wayland frame scenarios with a private Labwc session.
 set -euo pipefail
 
 script=$(realpath "$0")
 if [[ "${1-}" != --private-session ]]; then
-    cd "$(dirname "$script")/../../../../.."
-    exec tools/with-xvfb.sh dbus-run-session -- bash "$script" --private-session
+    fixtures=$(dirname "$script")
+    cd "$fixtures/../../../../.."
+    bus_options=()
+    if [[ "${OBK_BDD_LABWC_TASKBAR:-0}" == 1 ]]; then
+        bus_options+=(--config-file="$fixtures/waybar-session.conf")
+    fi
+    exec tools/with-xvfb.sh dbus-run-session "${bus_options[@]}" -- bash "$script" --private-session
 fi
 
 session=$(mktemp -d)
@@ -20,13 +25,28 @@ cat > "$config" <<'EOF'
   <keyboard>
     <keybind key="A-F4"><action name="Close" /></keybind>
   </keyboard>
-</labwc_config>
 EOF
+
+if [[ "${OBK_BDD_LABWC_TASKBAR:-0}" == 1 ]]; then
+    cat >> "$config" <<'EOF'
+  <windowRules>
+    <windowRule identifier="org.oblikovati.Oblikovati" serverDecoration="no">
+      <action name="MoveTo" x="0" y="0" />
+      <action name="ResizeTo" width="960" height="680" />
+    </windowRule>
+  </windowRules>
+EOF
+fi
+printf '%s\n' '</labwc_config>' >> "$config"
 
 env -u WAYLAND_DEBUG WLR_BACKENDS=x11 WLR_RENDERER=pixman \
     "${LABWC_BIN:-labwc}" --config "$config" &
 compositor=$!
 cleanup() {
+    if [[ -n "${panel:-}" ]]; then
+        kill "$panel" 2>/dev/null || true
+        wait "$panel" 2>/dev/null || true
+    fi
     kill "$compositor" 2>/dev/null || true
     wait "$compositor" 2>/dev/null || true
     rm -rf -- "$session"
@@ -40,6 +60,14 @@ for ((attempt=0; attempt<60; attempt++)); do
     sleep .05
 done
 test -S "$XDG_RUNTIME_DIR/$WAYLAND_DISPLAY"
+
+if [[ "${OBK_BDD_LABWC_TASKBAR:-0}" == 1 ]]; then
+    fixtures=$(dirname "$script")
+    env GDK_BACKEND=wayland GTK_USE_PORTAL=0 GIO_USE_VFS=local NO_AT_BRIDGE=1 \
+        XDG_CURRENT_DESKTOP=labwc "${WAYBAR_BIN:-waybar}" \
+        --config "$fixtures/waybar-taskbar.json" --style "$fixtures/waybar-taskbar.css" &
+    panel=$!
+fi
 
 export OBK_BDD_AREA=application
 export OBK_BDD_FEATURE="${OBK_BDD_FEATURE:-main-window-frame}"

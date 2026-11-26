@@ -64,10 +64,21 @@ pub(in super::super) fn switch_fullscreen_wayland_task() {
 }
 
 pub(in super::super) fn press_labwc_close_shortcut() {
+    let (connection, root, output) = labwc_host_output();
+    focus_target(&connection, output);
+    send_alt_f4(&connection, root);
+}
+
+pub(in super::super) fn labwc_output() -> (RustConnection, Window) {
+    let (connection, _, output) = labwc_host_output();
+    (connection, output)
+}
+
+fn labwc_host_output() -> (RustConnection, Window, Window) {
     assert_eq!(
         std::env::var("OBK_BDD_LABWC_NESTED_X11").as_deref(),
         Ok("1"),
-        "run the desktop Close scenario with the private labwc runner"
+        "run the Wayland frame scenario with the private Labwc runner"
     );
     let (connection, screen) = x11rb::connect(None).expect("expected the labwc host display");
     let root = connection.setup().roots[screen].root;
@@ -80,8 +91,7 @@ pub(in super::super) fn press_labwc_close_shortcut() {
     let [output] = children.as_slice() else {
         panic!("expected one private labwc output window, found {children:?}");
     };
-    focus_target(&connection, *output);
-    send_alt_f4(&connection, root);
+    (connection, root, *output)
 }
 
 pub(super) fn send_alt_f4(connection: &RustConnection, root: Window) {

@@ -11,6 +11,8 @@ pub(super) use fixture::{open_dirty_frame_part, open_frame_part};
 mod maximized_edge;
 #[path = "wayland.rs"]
 pub(super) mod wayland;
+#[path = "wayland_taskbar.rs"]
+mod wayland_taskbar;
 
 #[when("the user invokes the desktop window Close shortcut")]
 #[when("the user presses Alt+F4")]
@@ -186,8 +188,12 @@ fn remember_restored_part(world: &mut ApplicationWorld) {
 }
 #[given("the main window is maximized")]
 fn remember_maximized_part(world: &mut ApplicationWorld) {
-    super::x11_input::focus_window();
-    super::main_window_frame_native::press_maximize(world);
+    if world.app().window.native.view.uses_wayland() {
+        wayland_taskbar::click_frame_button(world, 1);
+    } else {
+        super::x11_input::focus_window();
+        super::main_window_frame_native::press_maximize(world);
+    }
     super::main_window_frame_native::pump_until(world, true);
     remember_part_view(world);
 }
@@ -195,7 +201,9 @@ fn remember_part_view(world: &mut ApplicationWorld) {
     save_active_part_fixture(world);
     world.previous_document = Some(world.active_id());
     world.observed_view_camera = Some(crate::HeadWindow::view_camera(&world.app().window).unwrap());
-    super::x11_input::focus_window();
+    if !world.app().window.native.view.uses_wayland() {
+        super::x11_input::focus_window();
+    }
 }
 fn save_active_part_fixture(world: &mut ApplicationWorld) {
     let document = world.active_id();
@@ -207,10 +215,16 @@ fn save_active_part_fixture(world: &mut ApplicationWorld) {
 
 #[when("the user selects Minimize in the application bar")]
 fn minimize_part_window(world: &mut ApplicationWorld) {
+    if world.app().window.native.view.uses_wayland() {
+        return wayland_taskbar::click_frame_button(world, 0);
+    }
     super::main_window_frame_native::pump_minimize_button(world);
 }
 #[then("the main window is minimized and its taskbar entry remains available")]
-fn minimized_with_taskbar_entry(_: &mut ApplicationWorld) {
+fn minimized_with_taskbar_entry(world: &mut ApplicationWorld) {
+    if world.app().window.native.view.uses_wayland() {
+        return wayland_taskbar::wait_for_minimized(world);
+    }
     assert!(super::x11_input::window_has_state(b"_NET_WM_STATE_HIDDEN"));
     assert!(!super::x11_input::window_has_state(
         b"_NET_WM_STATE_SKIP_TASKBAR"
@@ -218,6 +232,9 @@ fn minimized_with_taskbar_entry(_: &mut ApplicationWorld) {
 }
 #[when("the user activates the application from the taskbar")]
 fn activate_from_taskbar(world: &mut ApplicationWorld) {
+    if world.app().window.native.view.uses_wayland() {
+        return wayland_taskbar::activate(world);
+    }
     std::thread::sleep(std::time::Duration::from_millis(500));
     super::x11_input::click_test_taskbar();
     super::main_window_frame_native::wait_for_hidden(false);

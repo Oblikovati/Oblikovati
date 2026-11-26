@@ -1,0 +1,12 @@
+{
+  "layer": "top",
+  "position": "bottom",
+  "height": 36,
+  "modules-left": ["wlr/taskbar"],
+  "wlr/taskbar": {
+    "format": "{app_id}",
+    "all-outputs": true,
+    "tooltip": false,
+    "on-click": "activate"
+  }
+}

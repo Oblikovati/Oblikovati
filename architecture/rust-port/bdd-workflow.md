@@ -247,6 +247,14 @@ record the incoming `xdg_toplevel.close` event. For Application Closing
 scenarios that use Alt+F4, set `OBK_BDD_FEATURE=application-closing`
 and select the case with `OBK_BDD_SCENARIO`.
 
+For the minimize-and-return outline, run the same Labwc runner with
+`OBK_BDD_LABWC_TASKBAR=1` and
+`OBK_BDD_SCENARIO='Minimize and return from the taskbar'`. Install Waybar
+with its `wlr/taskbar` module or set `WAYBAR_BIN` to a local executable.
+The fixture displays one task button and styles its active and minimized
+states distinctly. The test samples the displayed button before clicking it,
+then checks the restored window and document state.
+
 The Linux docking-system restart scenario also starts the desktop executable
 twice. Build `oblikovati` from the same source as the test, and set
 `OBK_BDD_DESKTOP_BINARY` to its absolute path. Run with an X11 window manager,
