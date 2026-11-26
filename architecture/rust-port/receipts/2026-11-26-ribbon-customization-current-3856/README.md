@@ -16,11 +16,20 @@ read the submitted icon rectangles and rendered command labels.
 - Large icon without text on [Wayland](icon-only-wayland-report.json)
   and [X11](icon-only-x11-report.json)
 
+At `c5ee038dfc27d2303c4b3c8059d588ae1427c2d7`, the two small commands
+and their vertical divider passed all eight steps on both backends.
+The export and restore case passed all 14 steps on both backends and
+verified that importing restores the draft before Apply displays the icon.
+
+- Divider on [Wayland](divider-wayland-report.json) and [X11](divider-x11-report.json),
+  with a [Wayland capture](divider-wayland.png)
+- Export and restore on [Wayland](export-wayland-report.json) and [X11](export-x11-report.json)
+
 The [later removal checks](../2026-11-26-ribbon-panel-retirement-3856/README.md)
 cover applying an empty panel and retaining it during Shell. That fix and
 the icon checks were run separately from the full suite.
 
-Both builds included the existing local GUI filesystem test-module visibility
+The builds included the existing local GUI filesystem test-module visibility
 edit. Wayland used nested Weston 13 and X11 used Openbox. Both used Xvfb and
 Vulkan Lavapipe. The [input hashes](current-inputs.sha256) matched the shared
 source before and after the runs. Strict build and runtime verification
