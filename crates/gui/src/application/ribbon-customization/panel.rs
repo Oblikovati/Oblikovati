@@ -47,10 +47,11 @@ impl RibbonCustomization {
             } else {
                 "##icon-only"
             };
-            let size = if normal {
-                if entry.large { [90., 58.] } else { [90., 26.] }
-            } else {
-                icons.appearance.cell(count).1
+            let size = match (normal, entry.large, entry.text) {
+                (false, _, _) => icons.appearance.cell(count).1,
+                (true, true, _) => [90., 58.],
+                (true, false, true) => [90., 26.],
+                (true, false, false) => [26., 26.],
             };
             match entry.command {
                 Command::Sketches => sketch_visibility(ui, label, size, state, icons, actions),

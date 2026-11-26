@@ -88,6 +88,8 @@ stays visible until Customize closes.
 Native icon checks cover small icons beside labels, large icons above
 labels, and large icons with labels hidden.
 [Current Ribbon Customization runs](receipts/2026-11-26-ribbon-customization-current-3856/README.md)
+Small custom buttons with Text cleared use icon-width cells. A separator
+between two such commands stays visible when the group fits on the ribbon.
 The [consecutive Remove scenario](receipts/2026-11-26-ribbon-pdf-removal-3856/README.md)
 checks the next row after each click and the pending marker after the
 last command leaves the draft.

@@ -141,7 +141,7 @@ impl GuiRibbonIcons {
         let mut cell = self.cell(size);
         let show_caption = self.appearance == RibbonAppearance::Normal;
         if show_caption {
-            let caption = ui.calc_text_size(label)[0];
+            let caption = ui.calc_text_size_with_opts(label, true, -1.)[0];
             cell[0] = cell[0].max(caption + if large { 4. } else { icon[0] + 7. });
         }
         crate::widget_abi::IconButtonPresentation {
