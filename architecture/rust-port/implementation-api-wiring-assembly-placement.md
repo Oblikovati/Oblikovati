@@ -23,3 +23,21 @@ returned all 15 new names, IDs, and transforms in order. The live assembly
 listed 16 occurrences, then one after undo and 16 after redo. A captured
 frame showed all sixteen boxes in a four-by-four grid. The driver set an
 explicit camera frame for the capture.
+
+## Occurrence transforms and grounding
+
+The API can reposition, ground, and release an occurrence in the active
+assembly by its session ID. It validates the affine transform before the
+edit and keeps the occurrence's component binding and ID. A repeated
+setting keeps the current history cursor. Each changed setting is one
+undoable command. The file-host regression verifies invalid inputs,
+undo and redo, and the persisted transform and grounding after reopen.
+
+Contact-set collision blocking depends on the assembly contact solver,
+which is still pending for the Rust desktop.
+
+The Wayland MCP run released the first grounded occurrence in the grid,
+moved it, undid and redid the transform, then grounded it at the new
+position. The transform changed 31,606 pixels in the viewport crop. Undo
+restored the original crop pixel for pixel. The frame after redo and
+grounding matched the moved crop.

@@ -146,3 +146,82 @@ fn open_assembly_and_part(files: &mut DiscoveryWorkspace, guids: &mut QueryGuids
         .unwrap();
     (root, part)
 }
+
+#[test]
+fn occurrence_transform_and_grounding_round_trip_through_history_and_file() {
+    let mut files = DiscoveryWorkspace::new(QueryObserver::default(), DiscoveryFiles::default());
+    let mut guids = QueryGuids(0);
+    let (root, part) = open_assembly_and_part(&mut files, &mut guids);
+    let moved = {
+        let client = Client::new(FileHost::new(&mut files, &mut guids, "test"));
+        let original = client
+            .assembly()
+            .place(&PlaceOccurrenceArgs {
+                document: part,
+                name: "Box:1".into(),
+                transform: translation(0.),
+            })
+            .unwrap()
+            .occurrence;
+        let id = original.id;
+        let ground = GroundOccurrenceArgs {
+            id,
+            grounded: false,
+        };
+        let released = client.assembly().ground(&ground).unwrap().occurrence;
+        assert!(!released.grounded);
+        assert_eq!(released.transform, original.transform);
+        let transform = TransformOccurrenceArgs {
+            id,
+            transform: translation(6.),
+        };
+        let moved = client.assembly().transform(&transform).unwrap().occurrence;
+        assert_eq!(moved.id, id);
+        assert_eq!(moved.transform, transform.transform);
+        assert!(!moved.grounded);
+        assert_eq!(
+            client.assembly().transform(&transform).unwrap().occurrence,
+            moved
+        );
+        assert!(
+            client
+                .assembly()
+                .transform(&TransformOccurrenceArgs {
+                    id,
+                    transform: Matrix::default(),
+                })
+                .is_err()
+        );
+        assert!(
+            client
+                .assembly()
+                .ground(&GroundOccurrenceArgs {
+                    id: u64::MAX,
+                    grounded: true,
+                })
+                .is_err()
+        );
+        client.transactions().undo().unwrap();
+        assert_eq!(rows(&client), vec![released]);
+        client.transactions().undo().unwrap();
+        assert_eq!(rows(&client), vec![original]);
+        client.transactions().redo().unwrap();
+        client.transactions().redo().unwrap();
+        assert_eq!(rows(&client), vec![moved.clone()]);
+        moved
+    };
+    files.save(root, "test", &mut guids).unwrap();
+    files.close_discarding_changes(root).unwrap();
+    let mut factory = QueryObserverFactory {
+        created: 0,
+        limit: 4,
+    };
+    FileHost::new(&mut files, &mut guids, "test")
+        .with_observer_factory(&mut factory)
+        .open_path(Path::new("/fixtures/definition.oad"), true)
+        .unwrap();
+    assert_eq!(
+        rows(&Client::new(FileHost::new(&mut files, &mut guids, "test"))),
+        vec![moved]
+    );
+}
