@@ -24,8 +24,7 @@ fn no_abc_parameter(world: &mut ApplicationWorld) {
 #[when("the user replaces the active member d0 value with \"abc\" and presses Enter")]
 fn enter_invalid_equation(world: &mut ApplicationWorld) {
     set_parameter_cell(world, "Copy State", "abc");
-    super::super::x11_input::press_keysym(0xff0d);
-    world.pump(Vec::new());
+    super::super::desktop_input::key(world, 0xff0d);
     world.pump(Vec::new());
 }
 fn yellow_equation(world: &mut ApplicationWorld) {
@@ -91,7 +90,7 @@ fn dismiss_message(world: &mut ApplicationWorld) {
         .find(|run| run.text.trim() == "OK")
         .unwrap()
         .center();
-    super::super::x11_input::click(diagnostics::pointer_pixels(button));
+    world.desktop_click(diagnostics::pointer_pixels(button));
     world.pump(Vec::new());
 }
 #[then("the model-state table remains open with \"abc\" in the d0 cell")]
