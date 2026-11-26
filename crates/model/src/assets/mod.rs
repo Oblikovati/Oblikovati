@@ -53,9 +53,9 @@ pub use catalog::{BuiltinAssetCatalog, DEFAULT_APPEARANCE_ID};
 pub use document::{
     AppearanceAssignmentTarget, AppearanceBump, AppearanceChecker, AppearanceHeightMap,
     AppearanceIllumination, AppearanceMetadata, AppearanceReflectivity, AppearanceTint,
-    AppearanceTransparency, CeramicAppearance, CeramicFinish, CeramicKind, DocumentAssets,
-    GenericAppearanceEffects, GenericRoughSurface, MaterialAssignmentTarget, RefractionPreset,
-    TextureRepeat,
+    AppearanceTransparency, CeramicAppearance, CeramicFinish, CeramicKind, ConcreteAppearance,
+    ConcreteFinish, ConcreteSealant, DocumentAssets, GenericAppearanceEffects, GenericRoughSurface,
+    MaterialAssignmentTarget, RefractionPreset, TextureRepeat,
 };
 pub use material::MaterialAsset;
 pub use project::ProjectAssetLibrary;

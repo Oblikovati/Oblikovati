@@ -10,8 +10,8 @@ use oblikovati_gui::{
     AppearanceCopy, AppearanceTemplate, GuiAppearanceChange, GuiMaterialChoice, GuiPartAssetKind,
 };
 use oblikovati_model::assets::{
-    AppearanceAsset, AppearanceMetadata, CeramicAppearance, DocumentAssets, MaterialAsset,
-    ScopedAssets,
+    AppearanceAsset, AppearanceMetadata, CeramicAppearance, ConcreteAppearance, DocumentAssets,
+    MaterialAsset, ScopedAssets,
 };
 
 macro_rules! owned_part_asset_work_methods {
@@ -196,8 +196,18 @@ impl<
             .get(oblikovati_model::assets::DEFAULT_APPEARANCE_ID)
             .ok_or_else(|| "appearance: expected the neutral built-in definition".to_owned())?;
         let mut asset = base.duplicate(id, name, oblikovati_api::types::ASSET_DOCUMENT)?;
-        if template == AppearanceTemplate::Ceramic {
-            initialize_ceramic_surface(&mut asset)?;
+        match template {
+            AppearanceTemplate::Ceramic => initialize_typed_surface(
+                &mut asset,
+                1.,
+                CeramicAppearance::default().finish.surface(),
+            )?,
+            AppearanceTemplate::Concrete => initialize_typed_surface(
+                &mut asset,
+                120. / 255.,
+                ConcreteAppearance::default().surface(),
+            )?,
+            AppearanceTemplate::Generic => (),
         }
         Ok(asset)
     }
@@ -235,14 +245,17 @@ impl<
     }
 }
 
-fn initialize_ceramic_surface(asset: &mut AppearanceAsset) -> Result<(), String> {
-    let [roughness, weight] = CeramicAppearance::default().finish.surface();
+fn initialize_typed_surface(
+    asset: &mut AppearanceAsset,
+    gray: f32,
+    [roughness, weight]: [u8; 2],
+) -> Result<(), String> {
     let mut record = asset.info();
     [
         record.base.color.r,
         record.base.color.g,
         record.base.color.b,
-    ] = [1.; 3];
+    ] = [gray; 3];
     record.specular.roughness = f32::from(roughness) / 255.;
     record.specular.weight = f32::from(weight) / 255.;
     asset.edit(record)?;
@@ -333,19 +346,19 @@ fn embed_new_appearance(
     let created =
         created.ok_or_else(|| "appearance: expected a new document definition".to_owned())?;
     let embedded = assets.embed_appearance(created)?;
-    if let GuiAppearanceChange::Create {
-        id,
-        template: AppearanceTemplate::Ceramic,
-        ..
-    } = edit
-    {
-        assets.set_appearance_metadata(
-            id,
-            AppearanceMetadata {
+    if let GuiAppearanceChange::Create { id, template, .. } = edit {
+        let metadata = match template {
+            AppearanceTemplate::Generic => return Ok(embedded),
+            AppearanceTemplate::Ceramic => AppearanceMetadata {
                 ceramic: Some(CeramicAppearance::default()),
                 ..Default::default()
             },
-        )?;
+            AppearanceTemplate::Concrete => AppearanceMetadata {
+                concrete: Some(ConcreteAppearance::default()),
+                ..Default::default()
+            },
+        };
+        assets.set_appearance_metadata(id, metadata)?;
     }
     Ok(embedded)
 }

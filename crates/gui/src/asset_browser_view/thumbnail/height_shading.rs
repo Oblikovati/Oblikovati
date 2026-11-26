@@ -83,14 +83,30 @@ fn image_effect(
         .map(|map| (map, f32::from(effect.amount) / 100.))
 }
 
-fn slope(map: &AppearanceHeightMap, [x, y]: [f32; 2]) -> f32 {
+pub(super) fn slope(map: &AppearanceHeightMap, at: [f32; 2]) -> f32 {
     let side = AppearanceHeightMap::SIDE;
-    let at = [x, y].map(|axis| (axis * 0.5 + 0.5).clamp(0., 1.) * (side - 1) as f32);
-    let [u, v] = at.map(|axis| axis.round() as usize);
-    let height = |x: usize, y: usize| {
-        f32::from(map.samples().get(y * side + x).copied().unwrap_or(0)) / 255.
-    };
+    let [u, v] = sample_indices(at);
+    let height = |x: usize, y: usize| height_sample(map, x, y);
     let dx = height((u + 1).min(side - 1), v) - height(u.saturating_sub(1), v);
     let dy = height(u, (v + 1).min(side - 1)) - height(u, v.saturating_sub(1));
     dx * 0.34 + dy * 0.42
+}
+
+pub(super) fn height_at(map: &AppearanceHeightMap, at: [f32; 2]) -> f32 {
+    let [u, v] = sample_indices(at);
+    height_sample(map, u, v)
+}
+
+fn sample_indices(at: [f32; 2]) -> [usize; 2] {
+    let limit = (AppearanceHeightMap::SIDE - 1) as f32;
+    at.map(|axis| ((axis * 0.5 + 0.5).clamp(0., 1.) * limit).round() as usize)
+}
+
+fn height_sample(map: &AppearanceHeightMap, x: usize, y: usize) -> f32 {
+    f32::from(
+        map.samples()
+            .get(y * AppearanceHeightMap::SIDE + x)
+            .copied()
+            .unwrap_or(0),
+    ) / 255.
 }

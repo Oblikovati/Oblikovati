@@ -7,7 +7,7 @@ use crate::application::document_saving::folder_browser::{
 use crate::application::file_system::NativeFolders;
 use image::{ImageFormat, ImageReader, Limits, imageops::FilterType};
 use imgui::Ui;
-use oblikovati_model::assets::{AppearanceHeightMap, CeramicAppearance};
+use oblikovati_model::assets::{AppearanceHeightMap, AppearanceMetadata};
 use std::io::{Cursor, Read};
 use std::{fs::File, path::Path, rc::Rc};
 
@@ -17,6 +17,34 @@ const TITLE: &str = "Choose Image File";
 pub(super) enum HeightMapTarget {
     FinishBumps,
     Relief,
+    ConcreteStamp,
+    ConcreteWeathering,
+}
+
+impl HeightMapTarget {
+    fn assign(self, metadata: &mut AppearanceMetadata, map: AppearanceHeightMap) {
+        let destination = match self {
+            Self::FinishBumps => metadata
+                .ceramic
+                .as_mut()
+                .map(|value| &mut value.custom_bump),
+            Self::Relief => metadata
+                .ceramic
+                .as_mut()
+                .map(|value| &mut value.relief_image),
+            Self::ConcreteStamp => metadata
+                .concrete
+                .as_mut()
+                .map(|value| &mut value.stamped_image),
+            Self::ConcreteWeathering => metadata
+                .concrete
+                .as_mut()
+                .map(|value| &mut value.weathering_image),
+        };
+        if let Some(destination) = destination {
+            *destination = Some(map);
+        }
+    }
 }
 
 #[derive(Default)]
@@ -38,7 +66,7 @@ impl ImageChooser {
         self.request = Some(target);
     }
 
-    pub(super) fn draw(&mut self, ui: &Ui, ceramic: &mut CeramicAppearance) {
+    pub(super) fn draw(&mut self, ui: &Ui, metadata: &mut AppearanceMetadata) {
         if let Some(target) = self.request.take() {
             self.draft = Some(ImageSelection::new(target));
             ui.open_popup(TITLE);
@@ -54,10 +82,7 @@ impl ImageChooser {
         match draft.controls(ui) {
             Selection::Pending => return,
             Selection::Cancelled => (),
-            Selection::Chosen(map) => match draft.target {
-                HeightMapTarget::FinishBumps => ceramic.custom_bump = Some(map),
-                HeightMapTarget::Relief => ceramic.relief_image = Some(map),
-            },
+            Selection::Chosen(map) => draft.target.assign(metadata, map),
         }
         ui.close_current_popup();
         self.draft = None;

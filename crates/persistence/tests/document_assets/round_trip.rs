@@ -135,6 +135,7 @@ fn document_appearance_information_round_trips_and_clears() {
         description: "Metallic finish\nFinish per drawing".into(),
         keywords: "metal, finition".into(),
         ceramic: None,
+        concrete: None,
         checker: Some(oblikovati_model::assets::AppearanceChecker {
             size_mm: [18, 32],
             rotation_degrees: 45,

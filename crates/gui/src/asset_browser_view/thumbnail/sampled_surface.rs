@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Sample textured and transmissive surfaces for the browser and editor previews.
-use super::PreviewLight;
 use super::height_shading::HeightShading;
+use super::{PreviewLight, concrete_shading};
 use crate::GuiAssetChoice;
 use crate::appearance_editor::CheckerSampler;
 use imgui::DrawListMut;
-use oblikovati_model::assets::{AppearanceReflectivity, GenericAppearanceEffects};
+use oblikovati_model::assets::{
+    AppearanceReflectivity, ConcreteAppearance, GenericAppearanceEffects,
+};
 
 pub(super) fn paint(
     draw: &DrawListMut<'_>,
@@ -38,6 +40,7 @@ pub(super) struct PreviewSurface<'a> {
     effects: Option<&'a GenericAppearanceEffects>,
     height_shading: HeightShading<'a>,
     rough_diffuse: f32,
+    concrete: Option<&'a ConcreteAppearance>,
 }
 
 impl<'a> PreviewSurface<'a> {
@@ -48,15 +51,19 @@ impl<'a> PreviewSurface<'a> {
             .map(|v| f32::from(v) / 255.);
         let metadata = asset.appearance_metadata.as_ref();
         let ceramic = metadata.and_then(|metadata| metadata.ceramic.as_ref());
-        let base = ceramic
-            .filter(|value| value.tint.enabled)
-            .map_or(base, |value| {
-                std::array::from_fn(|index| base[index] * f32::from(value.tint.color[index]) / 255.)
-            });
+        let concrete = metadata.and_then(|metadata| metadata.concrete.as_ref());
+        let tint = ceramic
+            .map(|value| value.tint)
+            .or_else(|| concrete.map(|value| value.tint));
+        let base = tint.filter(|tint| tint.enabled).map_or(base, |tint| {
+            std::array::from_fn(|index| base[index] * f32::from(tint.color[index]) / 255.)
+        });
         let reflectivity = metadata
             .and_then(|metadata| metadata.reflectivity)
             .filter(|effect| effect.enabled);
         let effects = metadata.and_then(|metadata| metadata.generic_effects.as_ref());
+        let concrete =
+            concrete.or_else(|| effects.and_then(|effect| effect.concrete_surface.as_deref()));
         let transparency = metadata
             .and_then(|metadata| metadata.transparency)
             .filter(|effect| effect.enabled);
@@ -68,6 +75,7 @@ impl<'a> PreviewSurface<'a> {
         Self {
             base,
             effects,
+            concrete,
             height_shading: HeightShading::new(ceramic, effects),
             rough_diffuse: asset
                 .appearance_preview
@@ -85,7 +93,10 @@ impl<'a> PreviewSurface<'a> {
     }
 
     pub(super) fn needs_samples(&self) -> bool {
-        self.transmission > 0. || self.checker.is_some() || self.height_shading.enabled()
+        self.transmission > 0.
+            || self.checker.is_some()
+            || self.height_shading.enabled()
+            || self.concrete.is_some()
     }
 
     fn sphere(&self, [x, y]: [f32; 2], light: PreviewLight) -> [f32; 4] {
@@ -118,6 +129,9 @@ impl<'a> PreviewSurface<'a> {
             .effects
             .map_or(base, |effects| super::preview_effect_color(base, effects));
         let diffuse = self.height_shading.apply([x, y], diffuse);
+        let diffuse = self.concrete.map_or(diffuse, |concrete| {
+            concrete_shading::shade(concrete, [x, y], diffuse)
+        });
         // A rough surface scatters the directional light into a broader, softer lobe.
         let diffuse = diffuse + (0.65 - diffuse) * self.rough_diffuse;
         let surface = super::surface_color(base, diffuse, facing, self.reflectivity);

@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: GPL-2.0-only
 mod assign;
 mod ceramic;
+mod concrete;
 mod effects;
 mod height_map;
 mod texture;
 use super::{AppearanceAsset, AssetAssignments, AssetCollection, MaterialAsset};
 pub use assign::{AppearanceAssignmentTarget, MaterialAssignmentTarget};
 pub use ceramic::{CeramicAppearance, CeramicFinish, CeramicKind};
+pub use concrete::{ConcreteAppearance, ConcreteFinish, ConcreteSealant};
 pub use effects::{
     AppearanceBump, AppearanceIllumination, AppearanceTint, GenericAppearanceEffects,
     GenericRoughSurface,
@@ -34,6 +36,8 @@ pub struct AppearanceMetadata {
     pub checker: Option<AppearanceChecker>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub ceramic: Option<CeramicAppearance>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub concrete: Option<ConcreteAppearance>,
 }
 
 impl AppearanceMetadata {
@@ -49,6 +53,11 @@ impl AppearanceMetadata {
                 relief: ceramic.relief,
                 relief_image: ceramic.relief_image,
             }));
+        }
+        if let Some(mut concrete) = self.concrete.take() {
+            let effects = self.generic_effects.get_or_insert_with(Default::default);
+            effects.tint = std::mem::take(&mut concrete.tint);
+            effects.concrete_surface = Some(Box::new(concrete));
         }
         self
     }
@@ -218,6 +227,11 @@ impl DocumentAssets {
         }
         if let Some(ceramic) = &metadata.ceramic {
             ceramic
+                .validate()
+                .map_err(|cause| format!("appearance {id:?}: {cause}"))?;
+        }
+        if let Some(concrete) = &metadata.concrete {
+            concrete
                 .validate()
                 .map_err(|cause| format!("appearance {id:?}: {cause}"))?;
         }

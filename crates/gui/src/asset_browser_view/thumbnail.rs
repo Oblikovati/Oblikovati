@@ -4,6 +4,7 @@ use super::{AssetRows, GuiAssetChoice};
 use imgui::{DrawListMut, StyleColor, Ui};
 use oblikovati_model::assets::AppearanceReflectivity;
 
+mod concrete_shading;
 mod cube;
 mod height_shading;
 mod sampled_surface;

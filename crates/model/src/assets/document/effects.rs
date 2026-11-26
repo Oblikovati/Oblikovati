@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Authored settings for the optional Generic document appearance effects.
-use super::AppearanceHeightMap;
+use super::{AppearanceHeightMap, ConcreteAppearance};
 
 /// Generic appearance settings retained when the individual effects are disabled.
 #[derive(Clone, Debug, Default, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
@@ -12,6 +12,8 @@ pub struct GenericAppearanceEffects {
     pub tint: AppearanceTint,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub rough_surface: Option<Box<GenericRoughSurface>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub concrete_surface: Option<Box<ConcreteAppearance>>,
 }
 
 impl GenericAppearanceEffects {
@@ -29,6 +31,9 @@ impl GenericAppearanceEffects {
             ));
         }
         if let Some(surface) = &self.rough_surface {
+            surface.validate()?;
+        }
+        if let Some(surface) = &self.concrete_surface {
             surface.validate()?;
         }
         Ok(())

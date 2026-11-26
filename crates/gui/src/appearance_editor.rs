@@ -6,7 +6,8 @@ use imgui::{Condition, Ui, WindowFlags};
 use oblikovati_model::assets::AppearanceMetadata;
 
 mod ceramic;
-mod duplicate;
+mod concrete;
+mod creation;
 mod image_chooser;
 mod optional_effects;
 mod preview_options;
@@ -57,13 +58,25 @@ pub enum AppearanceCopy {
 pub enum AppearanceTemplate {
     Generic,
     Ceramic,
+    Concrete,
 }
 
 impl AppearanceTemplate {
-    fn label(self) -> &'static str {
+    pub(crate) fn label(self) -> &'static str {
         match self {
             Self::Generic => "Generic",
             Self::Ceramic => "Ceramic",
+            Self::Concrete => "Concrete",
+        }
+    }
+
+    pub(crate) fn from_metadata(metadata: &AppearanceMetadata) -> Self {
+        if metadata.concrete.is_some() {
+            Self::Concrete
+        } else if metadata.ceramic.is_some() {
+            Self::Ceramic
+        } else {
+            Self::Generic
         }
     }
 
@@ -71,6 +84,7 @@ impl AppearanceTemplate {
         match self {
             Self::Generic => "generic",
             Self::Ceramic => "ceramic",
+            Self::Concrete => "concrete",
         }
     }
 }
@@ -85,7 +99,7 @@ pub(crate) struct AppearanceEditor {
     confirm_close: bool,
     texture_open: bool,
     close_after_apply: bool,
-    pending_duplicate: Option<String>,
+    pending_creation: Option<String>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -155,11 +169,7 @@ impl AppearanceEditor {
         let Some(_popup) = ui.begin_popup("##new-appearance") else {
             return;
         };
-        let template = if ui.menu_item("New Generic Appearance") {
-            AppearanceTemplate::Generic
-        } else if ui.menu_item("Ceramic") {
-            AppearanceTemplate::Ceramic
-        } else {
+        let Some(template) = creation::template_choice(ui) else {
             return;
         };
         let (id, name) = available_identity(&browser.appearances, template);
@@ -187,7 +197,7 @@ impl AppearanceEditor {
             self.close();
             return;
         };
-        let id = self.accept_duplicate(document, id, &browser.appearances, selected);
+        let id = self.accept_creation(document, id, &browser.appearances, selected);
         let Some(asset) = browser
             .appearances
             .iter()
@@ -203,7 +213,7 @@ impl AppearanceEditor {
             self.close();
             return;
         }
-        if let Some(kind) = self.window(
+        if let Some(action) = self.window(
             ui,
             asset,
             &original,
@@ -211,7 +221,7 @@ impl AppearanceEditor {
             state.transaction_open,
             actions,
         ) {
-            self.queue_duplicate(asset, &browser.appearances, document, kind, actions);
+            self.queue_creation(asset, &browser.appearances, document, action, actions);
         }
     }
 
@@ -223,7 +233,7 @@ impl AppearanceEditor {
         document: u64,
         read_only: bool,
         actions: &mut Vec<GuiShellAction>,
-    ) -> Option<AppearanceCopy> {
+    ) -> Option<creation::EditorCreation> {
         let draft = self.draft.get_or_insert_with(|| original.clone());
         let title = format!("Appearance Editor — {}###appearance-editor", original.name);
         let mut open = true;
@@ -252,14 +262,12 @@ impl AppearanceEditor {
                             &mut self.image_chooser,
                         )
                     });
-                if let Some(ceramic) = &mut draft.metadata.ceramic {
-                    self.image_chooser.draw(ui, ceramic);
-                }
+                self.image_chooser.draw(ui, &mut draft.metadata);
                 let changed = draft != original;
                 let editable = changed && !draft.name.trim().is_empty() && !read_only;
                 exit = editor_buttons(ui, editable);
                 if exit == EditorExit::KeepOpen {
-                    exit = duplicate::menu(ui, !changed && !read_only);
+                    exit = creation::menu(ui, !changed && !read_only);
                 }
                 if self.confirm_close {
                     exit = confirm_exit(ui, editable);
@@ -283,7 +291,7 @@ impl AppearanceEditor {
                 self.close_after_apply = exit == EditorExit::SaveAndClose;
                 self.confirm_close = false;
             }
-            EditorExit::Duplicate(kind) => return Some(kind),
+            EditorExit::Create(action) => return Some(action),
             EditorExit::Discard => self.close(),
             EditorExit::CancelClose => self.confirm_close = false,
             EditorExit::KeepOpen => {}
@@ -299,7 +307,7 @@ impl AppearanceEditor {
         self.image_chooser = Default::default();
         self.preview_options = Default::default();
         self.close_after_apply = false;
-        self.pending_duplicate = None;
+        self.pending_creation = None;
     }
 }
 
@@ -341,15 +349,16 @@ fn draw_properties(
     texture_open: &mut bool,
     image_chooser: &mut image_chooser::ImageChooser,
 ) {
-    let template = if draft.metadata.ceramic.is_some() {
-        AppearanceTemplate::Ceramic
-    } else {
-        AppearanceTemplate::Generic
-    };
+    let template = AppearanceTemplate::from_metadata(&draft.metadata);
     draw_information(ui, draft, template);
-    if template == AppearanceTemplate::Ceramic {
-        ceramic::draw(ui, draft, color_dialog, image_chooser);
-        return;
+    match template {
+        AppearanceTemplate::Ceramic => {
+            return ceramic::draw(ui, draft, color_dialog, image_chooser);
+        }
+        AppearanceTemplate::Concrete => {
+            return concrete::draw(ui, draft, color_dialog, image_chooser);
+        }
+        AppearanceTemplate::Generic => (),
     }
     if let Some(_generic) = ui.tree_node_config("Generic").default_open(true).push() {
         base_color(ui, &mut draft.color, color_dialog);
@@ -416,7 +425,7 @@ enum EditorExit {
     SaveAndClose,
     Discard,
     CancelClose,
-    Duplicate(AppearanceCopy),
+    Create(creation::EditorCreation),
 }
 
 fn editor_buttons(ui: &Ui, editable: bool) -> EditorExit {

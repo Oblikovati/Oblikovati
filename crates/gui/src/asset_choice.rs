@@ -16,15 +16,14 @@ pub struct GuiAssetChoice {
 
 impl GuiAssetChoice {
     pub(crate) fn appearance_type(&self) -> &'static str {
-        if self
-            .appearance_metadata
+        use crate::AppearanceTemplate;
+        self.appearance_metadata
             .as_ref()
-            .is_some_and(|metadata| metadata.ceramic.is_some())
-        {
-            "Ceramic"
-        } else {
-            "Generic"
-        }
+            .map_or(
+                AppearanceTemplate::Generic,
+                AppearanceTemplate::from_metadata,
+            )
+            .label()
     }
 }
 

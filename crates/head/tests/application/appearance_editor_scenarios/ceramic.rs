@@ -176,7 +176,7 @@ fn ceramic_finish_and_wavy_bumps_are_saved_with_the_part() {
     );
 }
 
-fn preview_changed(world: &mut ApplicationWorld, threshold: u8, minimum: usize) {
+pub(super) fn preview_changed(world: &mut ApplicationWorld, threshold: u8, minimum: usize) {
     let before = world.last_capture.take().unwrap();
     let after = capture_framebuffer(&mut world.app().window.native);
     let changed = preview_pixels(&before, EDITOR)
@@ -200,7 +200,7 @@ fn ceramic_asset(world: &mut ApplicationWorld) -> oblikovati_gui::GuiAssetChoice
         .expect("expected a document-owned Ceramic appearance")
 }
 
-fn check_choices(world: &mut ApplicationWorld, value: &str, choices: &[&str]) {
+pub(super) fn check_choices(world: &mut ApplicationWorld, value: &str, choices: &[&str]) {
     click_in(world, EDITOR, value);
     for choice in choices {
         menu_item(world, choice);
@@ -209,7 +209,7 @@ fn check_choices(world: &mut ApplicationWorld, value: &str, choices: &[&str]) {
     world.pump(Vec::new());
 }
 
-fn select_menu_item(world: &mut ApplicationWorld, name: &str) {
+pub(super) fn select_menu_item(world: &mut ApplicationWorld, name: &str) {
     let at = diagnostics::pointer_pixels(menu_item(world, name).center());
     world.click(at);
     world.pump(Vec::new());
@@ -224,6 +224,6 @@ fn menu_item<'a>(world: &'a ApplicationWorld, name: &str) -> &'a diagnostics::Re
         .unwrap_or_else(|| panic!("expected {name} in the appearance menu: {}", world.text()))
 }
 
-mod height_maps;
+pub(super) mod height_maps;
 
 mod duplicate;

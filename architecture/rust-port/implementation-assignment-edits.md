@@ -141,3 +141,11 @@ keeps the common surface parameters and moves Ceramic scattering, Tint,
 bump, and relief into Generic preview settings. Both commands select the
 new asset and keep the current preview scene and lighting. See the
 [native duplicate receipt](receipts/2026-11-26-appearance-duplicate-3563/README.md).
+
+Concrete opens from either creation menu. Its sealant and finish change
+the shared surface and preview. Finish Bumps uses the selected tooling
+with no enable checkbox. Weathering and Tint can be enabled separately.
+The image chooser can embed stamped finish and weathering maps, and
+Apply commits them with the selected settings. A Generic copy retains
+the concrete preview surface and map data. See the
+[native Concrete receipt](receipts/2026-11-26-appearance-concrete-3563/README.md).

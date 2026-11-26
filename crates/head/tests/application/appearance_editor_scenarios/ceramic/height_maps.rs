@@ -122,7 +122,7 @@ fn open_bump_chooser(world: &mut ApplicationWorld) {
     chooser_open(world);
 }
 
-fn choose_file(world: &mut ApplicationWorld, file: &std::path::Path) {
+pub(in super::super) fn choose_file(world: &mut ApplicationWorld, file: &std::path::Path) {
     world.type_text(file.to_str().unwrap());
     world.pump(Vec::new());
     click_in(world, CHOOSER, "Open");
@@ -133,7 +133,11 @@ fn choose_file(world: &mut ApplicationWorld, file: &std::path::Path) {
     );
 }
 
-fn write_map(world: &mut ApplicationWorld, name: &str, vertical: bool) -> std::path::PathBuf {
+pub(in super::super) fn write_map(
+    world: &mut ApplicationWorld,
+    name: &str,
+    vertical: bool,
+) -> std::path::PathBuf {
     let path = world.scratch_folder().join(name);
     let mut png = png::Encoder::new(std::fs::File::create(&path).unwrap(), 32, 32);
     png.set_color(png::ColorType::Grayscale);
