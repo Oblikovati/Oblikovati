@@ -3,21 +3,24 @@ use oblikovati_api::{
     Error,
     types::DOCUMENT_PART,
     wire::{
-        self, AddCustomTableArgs, AddDrawingNoteArgs, AnnotationResult, DeleteAnnotationArgs,
-        DrawingAnnotationInfo, ListDrawingAnnotationsResult,
+        self, AddCustomTableArgs, AddDrawingNoteArgs, AddRevisionTableArgs, AddRevisionTagArgs,
+        AnnotationResult, DeleteAnnotationArgs, DrawingAnnotationInfo,
+        ListDrawingAnnotationsResult,
     },
 };
 use oblikovati_model::drawing::{
     DrawingAnnotationDefinition, DrawingDocument, DrawingPartsListPresentation,
-    DrawingPartsListRow, DrawingPartsListSource,
+    DrawingPartsListRow, DrawingPartsListSource, DrawingRevisionRow,
 };
 use oblikovati_model::property::{DESIGN_TRACKING, DocumentProperties};
 use oblikovati_persistence::file_access::DocumentFiles;
 use oblikovati_session::{TransactionObserver, files::FileWorkspace, workspace::WorkspaceObserver};
 
-pub(super) const ANNOTATION_METHODS: [&str; 4] = [
+pub(super) const ANNOTATION_METHODS: [&str; 6] = [
     wire::METHOD_DRAWING_ANNOTATIONS_ADD_NOTE,
     wire::METHOD_DRAWING_ANNOTATIONS_ADD_CUSTOM_TABLE,
+    wire::METHOD_DRAWING_ANNOTATIONS_ADD_REV_TABLE,
+    wire::METHOD_DRAWING_ANNOTATIONS_ADD_REV_TAG,
     wire::METHOD_DRAWING_ANNOTATIONS_LIST,
     wire::METHOD_DRAWING_ANNOTATIONS_DELETE,
 ];
@@ -64,6 +67,28 @@ pub(super) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
                     args.headers.unwrap_or_default(),
                     args.rows.unwrap_or_default(),
                 )
+            })
+        }
+        wire::METHOD_DRAWING_ANNOTATIONS_ADD_REV_TABLE => {
+            let args: AddRevisionTableArgs = crate::decode(method, request)?;
+            let rows = args
+                .rows
+                .unwrap_or_default()
+                .into_iter()
+                .map(|row| DrawingRevisionRow {
+                    revision: row.revision,
+                    date: row.date,
+                    description: row.description,
+                })
+                .collect();
+            add_annotation(files, owner, "Add Drawing Revision Table", |drawing| {
+                drawing.add_revision_table(&args.name, [args.xmm, args.ymm], rows)
+            })
+        }
+        wire::METHOD_DRAWING_ANNOTATIONS_ADD_REV_TAG => {
+            let args: AddRevisionTagArgs = crate::decode(method, request)?;
+            add_annotation(files, owner, "Add Drawing Revision Tag", |drawing| {
+                drawing.add_revision_tag(&args.name, [args.xmm, args.ymm], &args.revision)
             })
         }
         wire::METHOD_DRAWING_ANNOTATIONS_DELETE => {
@@ -157,19 +182,7 @@ fn annotation_info(
     annotation: &DrawingAnnotationDefinition,
     table: Option<&DrawingPartsListPresentation>,
 ) -> Result<DrawingAnnotationInfo, Error> {
-    let (kind, tag, curves, rows) = if let Some(note) = annotation.note_presentation() {
-        ("drawingNote", note.text, note.leader_segments_mm.len(), 0)
-    } else if let DrawingAnnotationDefinition::CustomTable { headers, rows, .. } = annotation {
-        (
-            "customTable",
-            "",
-            headers.len() + rows.len() + 3,
-            rows.len(),
-        )
-    } else {
-        let (curves, rows) = table.map_or((0, 0), |table| (table.lines.len(), table.row_count));
-        ("partsList", "", curves, rows)
-    };
+    let (kind, tag, curves, rows) = annotation_details(annotation, table);
     let count = |value| i64::try_from(value).map_err(api_error);
     Ok(DrawingAnnotationInfo {
         name: annotation.name().into(),
@@ -179,6 +192,36 @@ fn annotation_info(
         row_count: count(rows)?,
         ..Default::default()
     })
+}
+
+fn annotation_details<'a>(
+    annotation: &'a DrawingAnnotationDefinition,
+    table: Option<&DrawingPartsListPresentation>,
+) -> (&'static str, &'a str, usize, usize) {
+    match annotation {
+        DrawingAnnotationDefinition::RevisionTag { revision, .. } => {
+            ("revisionTag", revision, 3, 0)
+        }
+        DrawingAnnotationDefinition::RevisionTable { revisions, .. } => {
+            ("revisionTable", "", revisions.len() + 6, revisions.len())
+        }
+        DrawingAnnotationDefinition::CustomTable { headers, rows, .. } => (
+            "customTable",
+            "",
+            headers.len() + rows.len() + 3,
+            rows.len(),
+        ),
+        DrawingAnnotationDefinition::PartsList { .. } => {
+            let (curves, rows) = table.map_or((0, 0), |table| (table.lines.len(), table.row_count));
+            ("partsList", "", curves, rows)
+        }
+        DrawingAnnotationDefinition::Note { text, .. } => {
+            let curves = annotation
+                .note_presentation()
+                .map_or(0, |note| note.leader_segments_mm.len());
+            ("drawingNote", text, curves, 0)
+        }
+    }
 }
 
 fn current_parts_lists<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(

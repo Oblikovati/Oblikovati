@@ -36,3 +36,18 @@ grid coordinates, deletion, undo, and the authored cells after reopening.
 The native Wayland MCP run used two columns and three data rows. Adding
 the table changed 4,921 sheet pixels. Undo, redo, deletion, and reopen
 matched their expected sheet captures pixel for pixel.
+
+## Revision annotations
+
+`drawingAnnotations.addRevisionTable` places revision, date, and
+description rows in a table at the given top-left sheet point.
+`drawingAnnotations.addRevisionTag` places an upward triangle with the
+revision text at the given sheet point. Each is saved with the active
+sheet and can be listed, deleted, and undone independently.
+
+The owner test checks required inputs, the table and tag geometry,
+separate undo and redo, and the authored rows and tag after reopening.
+The native Wayland MCP run placed a two-row table and a B tag on a
+drawing with no referenced model. The table changed 7,149 sheet pixels,
+and the tag changed another 454. Undo, redo, reopen, and tag deletion
+matched their expected captures pixel for pixel.

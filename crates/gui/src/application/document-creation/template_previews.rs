@@ -42,10 +42,12 @@ impl GuiTemplateSheet {
                 .iter()
                 .filter_map(|annotation| match annotation {
                     DrawingAnnotationDefinition::PartsList { x_mm, y_mm, .. }
-                    | DrawingAnnotationDefinition::CustomTable { x_mm, y_mm, .. } => {
+                    | DrawingAnnotationDefinition::CustomTable { x_mm, y_mm, .. }
+                    | DrawingAnnotationDefinition::RevisionTable { x_mm, y_mm, .. } => {
                         Some(anchor(*x_mm, *y_mm))
                     }
-                    DrawingAnnotationDefinition::Note { .. } => None,
+                    DrawingAnnotationDefinition::Note { .. }
+                    | DrawingAnnotationDefinition::RevisionTag { .. } => None,
                 })
                 .collect(),
         })

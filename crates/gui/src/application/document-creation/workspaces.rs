@@ -16,8 +16,8 @@ mod base_view_dialog;
 mod drawing_border_zones;
 #[path = "drawing_lines.rs"]
 mod drawing_lines;
-#[path = "drawing_notes.rs"]
-mod drawing_notes;
+#[path = "drawing_markup.rs"]
+mod drawing_markup;
 #[path = "drawing_view_labels.rs"]
 mod drawing_view_labels;
 
@@ -269,13 +269,11 @@ fn sheet_on_list(
         [minimum, maximum],
         dimensions,
     );
-    drawing_notes::draw(list, &sheet.annotations, [minimum, maximum], dimensions);
+    drawing_markup::draw(ui, list, &sheet.annotations, [minimum, maximum], dimensions);
     list.with_clip_rect_intersect(minimum, maximum, || {
-        for table in sheet
-            .annotations
-            .iter()
-            .filter_map(|annotation| annotation.custom_table_presentation())
-        {
+        for table in sheet.annotations.iter().filter_map(
+            oblikovati_model::drawing::DrawingAnnotationDefinition::authored_table_presentation,
+        ) {
             drawing_lines::draw_table(ui, list, &table, [minimum, maximum], dimensions);
         }
     });

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Authored sheet annotations and the placement of their labels.
-use super::{DrawingError, validation::require_label};
+use super::{DrawingError, DrawingRevisionRow, validation::require_label};
 use serde::{Deserialize, Serialize};
 
 /// A supported annotation definition in the Go drawing-recipe shape.
@@ -65,6 +65,41 @@ pub enum DrawingAnnotationDefinition {
         )]
         material_removal: Option<String>,
     },
+    #[serde(rename = "revisionTable")]
+    RevisionTable {
+        name: String,
+        #[serde(rename = "xmm", default)]
+        x_mm: f64,
+        #[serde(rename = "ymm", default)]
+        y_mm: f64,
+        revisions: Vec<DrawingRevisionRow>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        characteristic: Option<String>,
+        #[serde(
+            rename = "materialRemoval",
+            default,
+            skip_serializing_if = "Option::is_none"
+        )]
+        material_removal: Option<String>,
+    },
+    #[serde(rename = "revisionTag")]
+    RevisionTag {
+        name: String,
+        #[serde(rename = "xmm", default)]
+        x_mm: f64,
+        #[serde(rename = "ymm", default)]
+        y_mm: f64,
+        #[serde(rename = "tag")]
+        revision: String,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        characteristic: Option<String>,
+        #[serde(
+            rename = "materialRemoval",
+            default,
+            skip_serializing_if = "Option::is_none"
+        )]
+        material_removal: Option<String>,
+    },
 }
 impl DrawingAnnotationDefinition {
     /// Define a parts list without inventing BOM rows; example: `DrawingAnnotationDefinition::parts_list("Parts", [40., 200.])?`.
@@ -84,7 +119,9 @@ impl DrawingAnnotationDefinition {
         match self {
             Self::PartsList { name, .. }
             | Self::Note { name, .. }
-            | Self::CustomTable { name, .. } => name,
+            | Self::CustomTable { name, .. }
+            | Self::RevisionTable { name, .. }
+            | Self::RevisionTag { name, .. } => name,
         }
     }
     /// Check whether a definition requires a model, as a parts list does.
@@ -92,20 +129,31 @@ impl DrawingAnnotationDefinition {
         matches!(self, Self::PartsList { .. })
     }
     pub(super) fn validate(&self) -> Result<(), DrawingError> {
+        self.validate_content()?;
+        require_label("annotation name", self.name())?;
         let (point, leader, characteristic, material_removal) = match self {
             Self::CustomTable {
                 x_mm,
                 y_mm,
-                headers,
-                rows,
                 characteristic,
                 material_removal,
                 ..
-            } => {
-                super::table::validate_cells(headers, rows)?;
-                ([*x_mm, *y_mm], [0., 0.], characteristic, material_removal)
             }
-            Self::PartsList {
+            | Self::PartsList {
+                x_mm,
+                y_mm,
+                characteristic,
+                material_removal,
+                ..
+            }
+            | Self::RevisionTable {
+                x_mm,
+                y_mm,
+                characteristic,
+                material_removal,
+                ..
+            }
+            | Self::RevisionTag {
                 x_mm,
                 y_mm,
                 characteristic,
@@ -117,21 +165,16 @@ impl DrawingAnnotationDefinition {
                 y_mm,
                 leader_x_mm,
                 leader_y_mm,
-                text,
                 characteristic,
                 material_removal,
                 ..
-            } => {
-                require_label("note text", text)?;
-                (
-                    [*x_mm, *y_mm],
-                    [*leader_x_mm, *leader_y_mm],
-                    characteristic,
-                    material_removal,
-                )
-            }
+            } => (
+                [*x_mm, *y_mm],
+                [*leader_x_mm, *leader_y_mm],
+                characteristic,
+                material_removal,
+            ),
         };
-        require_label("annotation name", self.name())?;
         validate_recipe_defaults(characteristic.as_deref(), material_removal.as_deref())?;
         if point
             .into_iter()
@@ -144,6 +187,16 @@ impl DrawingAnnotationDefinition {
             )));
         }
         Ok(())
+    }
+
+    fn validate_content(&self) -> Result<(), DrawingError> {
+        match self {
+            Self::PartsList { .. } => Ok(()),
+            Self::Note { text, .. } => require_label("note text", text),
+            Self::CustomTable { headers, rows, .. } => super::table::validate_cells(headers, rows),
+            Self::RevisionTable { revisions, .. } => super::revision::validate_rows(revisions),
+            Self::RevisionTag { revision, .. } => require_label("revision tag", revision),
+        }
     }
 }
 

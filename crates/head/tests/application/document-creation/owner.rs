@@ -484,7 +484,6 @@ mod drawing_border;
 
 #[path = "drawing_sheet_format.rs"]
 mod drawing_sheet_format;
-
 #[path = "drawing_styles.rs"]
 mod drawing_styles;
 
@@ -492,6 +491,8 @@ mod drawing_styles;
 mod drawing_custom_table;
 #[path = "drawing_notes.rs"]
 mod drawing_notes;
+#[path = "drawing_revision_annotations.rs"]
+mod drawing_revision_annotations;
 #[path = "drawing_view_label.rs"]
 mod drawing_view_label;
 #[path = "drawing_view_rotation.rs"]

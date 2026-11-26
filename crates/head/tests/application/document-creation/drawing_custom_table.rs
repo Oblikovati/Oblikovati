@@ -53,7 +53,7 @@ fn drawing_custom_table_round_trips_ragged_rows() {
             .as_deref(),
         Some(std::slice::from_ref(&table))
     );
-    let reopened = reopen(&client, drawing);
+    let reopened = reopen(&client, drawing, "/memory/custom-table.odd");
     assert_eq!(
         annotations
             .list(&EmptyObject {})
@@ -91,7 +91,7 @@ fn assert_table_cells(annotation: &DrawingAnnotationDefinition, request: &AddCus
     };
     assert_eq!(Some(headers), request.headers.as_ref());
     assert_eq!(Some(rows), request.rows.as_ref());
-    let table = annotation.custom_table_presentation().unwrap();
+    let table = annotation.authored_table_presentation().unwrap();
     assert_eq!(table.lines[0].start, [80., 180.]);
     assert_eq!(table.lines[0].end, [152., 180.]);
     assert_eq!(table.lines.last().unwrap().end, [152., 148.]);
@@ -104,8 +104,7 @@ fn assert_table_cells(annotation: &DrawingAnnotationDefinition, request: &AddCus
     assert_eq!(cells, ["ZONE", "FINISH", "A", "ANODIZE", "", "", "B", ""]);
 }
 
-fn reopen(client: &Client<impl Caller>, id: u64) -> u64 {
-    let path = "/memory/custom-table.odd";
+pub(super) fn reopen(client: &Client<impl Caller>, id: u64, path: &str) -> u64 {
     client
         .documents()
         .save_as(&SaveDocumentAsArgs {

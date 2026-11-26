@@ -53,8 +53,17 @@ impl DrawingDocument {
 }
 
 impl DrawingAnnotationDefinition {
-    /// Lay out user-authored table cells, e.g. `annotation.custom_table_presentation()`.
-    pub fn custom_table_presentation(&self) -> Option<DrawingTablePresentation> {
+    /// Lay out a sheet table with authored cells, e.g. `annotation.authored_table_presentation()`.
+    pub fn authored_table_presentation(&self) -> Option<DrawingTablePresentation> {
+        if let Self::RevisionTable {
+            x_mm,
+            y_mm,
+            revisions,
+            ..
+        } = self
+        {
+            return Some(super::revision::revision_table([*x_mm, *y_mm], revisions));
+        }
         let Self::CustomTable {
             x_mm,
             y_mm,
