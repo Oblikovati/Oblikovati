@@ -133,7 +133,7 @@ pub use sketch_prism::{
     SketchDirectedCurve, SketchPrismSelection, SketchProfileExtent, SketchRegionBoundary,
     SketchRegionCurveUse, SketchRegionMeasure, certified_sketch_region_measures,
     certified_sketch_regions, certified_sketch_regions_with_datums,
-    certified_sketch_regions_with_policy, conditional_profile_mapping,
+    certified_sketch_regions_with_policy, conditional_profile_mapping, offset_sketch_profile,
     retain_certified_sketch_prism, retain_resolved_sketch_prism, retain_selected_sketch_prism,
     retain_sketch_prism_definition, sketch_profile_extent,
 };

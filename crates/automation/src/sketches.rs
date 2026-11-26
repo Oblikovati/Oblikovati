@@ -21,6 +21,7 @@ mod entity_format;
 mod indices;
 pub(crate) mod inspection;
 mod move_dimension;
+pub(crate) mod offset;
 pub(crate) mod owner;
 mod pattern;
 pub(crate) mod profiles;
@@ -45,7 +46,7 @@ use oblikovati_solve::{
 };
 
 /// Geometry commands require a part or assembly; inference preferences use the workspace owner.
-pub const SKETCH_COMMAND_METHODS: [&str; 29] = [
+pub const SKETCH_COMMAND_METHODS: [&str; 30] = [
     METHOD_SKETCH_ADD_ASSOCIATIVE_ENTITY,
     METHOD_SKETCH_ADD_BLOCK_INSTANCE,
     METHOD_SKETCH_EXPLODE_BLOCK_INSTANCE,
@@ -64,6 +65,7 @@ pub const SKETCH_COMMAND_METHODS: [&str; 29] = [
     METHOD_SKETCH_ADD_PATTERN,
     METHOD_SKETCH_ADD_ENTITY,
     METHOD_SKETCH_RECTANGLE,
+    METHOD_SKETCH_OFFSET,
     METHOD_SKETCH_ADD_TEXT,
     METHOD_SKETCH_EDIT_TEXT,
     METHOD_SKETCH_ADD_CONSTRAINT,

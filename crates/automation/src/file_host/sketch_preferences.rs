@@ -35,6 +35,13 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext
         method: &str,
         request: &[u8],
     ) -> Result<Vec<u8>, Error> {
+        if method == METHOD_SKETCH_OFFSET {
+            return crate::sketches::offset::apply(
+                self.files,
+                crate::decode(method, request)?,
+                self.extrusion.and_then(|backend| backend.replay_policy()),
+            );
+        }
         if method == METHOD_SKETCH_RECTANGLE {
             return crate::sketches::profiles::rectangle(
                 self.files,

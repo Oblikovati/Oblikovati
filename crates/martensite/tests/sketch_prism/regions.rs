@@ -243,3 +243,51 @@ fn free_open_profile_does_not_discover_a_bounded_region() {
     assert_eq!(error.sketch(), Some(SKETCH));
     assert!(error.to_string().contains("OpenProfile"));
 }
+
+#[test]
+fn rounded_profile_offset_preserves_requested_spans_in_sketch_coordinates() {
+    use oblikovati_martensite::{PrismResolutionPolicy, offset_sketch_profile};
+
+    let mut document = selected_sketch_document();
+    document
+        .sketches
+        .replace_plane(SKETCH, SketchPlane::yz())
+        .unwrap();
+    let policy = PrismResolutionPolicy::Fixed(resolution());
+    let outside = offset_sketch_profile(&document, SKETCH, policy, 0, 0.25, 16).unwrap();
+    let inside = offset_sketch_profile(&document, SKETCH, policy, 0, -0.25, 8).unwrap();
+    let unchanged = offset_sketch_profile(&document, SKETCH, policy, 0, 0., 8).unwrap();
+
+    check_contour(&outside, 68, [[-0.25, -0.25], [4.25, 3.25]]);
+    check_contour(&inside, 4, [[0.25, 0.25], [3.75, 2.75]]);
+    check_contour(&unchanged, 4, [[0., 0.], [4., 3.]]);
+    assert!(offset_sketch_profile(&document, SKETCH, policy, 0, -5., 8).is_err());
+    assert!(offset_sketch_profile(&document, SKETCH, policy, 1, 0.25, 8).is_err());
+}
+
+fn check_contour(loops: &[Vec<[f64; 2]>], count: usize, bounds: [[f64; 2]; 2]) {
+    assert_eq!(loops.len(), 1);
+    let contour = &loops[0];
+    assert_eq!(contour.len(), count);
+    for (axis, [minimum, maximum]) in [0, 1]
+        .into_iter()
+        .map(|axis| (axis, [bounds[0][axis], bounds[1][axis]]))
+    {
+        let low = contour
+            .iter()
+            .map(|point| point[axis])
+            .fold(f64::INFINITY, f64::min);
+        let high = contour
+            .iter()
+            .map(|point| point[axis])
+            .fold(f64::NEG_INFINITY, f64::max);
+        assert!(
+            (low - minimum).abs() < 1e-8,
+            "offset min {low}, expected {minimum}"
+        );
+        assert!(
+            (high - maximum).abs() < 1e-8,
+            "offset max {high}, expected {maximum}"
+        );
+    }
+}

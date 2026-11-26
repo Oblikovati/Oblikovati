@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Certified sketch regions reported with source curve identities rather than native handles.
 use super::*;
-use martensite_tkbo::profile_extrusion::{PlanarRegion, ProfileLoop, build_planar_regions};
+use martensite_tkbo::profile_extrusion::{
+    PlanarRegion, PlanarRegionSet, ProfileLoop, build_planar_regions,
+};
 use oblikovati_model::{
     feature::work_geometry::WorkGeometryEvaluation, history::ResolvedDocumentSketch,
     sketch::SketchEntityId,
@@ -164,6 +166,17 @@ fn map_regions<T>(
     policy: crate::PrismResolutionPolicy,
     project: impl FnMut(&PlanarRegion) -> T,
 ) -> Result<Vec<T>, EvaluationFailure> {
+    Ok(
+        resolved_regions(sketch, policy)?.map_or_else(Vec::new, |regions| {
+            regions.regions().iter().map(project).collect()
+        }),
+    )
+}
+
+pub(super) fn resolved_regions(
+    sketch: ResolvedDocumentSketch<'_>,
+    policy: crate::PrismResolutionPolicy,
+) -> Result<Option<PlanarRegionSet>, EvaluationFailure> {
     let sketch_id = sketch.sketch.id();
     let policy = policy.validate().map_err(|cause| {
         Phase::Input
@@ -173,7 +186,7 @@ fn map_regions<T>(
     let (profile, _) = input::profile(sketch.sketch.geometry(), sketch.plane)
         .map_err(|cause| cause.with_sketch_identity(sketch_id))?;
     if profile.curves.is_empty() {
-        return Ok(Vec::new());
+        return Ok(None);
     }
     let resolution = policy.for_sketch(&sketch)?;
     let regions = build_planar_regions(&profile, resolution.kernel()).map_err(|cause| {
@@ -181,7 +194,7 @@ fn map_regions<T>(
             .operation(Entity::Body, cause)
             .with_sketch_identity(sketch_id)
     })?;
-    Ok(regions.regions().iter().map(project).collect())
+    Ok(Some(regions))
 }
 fn boundary(loop_: &ProfileLoop) -> Vec<SketchRegionCurveUse> {
     loop_
