@@ -220,6 +220,12 @@ pub(in super::super) fn compositor_toplevel_bounds(title: &str) -> [i32; 4] {
         .unwrap_or_else(|| panic!("expected mapped toplevel {title:?} in the Weston scene graph"))
 }
 
+/// Locate the main window even when a detached drawing also has a toplevel.
+pub(in super::super) fn main_toplevel_bounds(world: &mut ApplicationWorld) -> [i32; 4] {
+    let title = world.app().window.native.view.native_title().unwrap();
+    compositor_toplevel_bounds(&title)
+}
+
 fn is_application_toplevel(line: &str, pid: &str) -> bool {
     line.contains("(role xdg_toplevel")
         && line.contains(pid)

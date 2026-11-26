@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
+use super::super::main_window_frame::wayland;
 use super::super::{diagnostics::pointer_pixels, x11_input};
 use super::mixed_documents::expect_drawing_shown;
 use super::*;
@@ -23,16 +24,29 @@ fn drag_tab_to_first_place(world: &mut ApplicationWorld, id: u64) {
 
 fn drag_reorder_in_strip(world: &mut ApplicationWorld, from: [f32; 2], target_x: f32) {
     let start = pointer_pixels(from);
+    let motion = [0.25, 0.5, 0.75, 1.].map(|fraction| {
+        let x = from[0] + (target_x - from[0]) * fraction;
+        pointer_pixels([x, from[1]])
+    });
+    if world.app().window.native.view.uses_wayland() {
+        let [x, y, _, _] = wayland::main_toplevel_bounds(world);
+        let translate = |[local_x, local_y]: [i32; 2]| [x + local_x, y + local_y];
+        wayland::drag_fullscreen_pointer(world, translate(start), &motion.map(translate));
+    } else {
+        drag_reorder_with_x11(world, start, &motion);
+    }
+}
+
+fn drag_reorder_with_x11(world: &mut ApplicationWorld, start: [i32; 2], motion: &[[i32; 2]]) {
     x11_input::move_pointer(start);
     world.pump(Vec::new());
     x11_input::left_button(start, true);
     world.pump(Vec::new());
-    for step in 1..=4 {
-        let x = from[0] + (target_x - from[0]) * (step as f32 / 4.);
-        x11_input::move_pointer(pointer_pixels([x, from[1]]));
+    for &point in motion {
+        x11_input::move_pointer(point);
         world.pump(Vec::new());
     }
-    x11_input::left_button(pointer_pixels([target_x, from[1]]), false);
+    x11_input::left_button(*motion.last().unwrap(), false);
     world.pump(Vec::new());
 }
 fn expect_tab_moved_left(world: &mut ApplicationWorld, id: u64) {

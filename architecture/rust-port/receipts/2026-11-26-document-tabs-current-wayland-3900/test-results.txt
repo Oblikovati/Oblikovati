@@ -1,0 +1,27 @@
+full-wayland-final
+39 scenarios (39 passed)
+343 steps (343 passed)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1733 filtered out; finished in 266.06s
+
+full-x11
+39 scenarios (39 passed)
+343 steps (343 passed)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1733 filtered out; finished in 306.70s
+
+reorder-active-wayland
+1 scenario (1 passed)
+9 steps (9 passed)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1733 filtered out; finished in 16.33s
+
+reorder-inactive-wayland
+1 scenario (1 passed)
+8 steps (8 passed)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1733 filtered out; finished in 14.67s
+
+detach-final-x11
+1 scenario (1 passed)
+9 steps (9 passed)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1733 filtered out; finished in 7.16s
+
+Head Clippy
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 47.37s

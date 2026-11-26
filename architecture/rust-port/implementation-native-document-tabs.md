@@ -43,6 +43,11 @@ and wrap between Home and the last numbered window. The
 [Wayland and X11 runs](receipts/2026-11-26-document-tabs-wayland-keys-3900/README.md)
 verify the shortcut in both directions.
 
+Native tab reordering keeps the active drawing visible and activates an
+inactive Part when it is dragged, while keeping the drawing open.
+[Current Document Tabs runs](receipts/2026-11-26-document-tabs-current-wayland-3900/README.md)
+include the Wayland reorder trace and full reports for both backends.
+
 Dragging a drawing out of the strip opens a native window. The main
 window activates another attached document when one is available and
 shows Home when the detached drawing was the only attached document.

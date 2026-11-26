@@ -15,7 +15,7 @@ fn drag_drawing_out(world: &mut ApplicationWorld) {
     let from = super::super::diagnostics::pointer_pixels(world.expect_tab(&name).center());
     let target = [800, 500];
     if world.app().window.native.view.uses_wayland() {
-        let [x, y, _, _] = main_wayland_bounds(world);
+        let [x, y, _, _] = wayland::main_toplevel_bounds(world);
         let start = [x + from[0], y + from[1]];
         let motion = [[start[0], y + target[1]], [x + target[0], y + target[1]]];
         wayland::drag_fullscreen_pointer(world, start, &motion);
@@ -82,18 +82,32 @@ fn select_main_part_tab(world: &mut ApplicationWorld) {
     let name = world.document_name(part_of(world));
     let at = super::super::diagnostics::pointer_pixels(world.expect_tab(&name).center());
     if world.app().window.native.view.uses_wayland() {
-        let [x, y, _, _] = main_wayland_bounds(world);
-        wayland::click_compositor_point(world, [x + at[0], y + at[1]]);
+        select_wayland_main_tab(world, at);
     } else {
         super::super::x11_input::click(at);
     }
     world.pump(Vec::new());
 }
 
-fn main_wayland_bounds(world: &mut ApplicationWorld) -> [i32; 4] {
-    let title = world.app().window.native.view.native_title().unwrap();
-    wayland::compositor_toplevel_bounds(&title)
+fn select_wayland_main_tab(world: &mut ApplicationWorld, [tab_x, tab_y]: [i32; 2]) {
+    let [x, y, width, _] = wayland::main_toplevel_bounds(world);
+    let drawing_title = world.document_name(drawing_of(world));
+    let [left, top, w, h] = wayland::compositor_toplevel_bounds(&drawing_title);
+    let covered =
+        |[px, py]: [i32; 2]| (left..left + w).contains(&px) && (top..top + h).contains(&py);
+    let target = [x + tab_x, y + tab_y];
+    if covered(target) {
+        let title_bar = [width / 2, width / 3, width * 5 / 6]
+            .map(|offset| [x + offset, y + 16])
+            .into_iter()
+            .find(|&point| !covered(point))
+            .expect("expected an exposed area of the main title bar");
+        wayland::click_compositor_point(world, title_bar);
+        world.pump(Vec::new());
+    }
+    wayland::click_compositor_point(world, target);
 }
+
 #[then("that part becomes active in the main workspace")]
 fn that_part_active(world: &mut ApplicationWorld) {
     world.expect_active(part_of(world));
