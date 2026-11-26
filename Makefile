@@ -27,7 +27,7 @@ gate:
 	"$(CARGO)" xtask gate
 
 gate-xvfb:
-	./tools/with-xvfb.sh $(MAKE) gate
+	./tools/with-xvfb.sh --window-manager $(MAKE) gate
 
 build:
 	"$(CARGO)" xtask build

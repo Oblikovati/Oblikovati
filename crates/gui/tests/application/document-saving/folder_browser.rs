@@ -2,23 +2,33 @@
 use super::*;
 use crate::application::file_system::FileFacts;
 use oblikovati_api::types::{DOCUMENT_ASSEMBLY, DOCUMENT_DRAWING, DOCUMENT_PRESENTATION};
+
+fn fixture_path(relative: &str) -> String {
+    let root = if cfg!(windows) { r"C:\" } else { "/" };
+    Path::new(root)
+        .join(relative.replace('/', std::path::MAIN_SEPARATOR_STR))
+        .display()
+        .to_string()
+}
+
 struct FakeFolders;
 impl GuiFolders for FakeFolders {
     fn default_folder(&self) -> String {
-        "/work/parts".into()
+        fixture_path("work/parts")
     }
     fn entries(&self, folder: &str) -> Result<Vec<FolderEntry>, String> {
-        if folder == "/work/parts" {
+        let expected = fixture_path("work/parts");
+        if folder == expected {
             return Ok(vec![
                 entry("old", true),
                 entry("a.opd", false),
                 entry("b.png", false),
             ]);
         }
-        Err(format!("folder {folder:?}: expected /work/parts"))
+        Err(format!("folder {folder:?}: expected {expected:?}"))
     }
     fn system_locations(&self) -> Vec<(String, String)> {
-        vec![("Home".to_string(), "/home".to_string())]
+        vec![("Home".to_string(), fixture_path("home"))]
     }
     fn file_facts(&self, path: &str) -> Result<FileFacts, String> {
         Err(format!("file {path:?}: expected no file read"))
@@ -94,8 +104,11 @@ fn a_folder_row_reads_as_a_folder() {
 }
 #[test]
 fn a_typed_absolute_name_wins_over_the_folder() {
-    assert_eq!(full_path("/work", "a.opd"), "/work/a.opd");
-    assert_eq!(full_path("/work", "/other/a.opd"), "/other/a.opd");
+    let work = fixture_path("work");
+    let other = fixture_path("other/a.opd");
+    assert!(Path::new(&other).is_absolute());
+    assert_eq!(full_path(&work, "a.opd"), fixture_path("work/a.opd"));
+    assert_eq!(full_path(&work, &other), other);
 }
 #[test]
 fn back_returns_through_the_folders_left_behind() {
@@ -103,11 +116,11 @@ fn back_returns_through_the_folders_left_behind() {
     browser.navigate("old");
     browser.navigate("older");
     browser.back();
-    assert_eq!(browser.folder, "/work/parts/old");
+    assert_eq!(browser.folder, fixture_path("work/parts/old"));
     browser.back();
-    assert_eq!(browser.folder, "/work/parts");
+    assert_eq!(browser.folder, fixture_path("work/parts"));
     browser.back();
-    assert_eq!(browser.folder, "/work/parts");
+    assert_eq!(browser.folder, fixture_path("work/parts"));
 }
 #[test]
 fn a_reset_starts_over_in_the_initial_folder_with_no_history() {
@@ -115,7 +128,7 @@ fn a_reset_starts_over_in_the_initial_folder_with_no_history() {
     browser.navigate("old");
     browser.selected = Some("a.opd".into());
     browser.reset();
-    assert_eq!(browser.folder, "/work/parts");
+    assert_eq!(browser.folder, fixture_path("work/parts"));
     assert!(browser.selected.is_none() && browser.history.is_empty());
 }
 #[test]
@@ -124,14 +137,17 @@ fn visited_folders_appear_once_most_recent_first_and_a_reset_restores_the_recent
     browser.refresh();
     browser.navigate("old");
     browser.back();
-    assert_eq!(browser.recent, ["/work/parts", "/work/parts/old"]);
+    assert_eq!(
+        browser.recent,
+        [fixture_path("work/parts"), fixture_path("work/parts/old")]
+    );
     browser.navigation = NavigationPane::SystemLocations;
     assert_eq!(browser.navigation_rows()[0].0, "Home");
     browser.reset();
     assert_eq!(browser.navigation, NavigationPane::RecentFolders);
     assert_eq!(
         browser.navigation_rows()[0],
-        ("parts".to_string(), "/work/parts".to_string())
+        ("parts".to_string(), fixture_path("work/parts"))
     );
 }
 #[test]
@@ -150,8 +166,13 @@ fn the_status_names_a_selection_or_counts_the_rows() {
 }
 #[test]
 fn the_breadcrumb_shows_each_step_of_the_folder() {
-    assert_eq!(breadcrumb("/work/parts"), "/ > work > parts");
-    assert_eq!(breadcrumb("/a/b/c/d/e"), "... > c > d > e");
+    let expected = if cfg!(windows) {
+        r"... > \ > work > parts"
+    } else {
+        "/ > work > parts"
+    };
+    assert_eq!(breadcrumb(&fixture_path("work/parts")), expected);
+    assert_eq!(breadcrumb(&fixture_path("a/b/c/d/e")), "... > c > d > e");
 }
 #[test]
 fn navigation_reads_the_new_folder_and_reports_a_bad_one() {
@@ -159,16 +180,17 @@ fn navigation_reads_the_new_folder_and_reports_a_bad_one() {
     browser.refresh();
     assert_eq!(browser.listing.as_ref().unwrap().len(), 3);
     browser.navigate("old");
-    assert_eq!(browser.folder, "/work/parts/old");
+    let old = fixture_path("work/parts/old");
+    assert_eq!(browser.folder, old);
     assert!(
         browser
             .listing
             .as_ref()
             .unwrap_err()
-            .contains("/work/parts/old")
+            .contains(&format!("{old:?}"))
     );
     browser.up();
-    assert_eq!(browser.folder, "/work/parts");
+    assert_eq!(browser.folder, fixture_path("work/parts"));
     assert_eq!(browser.listing.as_ref().unwrap().len(), 3);
 }
 #[test]
@@ -191,7 +213,7 @@ fn only_a_picture_view_asks_for_pictures_and_it_lists_files_alone() {
     browser.view = FileListView::Tiles;
     assert_eq!(
         browser.listed_for_pictures(FileFilter::Extension("opd")),
-        ["/work/parts/a.opd"]
+        [fixture_path("work/parts/a.opd")]
     );
 }
 #[test]

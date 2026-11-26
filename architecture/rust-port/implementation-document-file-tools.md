@@ -19,6 +19,11 @@ document. Failed Open and an unsupported saved-package version also preserve
 the current document and its history. File operations use the existing save
 binding, atomic package publication, document restore, and close guards.
 
+When opening several files at once, the picker processes already open paths
+first. It compares paths using the host path syntax, so different separators
+can still identify the same open document and a newly opened drawing ends in
+front.
+
 The desktop command state publishes Open dialog file inspections while Home
 is active. A saved drawing preview remains available after the last drawing
 is closed, as verified by the
