@@ -21,12 +21,14 @@ impl DocumentRibbon {
             &crate::application::quick_access_toolbar::QuickAccessToolbar,
             &crate::application::workspace_layout::WorkspaceLayout,
         ),
+        retain_empty_panels: bool,
     ) {
         use crate::application::ribbon_customization::interface_export::InterfaceExport;
         self.customization.panel(
             ui,
             commands,
             actions,
+            retain_empty_panels,
             InterfaceExport {
                 ribbon: &self.display,
                 quick_access,

@@ -61,6 +61,19 @@ fn sketches_are_the_only_target_row(world: &mut ApplicationWorld) {
 fn add_circle_and_separator(world: &mut ApplicationWorld) {
     click_in_customize(world, CENTER_CIRCLE);
     transfer_to_target(world);
+    let rows = source_rows(world);
+    if !rows.iter().any(|row| row.text == "<Separator>") {
+        let first = rows.first().expect("expected visible sketch commands");
+        let point = diagnostics::pointer_pixels(first.center());
+        world.hover(point);
+        world.pump(vec![oblikovati_viewport::ViewportEvent::Input(
+            oblikovati_viewport::ViewportInput::Wheel {
+                notches: 3,
+                position: point,
+            },
+        )]);
+        world.pump(Vec::new());
+    }
     click_source_separator(world);
     transfer_to_target(world);
 }

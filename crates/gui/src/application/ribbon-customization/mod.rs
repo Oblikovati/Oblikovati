@@ -166,6 +166,7 @@ impl RibbonCustomization {
         ui: &Ui,
         commands: &crate::GuiCommandState,
         actions: &mut Vec<crate::GuiShellAction>,
+        retain_empty_panels: bool,
         export: interface_export::InterfaceExport<'_>,
     ) {
         self.escape_consumed = false;
@@ -194,7 +195,7 @@ impl RibbonCustomization {
                     ui.text_wrapped("Keyboard settings changed outside this dialog. Close and reopen Customize to edit the current settings.");
                 }
                 if self.marking_conflict { ui.text_wrapped("Marking menu changed outside this dialog. Close and reopen Customize to edit the current menu."); }
-                self.buttons(ui, actions);
+                self.buttons(ui, actions, retain_empty_panels);
                 let focused = ui.is_window_focused_with_flags(
                     imgui::WindowFocusedFlags::ROOT_AND_CHILD_WINDOWS,
                 );
@@ -436,20 +437,18 @@ impl RibbonCustomization {
         }
         self.navigation_consumed = true;
     }
-    fn has_pending_changes(&self) -> bool {
-        self.draft.changed()
-            || self.builtins.changed()
-            || self.staged_appearance != self.appearance
-            || self.keyboard_changed()
-            || self.marking_changed()
-    }
-    fn buttons(&mut self, ui: &Ui, actions: &mut Vec<crate::GuiShellAction>) {
+    fn buttons(
+        &mut self,
+        ui: &Ui,
+        actions: &mut Vec<crate::GuiShellAction>,
+        retain_empty_panels: bool,
+    ) {
         ui.separator();
         let changed = self.has_pending_changes();
         let conflict = self.keyboard_conflict || self.marking_conflict;
         let disabled = ui.begin_disabled(!changed || conflict);
         if ui.button("OK") {
-            match self.apply() {
+            match self.apply(retain_empty_panels) {
                 Ok(()) => {
                     self.settings_error = None;
                     let keyboard = self.submit_keyboard(actions);
@@ -473,7 +472,7 @@ impl RibbonCustomization {
         ui.same_line();
         let disabled = ui.begin_disabled(!changed || conflict);
         if ui.button("Apply") {
-            self.settings_error = self.apply().err();
+            self.settings_error = self.apply(retain_empty_panels).err();
             if self.settings_error.is_none() {
                 self.submit_keyboard(actions);
                 self.submit_marking(actions);

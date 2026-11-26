@@ -81,12 +81,12 @@ fn applied_settings_reload_and_failed_saves_leave_the_draft_pending() {
         .reset_source_selection(Command::Sketches);
     customization.draft.add();
     store.0.borrow_mut().fail_save = true;
-    assert!(customization.apply().is_err());
+    assert!(customization.apply(false).is_err());
     assert!(customization.draft.changed());
     assert!(!customization.has_panel(RibbonTab::Tools));
     assert!(store.0.borrow().bytes.is_none());
     store.0.borrow_mut().fail_save = false;
-    customization.apply().unwrap();
+    customization.apply(false).unwrap();
     let mut reopened = RibbonCustomization::default();
     reopened.set_store(Box::new(store)).unwrap();
     assert!(reopened.has_panel(RibbonTab::Tools));
@@ -103,16 +103,16 @@ fn corrupt_saved_settings_are_rejected_without_a_partial_store() {
 }
 
 #[test]
-fn applied_empty_panel_retires_when_customization_closes() {
+fn shell_retains_the_empty_panel_until_customization_closes() {
     let mut customization = RibbonCustomization::default();
     customization.open(RibbonTab::Tools);
     customization
         .draft
         .reset_source_selection(Command::Sketches);
     customization.draft.add();
-    customization.apply().unwrap();
+    customization.apply(false).unwrap();
     customization.draft.remove();
-    customization.apply().unwrap();
+    customization.apply(true).unwrap();
     assert!(customization.draft.applied(RibbonTab::Tools).is_empty());
     assert!(customization.has_panel(RibbonTab::Tools));
     customization.open.set_open(false);
@@ -129,7 +129,7 @@ fn reset_saves_defaults_before_changing_applied_ribbon() {
         .draft
         .reset_source_selection(Command::Sketches);
     customization.draft.add();
-    customization.apply().unwrap();
+    customization.apply(false).unwrap();
     let saved = store.0.borrow().bytes.clone();
     store.0.borrow_mut().fail_save = true;
     assert!(customization.reset().is_err());
@@ -153,7 +153,7 @@ fn moving_a_command_saves_atomically_without_committing_other_drafts() {
         .draft
         .reset_source_selection(Command::Sketches);
     customization.draft.add();
-    customization.apply().unwrap();
+    customization.apply(false).unwrap();
     customization
         .draft
         .reset_source_selection(Command::Tool(crate::GuiSketchTool::Line));
@@ -215,10 +215,10 @@ fn appearance_is_saved_atomically_and_reloaded_with_other_ribbon_settings() {
     customization.set_store(Box::new(store.clone())).unwrap();
     customization.staged_appearance = RibbonAppearance::Compact;
     store.0.borrow_mut().fail_save = true;
-    assert!(customization.apply().is_err());
+    assert!(customization.apply(false).is_err());
     assert_eq!(customization.appearance, RibbonAppearance::Normal);
     store.0.borrow_mut().fail_save = false;
-    customization.apply().unwrap();
+    customization.apply(false).unwrap();
     let mut reopened = RibbonCustomization::default();
     reopened.set_store(Box::new(store)).unwrap();
     assert_eq!(reopened.appearance, RibbonAppearance::Compact);

@@ -126,10 +126,20 @@ impl RibbonCustomization {
         self.appearance = appearance;
         Ok(())
     }
-    pub(super) fn apply(&mut self) -> Result<(), String> {
+    pub(super) fn has_pending_changes(&self) -> bool {
+        self.draft.changed()
+            || self.builtins.changed()
+            || self.staged_appearance != self.appearance
+            || self.keyboard_changed()
+            || self.marking_changed()
+    }
+    pub(super) fn apply(&mut self, retain_empty_panels: bool) -> Result<(), String> {
         let document = self.staged_document();
         Self::save_settings(&mut self.store, &document)?;
         self.draft.apply();
+        if !retain_empty_panels {
+            self.draft.retained_panels.clear();
+        }
         self.builtins.apply();
         self.appearance = self.staged_appearance;
         Ok(())

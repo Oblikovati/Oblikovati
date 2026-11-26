@@ -14,6 +14,10 @@ pub(crate) struct ShellFeatureDialog {
 }
 impl DockableWindow for ShellFeatureDialog {}
 impl ShellFeatureDialog {
+    pub(crate) fn active(&self) -> bool {
+        self.document.is_some()
+    }
+
     pub(crate) fn register_dockable(
         &self,
         registry: &mut crate::dockable_lifecycle::DockRegistry,
