@@ -48,7 +48,7 @@ using this status; the live scenario directory can change.
   The pinned snapshot passed all 38 scenarios and 334 steps, with R0 baseline records in
   `receipts/2026-11-21-document-tabs-r0-3900/`.
   Strict verification remains blocked by #3978.
-- Home Recent Documents (#3898) passed [36 of 37 amended scenarios on Wayland](receipts/2026-11-26-home-workspace-chrome-4063/README.md). Both Home chrome scenarios passed on Wayland and X11.
+- Home Recent Documents (#3898) passed [all 37 amended scenarios on Wayland](receipts/2026-11-26-home-recent-resize-3898/README.md). The resize and both Home chrome scenarios also passed on X11.
 - Document Opening (#3889) passed all [27 scenarios and 315 steps in the full shared fixture tree on Wayland](receipts/2026-11-26-document-opening-wayland-3889/README.md). The [earlier isolated-fixture run](receipts/2026-11-25-document-opening-current-3889/README.md) covered all cases on X11.
 - Ribbon Display (#3856) passed [48 of 52 amended scenarios on Wayland](receipts/2026-11-26-home-workspace-chrome-4063/README.md). All four Home transitions passed on Wayland and X11.
 - Ribbon Panel Visibility (#3856) passed [53 of 55 cases and 626 steps in passing cases on Wayland](receipts/2026-11-26-side-model-panel-inventory-3856/README.md). The side-docked 3D Model inventory also passed on X11. Two cases still require Shell previews.
