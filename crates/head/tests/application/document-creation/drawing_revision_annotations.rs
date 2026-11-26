@@ -5,7 +5,7 @@ use oblikovati_api::{
     json::EmptyObject,
     wire::{
         AddDatumFeatureArgs, AddRevisionCloudArgs, AddRevisionTableArgs, AddRevisionTagArgs,
-        DeleteAnnotationArgs, DrawingAnnotationInfo, RevisionTableRow,
+        AddSurfaceTextureArgs, DeleteAnnotationArgs, DrawingAnnotationInfo, RevisionTableRow,
     },
 };
 use oblikovati_gui::{GuiDocumentTemplate, GuiTemplateKind, GuiTemplateUnits};
@@ -40,6 +40,89 @@ fn drawing_owner() -> (TestOwner, u64) {
         .unwrap();
     let drawing = owner.documents().workspace().active_document().unwrap();
     (owner, drawing)
+}
+
+#[test]
+fn drawing_surface_texture_retains_all_material_removal_variants() {
+    let (mut owner, drawing) = drawing_owner();
+    let client = Client::new(owner.document_host());
+    let added = add_surface_symbols(&client);
+    client.transactions().undo().unwrap();
+    assert_eq!(listed(&client), added[..2]);
+    client.transactions().redo().unwrap();
+    assert_eq!(listed(&client), added);
+    let reopened =
+        super::drawing_custom_table::reopen(&client, drawing, "/memory/surface-texture.odd");
+    assert_eq!(listed(&client), added);
+    drop(client);
+    let state = owner.gui_command_state().unwrap();
+    assert!(state.drawing_projections[&reopened].error.is_none());
+    let sheet = &state.drawing_documents[&reopened].sheets()[0];
+    assert_finish_geometry(&sheet.annotations);
+    let client = Client::new(owner.document_host());
+    let deleted = client
+        .drawing_annotations()
+        .delete(&DeleteAnnotationArgs {
+            name: added[2].name.clone(),
+        })
+        .unwrap();
+    assert_eq!(deleted.annotations.as_deref(), Some(&added[..2]));
+}
+
+fn add_surface_symbols(client: &Client<impl Caller>) -> [DrawingAnnotationInfo; 3] {
+    let annotations = client.drawing_annotations();
+    assert!(
+        annotations
+            .add_surface_texture(&AddSurfaceTextureArgs {
+                material_removal: "unknown".into(),
+                ..Default::default()
+            })
+            .is_err()
+    );
+    [
+        ("", "", 3),
+        ("required", "Ra 1.6", 4),
+        ("prohibited", "Ra 3.2", 27),
+    ]
+    .map(|(material_removal, text, curves)| {
+        let info = annotations
+            .add_surface_texture(&AddSurfaceTextureArgs {
+                xmm: 60.,
+                ymm: 80.,
+                roughness: text.into(),
+                material_removal: material_removal.into(),
+                ..Default::default()
+            })
+            .unwrap()
+            .annotation;
+        assert_eq!(
+            (info.kind.as_str(), info.tag.as_str(), info.curve_count),
+            ("surfaceTexture", text, curves)
+        );
+        info
+    })
+}
+
+fn assert_finish_geometry(annotations: &[DrawingAnnotationDefinition]) {
+    let basic = annotations[0].surface_texture_presentation().unwrap();
+    let required = annotations[1].surface_texture_presentation().unwrap();
+    let prohibited = annotations[2].surface_texture_presentation().unwrap();
+    let base = [
+        [[60., 80.], [57., 84.]],
+        [[60., 80.], [65., 88.8]],
+        [[65., 88.8], [77., 88.8]],
+    ];
+    assert_eq!(basic.segments_mm, base);
+    assert!(basic.roughness.is_empty());
+    assert_eq!(required.segments_mm[..3], base);
+    assert_eq!(required.segments_mm[3], [[57., 84.], [65., 88.8]]);
+    assert_eq!(required.text_center_mm[0], 71.);
+    assert!((required.text_center_mm[1] - 91.2).abs() < 1e-10);
+    assert_eq!(prohibited.segments_mm[..3], base);
+    let circle = &prohibited.segments_mm[3..];
+    assert_eq!(circle.len(), 24);
+    assert_eq!(circle[0][0], circle[23][1]);
+    assert_eq!(circle[0][0], [61.8, 81.8]);
 }
 
 #[test]

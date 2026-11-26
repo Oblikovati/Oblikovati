@@ -7,6 +7,24 @@ use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind", deny_unknown_fields)]
 pub enum DrawingAnnotationDefinition {
+    #[serde(rename = "surfaceTexture")]
+    SurfaceTexture {
+        name: String,
+        #[serde(rename = "xmm", default)]
+        x_mm: f64,
+        #[serde(rename = "ymm", default)]
+        y_mm: f64,
+        #[serde(rename = "tag", default, skip_serializing_if = "String::is_empty")]
+        roughness: String,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        characteristic: Option<String>,
+        #[serde(
+            rename = "materialRemoval",
+            default,
+            with = "super::spelling::material_removal"
+        )]
+        removal: oblikovati_api::types::MaterialRemoval,
+    },
     #[serde(rename = "datumFeature")]
     DatumFeature {
         name: String,
@@ -163,7 +181,8 @@ impl DrawingAnnotationDefinition {
             | Self::RevisionTable { name, .. }
             | Self::RevisionTag { name, .. }
             | Self::DatumFeature { name, .. }
-            | Self::RevisionCloud { name, .. } => name,
+            | Self::RevisionCloud { name, .. }
+            | Self::SurfaceTexture { name, .. } => name,
         }
     }
     /// Check whether a definition requires a model, as a parts list does.
@@ -174,6 +193,12 @@ impl DrawingAnnotationDefinition {
         self.validate_content()?;
         require_label("annotation name", self.name())?;
         let (point, leader, characteristic, material_removal) = match self {
+            Self::SurfaceTexture {
+                x_mm,
+                y_mm,
+                characteristic,
+                ..
+            } => ([*x_mm, *y_mm], [0., 0.], characteristic.as_deref(), None),
             Self::CustomTable {
                 x_mm,
                 y_mm,
@@ -215,7 +240,12 @@ impl DrawingAnnotationDefinition {
                 characteristic,
                 material_removal,
                 ..
-            } => ([*x_mm, *y_mm], [0., 0.], characteristic, material_removal),
+            } => (
+                [*x_mm, *y_mm],
+                [0., 0.],
+                characteristic.as_deref(),
+                material_removal.as_deref(),
+            ),
             Self::Note {
                 x_mm,
                 y_mm,
@@ -227,11 +257,11 @@ impl DrawingAnnotationDefinition {
             } => (
                 [*x_mm, *y_mm],
                 [*leader_x_mm, *leader_y_mm],
-                characteristic,
-                material_removal,
+                characteristic.as_deref(),
+                material_removal.as_deref(),
             ),
         };
-        validate_recipe_defaults(characteristic.as_deref(), material_removal.as_deref())?;
+        validate_recipe_defaults(characteristic, material_removal)?;
         if point
             .into_iter()
             .chain(leader)
@@ -247,6 +277,9 @@ impl DrawingAnnotationDefinition {
 
     fn validate_content(&self) -> Result<(), DrawingError> {
         match self {
+            Self::SurfaceTexture {
+                roughness, removal, ..
+            } => super::surface_texture::validate_texture(roughness, *removal),
             Self::DatumFeature { letter, .. } => require_label("datum letter", letter),
             Self::PartsList { .. } => Ok(()),
             Self::Note { text, .. } => require_label("note text", text),

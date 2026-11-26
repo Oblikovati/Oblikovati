@@ -54,3 +54,8 @@ recipe_spelling!(border_label, BorderLabelMode, {
     ALPHABETICAL_BORDER_LABEL => "alphabetical", NUMERIC_BORDER_LABEL => "numeric",
     NO_BORDER_LABEL => "none", ALPHABETICAL_BORDER_LABEL => ""
 });
+
+recipe_spelling!(material_removal, MaterialRemoval, {
+    MATERIAL_REMOVAL_ANY => "any", MATERIAL_REMOVAL_REQUIRED => "required",
+    MATERIAL_REMOVAL_PROHIBITED => "prohibited", MATERIAL_REMOVAL_ANY => ""
+});

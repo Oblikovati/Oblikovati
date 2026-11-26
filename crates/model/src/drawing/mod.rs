@@ -19,6 +19,7 @@ mod sheet_format;
 pub use sheet_format::DrawingSheetFormat;
 mod spelling;
 mod standard;
+mod surface_texture;
 mod table;
 pub use standard::{DRAWING_STANDARD_PRESETS, DrawingStandardPreset};
 mod validation;
@@ -31,5 +32,6 @@ pub use parts_list::{DrawingPartsListPresentation, DrawingPartsListRow, DrawingP
 pub use recipe::{DrawingRecipe, DrawingSheetRecipe};
 pub use revision::{DrawingRevisionRow, DrawingRevisionTagPresentation};
 pub use revision_cloud::DrawingRevisionCloudPresentation;
+pub use surface_texture::{DrawingSurfaceTexturePresentation, parse_material_removal};
 pub use table::{DrawingTableLabel, DrawingTableLine, DrawingTablePresentation};
 pub use view::{DrawingBaseViewDefinition, DrawingViewLabelEdit};

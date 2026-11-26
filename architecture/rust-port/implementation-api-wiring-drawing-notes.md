@@ -79,3 +79,18 @@ coordinates, history, save and reopen, and deletion. The native Wayland
 MCP run placed datum A on a sheet with no referenced model. It changed
 584 sheet pixels. Undo, redo, reopen, and deletion matched their
 expected sheet captures pixel for pixel.
+
+## Surface texture symbols
+
+`drawingAnnotations.addSurfaceTexture` places the finish symbol's
+vertex at the requested sheet point. The basic variant is `any` and
+is the default. `required` adds a bar, and `prohibited` adds a circle
+at the vertex. The optional roughness text appears above the extension.
+The drawing stores the point, typed variant, and text with the sheet.
+
+The owner test checks the default, both explicit variants, unknown
+variant rejection, geometry, history, and the saved symbols after
+reopening. The native Wayland MCP run placed all three variants on
+one sheet with no referenced model. Their respective wire curve
+counts were 3, 4, and 27. Undo, redo, reopening, and deletion matched
+the expected sheet captures pixel for pixel.

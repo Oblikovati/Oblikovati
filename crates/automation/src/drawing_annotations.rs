@@ -4,19 +4,20 @@ use oblikovati_api::{
     types::DOCUMENT_PART,
     wire::{
         self, AddCustomTableArgs, AddDatumFeatureArgs, AddDrawingNoteArgs, AddRevisionCloudArgs,
-        AddRevisionTableArgs, AddRevisionTagArgs, AnnotationResult, DeleteAnnotationArgs,
-        DrawingAnnotationInfo, ListDrawingAnnotationsResult,
+        AddRevisionTableArgs, AddRevisionTagArgs, AddSurfaceTextureArgs, AnnotationResult,
+        DeleteAnnotationArgs, DrawingAnnotationInfo, ListDrawingAnnotationsResult,
     },
 };
 use oblikovati_model::drawing::{
     DrawingAnnotationDefinition, DrawingDocument, DrawingPartsListPresentation,
-    DrawingPartsListRow, DrawingPartsListSource, DrawingRevisionRow,
+    DrawingPartsListRow, DrawingPartsListSource, DrawingRevisionRow, parse_material_removal,
 };
 use oblikovati_model::property::{DESIGN_TRACKING, DocumentProperties};
 use oblikovati_persistence::file_access::DocumentFiles;
 use oblikovati_session::{TransactionObserver, files::FileWorkspace, workspace::WorkspaceObserver};
 
-pub(super) const ANNOTATION_METHODS: [&str; 8] = [
+pub(super) const ANNOTATION_METHODS: [&str; 9] = [
+    wire::METHOD_DRAWING_ANNOTATIONS_ADD_SURFACE_TEXT,
     wire::METHOD_DRAWING_ANNOTATIONS_ADD_DATUM,
     wire::METHOD_DRAWING_ANNOTATIONS_ADD_NOTE,
     wire::METHOD_DRAWING_ANNOTATIONS_ADD_CUSTOM_TABLE,
@@ -49,6 +50,18 @@ pub(super) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
         )));
     }
     match method {
+        wire::METHOD_DRAWING_ANNOTATIONS_ADD_SURFACE_TEXT => {
+            let args: AddSurfaceTextureArgs = crate::decode(method, request)?;
+            let removal = parse_material_removal(&args.material_removal).map_err(api_error)?;
+            add_annotation(files, owner, "Add Drawing Surface Texture", |drawing| {
+                drawing.add_surface_texture(
+                    &args.name,
+                    [args.xmm, args.ymm],
+                    &args.roughness,
+                    removal,
+                )
+            })
+        }
         wire::METHOD_DRAWING_ANNOTATIONS_ADD_DATUM => {
             let args: AddDatumFeatureArgs = crate::decode(method, request)?;
             add_annotation(files, owner, "Add Drawing Datum Feature", |drawing| {
@@ -218,6 +231,12 @@ fn annotation_details<'a>(
     table: Option<&DrawingPartsListPresentation>,
 ) -> (&'static str, &'a str, usize, usize) {
     match annotation {
+        DrawingAnnotationDefinition::SurfaceTexture { roughness, .. } => {
+            let curves = annotation
+                .surface_texture_presentation()
+                .map_or(0, |symbol| symbol.segments_mm.len());
+            ("surfaceTexture", roughness, curves, 0)
+        }
         DrawingAnnotationDefinition::DatumFeature { letter, .. } => {
             let curves = annotation
                 .datum_feature_presentation()

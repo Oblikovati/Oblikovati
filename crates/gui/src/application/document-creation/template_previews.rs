@@ -49,6 +49,7 @@ impl GuiTemplateSheet {
                     DrawingAnnotationDefinition::Note { .. }
                     | DrawingAnnotationDefinition::RevisionTag { .. }
                     | DrawingAnnotationDefinition::DatumFeature { .. }
+                    | DrawingAnnotationDefinition::SurfaceTexture { .. }
                     | DrawingAnnotationDefinition::RevisionCloud { .. } => None,
                 })
                 .collect(),
