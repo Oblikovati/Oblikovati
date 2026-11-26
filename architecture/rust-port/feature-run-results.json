@@ -1225,14 +1225,14 @@
           "fixtures/cad/planar-sketch-empty-xy.opd": "d936ef6b165b4bcbe14e04ac1b08bb5b16c81fddb597e70acb781e753c07e9a8",
           "fixtures/cad/workspace-layout-native.opd": "d85db64234c40a7bb09268f57abbd97aaa33c7542a81a022f385e8d590bae2ac"
         },
-        "cucumber": "architecture/rust-port/receipts/2026-11-26-home-workspace-chrome-4063/ribbon-wayland.json",
-        "cucumber_sha256": "1ef19a8b04ca9dce9e4f1062045fd3bea2ba279b9372a79f3c5cbaac97b825f5",
-        "scenario_arguments": "architecture/rust-port/receipts/2026-11-26-home-workspace-chrome-4063/ribbon-wayland-arguments.json",
-        "scenario_arguments_sha256": "6410a9a85920e6fefc281af9de792caa7093bd1bdb5131f2dd8803c892f6efbb",
-        "application_commit": "e604c19055a40a29e0968dda832b8cd3c3f1cc19",
+        "cucumber": "architecture/rust-port/receipts/2026-11-26-ribbon-sketch-context-3856/wayland.json",
+        "cucumber_sha256": "3ee2c0e4d2d0e6e7296f372a45d0f360849dafd82d5da1b1862ea7a9fd1c59ac",
+        "scenario_arguments": "architecture/rust-port/receipts/2026-11-26-ribbon-sketch-context-3856/wayland-arguments.json",
+        "scenario_arguments_sha256": "1ea4dc0a30d495fbe3abbe6abe0b2034241b5572fb4dfbdcd8404201dba9ccf5",
+        "application_commit": "cd2a49adaa1322c788f7f67b4b2cf76cd94be657",
         "command": "OBK_BDD_ROOT=<published-scenarios> OBK_BDD_AREA=application OBK_BDD_FEATURE=ribbon-display OBK_BDD_SCENARIO=<case> <head-test-binary> application_scenarios_use_the_native_window --test-threads=1 --nocapture",
         "environment": "Linux Wayland with nested Weston 13, Xvfb, and Vulkan Lavapipe.",
-        "notes": "48 of 52 amended scenarios passed on Wayland with 551 steps in passing cases. All four Home transition cases passed on Wayland and X11."
+        "notes": "49 of 52 amended scenarios passed on Wayland with 563 steps in passing cases. The existing-sketch ribbon transition passed on Wayland and X11. The native build included existing local GUI filesystem edits."
       }
     }
   },
