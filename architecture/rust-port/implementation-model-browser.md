@@ -14,6 +14,10 @@ other rows from appearing. Labels containing `##` remain literal visible names.
 Invalid duplicate IDs, missing consumer IDs, and NUL text are refused before
 widget submission.
 
+The expanded Geometry Properties color picker leaves room for the palette
+scrollbar so Add to Custom Colors remains visible when the dialog fits.
+On shorter displays the palette scrolls while OK and Cancel remain below it.
+
 A double-click sends the document and sketch IDs to the existing owner edit
 operation. The same operation remains available through script and add-in owner
 wrappers. The owner checks document focus, sketch continuity, plane resolution,

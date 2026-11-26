@@ -142,10 +142,11 @@ impl ColorDialog {
     }
     fn fitted_size(&self, ui: &Ui) -> [f32; 2] {
         let style = ui.clone_style();
-        // Six channel rows, Add, and the answer row must fit below the color field.
+        // Keep Add above the child scrollbar while the answer row stays outside it.
         let height = FIELD_SIDE
             + CHANNEL_AND_ACTION_ROWS * ui.frame_height_with_spacing()
             + ui.frame_height()
+            + style.scrollbar_size
             + 2. * (style.window_padding[1] + style.item_spacing[1]);
         let wanted = if self.defining {
             [DEFINING_WIDTH, height]
