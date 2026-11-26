@@ -71,9 +71,17 @@ jobs:
           persist-credentials: false
       - uses: ./.github/actions/setup
       - name: Build and test every discovered Cargo workspace
+        id: native-workspaces
         run: |
           if [ "$RUNNER_OS" = Linux ]; then
             ./tools/with-xvfb.sh --window-manager cargo xtask native
+          elif [ "$RUNNER_OS" = Windows ] && [ "$RUNNER_ARCH" = ARM64 ]; then
+            cargo xtask native 2>&1 | tee "$(cygpath -u "$RUNNER_TEMP")/oblikovati-native.log"
           else
             cargo xtask native
           fi
+      - name: Capture Windows ARM64 New dialog assertion stack
+        if: failure() && matrix.target == 'aarch64-pc-windows-msvc' && steps.native-workspaces.conclusion == 'failure'
+        timeout-minutes: 6
+        shell: pwsh
+        run: ./tools/bootstrap/windows_gui_debug.ps1 -NativeLog (Join-Path $env:RUNNER_TEMP 'oblikovati-native.log')

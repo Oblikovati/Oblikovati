@@ -35,8 +35,14 @@ or change the context layout. `IMGUI_USE_WCHAR32` matches the dependency build.
 Window position and size, cursor position, buttons, selectable rows, and literal
 draw-list text use this boundary on every platform. The old vector-by-value
 calls are removed from application controls and the input test fixture.
-The remaining SDK calls use scalar arguments or output pointers. The binding
-must keep this rule when it adds controls that accept vector values.
+New controls that accept vector values use scalar arguments or output
+pointers at the Rust and C++ boundary.
+
+The Windows ARM64 CI job retains the native test output. If the New dialog
+test aborts with `0xc0000409`, CDB runs that test alone using the same
+executable and records the assertion stack in the job log. It uses the ARM64
+debugger from the Windows SDK and checks the cached SDK installer's signature
+before enabling the debugger component when required.
 
 The GUI thread still owns the context and every frame. Label owners and text
 slices remain live through each call. C++ copies glyph vertices and retains no
