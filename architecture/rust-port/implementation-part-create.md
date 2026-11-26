@@ -51,8 +51,23 @@ smoothed Loft both produce a frustum of volume `1.75π cm³`. Each result is
 a valid solid with two cap faces and a side face attributed to the source
 curves. Both Loft section edges generate the same side face.
 
-Sweep and Loft still require persistent input identities, selection,
-preview, commit, undo, redo and reopen in the host. The probes cover the
-straight circular Sweep and two coaxial Loft sections. Guided, Boolean and
-spatial inputs still need qualification. Revolve has a persisted definition
-type and a geometry probe, and still needs desktop authoring and replay.
+### Sweep source resolution
+
+The versioned Sweep recipe records the profile boundary, both source sketch
+IDs, and the ordered, directed path curve IDs. Resolution reads both solved
+sketches and attributes their datum and parameter dependencies. The adapter
+resolves the selected closed region, lifts the analytic path from its
+current sketch plane, and checks wire traversal before calling Martensite.
+The result must have a valid solid, measured B-rep tolerances within the
+configured cap, and exactly one construction role per face.
+
+The [source tests](../../crates/martensite/tests/release_probe/sweep_sources.rs)
+round-trip the recipe, rebuild the cylinder after a path length edit, and
+reject a replacement path even when it occupies the same coordinates. A
+disconnected path reports the offending curve and returns no solid.
+
+Ordered Part replay, document serialization and desktop authoring remain
+open for Sweep. Loft still requires authored section identities and host
+integration. Guided, Boolean and spatial inputs still need qualification.
+Revolve has a persisted definition type and a geometry probe, and still
+needs desktop authoring and replay.

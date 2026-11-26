@@ -4,6 +4,8 @@ use oblikovati_martensite::probe_box_release;
 
 #[path = "release_probe/create.rs"]
 mod create;
+#[path = "release_probe/sweep_sources.rs"]
+mod sweep_sources;
 
 #[test]
 fn released_toolkits_construct_validate_and_integrate_in_working_units() {

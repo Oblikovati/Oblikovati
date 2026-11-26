@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 mod boundary;
 mod profile_offset;
-mod regions;
+pub(crate) mod regions;
 pub use profile_offset::offset_sketch_profile;
 pub use regions::{
     SketchRegionBoundary, SketchRegionCurveUse, SketchRegionMeasure,

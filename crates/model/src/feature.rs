@@ -22,6 +22,7 @@ mod replay;
 pub mod shell;
 pub mod sketch_prism;
 pub mod sketch_revolve;
+pub mod sketch_sweep;
 mod suppression;
 mod validation;
 pub mod work_axis;

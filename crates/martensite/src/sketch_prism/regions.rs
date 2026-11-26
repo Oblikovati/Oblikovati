@@ -24,6 +24,23 @@ pub struct SketchRegionBoundary {
     pub holes: Vec<Vec<SketchRegionCurveUse>>,
 }
 impl SketchRegionBoundary {
+    /// Capture its complete directed lineage. Example: `region.selection()` before storing tool inputs.
+    pub fn selection(&self) -> SketchPrismSelection {
+        let directed = |boundary: &[SketchRegionCurveUse]| {
+            boundary
+                .iter()
+                .map(|item| SketchDirectedCurve {
+                    curve: item.curve,
+                    reversed: item.reversed,
+                })
+                .collect()
+        };
+        SketchPrismSelection {
+            outer: directed(&self.outer),
+            holes: self.holes.iter().map(|hole| directed(hole)).collect(),
+        }
+    }
+
     /// Convert a line-bounded region to a saved prism selection; example: `region.line_selection(sketch)?`.
     pub fn line_selection(
         &self,
@@ -114,7 +131,7 @@ pub fn certified_sketch_regions_with_datums(
     )
 }
 
-fn region_boundary(region: &PlanarRegion) -> SketchRegionBoundary {
+pub(crate) fn region_boundary(region: &PlanarRegion) -> SketchRegionBoundary {
     SketchRegionBoundary {
         outer: boundary(region.outer()),
         holes: region.holes().iter().map(boundary).collect(),
@@ -173,7 +190,7 @@ fn map_regions<T>(
     )
 }
 
-pub(super) fn resolved_regions(
+pub(crate) fn resolved_regions(
     sketch: ResolvedDocumentSketch<'_>,
     policy: crate::PrismResolutionPolicy,
 ) -> Result<Option<PlanarRegionSet>, EvaluationFailure> {

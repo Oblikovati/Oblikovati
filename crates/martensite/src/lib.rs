@@ -118,6 +118,7 @@ pub use prism::{
     retain_prism_on_plane, validate_full_named_snapshot,
 };
 mod revolve;
+pub mod sweep;
 pub use revolve::{
     RevolveFaceRole, RevolveProbeDefinition, RevolveProbeReport, probe_planar_revolve,
     probe_revolve_on_plane,
