@@ -12,7 +12,9 @@ pub(super) fn packet() -> ViewportSketchPreview {
 #[test]
 fn native_sketch_preview_draws_clears_and_keeps_model_generation() {
     let runtime = ViewportRuntime::new(Default::default()).unwrap();
-    let mut view = runtime.open_window("Slot preview", [320, 240]).unwrap();
+    let mut view = runtime
+        .open_document_window("Slot preview", [320, 240])
+        .unwrap();
     view.submit(&ViewportScene {
         background: [0.; 3],
         triangles: vec![],
@@ -56,8 +58,7 @@ fn verify_invalid_and_resize(view: &mut Viewport, packet: &ViewportSketchPreview
     recipe_parts(&mut invalid).0.points[0][0] = f64::NAN;
     assert!(view.set_sketch_preview(Some(&invalid)).is_err());
     assert!(!view.set_sketch_preview(Some(packet)).unwrap());
-    view.resize([400, 300]).unwrap();
-    view.poll_events(64).unwrap();
+    resize_native(view, [400, 300]);
     assert!(view.set_sketch_preview(Some(packet)).unwrap());
     view.redraw().unwrap();
 }

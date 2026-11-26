@@ -3,7 +3,7 @@
 use oblikovati_viewport::{
     GuiAtlas, GuiBatch, GuiFrame, GuiTextureKey, GuiTextureResources, GuiVertex, Viewport,
     ViewportCamera, ViewportCapture, ViewportOptions, ViewportPresentation, ViewportRuntime,
-    ViewportScene, ViewportTriangle,
+    ViewportScene, ViewportTriangle, ViewportWake,
 };
 use std::time::{Duration, Instant};
 #[path = "native/background.rs"]
@@ -68,20 +68,24 @@ fn complete_surface_frame(view: &mut Viewport) -> ViewportCapture {
 }
 fn await_presented_pixels(view: &Viewport, capture: &ViewportCapture) {
     let deadline = Instant::now() + Duration::from_secs(3);
-    while view.native_pixels().unwrap() != capture.rgba {
+    loop {
+        let pixels = view.native_pixels();
+        if pixels.as_ref().is_ok_and(|pixels| pixels == &capture.rgba) {
+            return;
+        }
         assert!(
             Instant::now() < deadline,
-            "native viewport {} at {:?}: expected current GPU pixels",
+            "native viewport {} at {:?}: expected current GPU pixels, {}",
             view.id(),
-            capture.extent
+            capture.extent,
+            pixels.err().as_deref().unwrap_or("pixels differed"),
         );
         std::thread::sleep(Duration::from_millis(5));
     }
 }
 fn verify_resize_and_mapping(view: &mut Viewport) {
     let first = verify_native(view);
-    view.resize([400, 300]).unwrap();
-    view.poll_events(64).unwrap();
+    resize_native(view, [800, 600]);
     let resized = verify_native(view);
     assert!(resized.surface_generation > first.surface_generation);
     view.set_camera(ViewportCamera::default()).unwrap();
@@ -95,9 +99,31 @@ fn verify_resize_and_mapping(view: &mut Viewport) {
     assert!(verify_native(view).surface_generation > resized.surface_generation);
 }
 fn open_fixture(runtime: &ViewportRuntime, title: &str) -> Viewport {
-    let mut view = runtime.open_window(title, [320, 240]).unwrap();
+    // The small pixel fixtures use the system-framed window, which has no app size hint.
+    submit_fixture(runtime.open_document_window(title, [320, 240]).unwrap())
+}
+fn submit_fixture(mut view: Viewport) -> Viewport {
     view.submit(&scene()).unwrap();
     view
+}
+
+fn resize_native(view: &mut Viewport, extent: [u32; 2]) {
+    view.resize(extent).unwrap();
+    let wake = ViewportWake::new().unwrap();
+    let deadline = Instant::now() + Duration::from_secs(2);
+    loop {
+        let actual = view.drawable_extent().unwrap();
+        if actual == extent {
+            return;
+        }
+        let remaining = deadline.saturating_duration_since(Instant::now());
+        assert!(
+            !remaining.is_zero(),
+            "native extent {actual:?}: expected {extent:?}"
+        );
+        view.wait_events(&wake, Some(remaining)).unwrap();
+        view.poll_events(64).unwrap();
+    }
 }
 
 #[test]
@@ -122,7 +148,7 @@ fn packed_native_preview_matches_full_capture_after_resize() {
     let runtime = ViewportRuntime::new(ViewportOptions::default()).unwrap();
     let mut view = open_fixture(&runtime, "Oblikovati packed preview");
     for extent in [[320, 240], [319, 233]] {
-        assert_eq!(view.resize(extent).unwrap(), extent);
+        resize_native(&mut view, extent);
         let expected = verify_native(&mut view);
         assert!(
             view.present_with_preview(|size, generations, pixels| {
@@ -157,10 +183,18 @@ fn packed_native_preview_matches_full_capture_after_resize() {
 fn application_owned_linux_windows_present_resize_capture_and_remove() {
     let runtime = ViewportRuntime::new(ViewportOptions::default()).unwrap();
     println!("OBLIKOVATI_VIEWPORT_DEVICE={}", runtime.device_name());
-    let mut view = open_fixture(&runtime, "Oblikovati Rust viewport acceptance");
+    let mut view = submit_fixture(
+        runtime
+            .open_window("Oblikovati Rust viewport acceptance", [640, 480])
+            .unwrap(),
+    );
     verify_title_metadata(&mut view);
     verify_resize_and_mapping(&mut view);
-    let mut second = open_fixture(&runtime, "Oblikovati Rust second viewport");
+    let mut second = submit_fixture(
+        runtime
+            .open_window("Oblikovati Rust second viewport", [650, 490])
+            .unwrap(),
+    );
     verify_native(&mut second);
     view.close();
     verify_native(&mut second);

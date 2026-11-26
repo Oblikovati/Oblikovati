@@ -88,8 +88,7 @@ fn verify_order_and_replacement(
 }
 fn verify_gui_resize(view: &mut Viewport, compiler: &GuiFrameCompiler, packet: &GuiFrame) {
     view.submit_gui_frame(compiler, packet).unwrap();
-    view.resize([400, 300]).unwrap();
-    view.poll_events(64).unwrap();
+    resize_native(view, [400, 300]);
     assert!(view.capture().is_err());
     assert!(view.redraw().is_err());
     assert!(view.submit_gui_frame(compiler, packet).is_err());

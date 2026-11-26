@@ -17,7 +17,7 @@ use oblikovati_model::{
 pub(super) fn verify_meshed_prism(runtime: &ViewportRuntime) {
     let tilted = tilted_frame();
     let mut view = runtime
-        .open_window("Oblikovati placed kernel prism presentation", [320, 240])
+        .open_document_window("Oblikovati placed kernel prism presentation", [320, 240])
         .unwrap();
     for plane in [
         SketchPlane::xy(),

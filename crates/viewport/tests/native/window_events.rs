@@ -3,16 +3,16 @@
 use oblikovati_viewport::{
     Viewport, ViewportEvent, ViewportOptions, ViewportRuntime, ViewportWake,
 };
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 #[test]
 fn a_secondary_resize_wakes_the_owner_and_stays_on_its_window() {
     let runtime = ViewportRuntime::new(ViewportOptions::default()).unwrap();
     let mut main = runtime
-        .open_window("Main event target", [160, 120])
+        .open_window("Main event target", [640, 480])
         .unwrap();
     let mut drawing = runtime
-        .open_window("Drawing event target", [180, 140])
+        .open_document_window("Drawing event target", [180, 140])
         .unwrap();
     let wake = ViewportWake::new().unwrap();
     drain(&mut main);
@@ -20,23 +20,12 @@ fn a_secondary_resize_wakes_the_owner_and_stays_on_its_window() {
 
     let extent = [210, 154];
     drawing.resize(extent).unwrap();
-    assert!(
-        !main
-            .wait_events(&wake, Some(Duration::ZERO))
-            .unwrap()
-            .native_events
-    );
+    expect_secondary_resize(&mut main, &mut drawing, &wake, extent);
     wake.wake().unwrap();
     let ready = main
         .wait_events_for_windows(&[&drawing], &wake, Some(Duration::from_secs(1)))
         .unwrap();
-    assert!(ready.native_events && ready.worker_wake, "{ready:?}");
-    assert!(
-        drawing
-            .poll_events(32)
-            .unwrap()
-            .contains(&ViewportEvent::Resized(extent))
-    );
+    assert!(ready.worker_wake, "{ready:?}");
 
     drawing.close();
     assert!(
@@ -44,6 +33,33 @@ fn a_secondary_resize_wakes_the_owner_and_stays_on_its_window() {
             .unwrap_err()
             .contains("expected a live view")
     );
+}
+
+fn expect_secondary_resize(
+    main: &mut Viewport,
+    drawing: &mut Viewport,
+    wake: &ViewportWake,
+    extent: [u32; 2],
+) {
+    // Openbox can deliver startup configure events before acknowledging the requested extent.
+    let deadline = Instant::now() + Duration::from_secs(2);
+    let expected = ViewportEvent::Resized(extent);
+    loop {
+        let timeout = deadline.saturating_duration_since(Instant::now());
+        let ready = main
+            .wait_events_for_windows(&[drawing], wake, Some(timeout))
+            .unwrap();
+        if ready.native_events {
+            assert!(!main.poll_events(32).unwrap().contains(&expected));
+            if drawing.poll_events(32).unwrap().contains(&expected) {
+                return;
+            }
+        }
+        assert!(
+            Instant::now() < deadline,
+            "missing secondary resize {extent:?}"
+        );
+    }
 }
 
 #[test]

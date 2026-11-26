@@ -33,7 +33,7 @@ pub(super) fn packet() -> ViewportSketchDisplay {
 }
 pub(super) fn open_display(title: &str) -> (ViewportRuntime, Viewport) {
     let runtime = ViewportRuntime::new(Default::default()).unwrap();
-    let mut view = runtime.open_window(title, [320, 240]).unwrap();
+    let mut view = runtime.open_document_window(title, [320, 240]).unwrap();
     view.submit(&ViewportScene {
         background: [0.; 3],
         triangles: vec![],
@@ -132,8 +132,7 @@ fn verify_zoom_resize(view: &mut Viewport) {
     .unwrap();
     let zoomed = view.redraw().unwrap();
     assert!(zoomed.overlay_generation > before.overlay_generation);
-    view.resize([400, 300]).unwrap();
-    view.poll_events(64).unwrap();
+    super::resize_native(view, [400, 300]);
     let resized = view.redraw().unwrap();
     assert!(resized.overlay_generation > zoomed.overlay_generation);
 }
