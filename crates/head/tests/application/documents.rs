@@ -127,8 +127,7 @@ impl ApplicationWorld {
     pub fn escape(&mut self) {
         #[cfg(target_os = "linux")]
         if self.navigation_wheel_scenario() {
-            super::x11_input::press_keysym(0xff1b);
-            self.pump(Vec::new());
+            super::desktop_input::escape(self);
             return;
         }
         let event = |pressed| {
@@ -149,9 +148,20 @@ impl ApplicationWorld {
             .collect();
         self.pump(events);
     }
+    #[cfg(target_os = "linux")]
+    pub(super) fn project_dialog_x11_input(&mut self) -> bool {
+        self.scenario_feature_path.as_ref().is_some_and(|path| {
+            path.ends_with("features/application/project-dialog/project-dialog.feature")
+        }) && !self.app().window.native.view.uses_wayland()
+    }
     pub fn hover(&mut self, position: [i32; 2]) {
         #[cfg(target_os = "linux")]
-        if self.navigation_wheel_scenario() || self.project_dialog_x11_input() {
+        if self.navigation_wheel_scenario() {
+            super::desktop_input::hover(self, position);
+            return;
+        }
+        #[cfg(target_os = "linux")]
+        if self.project_dialog_x11_input() {
             super::x11_input::move_pointer(position);
             self.pump(Vec::new());
             return;
@@ -164,8 +174,7 @@ impl ApplicationWorld {
     pub fn right_click(&mut self, position: [i32; 2]) {
         #[cfg(target_os = "linux")]
         if self.navigation_wheel_scenario() {
-            super::x11_input::right_click(position);
-            self.pump(Vec::new());
+            super::desktop_input::right_click(self, position);
             return;
         }
         self.hover(position);
@@ -435,12 +444,12 @@ impl ApplicationWorld {
         self.click_text("Open...");
         #[cfg(target_os = "linux")]
         if self.navigation_wheel_scenario() {
+            let wayland = self.app().window.native.view.uses_wayland();
             for character in path.to_str().expect("fixture path: expected UTF-8").chars() {
-                super::x11_input::press_path_character(character);
+                super::x11_input::press_desktop_path_character(character, wayland);
                 self.pump(Vec::new());
             }
-            super::x11_input::press_keysym(0xff0d);
-            self.pump(Vec::new());
+            super::desktop_input::key(self, 0xff0d);
             self.expect_no_text("Look in");
             return;
         }

@@ -36,7 +36,7 @@ fn separator(capture: &ViewportCapture, bounds: [f32; 4], angle: usize) -> bool 
             radius,
         );
         let after = sample(capture, bounds, (angle + NEIGHBOR) % SAMPLES, radius);
-        middle - before.max(after) > MIN_CONTRAST
+        middle - before.max(after) > MIN_CONTRAST || before.min(after) - middle > MIN_CONTRAST
     })
 }
 
@@ -54,7 +54,7 @@ pub(super) fn visible_separators(capture: &ViewportCapture, bounds: [f32; 4]) ->
 mod tests {
     use super::*;
 
-    fn capture_with_separators(count: usize) -> ViewportCapture {
+    fn capture_with_separators(count: usize, background: u8, line: u8) -> ViewportCapture {
         let mut capture = ViewportCapture {
             view_id: 1,
             scene_generation: 1,
@@ -62,7 +62,7 @@ mod tests {
             surface_generation: 1,
             overlay_generation: 1,
             extent: [64, 64],
-            rgba: [40, 40, 40, 255].repeat(64 * 64),
+            rgba: [background, background, background, 255].repeat(64 * 64),
         };
         for index in 0..count {
             let angle = TAU * (index as f32 + 0.5) / count as f32;
@@ -70,7 +70,7 @@ mod tests {
                 let x = (32. + angle.sin() * 64. * radius).round() as usize;
                 let y = (32. - angle.cos() * 64. * radius).round() as usize;
                 let offset = (y * 64 + x) * 4;
-                capture.rgba[offset..offset + 3].copy_from_slice(&[100, 100, 100]);
+                capture.rgba[offset..offset + 3].fill(line);
             }
         }
         capture
@@ -79,8 +79,11 @@ mod tests {
     #[test]
     fn distinguishes_more_separators_from_a_small_circle_without_them() {
         let bounds = [0., 0., 64., 64.];
-        assert_eq!(visible_separators(&capture_with_separators(0), bounds), 0);
-        assert_eq!(visible_separators(&capture_with_separators(4), bounds), 4);
-        assert_eq!(visible_separators(&capture_with_separators(8), bounds), 8);
+        for (background, line) in [(40, 100), (100, 40)] {
+            for count in [0, 4, 8] {
+                let capture = capture_with_separators(count, background, line);
+                assert_eq!(visible_separators(&capture, bounds), count);
+            }
+        }
     }
 }

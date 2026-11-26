@@ -5,7 +5,10 @@ mod cursor;
 pub(super) mod window_targets;
 pub(super) use cursor::{cursor_sprite, reference_cursor};
 use window_targets::application_window;
-pub(super) use window_targets::{press_window_key, request_named_window_close, window_is_separate};
+pub(super) use window_targets::{
+    press_desktop_path_character, press_path_character, press_window_key,
+    request_named_window_close, window_is_separate,
+};
 use x11rb::connection::Connection;
 use x11rb::protocol::xproto::{
     Atom, AtomEnum, BUTTON_PRESS_EVENT, BUTTON_RELEASE_EVENT, ClientMessageEvent,
@@ -137,31 +140,16 @@ fn press_target_key(connection: &RustConnection, root: Window, keysym: u32) {
     );
 }
 
-/// Type one ASCII path character through X11; example: `press_path_character('A')`.
-pub(super) fn press_path_character(character: char) {
-    let shifted = character.is_ascii_uppercase() || character == '_';
-    let base = if character == '_' {
-        '-'
-    } else {
-        character.to_ascii_lowercase()
-    };
-    assert!(
-        base.is_ascii_alphanumeric() || matches!(base, '/' | '.' | '-' | ' '),
-        "path character {character:?}: expected an ASCII letter, digit, slash, dot, hyphen, underscore or space"
-    );
-    if shifted {
-        press_shifted_keysym(u32::from(base));
-    } else {
-        press_keysym(u32::from(base));
-    }
-}
-
 pub(super) fn press_shifted_keysym(keysym: u32) {
     let (connection, root) = keyboard_target();
-    let shift = keyboard_keycode(&connection, 0xffe1);
-    let key = keyboard_keycode(&connection, keysym);
+    press_target_shifted_key(&connection, root, keysym);
+}
+
+fn press_target_shifted_key(connection: &RustConnection, root: Window, keysym: u32) {
+    let shift = keyboard_keycode(connection, 0xffe1);
+    let key = keyboard_keycode(connection, keysym);
     send_key_sequence(
-        &connection,
+        connection,
         root,
         &[
             (KEY_PRESS_EVENT, shift),

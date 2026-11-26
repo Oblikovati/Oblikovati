@@ -72,19 +72,19 @@ fn incline_block(world: &mut ApplicationWorld) {
 #[cfg(target_os = "linux")]
 #[test]
 fn desktop_orbit_drag_and_escape_keep_the_saved_block_active() {
-    use super::super::viewport_pan::native_input;
+    use super::super::desktop_input;
 
     let mut world = ApplicationWorld::new();
     open_saved_navigation_block(&mut world, &bundled_orbit_block());
     let before = camera(&mut world);
     let control = diagnostics::pointer_pixels(bar_icon_center(NavigationControl::Orbit));
-    native_input::click(&mut world, control);
+    desktop_input::click(&mut world, control);
     free_rotation(&mut world);
     expect_guide(&mut world, true);
-    native_input::drag(&mut world, DRAG[0], DRAG[1]);
+    desktop_input::drag(&mut world, DRAG[0], DRAG[1]);
     assert_ne!(camera(&mut world).eye, before.eye);
     world.save_capture("saved-block-orbit-guide");
-    native_input::escape(&mut world);
+    desktop_input::escape(&mut world);
     world.expect_ready();
     expect_guide(&mut world, false);
     super::super::viewport_pan::expect_part_and_solid(&mut world);

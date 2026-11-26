@@ -163,3 +163,10 @@ exercise dragging, right-click, and Escape through each desktop. Pan
 translated the view and restored the Part context menu when the tool
 closed. Orbit rotated the view, then Escape removed the guide while
 keeping the saved Part active.
+
+## Navigation Wheel desktop input
+
+The [Navigation Wheel runs](receipts/2026-11-26-navigation-wheel-wayland-3881/README.md)
+use the active desktop for the saved Part picker, wheel motion, menu
+clicks, and Escape. The compact layout check counts visible radial
+separators across both lighter and darker parts of the wheel.

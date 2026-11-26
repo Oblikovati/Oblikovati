@@ -10,7 +10,7 @@ use oblikovati_viewport::ViewportCamera;
 
 #[cfg(target_os = "linux")]
 #[path = "native_input.rs"]
-pub(super) mod native_input;
+mod native_input;
 
 const NAVIGATION: &str = "##navigation-bar";
 pub(super) const EMPTY_VIEW: [i32; 2] = [420, 300];

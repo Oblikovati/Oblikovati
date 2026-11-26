@@ -11,6 +11,8 @@ mod binding_inventory;
 mod capture_only;
 #[cfg(target_os = "linux")]
 mod cube_os_entry;
+#[cfg(target_os = "linux")]
+mod desktop_input;
 mod diagnostics;
 #[cfg(target_os = "linux")]
 #[path = "docking-system/steps.rs"]

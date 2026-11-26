@@ -14,7 +14,7 @@ using this status; the live scenario directory can change.
 
 ## Current evidence
 
-- All 12 current [Viewport Navigation Wheel scenarios](receipts/2026-11-24-navigation-wheel-current-3881/README.md) passed individually with the named native Part.
+- All 12 current [Viewport Navigation Wheel scenarios](receipts/2026-11-26-navigation-wheel-wayland-3881/README.md) passed on Wayland and X11 with native desktop input and the named Part.
 - Viewport Orbit (#3872) passed all ten current cases and 94 steps on
   [Wayland and X11](receipts/2026-11-26-viewport-pan-orbit-wayland-3881/README.md),
   including both adjacent-pair examples. Direct drag and Escape tests passed on both backends.

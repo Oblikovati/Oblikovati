@@ -194,15 +194,14 @@ impl ApplicationWorld {
     pub(super) fn navigation_wheel_scenario(&self) -> bool {
         super::scenario_capture::is_navigation_wheel(self.scenario_feature_path.as_deref())
     }
-    #[cfg(target_os = "linux")]
-    pub(super) fn project_dialog_x11_input(&mut self) -> bool {
-        self.scenario_feature_path.as_ref().is_some_and(|path| {
-            path.ends_with("features/application/project-dialog/project-dialog.feature")
-        }) && !self.app().window.native.view.uses_wayland()
-    }
     pub fn click(&mut self, position: [i32; 2]) {
         #[cfg(target_os = "linux")]
-        if self.navigation_wheel_scenario() || self.project_dialog_x11_input() {
+        if self.navigation_wheel_scenario() {
+            super::desktop_input::click(self, position);
+            return;
+        }
+        #[cfg(target_os = "linux")]
+        if self.project_dialog_x11_input() {
             super::x11_input::click(position);
             self.pump(Vec::new());
             return;

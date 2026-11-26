@@ -1,0 +1,49 @@
+x11: 12 passed scenarios, 155 passed steps
+wayland: 12 passed scenarios, 155 passed steps
+
+Isolated Wayland runs
+  Scenario: Open the full navigation wheel and close it from its menu
+16 steps (16 passed)
+  Scenario: Switch between the basic wheel layouts
+15 steps (15 passed)
+  Scenario: Switch among compact wheel layouts
+17 steps (17 passed)
+  Scenario: Cancel a mini wheel size preference change
+17 steps (17 passed)
+  Scenario: Inspect wheel display preference choices
+8 steps (8 passed)
+  Scenario: Apply and restore the big wheel size
+13 steps (13 passed)
+  Scenario: Fit a small model from the wheel menu
+9 steps (9 passed)
+  Scenario: Return to the home view from the wheel menu
+11 steps (11 passed)
+  Scenario: Apply and restore wheel opacity
+12 steps (12 passed)
+  Scenario: Apply and restore the mini wheel size
+14 steps (14 passed)
+  Scenario: Change the wheel tool-tip preference
+12 steps (12 passed)
+  Scenario: Repeat the last navigation wheel command
+11 steps (11 passed)
+
+Full X11 before the compact-wheel pixel correction
+12 scenarios (11 passed, 1 failed)
+142 steps (141 passed, 1 failed)
+
+Focused X11 compact-wheel rerun
+1 scenario (1 passed)
+17 steps (17 passed)
+
+Direct Pan and Orbit Wayland
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 1731 filtered out; finished in 25.38s
+
+Direct Pan and Orbit X11
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 1731 filtered out; finished in 17.05s
+
+Wheel separator unit test
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1733 filtered out; finished in 0.00s
+
+Head Clippy and Cargo formatting
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 15.43s
+Cargo formatting passed.

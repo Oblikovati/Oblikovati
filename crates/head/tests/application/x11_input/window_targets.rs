@@ -90,6 +90,35 @@ pub(in super::super) fn press_weston_key(keysym: u32) {
     press_target_key(&connection, root, keysym);
 }
 
+/// Type one ASCII path character through X11.
+pub(in super::super) fn press_path_character(character: char) {
+    press_desktop_path_character(character, false);
+}
+
+/// Type one ASCII path character through the active native desktop.
+pub(in super::super) fn press_desktop_path_character(character: char, wayland: bool) {
+    let shifted = character.is_ascii_uppercase() || character == '_';
+    let base = if character == '_' {
+        '-'
+    } else {
+        character.to_ascii_lowercase()
+    };
+    assert!(
+        base.is_ascii_alphanumeric() || matches!(base, '/' | '.' | '-' | ' '),
+        "path character {character:?}: expected an ASCII letter, digit, slash, dot, hyphen, underscore or space"
+    );
+    let (connection, root) = if wayland {
+        weston_keyboard_target()
+    } else {
+        keyboard_target()
+    };
+    if shifted {
+        press_target_shifted_key(&connection, root, u32::from(base));
+    } else {
+        press_target_key(&connection, root, u32::from(base));
+    }
+}
+
 fn weston_keyboard_target() -> (RustConnection, Window) {
     let (connection, screen) = x11rb::connect(None).expect("expected the Weston host display");
     let root = connection.setup().roots[screen].root;
