@@ -331,7 +331,8 @@ impl GuiFrameEngine {
                 area,
             },
         );
-        self.sweep_dialog.panel(ui, commands, area, &mut selected);
+        self.sweep_dialog
+            .panel(ui, commands, (area, icons), &mut selected);
         self.blend_dialog.panel(ui, commands, &mut selected, area);
         self.hole_dialog.panel(ui, commands, area, &mut selected);
         self.shell_feature_dialog
@@ -419,7 +420,6 @@ impl GuiFrameEngine {
         self.known_documents.clone_from(&request.commands.documents);
         self.known_document_type = request.commands.document_type;
         self.workspaces.note_created(&selected);
-        // A popup that closed this frame still owned the key that closed it.
         let (popup_open, doubled) = sketch_activation(ui, request, &mut self.popup_was_open);
         // A dialog over the workspace is not a picture of the document, nor of its tab.
         if popup_open {

@@ -92,7 +92,7 @@ SVGs for Extrude, Revolve, Sweep, Derive, and Import. The drawing code applies
 the named paint classes in Dark, Light, and High Contrast.
 
 The [desktop receipt](receipts/2026-11-26-sweep-entry-history-3917/README.md)
-covers `sweep-01` and `sweep-02` on Wayland and X11. Profile and path repicking, additional orientations, twist, guides,
+covers `sweep-01` and `sweep-02` on Wayland and X11. Profile and path repicking, twist, guide references,
 Boolean and surface operations remain open.
 Loft still requires authored section identities and host integration.
 Revolve has a persisted definition type and a geometry probe, and still
@@ -122,3 +122,17 @@ The [desktop taper receipt](receipts/2026-11-26-sweep-taper-edit-3917/README.md)
 covers all eight steps of `sweep-03` on Wayland and X11, including the
 change from the tapered preview to straight sides and the saved zero angle
 on the same Sweep.
+
+### Sweep orientation
+
+Properties offers Icons and Dropdown selectors with Follow Path, Fixed,
+and Guide. A Guide draft without a reference clears the preview, requests a
+rail or surfaces, and disables OK. Fixed translates the profile along a
+straight path while keeping its frame, including for an oblique path, and
+hides the taper field. Fixed orientation is authored in version 30 of the
+Part program. Its saved sources and body reference keys survive reopen.
+
+The [orientation receipt](receipts/2026-11-26-sweep-orientation-3917/README.md)
+covers the Guide validation and Fixed edit on both Linux backends. Guide
+reference picking and guided geometry remain open. Advanced Properties
+shows the unchecked single-selection option as read-only pending repicking.

@@ -106,7 +106,7 @@ fn write_offset(
 fn write_recipe_version(version: u32, formatter: &mut Formatter<'_>) -> std::fmt::Result {
     write!(
         formatter,
-        "work plane recipe version {version}: expected 1 for planes, 2 for line axes, 3 for positions and two-point axes, 4 for associative points, 5 for plane-and-point definitions, 6 for three-point definitions, 7 for line-and-point definitions, 8 for normal-to-axis definitions, 9 for two-axis definitions, 10 for line-angle definitions, 11 for sketch prism inputs, 12 for body deletion, 13 for face-based planes, 14 for Go face-based planes, 15 for fillet inputs, 16 for chamfer inputs, 17 for hole inputs, 18 for move-body inputs, 19 for shell inputs, 20 for rectangular patterns, 21 for circular patterns, 22 for mirrors, 23 for sketch sweep inputs, or 24 for tapered sketch sweep inputs"
+        "work plane recipe version {version}: expected 1 for planes, 2 for line axes, 3 for positions and two-point axes, 4 for associative points, 5 for plane-and-point definitions, 6 for three-point definitions, 7 for line-and-point definitions, 8 for normal-to-axis definitions, 9 for two-axis definitions, 10 for line-angle definitions, 11 for sketch prism inputs, 12 for body deletion, 13 for face-based planes, 14 for Go face-based planes, 15 for fillet inputs, 16 for chamfer inputs, 17 for hole inputs, 18 for move-body inputs, 19 for shell inputs, 20 for rectangular patterns, 21 for circular patterns, 22 for mirrors, 23 for sketch sweep inputs, 24 for tapered sketch sweep inputs, or 25 for fixed-orientation sketch sweep inputs"
     )
 }
 

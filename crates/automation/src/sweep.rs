@@ -151,7 +151,9 @@ pub fn prepare_sweep(
         }],
     )
     .map_err(api_error)?;
-    let definition = if input.taper.trim().is_empty() {
+    let definition = if input.orientation == "parallelToOriginalProfile" {
+        definition.with_fixed_orientation()
+    } else if input.taper.trim().is_empty() {
         definition
     } else {
         prepare_sweep_taper(snapshot, definition, &input.taper)?
@@ -174,9 +176,17 @@ pub fn prepare_sweep_taper(
 }
 
 fn validate_options(input: &Sweep) -> Result<(), Error> {
+    if input.orientation == "parallelToOriginalProfile" && !input.taper.trim().is_empty() {
+        return Err(Error(
+            "sweep taper: Fixed orientation uses the original profile".into(),
+        ));
+    }
     if !matches!(input.definition_type.as_str(), "" | "path")
         || !matches!(input.operation.as_str(), "" | "new")
-        || !matches!(input.orientation.as_str(), "" | "normalToPath")
+        || !matches!(
+            input.orientation.as_str(),
+            "" | "normalToPath" | "parallelToOriginalProfile"
+        )
         || !input.twist.is_empty()
         || input
             .align_vector
@@ -196,7 +206,7 @@ fn validate_options(input: &Sweep) -> Result<(), Error> {
         || !input.guide_face_key.is_empty()
         || input.tool_body_index.is_some()
     {
-        return Err(Error("sweep options: supported definition is New Solid, Path, Follow Path, with zero twist and no guide".into()));
+        return Err(Error("sweep options: supported definition is New Solid, Path with Follow Path or Fixed orientation, zero twist and no guide".into()));
     }
     Ok(())
 }

@@ -199,7 +199,10 @@ fn straight_sweep_stays_in_the_browser(world: &mut ApplicationWorld) {
     let browser = world.state().browser.unwrap();
     let feature = browser.bodies[0].feature;
     assert_eq!(
-        browser.sweep_edits.get(&feature).map(String::as_str),
+        browser
+            .sweep_edits
+            .get(&feature)
+            .map(|seed| seed.taper.as_str()),
         Some("0 deg")
     );
 }
@@ -226,4 +229,109 @@ fn preview_width(world: &mut ApplicationWorld) -> f32 {
             (left.min(x), right.max(x))
         });
     right - left
+}
+
+#[given("Sweep1 is open for editing with its profile and path selected")]
+fn sweep_is_open_for_editing(world: &mut ApplicationWorld) {
+    reopen_sweep(world);
+    chosen_sources(world);
+}
+
+#[when("orientation selector style is changed to Dropdown")]
+fn dropdown_style(world: &mut ApplicationWorld) {
+    click_panel(world, "Orientation");
+    click_orientation_option(world, "Dropdown");
+    world.pump(Vec::new());
+    click_panel(world, "FollowPath");
+}
+
+#[then("Follow Path Fixed and Guide are listed")]
+fn dropdown_lists_orientations(world: &mut ApplicationWorld) {
+    for label in ["FollowPath", "Fixed", "Guide"] {
+        assert!(
+            world
+                .frame
+                .runs
+                .iter()
+                .any(|run| run.text == label && world.frame.is_popup_row(run))
+        );
+    }
+}
+
+#[given("the user selects Guide orientation without a guide reference")]
+#[when("Guide is selected without a guide reference")]
+fn select_guide(world: &mut ApplicationWorld) {
+    click_orientation_option(world, "Guide");
+}
+
+#[then("selects Rail or Surfaces is required")]
+fn guide_requires_geometry(world: &mut ApplicationWorld) {
+    assert_eq!(
+        world.state().sweep_preview.map(|state| state.result),
+        Some(GuiSweepPreview::MissingGuide)
+    );
+    assert!(super::world::squeezed(&world.window_text("Sweep")).contains("SelectRailorSurfaces"));
+}
+
+#[when("Fixed is selected")]
+fn select_fixed(world: &mut ApplicationWorld) {
+    click_panel(world, "Fixed");
+}
+
+#[then("a solid preview returns and OK is enabled")]
+fn fixed_preview_returns(world: &mut ApplicationWorld) {
+    let draft = world.state().sweep_preview.unwrap();
+    assert_eq!(draft.result, GuiSweepPreview::Ready);
+    assert_eq!(
+        draft.request.orientation,
+        oblikovati_gui::GuiSweepOrientation::Fixed
+    );
+    assert!((preview_width(world) - 1.).abs() < 0.03);
+    assert!(world.run_is_enabled("OK"));
+}
+
+#[then("the Taper and Twist fields are absent")]
+fn fixed_hides_angle_fields(world: &mut ApplicationWorld) {
+    let panel = world.window_text("Sweep");
+    assert!(
+        !panel.contains("Taper") && !panel.contains("Twist"),
+        "{panel}"
+    );
+}
+
+#[when("Advanced Properties is expanded")]
+fn show_advanced(world: &mut ApplicationWorld) {
+    click_panel(world, "AdvancedProperties");
+}
+
+#[then("Optimize for Single Selection is shown unchecked")]
+fn optimization_defaults_unchecked(world: &mut ApplicationWorld) {
+    world.run_in_window("Sweep", "OptimizeforSingleSelection");
+    assert!(!world.checked("Optimize for Single Selection"));
+}
+
+#[then("Sweep1 and one solid body remain")]
+fn accepted_orientation_is_fixed(world: &mut ApplicationWorld) {
+    accepted_sweep(world);
+    let browser = world.state().browser.unwrap();
+    let feature = browser.bodies[0].feature;
+    assert_eq!(
+        browser.sweep_edits[&feature].orientation,
+        oblikovati_gui::GuiSweepOrientation::Fixed
+    );
+}
+
+fn click_orientation_option(world: &mut ApplicationWorld, label: &str) {
+    let popup = world
+        .frame
+        .runs
+        .iter()
+        .find(|run| run.text == label && world.frame.is_popup_row(run))
+        .map(super::diagnostics::RenderedRun::center);
+    if let Some(position) = popup {
+        world.click(super::diagnostics::pointer_pixels(position));
+        world.pump(Vec::new());
+    } else {
+        click_panel(world, label);
+    }
 }

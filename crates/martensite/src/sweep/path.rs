@@ -157,3 +157,37 @@ fn path_failure(id: SketchEntityId, cause: Failure) -> EvaluationFailure {
         cause,
     )
 }
+
+pub(super) fn straight_ends(
+    input: &oblikovati_model::feature::sketch_sweep::ResolvedSketchSweep<'_>,
+) -> Result<(SketchEntityId, [[f64; 3]; 2]), EvaluationFailure> {
+    let [member] = input.traversal else {
+        return Err(Phase::Input.refused(
+            Kind::InvalidInput,
+            Entity::Body,
+            "sweep: expected one straight path".into(),
+        ));
+    };
+    let path = input.path.sketch.geometry();
+    let error =
+        |cause: oblikovati_model::sketch::SketchError| path_input(member.curve, cause.to_string());
+    let line = path.line(member.curve).map_err(error)?;
+    let lift = |id| {
+        let point = path.point(id).map_err(error)?;
+        input.path.plane.to_model(point.position).map_err(error)
+    };
+    let [start, end] = line.endpoints;
+    let mut ends = [lift(start)?, lift(end)?];
+    if member.reversed {
+        ends.swap(0, 1);
+    }
+    Ok((member.curve, ends))
+}
+
+pub(super) fn difference(left: [f64; 3], right: [f64; 3]) -> [f64; 3] {
+    std::array::from_fn(|axis| left[axis] - right[axis])
+}
+
+pub(super) fn dot(left: [f64; 3], right: [f64; 3]) -> f64 {
+    left.into_iter().zip(right).map(|(a, b)| a * b).sum()
+}

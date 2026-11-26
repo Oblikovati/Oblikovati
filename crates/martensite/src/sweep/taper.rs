@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Analytic draft for a circular section transported along a normal straight path.
+use super::path::{difference, dot, straight_ends};
 use super::{Entity, EvaluationFailure, Kind, Phase, SweepFaceRole, sweep_failure};
 use crate::PrismResolution;
 use martensite_tkbrep::topods::Shape;
@@ -60,26 +61,9 @@ fn normal_path(
     profile_center: [f64; 3],
     resolution: PrismResolution,
 ) -> Result<(SketchEntityId, [f64; 3], f64), EvaluationFailure> {
-    let [member] = input.traversal else {
-        return Err(taper_input("expected a single straight path"));
-    };
-    let path = input.path.sketch.geometry();
-    let line = path.line(member.curve).map_err(taper_input)?;
-    let mut ends = line.endpoints.map(|id| {
-        let point = path.point(id).map_err(taper_input)?;
-        input
-            .path
-            .plane
-            .to_model(point.position)
-            .map_err(taper_input)
-    });
-    if member.reversed {
-        ends.swap(0, 1);
-    }
-    let [start, end] = ends;
-    let start = start?;
+    let (curve, [start, end]) = straight_ends(input)?;
     let offset = difference(start, profile_center);
-    let delta = difference(end?, start);
+    let delta = difference(end, start);
     let normal = input.profile.plane.normal();
     let axial = dot(delta, normal);
     let height = axial.abs();
@@ -93,7 +77,7 @@ fn normal_path(
             "expected a nonzero path normal to and starting in the profile plane",
         ));
     }
-    Ok((member.curve, normal.map(|v| v * axial.signum()), height))
+    Ok((curve, normal.map(|v| v * axial.signum()), height))
 }
 
 fn cone_faces(
@@ -117,14 +101,6 @@ fn cone_faces(
             cone.lateral_face().map_err(failure)?.as_ref().clone(),
         ),
     ])
-}
-
-fn difference(left: [f64; 3], right: [f64; 3]) -> [f64; 3] {
-    std::array::from_fn(|axis| left[axis] - right[axis])
-}
-
-fn dot(left: [f64; 3], right: [f64; 3]) -> f64 {
-    left.into_iter().zip(right).map(|(a, b)| a * b).sum()
 }
 
 fn taper_input(cause: impl std::fmt::Display) -> EvaluationFailure {

@@ -29,8 +29,8 @@ pub struct GuiModelBrowser {
     /// Rectangular patterns owned by each sketch.
     pub rectangular_patterns: Vec<GuiBrowserRectangularPattern>,
     pub features: Vec<GuiBrowserFeature>,
-    /// Authored taper expressions for editable Sweep features.
-    pub sweep_edits: std::collections::BTreeMap<FeatureId, String>,
+    /// Authored options for editable Sweep features.
+    pub sweep_edits: std::collections::BTreeMap<FeatureId, crate::GuiSweepEditSeed>,
     /// Editable extrusion distance sources, indexed by their current feature identities.
     pub extrusion_edits: std::collections::BTreeMap<FeatureId, GuiExtrudeEditSeed>,
     /// Authored radius expressions for editable Fillet features.

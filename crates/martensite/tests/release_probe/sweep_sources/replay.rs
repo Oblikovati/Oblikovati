@@ -223,3 +223,56 @@ fn tapered_sweep_keeps_named_topology_when_restored_or_set_to_zero() {
     );
     assert!((straight.volume(&history, document).unwrap() - 0.75 * PI).abs() < 1e-8);
 }
+
+#[test]
+fn fixed_orientation_preserves_section_and_topology_after_reopen() {
+    use oblikovati_model::feature::{
+        sketch_sweep::SketchSweepOrientation, work_geometry::DatumAngle,
+    };
+    let (snapshot, sweep) = fixture();
+    let fixed = sweep
+        .with_taper(DatumAngle::constant(5_f64.to_radians()).unwrap())
+        .unwrap()
+        .with_fixed_orientation();
+    assert!(fixed.recipe().taper.is_none());
+    let document: DocumentGuid = "11111111-2222-3333-4444-555555555555".parse().unwrap();
+    let mut history = owner(snapshot);
+    let token = history.begin("Sweep1").unwrap();
+    let feature = history
+        .edit(&token, |snapshot, ids| {
+            snapshot.create_sketch_sweep("Sweep1", fixed, ids)
+        })
+        .unwrap();
+    history.commit(&token, false).unwrap();
+    let body = named(&history, document, feature);
+    let initial_keys = keys(&body, &history, document, 3.);
+    assert_eq!(
+        history
+            .snapshot()
+            .work_geometry
+            .part_recipe()
+            .unwrap()
+            .version,
+        30
+    );
+    let reopened = reopen(&history);
+    let PartFeatureDefinition::SketchSweep(sweep) = reopened
+        .snapshot()
+        .work_geometry
+        .get(feature)
+        .unwrap()
+        .definition()
+    else {
+        panic!("expected the saved Sweep");
+    };
+    assert_eq!(sweep.recipe().orientation, SketchSweepOrientation::Fixed);
+    assert_eq!(
+        keys(
+            &named(&reopened, document, feature),
+            &reopened,
+            document,
+            3.
+        ),
+        initial_keys
+    );
+}

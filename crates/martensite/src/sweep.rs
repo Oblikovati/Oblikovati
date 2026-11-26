@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Build a solid from a current sketch region and directed planar path.
+mod fixed;
 mod path;
 mod taper;
 use crate::{
@@ -68,6 +69,10 @@ pub fn build_sweep(
     policy: PrismResolutionPolicy,
 ) -> Result<SweepCandidate, EvaluationFailure> {
     let resolution = policy.for_sketch(&input.profile)?;
+    if input.orientation == oblikovati_model::feature::sketch_sweep::SketchSweepOrientation::Fixed {
+        let (shape, faces) = fixed::build(input, resolution)?;
+        return checked_candidate(shape, faces, 0., resolution);
+    }
     if input.taper != 0. {
         let (shape, faces) = taper::build(input, resolution)?;
         return checked_candidate(shape, faces, 0., resolution);

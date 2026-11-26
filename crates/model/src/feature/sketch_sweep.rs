@@ -14,6 +14,20 @@ use std::{collections::BTreeSet, fmt};
 
 const VERSION: u32 = 1;
 const TAPER_VERSION: u32 = 2;
+const FIXED_VERSION: u32 = 3;
+
+/// How the source profile is transported along a Sweep path.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
+pub enum SketchSweepOrientation {
+    #[default]
+    FollowPath,
+    Fixed,
+}
+impl SketchSweepOrientation {
+    fn follows_path(&self) -> bool {
+        *self == Self::FollowPath
+    }
+}
 
 /// Persisted profile boundaries and path traversal, independent of browser order.
 #[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
@@ -26,6 +40,8 @@ pub struct SketchSweepRecipe {
     pub path: Vec<SketchDirectedCurve>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub taper: Option<DatumAngle>,
+    #[serde(default, skip_serializing_if = "SketchSweepOrientation::follows_path")]
+    pub orientation: SketchSweepOrientation,
 }
 
 /// A validated Sweep recipe without evaluated or cached geometry.
@@ -40,6 +56,7 @@ pub struct ResolvedSketchSweep<'a> {
     pub path: ResolvedDocumentSketch<'a>,
     pub traversal: &'a [SketchDirectedCurve],
     pub taper: f64,
+    pub orientation: SketchSweepOrientation,
 }
 
 /// Source and placement failures have different remedies when editing a Sweep.
@@ -93,14 +110,27 @@ impl SketchSweepDefinition {
             path_sketch,
             path,
             taper: None,
+            orientation: SketchSweepOrientation::FollowPath,
         })
     }
 
-    /// Set or replace the taper driver. Example: `untapered.with_taper(angle)?`.
+    /// Follow the path with the provided taper driver. Example: `untapered.with_taper(angle)?`.
     pub fn with_taper(self, angle: DatumAngle) -> Result<Self, SketchSweepError> {
         Self::from_recipe(SketchSweepRecipe {
             version: TAPER_VERSION,
             taper: Some(angle),
+            orientation: SketchSweepOrientation::FollowPath,
+            ..self.0
+        })
+    }
+
+    /// Keep the source profile orientation while translating it along the path.
+    /// Example: `definition.with_fixed_orientation()`.
+    pub fn with_fixed_orientation(self) -> Self {
+        Self(SketchSweepRecipe {
+            version: FIXED_VERSION,
+            taper: None,
+            orientation: SketchSweepOrientation::Fixed,
             ..self.0
         })
     }
@@ -116,10 +146,13 @@ impl SketchSweepDefinition {
 
     /// Validate saved sources before use. Example: `SketchSweepDefinition::from_recipe(recipe)?`.
     pub fn from_recipe(recipe: SketchSweepRecipe) -> Result<Self, SketchSweepError> {
-        let expected = if recipe.taper.is_some() {
-            TAPER_VERSION
-        } else {
-            VERSION
+        let expected = match (recipe.orientation, recipe.taper) {
+            (SketchSweepOrientation::FollowPath, None) => VERSION,
+            (SketchSweepOrientation::FollowPath, Some(_)) => TAPER_VERSION,
+            (SketchSweepOrientation::Fixed, None) => FIXED_VERSION,
+            (SketchSweepOrientation::Fixed, Some(_)) => {
+                return Err(taper_error("Fixed orientation does not take a taper"));
+            }
         };
         if recipe.version != expected || recipe.profile_sketch.0 == 0 || recipe.path_sketch.0 == 0 {
             return Err(SketchSweepError::Definition(format!(
@@ -225,6 +258,7 @@ impl SketchSweepDefinition {
             path,
             traversal: &self.0.path,
             taper,
+            orientation: self.0.orientation,
         })
     }
 }

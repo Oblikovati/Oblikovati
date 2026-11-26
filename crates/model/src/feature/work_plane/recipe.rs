@@ -199,13 +199,11 @@ impl WorkPlaneDefinitionRecipe {
             Self::Hole(_) => 17,
             Self::MoveBody(_) => 18,
             Self::Shell(_) => 19,
-            Self::SketchSweep(recipe) => {
-                if recipe.taper.is_some() {
-                    24
-                } else {
-                    23
-                }
-            }
+            Self::SketchSweep(recipe) => match recipe.version {
+                3 => 25,
+                2 => 24,
+                _ => 23,
+            },
             Self::Mirror(_) => 22,
             Self::CircularPattern(_) => 21,
             Self::RectangularPattern(_) => 20,
@@ -236,13 +234,11 @@ impl WorkPlaneDefinitionRecipe {
             Self::Hole(_) => 22,
             Self::MoveBody(_) => 23,
             Self::Shell(_) => 24,
-            Self::SketchSweep(recipe) => {
-                if recipe.taper.is_some() {
-                    29
-                } else {
-                    28
-                }
-            }
+            Self::SketchSweep(recipe) => match recipe.version {
+                3 => 30,
+                2 => 29,
+                _ => 28,
+            },
             Self::Mirror(_) => 27,
             Self::CircularPattern(_) => 26,
             Self::RectangularPattern(_) => 25,

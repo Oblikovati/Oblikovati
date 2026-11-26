@@ -4,7 +4,26 @@ use crate::{
     GuiAuthoringContext, GuiCommandState, GuiShellAction, dockable_window::DockableWindow,
 };
 use imgui::Ui;
+#[path = "sweep_orientation.rs"]
+mod orientation;
+use crate::icons::GuiRibbonIcons;
 use oblikovati_model::feature::FeatureId;
+
+/// Sweep orientation choices available in Properties.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum GuiSweepOrientation {
+    #[default]
+    FollowPath,
+    Fixed,
+    Guide,
+}
+
+/// Authored Sweep options shown when editing an existing feature.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct GuiSweepEditSeed {
+    pub taper: String,
+    pub orientation: GuiSweepOrientation,
+}
 
 /// Document and generation whose Sweep inputs may be previewed or accepted.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -12,6 +31,7 @@ pub struct GuiSweepRequest {
     pub document: u64,
     pub generation: u64,
     pub feature: Option<FeatureId>,
+    pub orientation: GuiSweepOrientation,
     pub taper: String,
 }
 
@@ -20,6 +40,7 @@ pub struct GuiSweepRequest {
 pub enum GuiSweepPreview {
     Ready,
     MissingInputs,
+    MissingGuide,
     Failed(String),
 }
 
@@ -81,6 +102,8 @@ pub(crate) struct SweepDialog {
     attempted: Option<GuiSweepRequest>,
     submitted: Option<GuiSweepRequest>,
     feature: Option<FeatureId>,
+    orientation: GuiSweepOrientation,
+    selector: orientation::OrientationSelector,
     taper: String,
     show_help: bool,
 }
@@ -94,7 +117,7 @@ impl SweepDialog {
     }
 
     pub(super) fn open(&mut self, state: &GuiCommandState, feature: Option<FeatureId>) {
-        let taper = match feature {
+        let seed = match feature {
             Some(id) => {
                 let Some(taper) = state
                     .browser
@@ -105,10 +128,14 @@ impl SweepDialog {
                 };
                 taper.clone()
             }
-            None => "0 deg".into(),
+            None => GuiSweepEditSeed {
+                taper: "0 deg".into(),
+                ..Default::default()
+            },
         };
         self.feature = feature;
-        self.taper = taper;
+        self.taper = seed.taper;
+        self.orientation = seed.orientation;
         self.document = state.document;
         self.dock.set_open(self.document.is_some());
         self.attempted = None;
@@ -144,19 +171,22 @@ impl SweepDialog {
         &mut self,
         ui: &Ui,
         state: &GuiCommandState,
-        area: crate::application::document_creation::workspaces::WorkspaceArea,
+        (area, icons): (
+            crate::application::document_creation::workspaces::WorkspaceArea,
+            &GuiRibbonIcons,
+        ),
         actions: &mut Vec<GuiShellAction>,
     ) {
         let (Some(document), Some(generation)) = (self.document, state.document_generation) else {
             return;
         };
-        let height = if self.show_help { 296. } else { 222. };
+        let height = if self.show_help { 363. } else { 289. };
         crate::widget_abi::fit_viewport_properties(ui, "Sweep", area, [300., height]);
         let _border = crate::theme::property_window_border(ui);
         let mut open = true;
         Self::dockable_window(ui, "Sweep", &mut open).build(|| {
             crate::theme::floating_property_shadow(ui);
-            self.contents(ui, state, (document, generation), actions);
+            self.contents(ui, state, (document, generation), icons, actions);
         });
         if !open {
             self.close(actions);
@@ -168,6 +198,7 @@ impl SweepDialog {
         ui: &Ui,
         state: &GuiCommandState,
         (document, generation): (u64, u64),
+        icons: &GuiRibbonIcons,
         actions: &mut Vec<GuiShellAction>,
     ) {
         let tip = state
@@ -179,7 +210,9 @@ impl SweepDialog {
             || preview.is_some_and(|state| {
                 matches!(
                     state.result,
-                    GuiSweepPreview::Ready | GuiSweepPreview::Failed(_)
+                    GuiSweepPreview::Ready
+                        | GuiSweepPreview::MissingGuide
+                        | GuiSweepPreview::Failed(_)
                 )
             })
         {
@@ -187,10 +220,12 @@ impl SweepDialog {
             ui.text("1 Profile");
             crate::theme::property_label(ui, "Path");
             ui.text("1 Curve");
-            crate::theme::property_label(ui, "Orientation");
-            ui.text("Follow Path");
         }
         if !tip {
+            self.selector.draw(ui, &mut self.orientation, icons);
+        }
+        let follows_path = self.orientation == GuiSweepOrientation::FollowPath;
+        if !tip && follows_path {
             crate::theme::property_label(ui, "Taper");
             let _width = ui.push_item_width(-1.);
             ui.input_text("##sweep-taper", &mut self.taper).build();
@@ -199,7 +234,12 @@ impl SweepDialog {
             document,
             generation,
             feature: self.feature,
-            taper: self.taper.clone(),
+            orientation: self.orientation,
+            taper: if follows_path {
+                self.taper.clone()
+            } else {
+                String::new()
+            },
         };
         if self.attempted.as_ref() != Some(&request) {
             self.attempted = Some(request.clone());
@@ -212,11 +252,16 @@ impl SweepDialog {
             .map(|preview| &preview.result)
         {
             Some(GuiSweepPreview::MissingInputs) => ui.text_wrapped(TIP),
+            Some(GuiSweepPreview::MissingGuide) => ui.text_wrapped("Select Rail or Surfaces"),
             Some(GuiSweepPreview::Failed(cause)) => ui.text_wrapped(cause),
             None if tip => ui.text_wrapped(TIP),
             _ => {}
         }
         let ready = GuiSweepAction::Commit(request.clone()).enabled(state);
+        if !tip && ui.collapsing_header("Advanced Properties", imgui::TreeNodeFlags::empty()) {
+            let _disabled = ui.begin_disabled(true);
+            ui.checkbox("Optimize for Single Selection", &mut false);
+        }
         if self.show_help {
             ui.text_wrapped("Create a closed section in one sketch and a straight path in another. Start the path on the profile plane and keep both sketches visible.");
         }

@@ -210,3 +210,26 @@ mod replay;
 
 #[path = "sweep_sources/taper.rs"]
 mod taper;
+
+#[test]
+fn fixed_orientation_translates_along_an_oblique_straight_path() {
+    let (mut snapshot, sweep) = fixture();
+    let mut geometry = Sketch2D::default();
+    let [start, end] = [SketchEntityId(5), SketchEntityId(6)];
+    geometry.add_point(start, [0., 0.]).unwrap();
+    geometry.add_point(end, [2., 3.]).unwrap();
+    geometry.add_line(SPINE, [start, end]).unwrap();
+    snapshot.sketches.replace_geometry(PATH, geometry).unwrap();
+    solve(&mut snapshot);
+    let datums = snapshot
+        .work_geometry
+        .evaluate_work_geometry(&snapshot.parameters)
+        .unwrap();
+    let fixed = sweep.with_fixed_orientation();
+    let body = build_sweep(fixed.resolve(&snapshot, &datums).unwrap(), resolution()).unwrap();
+    let result = body.properties().unwrap();
+    assert!((result.volume - 0.75 * PI).abs() < 1e-8);
+    for (current, expected) in result.centroid.into_iter().zip([1., 0., 1.5]) {
+        assert!((current - expected).abs() < 1e-8, "{result:?}");
+    }
+}

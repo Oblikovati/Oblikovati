@@ -5,9 +5,16 @@ use oblikovati_api::{Error, client::Client, wire::featureargs::Sweep};
 use oblikovati_automation::{
     PartUpdateAccess, automatic_sweep, prepare_sweep, prepare_sweep_taper,
 };
-use oblikovati_gui::{GuiSweepAction, GuiSweepPreview, GuiSweepPreviewState, GuiSweepRequest};
+use oblikovati_gui::{
+    GuiSweepAction, GuiSweepEditSeed, GuiSweepOrientation, GuiSweepPreview, GuiSweepPreviewState,
+    GuiSweepRequest,
+};
 use oblikovati_model::{
-    feature::{FeatureId, part::PartFeatureDefinition, sketch_sweep::SketchSweepDefinition},
+    feature::{
+        FeatureId,
+        part::PartFeatureDefinition,
+        sketch_sweep::{SketchSweepDefinition, SketchSweepOrientation},
+    },
     history::DocumentSnapshot,
 };
 use std::collections::BTreeMap;
@@ -23,7 +30,9 @@ pub(in crate::owner) struct SweepPreview {
     result: Result<Option<SweepCommit>, String>,
 }
 
-pub(in crate::owner) fn edit_seeds(snapshot: &DocumentSnapshot) -> BTreeMap<FeatureId, String> {
+pub(in crate::owner) fn edit_seeds(
+    snapshot: &DocumentSnapshot,
+) -> BTreeMap<FeatureId, GuiSweepEditSeed> {
     snapshot
         .work_geometry
         .features()
@@ -43,7 +52,11 @@ pub(in crate::owner) fn edit_seeds(snapshot: &DocumentSnapshot) -> BTreeMap<Feat
                 },
                 None => "0 deg".into(),
             };
-            Some((feature.id(), taper))
+            let orientation = match recipe.orientation {
+                SketchSweepOrientation::FollowPath => GuiSweepOrientation::FollowPath,
+                SketchSweepOrientation::Fixed => GuiSweepOrientation::Fixed,
+            };
+            Some((feature.id(), GuiSweepEditSeed { taper, orientation }))
         })
         .collect()
 }
@@ -68,6 +81,9 @@ impl<
                 request: preview.request.clone(),
                 result: match &preview.result {
                     Ok(Some(_)) => GuiSweepPreview::Ready,
+                    Ok(None) if preview.request.orientation == GuiSweepOrientation::Guide => {
+                        GuiSweepPreview::MissingGuide
+                    }
                     Ok(None) => GuiSweepPreview::MissingInputs,
                     Err(cause) => GuiSweepPreview::Failed(cause.clone()),
                 },
@@ -122,6 +138,9 @@ impl<
     }
 
     fn preview_sweep(&mut self, request: &GuiSweepRequest) -> Result<Option<SweepCommit>, String> {
+        if request.orientation == GuiSweepOrientation::Guide {
+            return Ok(None);
+        }
         if let Some(feature) = request.feature {
             return self.preview_sweep_edit(request, feature).map(Some);
         }
@@ -143,11 +162,15 @@ impl<
         let Some(mut input) = automatic_sweep(snapshot, &datums, policy) else {
             return Ok(None);
         };
-        if request.taper.trim().is_empty() {
-            return Err("Sweep taper requires an angle.".into());
-        }
-        if request.taper != "0 deg" {
-            input.taper.clone_from(&request.taper);
+        if request.orientation == GuiSweepOrientation::Fixed {
+            input.orientation = "parallelToOriginalProfile".into();
+        } else {
+            if request.taper.trim().is_empty() {
+                return Err("Sweep taper requires an angle.".into());
+            }
+            if request.taper != "0 deg" {
+                input.taper.clone_from(&request.taper);
+            }
         }
         let prepared =
             prepare_sweep(snapshot, &datums, policy, &input).map_err(|cause| cause.to_string())?;
@@ -173,8 +196,13 @@ impl<
         let PartFeatureDefinition::SketchSweep(definition) = authored.definition() else {
             return Err(format!("feature {id:?}: expected a Sweep"));
         };
-        let edited = prepare_sweep_taper(snapshot, (**definition).clone(), &request.taper)
-            .map_err(|cause| cause.to_string())?;
+        let definition = (**definition).clone();
+        let edited = if request.orientation == GuiSweepOrientation::Fixed {
+            definition.with_fixed_orientation()
+        } else {
+            prepare_sweep_taper(snapshot, definition, &request.taper)
+                .map_err(|cause| cause.to_string())?
+        };
         self.preview_selected_blend(request.document, |candidate, _| {
             replace_sweep(candidate, id, edited.clone())?;
             Ok(id)
