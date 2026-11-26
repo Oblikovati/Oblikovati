@@ -221,6 +221,13 @@ benchmark directly, with `OBK_BDD_WESTON_DEBUG` and
 `OBK_BDD_WESTON_NESTED_X11=1` set. XTest sends the drag to the compositor,
 which delivers native Wayland pointer events to the application.
 
+The same nested setup runs the perimeter-resize outline. Give the Weston
+output room for a 30-pixel drag on every edge. Run
+`python3 crates/head/tests/application/main-window-frame/cursor_theme.py "$XCURSOR_PATH"`
+with `XCURSOR_PATH` set to a private directory, and set `XCURSOR_THEME=oblikovati-frame`
+for the application process. The fixture gives each resize icon a distinct
+buffer width. The test reads the displayed cursor surface from Weston.
+
 The Linux docking-system restart scenario also starts the desktop executable
 twice. Build `oblikovati` from the same source as the test, and set
 `OBK_BDD_DESKTOP_BINARY` to its absolute path. Run with an X11 window manager,

@@ -8,7 +8,7 @@ mod fixture;
 pub(super) use fixture::{bundled_frame_fixture, open_dirty_frame_part_from};
 pub(super) use fixture::{open_dirty_frame_part, open_frame_part};
 #[path = "wayland.rs"]
-mod wayland;
+pub(super) mod wayland;
 
 #[when("the user invokes the desktop window Close shortcut")]
 #[when("the user presses Alt+F4")]

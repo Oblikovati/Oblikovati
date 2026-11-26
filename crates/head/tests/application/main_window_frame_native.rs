@@ -180,9 +180,16 @@ fn handle_coordinate(direction: i32, extent: i32) -> i32 {
     }
 }
 pub(super) fn verify_resize_axis(before: [i32; 4], after: [i32; 4], axis: usize, direction: i32) {
-    assert_eq!(
+    if direction == 0 {
+        assert_eq!(
+            [before[axis], before[axis + 2]],
+            [after[axis], after[axis + 2]],
+            "the perpendicular axis {axis} changed"
+        );
+        return;
+    }
+    assert!(
         after[axis + 2] > before[axis + 2],
-        direction != 0,
         "resize axis {axis}, direction {direction}: {before:?} -> {after:?}"
     );
     if direction < 0 {
@@ -190,8 +197,7 @@ pub(super) fn verify_resize_axis(before: [i32; 4], after: [i32; 4], axis: usize,
             before[axis] + before[axis + 2],
             after[axis] + after[axis + 2]
         );
-    }
-    if direction > 0 {
+    } else {
         assert_eq!(before[axis], after[axis]);
     }
 }

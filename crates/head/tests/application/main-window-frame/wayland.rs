@@ -7,7 +7,7 @@ use super::{
     restore_tooltip,
 };
 
-pub(super) fn compositor_frame_bounds() -> Option<[i32; 4]> {
+pub(in super::super) fn compositor_frame_bounds() -> Option<[i32; 4]> {
     let graph = compositor_scene_graph()?;
     Some(current_frame_bounds(&graph))
 }
@@ -21,11 +21,7 @@ pub(super) fn expect_maximized_work_area() {
 }
 
 pub(super) fn drag_application_bar(world: &mut ApplicationWorld) {
-    assert_eq!(
-        std::env::var("OBK_BDD_WESTON_NESTED_X11").as_deref(),
-        Ok("1"),
-        "set OBK_BDD_WESTON_NESTED_X11=1 for fullscreen Weston on a private X11 display"
-    );
+    require_nested_input();
     let graph = compositor_scene_graph().expect("set OBK_BDD_WESTON_DEBUG for Wayland bounds");
     let [x, y, width, _] = current_frame_bounds(&graph);
     let [area_x, _, area_width, _] = scene_work_area(&graph).expect("expected Weston work area");
@@ -34,23 +30,68 @@ pub(super) fn drag_application_bar(world: &mut ApplicationWorld) {
     } else {
         -1
     };
-    drag_fullscreen_pointer(world, [x + width - 390, y + 18], direction);
+    let start = [x + width - 390, y + 18];
+    let motion = [20, 72].map(|distance| [start[0] + direction * distance, start[1]]);
+    drag_fullscreen_pointer(world, start, &motion);
 }
 
-fn drag_fullscreen_pointer(world: &mut ApplicationWorld, [x, y]: [i32; 2], direction: i32) {
+fn require_nested_input() {
+    assert_eq!(
+        std::env::var("OBK_BDD_WESTON_NESTED_X11").as_deref(),
+        Ok("1"),
+        "set OBK_BDD_WESTON_NESTED_X11=1 for fullscreen Weston on a private X11 display"
+    );
+}
+
+pub(in super::super) fn hover_resize_handle(point: [i32; 2]) {
+    require_nested_input();
+    super::super::x11_input::window_targets::move_fullscreen_pointer(point);
+}
+
+pub(in super::super) fn drag_resize_handle(
+    world: &mut ApplicationWorld,
+    start: [i32; 2],
+    end: [i32; 2],
+) {
+    require_nested_input();
+    drag_fullscreen_pointer(world, start, &[end]);
+}
+
+pub(in super::super) fn expect_resize_cursor([x, y]: [i32; 2]) {
+    assert_eq!(
+        std::env::var("XCURSOR_THEME").as_deref(),
+        Ok("oblikovati-frame"),
+        "expected the private resize test cursor theme"
+    );
+    let graph = compositor_scene_graph().expect("set OBK_BDD_WESTON_DEBUG for the cursor");
+    let pid = format!(", PID {}, ", std::process::id());
+    let mut lines = graph.lines();
+    lines
+        .find(|line| line.contains("role wl_pointer-cursor") && line.contains(&pid))
+        .expect("expected a compositor cursor surface from Oblikovati");
+    let bounds = scene_bounds(lines.next().unwrap()).expect("expected Weston cursor bounds");
+    // The private frame theme assigns a distinct buffer width to each resize icon.
+    assert_eq!(
+        bounds[2],
+        24 + (x + 1) * 3 + y + 1,
+        "cursor for axes [{x}, {y}]"
+    );
+}
+
+fn drag_fullscreen_pointer(world: &mut ApplicationWorld, start: [i32; 2], motion: &[[i32; 2]]) {
     use super::super::x11_input::window_targets::{
         fullscreen_left_button, move_fullscreen_pointer,
     };
 
-    move_fullscreen_pointer([x, y]);
+    move_fullscreen_pointer(start);
     world.pump(Vec::new());
-    fullscreen_left_button([x, y], true);
+    fullscreen_left_button(start, true);
     world.pump(Vec::new());
-    for distance in [20, 72] {
-        move_fullscreen_pointer([x + direction * distance, y]);
+    for &point in motion {
+        move_fullscreen_pointer(point);
         world.pump(Vec::new());
     }
-    fullscreen_left_button([x + direction * 72, y], false);
+    fullscreen_left_button(*motion.last().unwrap(), false);
     world.pump(Vec::new());
 }
 
@@ -193,7 +234,11 @@ fn expect_restored(world: &mut ApplicationWorld, restored: [u32; 2]) {
     maximize_tooltip(world);
 }
 
-pub(super) fn expect_frame_layout(world: &mut ApplicationWorld, extent: [u32; 2], document: u64) {
+pub(in super::super) fn expect_frame_layout(
+    world: &mut ApplicationWorld,
+    extent: [u32; 2],
+    document: u64,
+) {
     let [left, top, right, bottom] = world.viewport_bounds();
     assert!(left < right && right <= extent[0] && top < bottom && bottom <= extent[1]);
     let [left, top, right, bottom] =

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Native resize scenarios compare pointer sprites and window-manager bounds.
 use super::ApplicationWorld;
+use super::main_window_frame::wayland;
 use cucumber::{given, then, when};
 
 fn handle(name: &str) -> ([i32; 2], u16, &'static str) {
@@ -23,13 +24,25 @@ fn coordinate(direction: i32, extent: i32) -> i32 {
         _ => extent / 2,
     }
 }
-fn handle_point(world: &ApplicationWorld) -> ([i32; 2], [i32; 2], u16) {
+fn frame_bounds(world: &mut ApplicationWorld) -> [i32; 4] {
+    if world.app().window.native.view.uses_wayland() {
+        wayland::compositor_frame_bounds().expect("set OBK_BDD_WESTON_DEBUG for resize bounds")
+    } else {
+        super::x11_input::application_bounds()
+    }
+}
+fn handle_point(world: &mut ApplicationWorld) -> ([i32; 2], [i32; 2], u16) {
     let (direction, shape, _) = handle(world.window_frame_handle.as_deref().unwrap());
-    let bounds = super::x11_input::application_bounds();
+    let bounds = frame_bounds(world);
+    let origin = if world.app().window.native.view.uses_wayland() {
+        [bounds[0], bounds[1]]
+    } else {
+        [0, 0]
+    };
     (
         [
-            coordinate(direction[0], bounds[2]),
-            coordinate(direction[1], bounds[3]),
+            origin[0] + coordinate(direction[0], bounds[2]),
+            origin[1] + coordinate(direction[1], bounds[3]),
         ],
         direction,
         shape,
@@ -38,23 +51,33 @@ fn handle_point(world: &ApplicationWorld) -> ([i32; 2], [i32; 2], u16) {
 #[given("the main window is restored with space to grow within the desktop work area")]
 fn restored_with_space(world: &mut ApplicationWorld) {
     assert!(!world.app().window.native.view.window_maximized().unwrap());
-    world.window_frame_before = Some(super::x11_input::application_bounds());
+    world.window_frame_before = Some(frame_bounds(world));
     world.previous_document = Some(world.active_id());
-    super::x11_input::focus_window();
+    if !world.app().window.native.view.uses_wayland() {
+        super::x11_input::focus_window();
+    }
 }
 #[when(regex = r"^the user moves the pointer onto the (.+) of the main window$")]
 fn pointer_on_handle(world: &mut ApplicationWorld, name: String) {
     handle(&name);
     world.window_frame_handle = Some(name);
     let (point, _, _) = handle_point(world);
-    super::x11_input::move_pointer(point);
+    if world.app().window.native.view.uses_wayland() {
+        wayland::hover_resize_handle(point);
+    } else {
+        super::x11_input::move_pointer(point);
+    }
     world.pump(Vec::new());
 }
 #[then(regex = r"^the pointer shows a (.+) resize cursor$")]
 fn expected_cursor(world: &mut ApplicationWorld, direction: String) {
     let name = world.window_frame_handle.as_deref().unwrap();
     assert_eq!(direction, handle(name).2);
-    let (point, _, shape) = handle_point(world);
+    let (point, axes, shape) = handle_point(world);
+    if world.app().window.native.view.uses_wayland() {
+        wayland::expect_resize_cursor(axes);
+        return;
+    }
     let expected = super::x11_input::reference_cursor(shape);
     super::x11_input::move_pointer(point);
     world.pump(Vec::new());
@@ -64,7 +87,11 @@ fn expected_cursor(world: &mut ApplicationWorld, direction: String) {
 fn drag_handle(world: &mut ApplicationWorld) {
     let (point, direction, _) = handle_point(world);
     let target = [point[0] + direction[0] * 30, point[1] + direction[1] * 30];
-    super::main_window_frame_native::drag_resize_handle(world, point, target);
+    if world.app().window.native.view.uses_wayland() {
+        wayland::drag_resize_handle(world, point, target);
+    } else {
+        super::main_window_frame_native::drag_resize_handle(world, point, target);
+    }
 }
 #[then(regex = r"^the window grows along the (.+) axes of that handle$")]
 fn grows_expected_axes(world: &mut ApplicationWorld, direction: String) {
@@ -72,7 +99,7 @@ fn grows_expected_axes(world: &mut ApplicationWorld, direction: String) {
     let (axes, _, expected) = handle(name);
     assert_eq!(direction, expected);
     let before = world.window_frame_before.unwrap();
-    let after = super::x11_input::application_bounds();
+    let after = frame_bounds(world);
     for (axis, direction) in axes.into_iter().enumerate() {
         super::main_window_frame_native::verify_resize_axis(before, after, axis, direction);
     }
@@ -84,6 +111,11 @@ fn opposite_boundary(world: &mut ApplicationWorld) {
 }
 #[then("the viewport and visible ribbon fit within the resized window")]
 fn resized_layout(world: &mut ApplicationWorld) {
+    if world.app().window.native.view.uses_wayland() {
+        let extent = world.extent();
+        wayland::expect_frame_layout(world, extent, world.previous_document.unwrap());
+        return;
+    }
     let bounds = super::x11_input::application_bounds();
     let (position, size) = super::window_geometry("##application-ribbon").unwrap();
     assert!(position[0] >= 0. && position[1] >= 0.);
@@ -91,10 +123,9 @@ fn resized_layout(world: &mut ApplicationWorld) {
     assert_eq!(world.active_id(), world.previous_document.unwrap());
 }
 #[then("all application window controls remain reachable")]
-fn controls_within_frame(_: &mut ApplicationWorld) {
-    let bounds = super::x11_input::application_bounds();
-    let (position, size) = super::window_geometry("##application-window-controls").unwrap();
-    assert!(position[0] >= 0. && position[1] >= 0.);
-    assert!(position[0] + size[0] <= bounds[2] as f32);
-    assert!(position[1] + size[1] <= bounds[3] as f32);
+fn controls_within_frame(world: &mut ApplicationWorld) {
+    let extent = world.extent();
+    let [left, top, right, bottom] =
+        super::diagnostics::window_pixel_bounds("##application-window-controls").unwrap();
+    assert!(0. <= left && right <= extent[0] as f32 && 0. <= top && bottom <= extent[1] as f32);
 }
