@@ -16,6 +16,8 @@ mod base_view_dialog;
 mod drawing_border_zones;
 #[path = "drawing_lines.rs"]
 mod drawing_lines;
+#[path = "drawing_notes.rs"]
+mod drawing_notes;
 #[path = "drawing_view_labels.rs"]
 mod drawing_view_labels;
 
@@ -267,6 +269,7 @@ fn sheet_on_list(
         [minimum, maximum],
         dimensions,
     );
+    drawing_notes::draw(list, &sheet.annotations, [minimum, maximum], dimensions);
     if sheet.border {
         list.add_rect(border_minimum, border_maximum, LINE_COLOR)
             .build();

@@ -51,6 +51,12 @@ impl DrawingAnnotationDefinition {
         source: &dyn DrawingPartsListSource,
     ) -> Result<DrawingPartsListPresentation, DrawingError> {
         self.validate()?;
+        if !matches!(self, Self::PartsList { .. }) {
+            return Err(DrawingError(format!(
+                "annotation {:?}: expected a parts list",
+                self.name()
+            )));
+        }
         let rows = resolve_rows(reference, source)?;
         self.table_from_rows(&rows)
     }
@@ -59,7 +65,12 @@ impl DrawingAnnotationDefinition {
         rows: &[DrawingPartsListRow],
     ) -> Result<DrawingPartsListPresentation, DrawingError> {
         self.validate()?;
-        let Self::PartsList { x_mm, y_mm, .. } = self;
+        let Self::PartsList { x_mm, y_mm, .. } = self else {
+            return Err(DrawingError(format!(
+                "annotation {:?}: expected a parts list",
+                self.name()
+            )));
+        };
         Ok(parts_list_geometry([*x_mm, *y_mm], rows))
     }
 }
@@ -157,13 +168,16 @@ impl super::DrawingDocument {
                 self.sheets().len()
             ))
         })?;
-        if target.annotations.is_empty() {
+        let mut parts_lists = target
+            .annotations
+            .iter()
+            .filter(|annotation| annotation.requires_model())
+            .peekable();
+        if parts_lists.peek().is_none() {
             return Ok(Vec::new());
         }
         let rows = resolve_rows(self.model_reference(), source)?;
-        target
-            .annotations
-            .iter()
+        parts_lists
             .map(|annotation| {
                 let table = annotation.table_from_rows(&rows)?;
                 Ok((annotation.name().to_string(), table))

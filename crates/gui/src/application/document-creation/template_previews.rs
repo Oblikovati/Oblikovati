@@ -40,10 +40,11 @@ impl GuiTemplateSheet {
             tables: sheet
                 .annotations
                 .iter()
-                .map(|annotation| match annotation {
+                .filter_map(|annotation| match annotation {
                     DrawingAnnotationDefinition::PartsList { x_mm, y_mm, .. } => {
-                        anchor(*x_mm, *y_mm)
+                        Some(anchor(*x_mm, *y_mm))
                     }
+                    DrawingAnnotationDefinition::Note { .. } => None,
                 })
                 .collect(),
         })

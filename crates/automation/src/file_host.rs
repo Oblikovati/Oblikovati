@@ -358,6 +358,9 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext
         if crate::drawing_styles::STYLE_METHODS.contains(&method) {
             return crate::drawing_styles::apply(self.files, method, request);
         }
+        if crate::drawing_annotations::ANNOTATION_METHODS.contains(&method) {
+            return crate::drawing_annotations::apply(self.files, method, request);
+        }
         if method == METHOD_FEATURES_ADD {
             return self.add_feature(request);
         }

@@ -228,7 +228,7 @@ Model tree reads reuse current part results and refresh them after edits. (#4079
 
 - Reused current part results for drawing view previews and display when their modelling policy matches. (#4079)
 
-- Reused the current source part result when creating a drawing base view. Enabled typed API listing, rotation, caption editing, and deletion of base views, sheet lifecycle, title-block fields and corner, sheet revision, zoned borders, reusable sheet formats, and ISO/ANSI drafting styles. (#4079)
+- Reused the current source part result when creating a drawing base view. Enabled typed API listing, rotation, caption editing, and deletion of base views, sheet lifecycle, title-block fields and corner, sheet revision, zoned borders, reusable sheet formats, ISO/ANSI drafting styles, and drawing notes with optional leaders. (#4079)
 
 - Reused current part results when typed Fillet and Chamfer commands resolve selected edges. (#4079)
 

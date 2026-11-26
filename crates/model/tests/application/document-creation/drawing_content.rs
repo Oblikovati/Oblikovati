@@ -281,6 +281,12 @@ fn parts_list_rebuilds_go_table_geometry_from_current_source_rows() {
     );
     assert_eq!(updated.labels[9].text, "BOLT");
     let mut drawing = DrawingDocument::new();
+    drawing
+        .add_note("Finish", [40., 90.], "Deburr", [0., 0.])
+        .unwrap();
+    let before = source.calls.get();
+    assert!(drawing.evaluate_parts_lists(0, &source).unwrap().is_empty());
+    assert_eq!(source.calls.get(), before);
     drawing.set_model_reference("assembly.oba").unwrap();
     drawing.add_annotation_definition(0, list.clone()).unwrap();
     drawing

@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use crate::*;
 use oblikovati_api::wire::METHOD_DOCUMENTS_LIST_ATTACHMENTS;
-const FILE_METHOD_GROUPS: [&[&str]; 26] = [
+const FILE_METHOD_GROUPS: [&[&str]; 27] = [
     &DRAWING_COMMAND_METHODS,
     &drawing_sheets::SHEET_METHODS,
     &drawing_styles::STYLE_METHODS,
+    &drawing_annotations::ANNOTATION_METHODS,
     &ASSEMBLY_COMMAND_METHODS,
     &DOCUMENT_UPDATE_METHODS,
     &WINDOW_CAPTURE_METHODS,
@@ -60,6 +61,7 @@ mod tests {
             &DRAWING_COMMAND_METHODS[..],
             &drawing_sheets::SHEET_METHODS,
             &drawing_styles::STYLE_METHODS,
+            &drawing_annotations::ANNOTATION_METHODS,
             &ASSEMBLY_COMMAND_METHODS,
             &DOCUMENT_UPDATE_METHODS,
             &FILE_COMMAND_METHODS[..],

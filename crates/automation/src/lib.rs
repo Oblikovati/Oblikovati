@@ -314,8 +314,10 @@ impl<O: TransactionObserver, W: WorkspaceObserver> Caller for SessionQueryHost<'
 }
 
 mod derived_edit;
+mod drawing_annotations;
 mod drawing_reference;
 mod drawing_sheets;
+pub use drawing_annotations::part_drawing_parts_lists;
 mod drawing_styles;
 mod drawing_views;
 pub use drawing_views::{

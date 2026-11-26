@@ -3,8 +3,7 @@
 use super::*;
 use oblikovati_drawing::project_evaluated_part;
 use oblikovati_gui::{GuiDrawingLine, GuiDrawingProjection};
-use oblikovati_model::drawing::{DrawingDocument, DrawingPartsListRow, DrawingPartsListSource};
-use oblikovati_model::property::DESIGN_TRACKING;
+use oblikovati_model::drawing::{DrawingAnnotationDefinition, DrawingDocument};
 use std::collections::BTreeMap;
 
 type ProjectionKey = (u64, u64, u64);
@@ -17,12 +16,6 @@ pub(super) struct DrawingViewPreview {
     source_generation: u64,
     focus: oblikovati_session::workspace::WorkspaceFocusIdentity,
     projection: GuiDrawingProjection,
-}
-struct PartListRow(DrawingPartsListRow);
-impl DrawingPartsListSource for PartListRow {
-    fn parts_list_rows(&self, _reference: &str) -> Result<Vec<DrawingPartsListRow>, String> {
-        Ok(vec![self.0.clone()])
-    }
 }
 impl<
     O: TransactionObserver,
@@ -155,7 +148,12 @@ impl<
             }
         }
         let sheet = &drawing.sheets()[drawing.active_sheet()];
-        if sheet.views.is_empty() && sheet.annotations.is_empty() {
+        if sheet.views.is_empty()
+            && !sheet
+                .annotations
+                .iter()
+                .any(DrawingAnnotationDefinition::requires_model)
+        {
             return GuiDrawingProjection::default();
         }
         let result = self.resolve_drawing_projection(drawing_id, generation, drawing);
@@ -221,7 +219,11 @@ impl<
                     ..Default::default()
                 })
         };
-        if !sheet.annotations.is_empty() {
+        if sheet
+            .annotations
+            .iter()
+            .any(DrawingAnnotationDefinition::requires_model)
+        {
             match self.drawing_parts_lists(source, drawing) {
                 Ok(tables) => output.parts_lists = tables,
                 Err(error) => {
@@ -240,26 +242,7 @@ impl<
         source: u64,
         drawing: &DrawingDocument,
     ) -> Result<Vec<oblikovati_model::drawing::DrawingPartsListPresentation>, String> {
-        let workspace = self.files.workspace();
-        let session = workspace
-            .session(source)
-            .map_err(|cause| cause.to_string())?;
-        let name = workspace
-            .display_name(source)
-            .map_err(|cause| cause.to_string())?;
-        let properties = &session.snapshot().properties;
-        let row = PartListRow(DrawingPartsListRow {
-            item: 1,
-            part_number: text_property(properties, "Part Number")
-                .unwrap_or(name)
-                .to_owned(),
-            description: text_property(properties, "Description")
-                .unwrap_or_default()
-                .to_owned(),
-            quantity: 1,
-        });
-        drawing
-            .evaluate_parts_lists(drawing.active_sheet(), &row)
+        oblikovati_automation::part_drawing_parts_lists(&self.files, source, drawing)
             .map(|tables| tables.into_iter().map(|(_, table)| table).collect())
             .map_err(|cause| cause.to_string())
     }
@@ -337,17 +320,6 @@ fn view_bottom(lines: &[GuiDrawingLine]) -> Option<f64> {
         .iter()
         .flat_map(|line| line.points.iter().map(|point| point[1]))
         .reduce(f64::min)
-}
-
-fn text_property<'a>(
-    properties: &'a oblikovati_model::property::DocumentProperties,
-    name: &str,
-) -> Option<&'a str> {
-    use oblikovati_api::types::VariantValue;
-    match &properties.get(DESIGN_TRACKING, name)?.value {
-        VariantValue::String(text) if !text.trim().is_empty() => Some(text),
-        _ => None,
-    }
 }
 
 fn append_curves(

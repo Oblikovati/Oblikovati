@@ -109,11 +109,12 @@ impl DrawingDocument {
     pub fn set_model_reference(&mut self, name: &str) -> Result<(), DrawingError> {
         super::validation::require_model_reference(name)?;
         if name.is_empty()
-            && self
-                .recipe
-                .sheets
-                .iter()
-                .any(|sheet| !sheet.annotations.is_empty())
+            && self.recipe.sheets.iter().any(|sheet| {
+                sheet
+                    .annotations
+                    .iter()
+                    .any(DrawingAnnotationDefinition::requires_model)
+            })
         {
             return Err(DrawingError(format!(
                 "model reference {name:?}: expected a referenced model while annotations exist"
@@ -136,7 +137,12 @@ impl DrawingDocument {
     /// Append a checked sheet and activate it; example: `drawing.add_sheet(DrawingSheetRecipe::a3_landscape("Second"))?`.
     pub fn add_sheet(&mut self, sheet: DrawingSheetRecipe) -> Result<(), DrawingError> {
         validate_sheet(&sheet)?;
-        if !sheet.annotations.is_empty() && self.recipe.model_reference.is_empty() {
+        if sheet
+            .annotations
+            .iter()
+            .any(DrawingAnnotationDefinition::requires_model)
+            && self.recipe.model_reference.is_empty()
+        {
             return Err(DrawingError(format!(
                 "sheet {:?} annotations: expected a referenced model",
                 sheet.name
@@ -260,14 +266,18 @@ impl DrawingDocument {
         let index = view_index(target, name)?;
         target.views[index].set_label(edit)
     }
-    /// Append an authored parts list; example: `drawing.add_annotation_definition(0, annotation)?`.
+    /// Append an authored annotation; example: `drawing.add_annotation_definition(0, annotation)?`.
     pub fn add_annotation_definition(
         &mut self,
         sheet: usize,
         annotation: DrawingAnnotationDefinition,
     ) -> Result<(), DrawingError> {
         annotation.validate()?;
-        let target = self.referenced_sheet(sheet)?;
+        let target = if annotation.requires_model() {
+            self.referenced_sheet(sheet)?
+        } else {
+            self.sheet_mut(sheet)?
+        };
         if target
             .annotations
             .iter()
@@ -279,6 +289,21 @@ impl DrawingDocument {
             )));
         }
         target.annotations.push(annotation);
+        Ok(())
+    }
+    /// Delete an annotation by name on the given sheet, e.g. `drawing.remove_annotation(0, "NOTE:1")?`.
+    pub fn remove_annotation(&mut self, sheet: usize, name: &str) -> Result<(), DrawingError> {
+        let target = self.sheet_mut(sheet)?;
+        let index = target
+            .annotations
+            .iter()
+            .position(|annotation| annotation.name() == name)
+            .ok_or_else(|| {
+                DrawingError(format!(
+                    "annotation {name:?}: expected an existing annotation on sheet {sheet}"
+                ))
+            })?;
+        target.annotations.remove(index);
         Ok(())
     }
     fn referenced_sheet(&mut self, sheet: usize) -> Result<&mut DrawingSheetRecipe, DrawingError> {

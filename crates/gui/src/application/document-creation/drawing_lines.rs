@@ -94,7 +94,11 @@ pub(super) fn screen_point(
         maximum[1] - (point[1] / dimensions[1]) as f32 * (maximum[1] - minimum[1]),
     ]
 }
-fn clip_segment(a: [f64; 2], b: [f64; 2], dimensions: [f64; 2]) -> Option<[[f64; 2]; 2]> {
+pub(super) fn clip_segment(
+    a: [f64; 2],
+    b: [f64; 2],
+    dimensions: [f64; 2],
+) -> Option<[[f64; 2]; 2]> {
     if a.iter()
         .chain(&b)
         .chain(&dimensions)

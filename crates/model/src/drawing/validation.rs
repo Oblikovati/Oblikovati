@@ -23,7 +23,12 @@ pub(super) fn validate_drawing(recipe: &DrawingRecipe) -> Result<(), DrawingErro
     let mut names = BTreeSet::new();
     for sheet in &recipe.sheets {
         validate_sheet(sheet)?;
-        if !sheet.annotations.is_empty() && recipe.model_reference.is_empty() {
+        if sheet
+            .annotations
+            .iter()
+            .any(super::DrawingAnnotationDefinition::requires_model)
+            && recipe.model_reference.is_empty()
+        {
             return Err(DrawingError(format!(
                 "sheet {:?} annotations: expected a referenced model",
                 sheet.name

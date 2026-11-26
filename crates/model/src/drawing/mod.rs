@@ -7,6 +7,7 @@ mod document;
 mod format;
 pub use format::DrawingTitleProperty;
 mod error;
+mod note;
 mod parts_list;
 mod recipe;
 mod sheet;
@@ -20,6 +21,7 @@ mod view;
 pub use annotation::DrawingAnnotationDefinition;
 pub use document::DrawingDocument;
 pub use error::DrawingError;
+pub use note::DrawingNotePresentation;
 pub use parts_list::{
     DrawingPartsListPresentation, DrawingPartsListRow, DrawingPartsListSource, DrawingTableLabel,
     DrawingTableLine,

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//! Authored drawing annotations; their evaluated content comes from the referenced model.
+//! Authored sheet annotations and the placement of their labels.
 use super::{DrawingError, validation::require_label};
 use serde::{Deserialize, Serialize};
 
@@ -15,6 +15,28 @@ pub enum DrawingAnnotationDefinition {
         x_mm: f64,
         #[serde(rename = "ymm", default)]
         y_mm: f64,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        characteristic: Option<String>,
+        #[serde(
+            rename = "materialRemoval",
+            default,
+            skip_serializing_if = "Option::is_none"
+        )]
+        material_removal: Option<String>,
+    },
+    #[serde(rename = "drawingNote")]
+    Note {
+        name: String,
+        #[serde(rename = "xmm", default)]
+        x_mm: f64,
+        #[serde(rename = "ymm", default)]
+        y_mm: f64,
+        #[serde(rename = "widthMm", default)]
+        leader_x_mm: f64,
+        #[serde(rename = "heightMm", default)]
+        leader_y_mm: f64,
+        #[serde(rename = "tag")]
+        text: String,
         #[serde(default, skip_serializing_if = "Option::is_none")]
         characteristic: Option<String>,
         #[serde(
@@ -41,37 +63,67 @@ impl DrawingAnnotationDefinition {
     /// Read the annotation name; example: `definition.name()` returns `"Parts"`.
     pub fn name(&self) -> &str {
         match self {
-            Self::PartsList { name, .. } => name,
+            Self::PartsList { name, .. } | Self::Note { name, .. } => name,
         }
     }
+    /// Check whether a definition requires a model, as a parts list does.
+    pub fn requires_model(&self) -> bool {
+        matches!(self, Self::PartsList { .. })
+    }
     pub(super) fn validate(&self) -> Result<(), DrawingError> {
-        match self {
+        let (point, leader, characteristic, material_removal) = match self {
             Self::PartsList {
-                name,
                 x_mm,
                 y_mm,
                 characteristic,
                 material_removal,
+                ..
+            } => ([*x_mm, *y_mm], [0., 0.], characteristic, material_removal),
+            Self::Note {
+                x_mm,
+                y_mm,
+                leader_x_mm,
+                leader_y_mm,
+                text,
+                characteristic,
+                material_removal,
+                ..
             } => {
-                require_label("annotation name", name)?;
-                if characteristic
-                    .as_deref()
-                    .is_some_and(|value| value != "enum(?)")
-                    || material_removal
-                        .as_deref()
-                        .is_some_and(|value| value != "any")
-                {
-                    return Err(DrawingError(format!(
-                        "parts list {name:?} characteristic {characteristic:?}, material removal {material_removal:?}: expected the Go default values"
-                    )));
-                }
-                if !x_mm.is_finite() || !y_mm.is_finite() {
-                    return Err(DrawingError(format!(
-                        "parts list {name:?} position [{x_mm}, {y_mm}]: expected finite sheet coordinates"
-                    )));
-                }
+                require_label("note text", text)?;
+                (
+                    [*x_mm, *y_mm],
+                    [*leader_x_mm, *leader_y_mm],
+                    characteristic,
+                    material_removal,
+                )
             }
+        };
+        require_label("annotation name", self.name())?;
+        validate_recipe_defaults(characteristic.as_deref(), material_removal.as_deref())?;
+        if point
+            .into_iter()
+            .chain(leader)
+            .any(|value| !value.is_finite())
+        {
+            return Err(DrawingError(format!(
+                "annotation {:?} point {point:?}, leader {leader:?}: expected finite sheet coordinates",
+                self.name()
+            )));
         }
         Ok(())
     }
+}
+
+fn validate_recipe_defaults(
+    characteristic: Option<&str>,
+    material_removal: Option<&str>,
+) -> Result<(), DrawingError> {
+    if characteristic.is_some_and(|value| value != "enum(?)")
+        || material_removal.is_some_and(|value| value != "any")
+    {
+        return Err(DrawingError(format!(
+            "annotation characteristic {characteristic:?}, material removal {material_removal:?}: expected the Go default values"
+        )));
+    }
+    Ok(())
 }
