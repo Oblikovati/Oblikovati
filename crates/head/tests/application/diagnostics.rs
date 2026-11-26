@@ -60,10 +60,14 @@ fn active_child_at(parent: &str, point: [f32; 2]) -> (*mut sys::ImDrawList, [f32
 #[derive(Clone, Copy)]
 pub(super) struct ChildScroll {
     pub list: usize,
+    pub origin: [f32; 2],
+    pub size: [f32; 2],
     pub center: [f32; 2],
     pub content_right: f32,
     pub offset: f32,
     pub limit: f32,
+    pub horizontal_scrollbar: bool,
+    pub content_width: f32,
 }
 
 /// Read the scroll range and draw list of a named child in the completed frame.
@@ -86,6 +90,8 @@ pub(super) fn child_scroll(parent: &str, label: &str) -> Option<ChildScroll> {
     let bounds = child.OuterRectClipped;
     Some(ChildScroll {
         list: rendered_draw_list_index(child.DrawList)?,
+        origin: [child.Pos.x, child.Pos.y],
+        size: [child.Size.x, child.Size.y],
         center: [
             (bounds.Min.x + bounds.Max.x) * 0.5,
             (bounds.Min.y + bounds.Max.y) * 0.5,
@@ -93,6 +99,8 @@ pub(super) fn child_scroll(parent: &str, label: &str) -> Option<ChildScroll> {
         content_right: child.InnerRect.Max.x,
         offset: child.Scroll.y,
         limit: child.ScrollMax.y,
+        horizontal_scrollbar: child.ScrollbarX,
+        content_width: child.ContentSize.x,
     })
 }
 

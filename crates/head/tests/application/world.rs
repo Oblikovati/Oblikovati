@@ -21,6 +21,7 @@ pub(super) struct ApplicationWorld {
     /// The picked face boundary before a Zoom Selected operation.
     pub observed_zoom_face_edges: Vec<[[f64; 3]; 2]>,
     pub ribbon_height: f32,
+    pub ribbon_layout_samples: Vec<super::ribbon_display::layout_contract::RibbonSample>,
     pub panel_selector_focus: Option<u32>,
     pub modify_title_anchor: Option<[f32; 2]>,
     pub work_features_x_before_explore_toggle: Option<f32>,
@@ -116,6 +117,7 @@ impl ApplicationWorld {
             observed_view_camera: None,
             observed_zoom_face_edges: Vec::new(),
             ribbon_height: 0.,
+            ribbon_layout_samples: Vec::new(),
             panel_selector_focus: None,
             modify_title_anchor: None,
             work_features_x_before_explore_toggle: None,
@@ -400,7 +402,6 @@ impl Drop for ApplicationWorld {
         self.close();
     }
 }
-
 pub(super) fn squeezed(text: &str) -> String {
     text.chars()
         .filter(|letter| !letter.is_whitespace())

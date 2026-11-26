@@ -10,6 +10,8 @@ mod double_click;
 mod drawing;
 mod home_transition;
 #[cfg(target_os = "linux")]
+pub(super) mod layout_contract;
+#[cfg(target_os = "linux")]
 mod manage_insert;
 mod measure;
 mod mode_policy;
