@@ -69,6 +69,7 @@ pub enum GuiShellAction {
     },
     /// Hide or restore surrounding model bodies while a sketch is edited.
     SetSketchIsolation(bool),
+    SetSketchOverlays(bool),
     SetPartOptions(oblikovati_model::application_options::PartApplicationOptions),
     SketchMove(crate::GuiSketchMoveAction),
     SketchCurvature(crate::GuiCurvatureAction),

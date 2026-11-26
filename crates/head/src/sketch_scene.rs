@@ -11,13 +11,14 @@ pub struct HeadSketchSceneUpdate {
     pub block_declines: Vec<(DocumentSketchId, String)>,
 }
 /// A hidden sketch still shows while it is chosen in the browser or edited.
-/// Example: `sketch_shows(sketch, &session.selected_browser_sketches())`.
+/// Example: `sketch_shows(sketch, &session.selected_browser_sketches(), true)`.
 #[cfg(any(target_os = "linux", target_os = "windows"))]
 pub(crate) fn sketch_shows(
     sketch: &oblikovati_model::document_sketch::PlacedSketch,
     called_up: &[DocumentSketchId],
+    show_stored: bool,
 ) -> bool {
-    sketch.visible() || called_up.contains(&sketch.id())
+    (show_stored && sketch.visible()) || called_up.contains(&sketch.id())
 }
 
 #[cfg(any(target_os = "linux", target_os = "windows"))]

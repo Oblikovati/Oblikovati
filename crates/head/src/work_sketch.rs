@@ -407,6 +407,10 @@ pub trait HeadSketchWork {
     fn take_sketch_scene(&mut self) -> Result<Option<crate::HeadSketchSceneUpdate>, String> {
         Ok(None)
     }
+    /// Set the session's committed sketch overlay switch, as in Object Visibility.
+    fn set_sketch_overlays(&mut self, _visible: bool) -> bool {
+        false
+    }
     /// End an edit whose view could not be prepared; example: `work.decline_sketch_edit(cause)?` after a camera refusal.
     fn decline_sketch_edit(&mut self, cause: String) -> Result<(), String> {
         Err(format!(

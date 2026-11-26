@@ -178,3 +178,70 @@ fn object_visibility_hides_and_restores_origin_axis_and_sketch_dimensions() {
     workspace_remains(&mut world);
     world.close();
 }
+
+#[test]
+fn object_visibility_filters_sketches_without_editing_stored_visibility() {
+    use crate::HeadSketchWork as _;
+    let mut world = ApplicationWorld::new();
+    open_part(&mut world);
+    view_selected(&mut world);
+    let document = world.active_id();
+    let before = world.state();
+    let sketch = before.browser.as_ref().unwrap().sketches[0].id;
+    assert_eq!(published_sketches(&mut world), [sketch]);
+
+    open_checklist(&mut world);
+    click(&mut world, "2D Sketches");
+    assert!(published_sketches(&mut world).is_empty());
+    world.expect_no_text("40 mm");
+    let filtered = world.state();
+    assert!(filtered.browser.unwrap().sketches[0].visible);
+    assert_eq!(filtered.undo_labels, before.undo_labels);
+    assert!(!filtered.document_storage[&document].unsaved_edits);
+    workspace_remains(&mut world);
+    click(&mut world, "2D Sketches");
+    assert_eq!(published_sketches(&mut world), [sketch]);
+    world.expect_text("40 mm");
+
+    world.escape();
+    world
+        .app()
+        .owner
+        .set_sketch_visibility_from_gui(document, sketch, false)
+        .unwrap();
+    world.pump(Vec::new());
+    open_checklist(&mut world);
+    click(&mut world, "2D Sketches");
+    click(&mut world, "2D Sketches");
+    assert!(published_sketches(&mut world).is_empty());
+    assert!(!world.state().browser.unwrap().sketches[0].visible);
+
+    click(&mut world, "2D Sketches");
+    world.escape();
+    world
+        .app()
+        .owner
+        .edit_existing_sketch_from_gui(document, sketch)
+        .unwrap();
+    world.pump(Vec::new());
+    assert_eq!(published_sketches(&mut world), [sketch]);
+    world.app().owner.edit_sketch_from_gui(false).unwrap();
+    world.pump(Vec::new());
+    assert!(published_sketches(&mut world).is_empty());
+    world.close();
+}
+
+fn published_sketches(
+    world: &mut ApplicationWorld,
+) -> Vec<oblikovati_model::document_sketch::DocumentSketchId> {
+    world
+        .app()
+        .window
+        .native
+        .sketch_scene_status()
+        .unwrap()
+        .sketches
+        .iter()
+        .map(|entry| entry.sketch)
+        .collect()
+}

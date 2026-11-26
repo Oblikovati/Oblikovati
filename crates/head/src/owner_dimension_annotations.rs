@@ -26,13 +26,22 @@ impl<
             .session(document)
             .map_err(|cause| cause.to_string())?;
         let snapshot = session.snapshot();
-        let mut called_up = session.selected_browser_sketches();
-        called_up.extend(self.sketch_opened_while_hidden());
+        let visible = self.sketch_scenes.overlays_visible();
+        let called_up = if visible {
+            let mut selected = session.selected_browser_sketches();
+            selected.extend(self.sketch_opened_while_hidden());
+            selected
+        } else {
+            self.active_sketch_edit()
+                .map(|edit| edit.sketch)
+                .into_iter()
+                .collect()
+        };
         for sketch in snapshot
             .sketches
             .sketches()
             .iter()
-            .filter(|sketch| crate::sketch_scene::sketch_shows(sketch, &called_up))
+            .filter(|sketch| crate::sketch_scene::sketch_shows(sketch, &called_up, visible))
             .filter(|sketch| !sketch.line_style().dimensions_hidden)
         {
             collect_dimension_annotations(snapshot, sketch, &mut output);

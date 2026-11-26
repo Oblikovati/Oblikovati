@@ -155,7 +155,8 @@ impl<
             }
             // A sketch in view already reads as chosen by its colour; only a hidden one needs this.
             (None, Some(sketch))
-                if self.active_sketch_edit().is_none()
+                if self.sketch_scenes.overlays_visible()
+                    && self.active_sketch_edit().is_none()
                     && session
                         .snapshot()
                         .sketches

@@ -131,7 +131,10 @@ pub(super) fn visibility_controls(
         size[0] = 140.;
     }
     let disabled = ui.begin_disabled(state.document.is_none());
-    owners.workspace.pending_layout |= owners.workspace.object_visibility.ribbon(ui, icons, size);
+    owners.workspace.pending_layout |= owners
+        .workspace
+        .object_visibility
+        .ribbon(ui, icons, size, actions);
     drop(disabled);
     let (position, size) = icons.appearance.cell(1);
     icons.cursor(ui, origin, position);

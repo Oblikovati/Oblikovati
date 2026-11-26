@@ -26,6 +26,9 @@ categories change. All Workfeatures changes the origin, user work-feature,
 and UCS checks together. Origin plane and axis overlays and sketch
 dimensions follow their switches. The active sketch keeps its dimensions
 available for editing. [Native checks](receipts/2026-11-26-object-visibility-3897/README.md)
+The 2D Sketches switch filters the committed sketch scene and its annotations
+while preserving each sketch's stored visibility. It keeps the active edit
+visible. [Native sketch overlay checks](receipts/2026-11-26-object-visibility-sketches-3897/README.md)
 
 Home keeps Get Started, Tools, and the display controls while it covers an
 open document. The ribbon suspends document commands and closes temporary

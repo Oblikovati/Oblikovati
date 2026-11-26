@@ -207,6 +207,9 @@ macro_rules! forward_owner_sketch_work {
         fn take_sketch_scene(&mut self) -> Result<Option<$crate::HeadSketchSceneUpdate>, String> {
             self.$owner.take_sketch_scene()
         }
+        fn set_sketch_overlays(&mut self, visible: bool) -> bool {
+            self.$owner.set_sketch_overlays(visible)
+        }
     };
 }
 pub(crate) use forward_owner_sketch_work;

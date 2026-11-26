@@ -23,7 +23,7 @@ fn sketch_scene_resolves_healthy_linked_text_and_names_missing_parameters() {
         plane_declines: vec![],
         block_declines: vec![],
     };
-    collect_sketches(&snapshot, "Part.opd", &[], None, &mut update);
+    collect_sketches(&snapshot, "Part.opd", &[], None, false, &mut update);
     let [packet] = update.sketches.as_slice() else {
         panic!("expected one visible sketch");
     };
@@ -94,7 +94,7 @@ fn invalid_plane_is_named_without_removing_other_sketches() {
         plane_declines: vec![],
         block_declines: vec![],
     };
-    collect_sketches(&snapshot, "Part.opd", &[], None, &mut update);
+    collect_sketches(&snapshot, "Part.opd", &[], None, false, &mut update);
     assert_eq!(update.sketches.len(), 1);
     assert_eq!(update.plane_declines.len(), 1);
     assert_eq!(update.plane_declines[0].0, DocumentSketchId(2));
@@ -122,14 +122,14 @@ fn hidden_sketches_leave_the_scene_before_plane_resolution() {
         plane_declines: vec![],
         block_declines: vec![],
     };
-    collect_sketches(&snapshot, "Part.opd", &[], None, &mut update);
+    collect_sketches(&snapshot, "Part.opd", &[], None, false, &mut update);
     assert!(update.sketches.is_empty());
     assert!(update.plane_declines.is_empty());
     snapshot
         .sketches
         .set_visible(DocumentSketchId(1), true)
         .unwrap();
-    collect_sketches(&snapshot, "Part.opd", &[], None, &mut update);
+    collect_sketches(&snapshot, "Part.opd", &[], None, false, &mut update);
     assert_eq!(update.sketches.len(), 1);
 }
 #[test]
@@ -138,8 +138,8 @@ fn a_hidden_sketch_shows_only_while_it_is_called_up() {
     let sketch = crate::scene_fixture::SKETCH;
     snapshot.sketches.set_visible(sketch, false).unwrap();
     let hidden = snapshot.sketches.get(sketch).unwrap();
-    assert!(!crate::sketch_scene::sketch_shows(hidden, &[]));
-    assert!(crate::sketch_scene::sketch_shows(hidden, &[sketch]));
+    assert!(!crate::sketch_scene::sketch_shows(hidden, &[], true));
+    assert!(crate::sketch_scene::sketch_shows(hidden, &[sketch], true));
 }
 
 #[test]
@@ -168,7 +168,7 @@ fn block_instance_is_sent_to_the_sketch_scene() {
         plane_declines: vec![],
         block_declines: vec![],
     };
-    collect_sketches(&snapshot, "Part.opd", &[], None, &mut update);
+    collect_sketches(&snapshot, "Part.opd", &[], None, false, &mut update);
     assert_eq!(update.sketches.len(), 1);
     assert!(update.block_declines.is_empty());
     assert_eq!(update.sketches[0].blocks.len(), 1);

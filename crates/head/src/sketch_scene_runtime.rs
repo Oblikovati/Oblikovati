@@ -14,6 +14,7 @@ pub(crate) struct DesktopSketchScenes {
     /// The sketches shown although hidden; a new choice redraws without any model change.
     called_up: Vec<DocumentSketchId>,
     curvature: ActiveCurvature,
+    hide_overlays: bool,
 }
 impl DesktopSketchScenes {
     pub(crate) fn refresh<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
@@ -21,10 +22,11 @@ impl DesktopSketchScenes {
         files: &mut FileWorkspace<O, W, F>,
         parts: &mut crate::part_scene::DesktopPartScenes,
         opened_hidden: Option<DocumentSketchId>,
+        active_sketch: Option<DocumentSketchId>,
         curvature: ActiveCurvature,
     ) -> Result<Option<HeadSketchSceneUpdate>, String> {
         let source = active_sketch_source(files)?;
-        let called_up = called_up_sketches(files, source, opened_hidden);
+        let called_up = self.called_up(files, source, opened_hidden, active_sketch);
         if source == self.source
             && called_up == self.called_up
             && curvature == self.curvature
@@ -34,10 +36,20 @@ impl DesktopSketchScenes {
         {
             return Ok(None);
         }
-        let datums = scene_datums(files, parts, source)?;
+        let datums = if self.hide_overlays && active_sketch.is_none() {
+            None
+        } else {
+            scene_datums(files, parts, source)?
+        };
         let source = active_sketch_source(files)?;
-        let called_up = called_up_sketches(files, source, opened_hidden);
-        let mut update = prepare_sketch_scene(files, source, &called_up, datums.as_ref())?;
+        let called_up = self.called_up(files, source, opened_hidden, active_sketch);
+        let mut update = prepare_sketch_scene(
+            files,
+            source,
+            &called_up,
+            datums.as_ref(),
+            self.hide_overlays,
+        )?;
         if let Some((id, requests)) = &curvature
             && let Some(sketch) = update
                 .sketches
@@ -53,6 +65,34 @@ impl DesktopSketchScenes {
             sketch_document_file_name(files, id).into_owned()
         });
         Ok(Some(update))
+    }
+
+    fn called_up<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+        &self,
+        files: &FileWorkspace<O, W, F>,
+        source: Option<(u64, u64)>,
+        opened_hidden: Option<DocumentSketchId>,
+        active_sketch: Option<DocumentSketchId>,
+    ) -> Vec<DocumentSketchId> {
+        if self.hide_overlays {
+            active_sketch.into_iter().collect()
+        } else {
+            called_up_sketches(files, source, opened_hidden)
+        }
+    }
+
+    pub(crate) fn set_overlays_visible(&mut self, visible: bool) -> bool {
+        let hide = !visible;
+        if self.hide_overlays == hide {
+            return false;
+        }
+        self.hide_overlays = hide;
+        self.clear();
+        true
+    }
+
+    pub(crate) fn overlays_visible(&self) -> bool {
+        !self.hide_overlays
     }
     pub(crate) fn clear(&mut self) {
         self.source = None;
@@ -141,6 +181,7 @@ fn prepare_sketch_scene<O: TransactionObserver, W: WorkspaceObserver, F: Documen
     source: Option<(u64, u64)>,
     called_up: &[DocumentSketchId],
     datums: Option<&oblikovati_model::feature::work_geometry::WorkGeometryEvaluation>,
+    hide_overlays: bool,
 ) -> Result<HeadSketchSceneUpdate, String> {
     let mut update = HeadSketchSceneUpdate {
         source,
@@ -159,6 +200,7 @@ fn prepare_sketch_scene<O: TransactionObserver, W: WorkspaceObserver, F: Documen
             &file_name,
             called_up,
             datums,
+            hide_overlays,
             &mut update,
         );
     }
@@ -173,6 +215,7 @@ fn collect_sketches(
     file_name: &str,
     called_up: &[DocumentSketchId],
     datums: Option<&oblikovati_model::feature::work_geometry::WorkGeometryEvaluation>,
+    hide_overlays: bool,
     update: &mut HeadSketchSceneUpdate,
 ) {
     let frames = datums.and_then(|datums| snapshot.bind_sketch_frames(datums).ok());
@@ -180,7 +223,7 @@ fn collect_sketches(
         .sketches
         .sketches()
         .iter()
-        .filter(|sketch| super::sketch_shows(sketch, called_up))
+        .filter(|sketch| super::sketch_shows(sketch, called_up, !hide_overlays))
     {
         let plane = match (datums, &frames) {
             (Some(_), Some(frames)) => frames.resolve(sketch.id()),

@@ -470,12 +470,17 @@ impl<
     }
     fn take_sketch_scene(&mut self) -> Result<Option<crate::HeadSketchSceneUpdate>, String> {
         let opened_hidden = self.sketch_opened_while_hidden();
+        let active_sketch = self.active_sketch_edit().map(|edit| edit.sketch);
         let curvature = self.curvature_scene();
         self.sketch_scenes.refresh(
             &mut self.files,
             &mut self.part_scenes,
             opened_hidden,
+            active_sketch,
             curvature,
         )
+    }
+    fn set_sketch_overlays(&mut self, visible: bool) -> bool {
+        self.sketch_scenes.set_overlays_visible(visible)
     }
 }

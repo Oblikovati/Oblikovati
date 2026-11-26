@@ -4,6 +4,7 @@ use crate::icons::{GuiRibbonIcons, IconGlyph};
 use imgui::Ui;
 
 const MENU: &str = "##object-visibility";
+const SKETCHES_2D: usize = 7;
 const SKETCH_DIMENSIONS: usize = 9;
 const UCS_START: usize = 11;
 // The second column identifies the categories controlled by All Workfeatures.
@@ -41,7 +42,13 @@ impl Default for ObjectVisibility {
 }
 
 impl ObjectVisibility {
-    pub(crate) fn ribbon(&mut self, ui: &Ui, icons: &GuiRibbonIcons, size: [f32; 2]) -> bool {
+    pub(crate) fn ribbon(
+        &mut self,
+        ui: &Ui,
+        icons: &GuiRibbonIcons,
+        size: [f32; 2],
+        actions: &mut Vec<crate::GuiShellAction>,
+    ) -> bool {
         if icons.button(ui, "Object Visibility", IconGlyph::SketchVisibility, size) {
             ui.open_popup(MENU);
             crate::widget_abi::next_window_position(
@@ -52,7 +59,13 @@ impl ObjectVisibility {
         let Some(_popup) = ui.begin_popup(MENU) else {
             return false;
         };
-        self.checklist(ui)
+        let before = self.categories[SKETCHES_2D];
+        let changed = self.checklist(ui);
+        let visible = self.categories[SKETCHES_2D];
+        if before != visible {
+            actions.push(crate::GuiShellAction::SetSketchOverlays(visible));
+        }
+        changed
     }
 
     fn checklist(&mut self, ui: &Ui) -> bool {

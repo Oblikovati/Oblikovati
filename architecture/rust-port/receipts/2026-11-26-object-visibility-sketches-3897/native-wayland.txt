@@ -1,0 +1,4 @@
+running 2 tests
+test native::gui_loop_tests::application_bdd::object_visibility::object_visibility_filters_sketches_without_editing_stored_visibility ... ok
+test native::gui_loop_tests::application_bdd::object_visibility::object_visibility_hides_and_restores_origin_axis_and_sketch_dimensions ... ok
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 1737 filtered out; finished in 12.09s
