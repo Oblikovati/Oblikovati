@@ -28,8 +28,8 @@ fn ambiguous_part_pick_reports_the_failure_without_losing_the_prior_selection() 
 }
 
 #[test]
-fn competing_exact_face_and_body_picks_follow_the_user_priority() {
-    use oblikovati_session::selection::SelectionKind;
+fn exact_solid_hit_obeys_selection_presets_and_active_measure() {
+    use oblikovati_session::selection::{SelectionKind, SelectionPriority};
     let (mut owner, _) = owner();
     let document = super::super::part_scene::open_prism(&mut owner, false);
     owner.take_scene().unwrap();
@@ -37,18 +37,16 @@ fn competing_exact_face_and_body_picks_follow_the_user_priority() {
     owner
         .click_model_with_window(document, ray, Some(0.1))
         .unwrap();
-    let session = owner.documents().workspace().session(document).unwrap();
-    assert!(session.selected_browser_body().is_some());
-    let face = owner.ambient_selection.rank(SelectionKind::Face);
-    owner.ambient_selection.move_kind(face, 0);
+    assert!(owner.model_face.is_some());
+    owner
+        .ambient_selection
+        .apply_priority(SelectionPriority::Part);
     owner
         .click_model_with_window(document, ray, Some(0.1))
         .unwrap();
-    assert!(owner.model_face.is_some());
-    owner.ambient_selection.enable_all();
-    owner
-        .ambient_selection
-        .move_kind(owner.ambient_selection.rank(SelectionKind::Body), 0);
+    let session = owner.documents().workspace().session(document).unwrap();
+    assert!(session.selected_browser_body().is_some());
+    assert!(owner.model_face.is_none());
     owner
         .inspect_from_gui(oblikovati_gui::GuiInspectAction::StartMeasure)
         .unwrap();
@@ -62,6 +60,14 @@ fn competing_exact_face_and_body_picks_follow_the_user_priority() {
     owner
         .inspect_from_gui(oblikovati_gui::GuiInspectAction::FinishMeasure)
         .unwrap();
+    owner
+        .ambient_selection
+        .apply_priority(SelectionPriority::Face);
+    owner
+        .click_model_with_window(document, ray, Some(0.1))
+        .unwrap();
+    assert!(owner.model_face.is_some());
+    owner.ambient_selection.enable_all();
     owner
         .ambient_selection
         .set_enabled(SelectionKind::Face, false);
@@ -117,10 +123,13 @@ fn viewport_ray_from_inside_a_solid_selects_the_forward_face() {
 
 #[test]
 fn viewport_toggle_preserves_other_selected_bodies_and_can_remove_the_pick() {
-    use oblikovati_session::selection::SelectionClickMode::Replace;
+    use oblikovati_session::selection::{SelectionClickMode::Replace, SelectionPriority};
     let (mut owner, _) = owner();
     let document = super::super::part_scene::open_prism(&mut owner, false);
     owner.take_scene().unwrap();
+    owner
+        .ambient_selection
+        .apply_priority(SelectionPriority::Part);
     let body = owner
         .gui_browser_snapshot(document)
         .unwrap()
@@ -172,11 +181,14 @@ fn viewport_toggle_preserves_other_selected_bodies_and_can_remove_the_pick() {
 
 #[test]
 fn face_toggle_preserves_body_selection_and_toggles_the_face() {
-    use oblikovati_session::selection::SelectionKind;
+    use oblikovati_session::selection::SelectionPriority;
     let (mut owner, _) = owner();
     let document = super::super::part_scene::open_prism(&mut owner, false);
     owner.take_scene().unwrap();
     let ray = [[1., 1., 10.], [0., 0., -1.]];
+    owner
+        .ambient_selection
+        .apply_priority(SelectionPriority::Part);
     owner
         .click_model_with_window(document, ray, Some(0.1))
         .unwrap();
@@ -191,7 +203,7 @@ fn face_toggle_preserves_body_selection_and_toggles_the_face() {
         .to_owned();
     owner
         .ambient_selection
-        .move_kind(owner.ambient_selection.rank(SelectionKind::Face), 0);
+        .apply_priority(SelectionPriority::Face);
     owner
         .click_model_with_modifiers(document, ray, Some(0.1), true)
         .unwrap();
@@ -253,6 +265,29 @@ fn chosen_feature(
         .session(document)
         .unwrap()
         .selected_browser_feature()
+}
+
+#[test]
+fn near_visible_plane_and_face_follow_the_user_priority() {
+    use oblikovati_session::selection::SelectionKind;
+    let (mut owner, _) = owner();
+    let document = super::super::part_scene::open_prism(&mut owner, false);
+    add_plane(&mut owner, true);
+    let ray = [[1., 1., 10.], [0., 0., -1.]];
+    owner
+        .click_model_with_window(document, ray, Some(1.1))
+        .unwrap();
+    assert!(owner.model_face.is_some());
+    let plane_rank = owner.ambient_selection.rank(SelectionKind::WorkPlane);
+    owner.ambient_selection.move_kind(plane_rank, 0);
+    owner
+        .click_model_with_window(document, ray, Some(1.1))
+        .unwrap();
+    assert!(owner.model_face.is_none());
+    assert_eq!(
+        chosen_feature(&owner, document),
+        Some(oblikovati_model::feature::FeatureId(2))
+    );
 }
 
 #[test]
