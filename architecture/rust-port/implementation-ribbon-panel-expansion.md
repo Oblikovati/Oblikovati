@@ -68,6 +68,11 @@ unavailability when hovered. Space toggles the panel while keeping the
 selector open and the same row focused.
 [Native keyboard toggle](receipts/2026-11-26-ribbon-primitives-space-3856/README.md)
 
+Showing Primitives moves Modify and its open additional command area together
+to the right. Hiding Primitives restores both positions. The selector stays open
+after each click.
+[Native reflow scenario](receipts/2026-11-26-ribbon-primitives-reflow-3856/README.md)
+
 The direct checklist wraps keyboard focus from the first row to the last
 with Up and from the last row to the first with Down. The
 [native regression](receipts/2026-11-24-selector-keyboard-wrap-3856/README.md)

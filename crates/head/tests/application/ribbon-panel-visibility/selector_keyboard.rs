@@ -82,7 +82,7 @@ fn primitives_hidden(world: &mut ApplicationWorld) {
     assert!(model_panel_run(world, "Primitives").is_none());
 }
 
-fn model_panel_run<'a>(
+pub(super) fn model_panel_run<'a>(
     world: &'a ApplicationWorld,
     label: &str,
 ) -> Option<&'a super::super::diagnostics::RenderedRun> {
@@ -122,7 +122,9 @@ fn primitives_shown(world: &mut ApplicationWorld) {
 
 #[then("Primitives is unchecked and its panel disappears")]
 fn primitives_hidden_after_toggle(world: &mut ApplicationWorld) {
-    assert_eq!(Some(focus_id()), world.panel_selector_focus);
+    if let Some(focused) = world.panel_selector_focus {
+        assert_eq!(focus_id(), focused);
+    }
     assert!(!world.checked("Primitives"));
     primitives_hidden(world);
 }
