@@ -159,11 +159,12 @@ fn modified_face_click_keeps_the_body_selection() {
 
 #[test]
 fn modified_body_click_keeps_the_face_selection() {
-    use oblikovati_session::selection::SelectionKind;
+    use oblikovati_session::selection::SelectionPriority;
     let (mut owner, document, end, _) = face_fixture();
     let body = super::assignments::entity_key(&owner, document, 1, "body");
-    let rank = owner.ambient_selection.rank(SelectionKind::Body);
-    owner.ambient_selection.move_kind(rank, 0);
+    owner
+        .ambient_selection
+        .apply_priority(SelectionPriority::Part);
     owner
         .click_model_with_modifiers(document, [[1., 1., 10.], [0., 0., -1.]], Some(0.1), true)
         .unwrap();
