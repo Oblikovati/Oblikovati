@@ -2078,17 +2078,17 @@
           "fixtures/cad/quick-access-toolbar/PartOne.opd": "09fedf5c0e865867a3088067f3f8378dc01b6e226924a5c64210102e10227993",
           "fixtures/cad/quick-access-toolbar/PartTwo.opd": "349c57f7cd94593d1ab6a0df940b666774c73ac3f8b27af89dbc0fd203d744c4"
         },
-        "cucumber": "architecture/rust-port/receipts/2026-11-26-manage-panel-inventory-3856/full-wayland.json",
-        "cucumber_sha256": "8cd3c53bb6e64c74801bee4e6fbda98f182086218e6c6445e9a6148c623ef1d9",
+        "cucumber": "architecture/rust-port/receipts/2026-11-26-side-model-panel-inventory-3856/full-wayland.json",
+        "cucumber_sha256": "a534d676e32b9d559297cd00cdc540322144849fecb37df36dc57303fe500578",
         "scenario_inventory": "architecture/rust-port/receipts/2026-11-25-ribbon-panel-visibility-current-3856/scenario-inventory.json",
         "scenario_inventory_sha256": "b4a1bec6908990d2ba0668313548f339a0e1658634af222cded041b9c11a0174",
-        "scenario_arguments": "architecture/rust-port/receipts/2026-11-26-manage-panel-inventory-3856/full-wayland-arguments.json",
-        "scenario_arguments_sha256": "51121e3e04aab449875d903d1cb383e575077ed00a2fee9ba936aaa5c47468e6",
-        "application_commit": "f3876dc1522f5892870ab0e28e3be3e654afa435",
-        "command": "Full published Wayland panel visibility suite and focused Manage inventory and compaction runs. See the receipt.",
+        "scenario_arguments": "architecture/rust-port/receipts/2026-11-26-side-model-panel-inventory-3856/full-wayland-arguments.json",
+        "scenario_arguments_sha256": "3367d6a043240fdcbabd53ffff9c884d8f947ca28091eeadff196516c1bbe8bf",
+        "application_commit": "0d4120d94f8375e0e3dbc68c1946d8be6caf6f74",
+        "command": "Full published Wayland visibility suite with focused side-docked 3D Model inventory and direct selector runs. See the receipt.",
         "environment": "Linux Wayland with nested Weston 13, Xvfb, and Vulkan Lavapipe.",
-        "blocker": "One case requires the side-docked 3D Model panel inventory and two require Shell previews.",
-        "notes": "52 of 55 current cases passed on Wayland, covering 618 steps in passing cases. The Manage inventory passed on X11. Strict build and runtime provenance remains open under #3978."
+        "blocker": "Two cases require an active Shell preview on the published Part, tracked in Martensite #554.",
+        "notes": "53 of 55 current executions passed on Wayland with 626 steps in passing cases. The 3D Model inventory and direct selector passed on both Wayland and X11. Strict build and runtime provenance remains open under #3978."
       }
     }
   },
