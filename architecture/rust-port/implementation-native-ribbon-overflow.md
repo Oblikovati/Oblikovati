@@ -24,6 +24,12 @@ has its own window and popup scope.
 
 ## Verification
 
+Native edge resizing, maximizing, tab overflow, and compact panel
+selection were exercised on both Wayland and X11. The overflow checks
+use the active tab underline and the groups visible in the ribbon
+row. The [native acceptance receipt](receipts/2026-11-26-ribbon-native-resize-3856/README.md)
+also covers opening Document Settings from the full ribbon and a compact panel.
+
 The GUI suite passed 117 tests, including eight fit tests and 32 ribbon pointer
 tests. Pointer cases cover 320, 640, and 1024 logical pixels at both display
 scales, popup commands, disabled transactions, Escape, context changes, clipped

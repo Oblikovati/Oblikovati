@@ -1191,14 +1191,14 @@
           "fixtures/cad/planar-sketch-empty-xy.opd": "d936ef6b165b4bcbe14e04ac1b08bb5b16c81fddb597e70acb781e753c07e9a8",
           "fixtures/cad/workspace-layout-native.opd": "d85db64234c40a7bb09268f57abbd97aaa33c7542a81a022f385e8d590bae2ac"
         },
-        "cucumber": "architecture/rust-port/receipts/2026-11-26-ribbon-display-amended-3856/wayland.json",
-        "cucumber_sha256": "13594e29c6228adc94611ecf19592800b8bca73ac6a56cd1486c63d535a81da6",
-        "scenario_arguments": "architecture/rust-port/receipts/2026-11-26-ribbon-display-amended-3856/wayland-arguments.json",
-        "scenario_arguments_sha256": "e366e133ffbafd6a5307b0acb599a3ce6b1e939e4affc364473c505a5199204f",
-        "application_commit": "195777b050bad9cad154eade08f8ca48b84ef525",
+        "cucumber": "architecture/rust-port/receipts/2026-11-26-ribbon-native-resize-3856/wayland.json",
+        "cucumber_sha256": "5d2729a8e0d7d6aa43213b3dcb0e815e9f19abed3c780f1620868075f2152a76",
+        "scenario_arguments": "architecture/rust-port/receipts/2026-11-26-ribbon-native-resize-3856/wayland-arguments.json",
+        "scenario_arguments_sha256": "6cfa6f21b0dbad60440c610ddaeddee5c7750df54349c04dbfbf4f8d1a73563b",
+        "application_commit": "111780f1688e47c7afc9ad62675d9c9c3c877a9a",
         "command": "OBK_BDD_ROOT=<published-scenarios> OBK_BDD_AREA=application OBK_BDD_FEATURE=ribbon-display OBK_BDD_SCENARIO=<case> <head-test-binary> application_scenarios_use_the_native_window --test-threads=1 --nocapture",
         "environment": "Linux Wayland with nested Weston 13, Xvfb, and Vulkan Lavapipe.",
-        "notes": "27 of 52 amended scenarios passed with 312 steps in passing cases. Nine cases reached X11-only test helpers, and three stopped at undefined steps. The sizing scenario also passed on X11."
+        "notes": "36 of 52 amended scenarios passed on Wayland, with 410 steps in passing cases. All nine resize, overflow, compact panel, and document settings cases passed on Wayland and X11."
       }
     }
   },
