@@ -209,3 +209,68 @@ fn the_previous_join_is_retained(world: &mut ApplicationWorld) {
         GuiSweepOutput::Join
     );
 }
+
+#[given("Sweep1 is open for editing with its path and zero taper")]
+fn open_join_with_zero_taper(world: &mut ApplicationWorld) {
+    reopen_sweep(world);
+    chosen_sources(world);
+    let draft = world.state().sweep_preview.unwrap();
+    assert_eq!(draft.request.output, GuiSweepOutput::Join);
+    assert_eq!(draft.request.taper, "0 deg");
+}
+
+#[when(expr = "the taper is changed to {int} degrees and the preview updates")]
+fn change_join_taper(world: &mut ApplicationWorld, degrees: i32) {
+    let expression = format!("{degrees} deg");
+    replace_taper(world, &expression);
+    let draft = world.state().sweep_preview.unwrap();
+    assert_eq!(draft.request.taper, expression);
+    assert_eq!(draft.result, GuiSweepPreview::Ready);
+}
+
+#[then("the preview narrows toward its upper end")]
+fn joined_boss_narrows(world: &mut ApplicationWorld) {
+    let width = preview_cap_width(world);
+    let expected = 1. - 6. * 5_f32.to_radians().tan();
+    assert!(
+        (width - expected).abs() < 0.03,
+        "cap width {width}, expected {expected}"
+    );
+}
+
+#[then("the preview widens toward its upper end")]
+fn joined_boss_widens(world: &mut ApplicationWorld) {
+    let width = preview_cap_width(world);
+    let expected = 1. + 6. * 5_f32.to_radians().tan();
+    assert!(
+        (width - expected).abs() < 0.03,
+        "cap width {width}, expected {expected}"
+    );
+}
+
+fn preview_cap_width(world: &mut ApplicationWorld) -> f32 {
+    let (left, right) = world
+        .app()
+        .window
+        .scene_triangles
+        .iter()
+        .filter(|triangle| triangle.color == crate::part_scene::NEW_SOLID_PREVIEW)
+        .flat_map(|triangle| triangle.positions)
+        .filter(|point| (point[2] - 5.).abs() < 0.001)
+        .fold(
+            (f32::INFINITY, f32::NEG_INFINITY),
+            |(left, right), point| (left.min(point[0]), right.max(point[0])),
+        );
+    right - left
+}
+
+#[then("the edit closes")]
+fn join_taper_is_unchanged_after_cancel(world: &mut ApplicationWorld) {
+    assert!(super::diagnostics::window_geometry("Sweep").is_none());
+    assert!(world.state().sweep_preview.is_none());
+    joined_part_has_one_body_with_the_boss(world);
+    let browser = world.state().browser.unwrap();
+    let seed = &browser.sweep_edits[&browser.bodies[0].feature];
+    assert_eq!(seed.output, GuiSweepOutput::Join);
+    assert_eq!(seed.taper, "0 deg");
+}
