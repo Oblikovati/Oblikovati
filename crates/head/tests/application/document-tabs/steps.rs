@@ -405,9 +405,8 @@ fn switch_document_tab(world: &mut ApplicationWorld, reverse: bool) {
     #[cfg(target_os = "linux")]
     if world.scenario_feature_path.as_ref().is_some_and(|path| {
         path.ends_with("features/application/document-tabs/document-tabs.feature")
-    }) {
-        super::x11_input::press_control_tab(reverse);
-        world.pump(Vec::new());
+    }) && keyboard_native::try_native_control_tab(world, reverse)
+    {
         return;
     }
     if reverse {

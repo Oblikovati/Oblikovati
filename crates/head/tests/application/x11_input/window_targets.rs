@@ -63,6 +63,21 @@ pub(in super::super) fn switch_fullscreen_wayland_task() {
     );
 }
 
+/// Drive a document shortcut through the fullscreen Weston test output.
+pub(in super::super) fn press_weston_control_tab(reverse: bool) {
+    let (connection, screen) = x11rb::connect(None).expect("expected the Weston host display");
+    let root = connection.setup().roots[screen].root;
+    let property = atom(&connection, b"_NET_WM_NAME");
+    let outputs = matching_descendants(&connection, root, property, |name| {
+        name == "Weston Compositor - screen0"
+    });
+    let [output] = outputs.as_slice() else {
+        panic!("expected one fullscreen Weston window, found {outputs:?}");
+    };
+    focus_target(&connection, *output);
+    send_control_tab(&connection, root, reverse);
+}
+
 pub(in super::super) fn press_labwc_close_shortcut() {
     let (connection, root, output) = labwc_host_output();
     focus_target(&connection, output);
@@ -137,11 +152,15 @@ pub(super) fn application_window(connection: &RustConnection, root: Window) -> W
 }
 
 fn application_descendants(connection: &RustConnection, root: Window) -> Vec<Window> {
-    matching_descendants(connection, root, |name| name.contains("Oblikovati"))
+    matching_descendants(connection, root, AtomEnum::WM_NAME.into(), |name| {
+        name.contains("Oblikovati")
+    })
 }
 
 fn named_window(connection: &RustConnection, root: Window, title: &str) -> Window {
-    let windows = matching_descendants(connection, root, |name| name == title);
+    let windows = matching_descendants(connection, root, AtomEnum::WM_NAME.into(), |name| {
+        name == title
+    });
     let [one] = windows.as_slice() else {
         panic!("X11 windows {windows:?}: expected exactly one separate window named {title:?}");
     };
@@ -179,6 +198,7 @@ fn top_level_frame(connection: &RustConnection, root: Window, mut window: Window
 fn matching_descendants(
     connection: &RustConnection,
     root: Window,
+    title_property: Atom,
     matches_title: impl Fn(&str) -> bool,
 ) -> Vec<Window> {
     let mut pending = vec![root];
@@ -189,7 +209,9 @@ fn matching_descendants(
         };
         let Ok(tree) = query.reply() else { continue };
         for child in tree.children {
-            if window_title(connection, child).is_some_and(|title| matches_title(&title)) {
+            if window_title(connection, child, title_property)
+                .is_some_and(|title| matches_title(&title))
+            {
                 matches.push(child);
             }
             pending.push(child);
@@ -198,9 +220,13 @@ fn matching_descendants(
     matches
 }
 
-fn window_title(connection: &RustConnection, window: Window) -> Option<String> {
+fn window_title(
+    connection: &RustConnection,
+    window: Window,
+    title_property: Atom,
+) -> Option<String> {
     let reply = connection
-        .get_property(false, window, AtomEnum::WM_NAME, AtomEnum::STRING, 0, 1024)
+        .get_property(false, window, title_property, AtomEnum::ANY, 0, 1024)
         .ok()?;
     let property = reply.reply().ok()?;
     Some(String::from_utf8_lossy(&property.value).into_owned())

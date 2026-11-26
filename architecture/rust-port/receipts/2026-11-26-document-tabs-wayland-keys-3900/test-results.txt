@@ -1,0 +1,63 @@
+wayland adjacent
+1 scenario (1 passed)
+9 steps (9 passed)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1733 filtered out; finished in 6.43s
+
+wayland neighbor
+1 scenario (1 passed)
+6 steps (6 passed)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1733 filtered out; finished in 5.92s
+
+wayland reverse
+1 scenario (1 passed)
+8 steps (8 passed)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1733 filtered out; finished in 5.05s
+
+wayland home
+1 scenario (1 passed)
+9 steps (9 passed)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1733 filtered out; finished in 4.83s
+
+wayland wrap
+1 scenario (1 passed)
+8 steps (8 passed)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1733 filtered out; finished in 10.99s
+
+wayland native
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1733 filtered out; finished in 5.31s
+
+x11 adjacent
+1 scenario (1 passed)
+9 steps (9 passed)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1733 filtered out; finished in 5.99s
+
+x11 neighbor
+1 scenario (1 passed)
+6 steps (6 passed)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1733 filtered out; finished in 5.78s
+
+x11 reverse
+1 scenario (1 passed)
+8 steps (8 passed)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1733 filtered out; finished in 5.11s
+
+x11 home
+1 scenario (1 passed)
+9 steps (9 passed)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1733 filtered out; finished in 5.24s
+
+x11 wrap
+1 scenario (1 passed)
+8 steps (8 passed)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1733 filtered out; finished in 11.80s
+
+x11 native
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1733 filtered out; finished in 4.63s
+
+X11 detached drawing
+1 scenario (1 passed)
+9 steps (9 passed)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1733 filtered out; finished in 8.49s
+
+Head Clippy
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 14.93s

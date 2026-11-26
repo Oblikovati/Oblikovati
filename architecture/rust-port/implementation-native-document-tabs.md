@@ -38,6 +38,11 @@ use disposable copies of PartOne and PartTwo. Inactive Properties reads
 the actual file name, location and size, and both tab close controls
 preserve the saved bytes.
 
+Native Ctrl+Tab and Ctrl+Shift+Tab preserve sketch editing through Home
+and wrap between Home and the last numbered window. The
+[Wayland and X11 runs](receipts/2026-11-26-document-tabs-wayland-keys-3900/README.md)
+verify the shortcut in both directions.
+
 Dragging a drawing out of the strip opens a native window. The main
 window activates another attached document when one is available and
 shows Home when the detached drawing was the only attached document.
