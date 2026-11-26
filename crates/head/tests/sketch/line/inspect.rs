@@ -188,10 +188,16 @@ fn five_back(world: &mut ApplicationWorld) {
 }
 // line-20: two typed edges so the closed triangle has the recorded area exactly.
 #[when("I leave Line and select the triangle interior in Region Properties")]
+#[when("the user leave Line and select the triangle interior in Region Properties")]
 fn select_triangle(world: &mut ApplicationWorld) {
     world.escape();
-    world.right_click([1200, 600]);
-    world.pump(Vec::new());
+    world.expect_ready();
+    let [width, height] = world.extent();
+    let point = [(width * 3 / 4) as i32, (height * 2 / 3) as i32];
+    #[cfg(target_os = "linux")]
+    super::super::super::desktop_input::right_click(world, point);
+    #[cfg(not(target_os = "linux"))]
+    world.right_click(point);
     world.click_text("Region Properties");
     world.pump(Vec::new());
     let at = world.chain_interior();

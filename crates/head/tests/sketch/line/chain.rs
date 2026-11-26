@@ -190,6 +190,7 @@ fn one_segment_pending(world: &mut ApplicationWorld) {
     world.hover(NEXT);
 }
 #[when("I open the active menu")]
+#[when("the user open the active menu")]
 fn open_active_menu(world: &mut ApplicationWorld) {
     world.right_click(NEXT);
     world.pump(Vec::new());
@@ -203,6 +204,7 @@ fn restart_enabled(world: &mut ApplicationWorld) {
     assert!(!world.run_is_enabled("Close"), "expected a disabled Close");
 }
 #[when("I choose Restart")]
+#[when("the user choose Restart")]
 fn choose_restart(world: &mut ApplicationWorld) {
     world.click_text("Restart");
 }
@@ -235,6 +237,7 @@ fn two_with_line_active(world: &mut ApplicationWorld) {
     world.hover(NEXT);
 }
 #[when("I open the active context menu and choose enabled Close")]
+#[when("the user open the active context menu and choose enabled Close")]
 fn choose_close(world: &mut ApplicationWorld) {
     world.right_click(NEXT);
     world.pump(Vec::new());
