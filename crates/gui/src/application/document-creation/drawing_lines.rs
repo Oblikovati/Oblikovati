@@ -33,7 +33,7 @@ pub(super) fn draw(
             }
         }
         for table in &projection.parts_lists {
-            draw_parts_list(ui, list, table, minimum, maximum, dimensions);
+            draw_table(ui, list, table, [minimum, maximum], dimensions);
         }
         if let Some(error) = &projection.error {
             list.add_text(
@@ -55,12 +55,11 @@ fn projected_line_width(
     // The view remains readable when zoomed out, and tiny custom paper cannot overflow the draw list.
     (weight_mm * scale).clamp(1., width.min(height).max(1.)) as f32
 }
-fn draw_parts_list(
+pub(super) fn draw_table(
     ui: &imgui::Ui,
     list: &imgui::DrawListMut<'_>,
-    table: &oblikovati_model::drawing::DrawingPartsListPresentation,
-    minimum: [f32; 2],
-    maximum: [f32; 2],
+    table: &oblikovati_model::drawing::DrawingTablePresentation,
+    [minimum, maximum]: [[f32; 2]; 2],
     dimensions: [f64; 2],
 ) {
     const INK: [f32; 4] = [0.1, 0.1, 0.12, 1.];
@@ -70,11 +69,18 @@ fn draw_parts_list(
             list.add_line(to_screen(start), to_screen(end), INK).build();
         }
     }
-    for label in &table.labels {
+    for label in table.labels.iter().filter(|label| !label.text.is_empty()) {
         let [x, y] = label.center;
         let [w, h] = label.cell_size.map(|length| length / 2.);
         let left_top = to_screen([x - w, y + h]);
         let right_bottom = to_screen([x + w, y - h]);
+        if left_top
+            .into_iter()
+            .chain(right_bottom)
+            .any(|coordinate| !coordinate.is_finite())
+        {
+            continue;
+        }
         let [width, height] = ui.calc_text_size(&label.text);
         let [cx, cy] = to_screen(label.center);
         list.with_clip_rect_intersect(left_top, right_bottom, || {

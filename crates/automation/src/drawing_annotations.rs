@@ -3,8 +3,8 @@ use oblikovati_api::{
     Error,
     types::DOCUMENT_PART,
     wire::{
-        self, AddDrawingNoteArgs, AnnotationResult, DeleteAnnotationArgs, DrawingAnnotationInfo,
-        ListDrawingAnnotationsResult,
+        self, AddCustomTableArgs, AddDrawingNoteArgs, AnnotationResult, DeleteAnnotationArgs,
+        DrawingAnnotationInfo, ListDrawingAnnotationsResult,
     },
 };
 use oblikovati_model::drawing::{
@@ -15,8 +15,9 @@ use oblikovati_model::property::{DESIGN_TRACKING, DocumentProperties};
 use oblikovati_persistence::file_access::DocumentFiles;
 use oblikovati_session::{TransactionObserver, files::FileWorkspace, workspace::WorkspaceObserver};
 
-pub(super) const ANNOTATION_METHODS: [&str; 3] = [
+pub(super) const ANNOTATION_METHODS: [&str; 4] = [
     wire::METHOD_DRAWING_ANNOTATIONS_ADD_NOTE,
+    wire::METHOD_DRAWING_ANNOTATIONS_ADD_CUSTOM_TABLE,
     wire::METHOD_DRAWING_ANNOTATIONS_LIST,
     wire::METHOD_DRAWING_ANNOTATIONS_DELETE,
 ];
@@ -44,7 +45,26 @@ pub(super) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
     }
     match method {
         wire::METHOD_DRAWING_ANNOTATIONS_ADD_NOTE => {
-            add_note(files, owner, crate::decode(method, request)?)
+            let args: AddDrawingNoteArgs = crate::decode(method, request)?;
+            add_annotation(files, owner, "Add Drawing Note", |drawing| {
+                drawing.add_note(
+                    &args.name,
+                    [args.xmm, args.ymm],
+                    &args.text,
+                    [args.leader_xmm, args.leader_ymm],
+                )
+            })
+        }
+        wire::METHOD_DRAWING_ANNOTATIONS_ADD_CUSTOM_TABLE => {
+            let args: AddCustomTableArgs = crate::decode(method, request)?;
+            add_annotation(files, owner, "Add Custom Drawing Table", |drawing| {
+                drawing.add_custom_table(
+                    &args.name,
+                    [args.xmm, args.ymm],
+                    args.headers.unwrap_or_default(),
+                    args.rows.unwrap_or_default(),
+                )
+            })
         }
         wire::METHOD_DRAWING_ANNOTATIONS_DELETE => {
             let args: DeleteAnnotationArgs = crate::decode(method, request)?;
@@ -56,32 +76,30 @@ pub(super) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
     }
 }
 
-fn add_note<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+fn add_annotation<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     files: &mut FileWorkspace<O, W, F>,
     owner: u64,
-    args: AddDrawingNoteArgs,
+    command: &str,
+    add: impl FnOnce(
+        &mut DrawingDocument,
+    )
+        -> Result<DrawingAnnotationDefinition, oblikovati_model::drawing::DrawingError>,
 ) -> Result<Vec<u8>, Error> {
     files
         .commands(owner)
         .map_err(api_error)?
         .run_projected(
-            "Add Drawing Note",
+            command,
             |snapshot, _| {
-                snapshot
+                let drawing = snapshot
                     .drawing
                     .as_mut()
-                    .ok_or_else(|| Error(format!("document {owner}: expected drawing content")))?
-                    .add_note(
-                        &args.name,
-                        [args.xmm, args.ymm],
-                        &args.text,
-                        [args.leader_xmm, args.leader_ymm],
-                    )
-                    .map_err(api_error)
+                    .ok_or_else(|| Error(format!("document {owner}: expected drawing content")))?;
+                add(drawing).map_err(api_error)
             },
-            |_, note| {
+            |_, annotation| {
                 crate::encode(&AnnotationResult {
-                    annotation: annotation_info(&note, None)?,
+                    annotation: annotation_info(&annotation, None)?,
                 })
             },
         )
@@ -141,6 +159,13 @@ fn annotation_info(
 ) -> Result<DrawingAnnotationInfo, Error> {
     let (kind, tag, curves, rows) = if let Some(note) = annotation.note_presentation() {
         ("drawingNote", note.text, note.leader_segments_mm.len(), 0)
+    } else if let DrawingAnnotationDefinition::CustomTable { headers, rows, .. } = annotation {
+        (
+            "customTable",
+            "",
+            headers.len() + rows.len() + 3,
+            rows.len(),
+        )
     } else {
         let (curves, rows) = table.map_or((0, 0), |table| (table.lines.len(), table.row_count));
         ("partsList", "", curves, rows)

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use super::{DrawingAnnotationDefinition, DrawingDocument, DrawingError};
+use super::{DrawingAnnotationDefinition, DrawingDocument, DrawingError, annotation::unique_name};
 
 /// Sheet-space text and leader geometry regenerated from a drawing note.
 pub struct DrawingNotePresentation<'a> {
@@ -54,25 +54,6 @@ impl DrawingDocument {
         };
         self.add_annotation_definition(sheet, note.clone())?;
         Ok(note)
-    }
-}
-
-fn unique_name(requested: &str, annotations: &[DrawingAnnotationDefinition]) -> String {
-    let exists = |name: &str| {
-        annotations
-            .iter()
-            .any(|annotation| annotation.name() == name)
-    };
-    if !requested.is_empty() && !exists(requested) {
-        return requested.into();
-    }
-    let mut number = annotations.len() + 1;
-    loop {
-        let name = format!("NOTE:{number}");
-        if !exists(&name) {
-            return name;
-        }
-        number += 1;
     }
 }
 

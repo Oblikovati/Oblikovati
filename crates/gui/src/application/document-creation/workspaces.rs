@@ -270,6 +270,15 @@ fn sheet_on_list(
         dimensions,
     );
     drawing_notes::draw(list, &sheet.annotations, [minimum, maximum], dimensions);
+    list.with_clip_rect_intersect(minimum, maximum, || {
+        for table in sheet
+            .annotations
+            .iter()
+            .filter_map(|annotation| annotation.custom_table_presentation())
+        {
+            drawing_lines::draw_table(ui, list, &table, [minimum, maximum], dimensions);
+        }
+    });
     if sheet.border {
         list.add_rect(border_minimum, border_maximum, LINE_COLOR)
             .build();

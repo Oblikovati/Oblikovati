@@ -41,7 +41,8 @@ impl GuiTemplateSheet {
                 .annotations
                 .iter()
                 .filter_map(|annotation| match annotation {
-                    DrawingAnnotationDefinition::PartsList { x_mm, y_mm, .. } => {
+                    DrawingAnnotationDefinition::PartsList { x_mm, y_mm, .. }
+                    | DrawingAnnotationDefinition::CustomTable { x_mm, y_mm, .. } => {
                         Some(anchor(*x_mm, *y_mm))
                     }
                     DrawingAnnotationDefinition::Note { .. } => None,

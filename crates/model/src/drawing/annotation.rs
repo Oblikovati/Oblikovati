@@ -46,6 +46,25 @@ pub enum DrawingAnnotationDefinition {
         )]
         material_removal: Option<String>,
     },
+    #[serde(rename = "customTable")]
+    CustomTable {
+        name: String,
+        #[serde(rename = "xmm", default)]
+        x_mm: f64,
+        #[serde(rename = "ymm", default)]
+        y_mm: f64,
+        headers: Vec<String>,
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        rows: Vec<Option<Vec<String>>>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        characteristic: Option<String>,
+        #[serde(
+            rename = "materialRemoval",
+            default,
+            skip_serializing_if = "Option::is_none"
+        )]
+        material_removal: Option<String>,
+    },
 }
 impl DrawingAnnotationDefinition {
     /// Define a parts list without inventing BOM rows; example: `DrawingAnnotationDefinition::parts_list("Parts", [40., 200.])?`.
@@ -63,7 +82,9 @@ impl DrawingAnnotationDefinition {
     /// Read the annotation name; example: `definition.name()` returns `"Parts"`.
     pub fn name(&self) -> &str {
         match self {
-            Self::PartsList { name, .. } | Self::Note { name, .. } => name,
+            Self::PartsList { name, .. }
+            | Self::Note { name, .. }
+            | Self::CustomTable { name, .. } => name,
         }
     }
     /// Check whether a definition requires a model, as a parts list does.
@@ -72,6 +93,18 @@ impl DrawingAnnotationDefinition {
     }
     pub(super) fn validate(&self) -> Result<(), DrawingError> {
         let (point, leader, characteristic, material_removal) = match self {
+            Self::CustomTable {
+                x_mm,
+                y_mm,
+                headers,
+                rows,
+                characteristic,
+                material_removal,
+                ..
+            } => {
+                super::table::validate_cells(headers, rows)?;
+                ([*x_mm, *y_mm], [0., 0.], characteristic, material_removal)
+            }
             Self::PartsList {
                 x_mm,
                 y_mm,
@@ -111,6 +144,25 @@ impl DrawingAnnotationDefinition {
             )));
         }
         Ok(())
+    }
+}
+
+pub(super) fn unique_name(requested: &str, annotations: &[DrawingAnnotationDefinition]) -> String {
+    let exists = |name: &str| {
+        annotations
+            .iter()
+            .any(|annotation| annotation.name() == name)
+    };
+    if !requested.is_empty() && !exists(requested) {
+        return requested.into();
+    }
+    let mut number = annotations.len() + 1;
+    loop {
+        let name = format!("NOTE:{number}");
+        if !exists(&name) {
+            return name;
+        }
+        number += 1;
     }
 }
 
