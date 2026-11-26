@@ -19,6 +19,7 @@ const VERSION: u32 = 1;
 const TAPER_VERSION: u32 = 2;
 const FIXED_VERSION: u32 = 3;
 const TWIST_VERSION: u32 = 4;
+const SURFACE_VERSION: u32 = 7;
 
 /// How the source profile is transported along a Sweep path.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
@@ -52,6 +53,8 @@ pub struct SketchSweepRecipe {
     pub join_target: Option<Vec<u8>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub boolean_target: Option<SweepBooleanRecipe>,
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub surface: bool,
 }
 
 /// A validated Sweep recipe without evaluated or cached geometry.
@@ -68,6 +71,7 @@ pub struct ResolvedSketchSweep<'a> {
     pub taper: f64,
     pub twist: f64,
     pub orientation: SketchSweepOrientation,
+    pub surface: bool,
 }
 
 /// Source and placement failures have different remedies when editing a Sweep.
@@ -125,6 +129,7 @@ impl SketchSweepDefinition {
             orientation: SketchSweepOrientation::FollowPath,
             join_target: None,
             boolean_target: None,
+            surface: false,
         })
     }
 
@@ -203,6 +208,12 @@ impl SketchSweepDefinition {
     /// Borrow the versioned source recipe. Example: `serde_json::to_string(sweep.recipe())?`.
     pub fn recipe(&self) -> &SketchSweepRecipe {
         &self.0
+    }
+
+    /// Set output topology. Example: `definition.with_surface_output(true)` for a free shell.
+    pub fn with_surface_output(mut self, surface: bool) -> Self {
+        self.0.surface = surface;
+        self.without_boolean_target()
     }
 
     /// Replace the bounded profile on the source sketch. Example: `sweep.with_profile(region)?`.
@@ -298,6 +309,7 @@ impl SketchSweepDefinition {
             taper,
             twist,
             orientation: self.0.orientation,
+            surface: self.0.surface,
         })
     }
 }

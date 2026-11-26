@@ -39,8 +39,8 @@ pub use fillet::{
 pub use hole::{PreparedHole, prepare_hole};
 pub use shell::{PreparedShell, prepare_shell};
 pub use sweep::{
-    PreparedSweep, automatic_sweep, prepare_sweep, prepare_sweep_for_target, prepare_sweep_taper,
-    prepare_sweep_twist, sweep_boolean_target,
+    PreparedSweep, automatic_sweep, prepare_surface_sweep, prepare_sweep, prepare_sweep_for_target,
+    prepare_sweep_taper, prepare_sweep_twist, sweep_boolean_target,
 };
 mod interests;
 pub use file_host::{

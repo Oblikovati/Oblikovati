@@ -211,3 +211,19 @@ The [native receipt](receipts/2026-11-26-sweep-cut-3917/README.md) covers
 the unchanged edit on Wayland and X11. The published inward cylinder
 fixture is blocked at profile certification by
 [Martensite #619](https://github.com/Oblikovati/Martensite/issues/619).
+
+### Surface Sweep
+
+Surface output sweeps the certified contour as a wire. The result is an
+open shell with a named side face and two named circular trims. The part
+program stores the output type from version 34. Reopening a part retains
+the surface references and its independent solid.
+
+The [release probe](../../crates/martensite/tests/release_probe/sweep_sources/surface_replay.rs)
+checks replay, tessellation, and stable references. The builder probe
+matches the 5 mm radius and 30 mm path in the published outward fixture.
+The current desktop creation path uses the unique visible profile and
+path and lists the result separately under Surface Bodies.
+The [native receipt](receipts/2026-11-27-sweep-surface-3917/README.md)
+covers automatic input acquisition on Wayland and X11. Explicit
+profile and path acquisition in the published scenario remains open.

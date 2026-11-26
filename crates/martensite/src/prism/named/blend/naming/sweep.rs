@@ -6,6 +6,8 @@ use super::{
 use crate::sweep::{SweepCandidate, SweepFaceRole};
 use oblikovati_model::identity::SemanticReferenceName;
 
+mod surface;
+
 impl BlendNamedTopology {
     pub(in crate::prism::named) fn sweep_boolean_tool(
         &self,
@@ -67,33 +69,52 @@ impl BlendNamedTopology {
             3,
             &edges,
         )?;
-        let entries: Vec<_> = std::iter::once((body.clone(), candidate.shape.clone()))
-            .chain(faces)
-            .chain(edges)
-            .chain(vertices)
-            .collect();
-        let bindings = ExactReferenceBindings::from_entries(
+        let subentities = faces.into_iter().chain(edges).chain(vertices).collect();
+        bind_sweep(
+            history,
             document,
-            history.evaluation_scope(),
-            entries.clone(),
-        )?;
-        verify_round_trip(&bindings, history, document, &entries)?;
-        let live = bindings
-            .encoded_keys(history, document)?
-            .map(<[u8]>::to_vec)
-            .collect();
-        Ok(Self {
-            resolution: Some(candidate.resolution),
+            body,
+            candidate.shape,
+            candidate.resolution,
             achieved_tolerance,
-            live,
-            deleted: Vec::new(),
-            splits: BTreeMap::new(),
-            bindings,
-            active_body: body.clone(),
-            primary_body: body,
-            shape: candidate.shape,
-        })
+            subentities,
+        )
     }
+}
+
+fn bind_sweep(
+    history: &DocumentEditHistory,
+    document: DocumentGuid,
+    body: Vec<u8>,
+    shape: Shape,
+    resolution: PrismResolution,
+    achieved_tolerance: Option<PrismAchievedTolerance>,
+    subentities: Vec<(Vec<u8>, Shape)>,
+) -> Result<BlendNamedTopology, String> {
+    let entries: Vec<_> = std::iter::once((body.clone(), shape.clone()))
+        .chain(subentities)
+        .collect();
+    let bindings = ExactReferenceBindings::from_entries(
+        document,
+        history.evaluation_scope(),
+        entries.clone(),
+    )?;
+    verify_round_trip(&bindings, history, document, &entries)?;
+    let live = bindings
+        .encoded_keys(history, document)?
+        .map(<[u8]>::to_vec)
+        .collect();
+    Ok(BlendNamedTopology {
+        resolution: Some(resolution),
+        achieved_tolerance,
+        live,
+        deleted: Vec::new(),
+        splits: BTreeMap::new(),
+        bindings,
+        active_body: body.clone(),
+        primary_body: body,
+        shape,
+    })
 }
 
 fn incident_names(

@@ -20,6 +20,7 @@ impl DesktopPartScenes {
         let evaluated = self.current(session)?;
         evaluated
             .ordered_bodies()
+            .filter(|body| !body.is_surface())
             .enumerate()
             .map(|(index, body)| {
                 let info = native_body_info(session, guid, index, body)?;
@@ -28,7 +29,7 @@ impl DesktopPartScenes {
             .collect()
     }
 }
-/// What the browser's folder shows of one solid.
+/// What the browser's folder shows of one part body.
 pub(crate) struct BodyRow {
     pub feature: oblikovati_model::feature::FeatureId,
     pub name: String,
@@ -36,6 +37,7 @@ pub(crate) struct BodyRow {
     /// Where the API's body list counts it.
     pub index: i64,
     pub faces: usize,
+    pub surface: bool,
 }
 impl DesktopPartScenes {
     /// Each solid and the feature that made it, for the browser's folder.
@@ -58,19 +60,21 @@ impl DesktopPartScenes {
             body.body_reference_key(session.history(), guid)
                 .map(body_reference_text)
         };
-        let ordered: Vec<String> = evaluated
+        let ordered = evaluated
             .ordered_bodies()
-            .map(&key_of)
-            .collect::<Result<_, _>>()?;
+            .map(|body| Ok((key_of(body)?, body.is_surface())))
+            .collect::<Result<Vec<_>, String>>()?;
         let mut rows = Vec::new();
         for record in evaluated.health() {
             let Some(body) = evaluated.body(record.feature) else {
                 continue;
             };
             let key = key_of(body)?;
+            let surface = body.is_surface();
             let index = ordered
                 .iter()
-                .position(|known| *known == key)
+                .filter(|(_, is_surface)| *is_surface == surface)
+                .position(|(known, _)| *known == key)
                 .unwrap_or_default();
             let (name, _) = files
                 .body_display_metadata(document, &key)
@@ -82,9 +86,13 @@ impl DesktopPartScenes {
             rows.push(BodyRow {
                 feature: record.feature,
                 faces,
-                name: name.map_or_else(|| format!("Solid{}", index + 1), Into::into),
+                name: name.map_or_else(
+                    || format!("{}{}", if surface { "Srf" } else { "Solid" }, index + 1),
+                    Into::into,
+                ),
                 key,
                 index: api_count("body index", index)?,
+                surface,
             });
         }
         Ok(rows)

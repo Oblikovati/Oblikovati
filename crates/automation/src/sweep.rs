@@ -75,7 +75,8 @@ pub fn sweep_boolean_target<O: TransactionObserver, W: WorkspaceObserver, F: Doc
         .health()
         .iter()
         .filter(|row| Some(row.feature) != except)
-        .filter_map(|row| evaluated.body(row.feature));
+        .filter_map(|row| evaluated.body(row.feature))
+        .filter(|body| !body.is_surface());
     let (Some(body), None) = (bodies.next(), bodies.next()) else {
         return Err(Error(
             "sweep Boolean: expected one eligible target body".into(),
@@ -93,9 +94,24 @@ pub fn sweep_boolean_target<O: TransactionObserver, W: WorkspaceObserver, F: Doc
 }
 
 /// A Sweep whose transient input indices have been resolved to authored sources.
+#[derive(Clone)]
 pub struct PreparedSweep {
     name: String,
     definition: SketchSweepDefinition,
+}
+
+/// Resolve a Sweep into an independent surface feature. Example: `prepare_surface_sweep(snapshot, datums, policy, input)?`.
+pub fn prepare_surface_sweep(
+    snapshot: &DocumentSnapshot,
+    datums: &WorkGeometryEvaluation,
+    policy: PrismResolutionPolicy,
+    input: &Sweep,
+) -> Result<PreparedSweep, Error> {
+    let source = prepare_sweep(snapshot, datums, policy, input)?;
+    Ok(PreparedSweep {
+        name: crate::fillet::next_name(snapshot, "SweepSrf")?,
+        definition: source.definition.with_surface_output(true),
+    })
 }
 impl PreparedSweep {
     /// Append the recipe to a private candidate. Example: `prepared.create(snapshot, ids)?`.

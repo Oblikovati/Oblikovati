@@ -60,15 +60,22 @@ impl PartFeatureEvaluator for CertifiedNamedSolidEvaluator<'_> {
             ));
         };
         let sources = [input.profile.sketch.id().0, input.path.sketch.id().0];
-        let candidate = crate::sweep::build_sweep(input, prism.resolution_policy())
-            .map_err(|error| PartFeatureFailure::Kernel(error.for_feature(feature)))?;
-        let topology = BlendNamedTopology::from_sweep(
-            self.history,
-            self.document,
-            feature,
-            sources,
-            candidate,
-        )
+        let policy = prism.resolution_policy();
+        let failure =
+            |error: EvaluationFailure| PartFeatureFailure::Kernel(error.for_feature(feature));
+        let topology = if input.surface {
+            let candidate = crate::sweep::build_surface_sweep(input, policy).map_err(failure)?;
+            BlendNamedTopology::from_surface_sweep(
+                self.history,
+                self.document,
+                feature,
+                sources,
+                candidate,
+            )
+        } else {
+            let candidate = crate::sweep::build_sweep(input, policy).map_err(failure)?;
+            BlendNamedTopology::from_sweep(self.history, self.document, feature, sources, candidate)
+        }
         .map_err(|cause| {
             PartFeatureFailure::Kernel(
                 crate::EvaluationPhase::Naming

@@ -2,6 +2,7 @@
 //! Build a solid from a current sketch region and directed planar path.
 mod fixed;
 mod path;
+mod surface;
 mod taper;
 use crate::{
     EvaluationEntity as Entity, EvaluationFailure, EvaluationFailureKind as Kind,
@@ -20,6 +21,7 @@ use oblikovati_model::{
     feature::{sketch_prism::SketchPrismSelection, sketch_sweep::ResolvedSketchSweep},
     sketch::SketchEntityId,
 };
+pub use surface::{SurfaceSweepCandidate, build_surface_sweep};
 
 /// Source roles from the native sweep, independent of result enumeration.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -224,6 +226,16 @@ fn face_history(
         .last_shape()
         .map_err(|cause| history_failure(Entity::Body, cause))?;
     let mut faces = vec![(SweepFaceRole::Start, start), (SweepFaceRole::End, end)];
+    faces.extend(side_history(maker, region, path)?);
+    Ok(faces)
+}
+
+fn side_history(
+    maker: &mut BRepOffsetAPIMakePipe,
+    region: &PlanarRegion,
+    path: &path::NativePath,
+) -> Result<Vec<(SweepFaceRole, Shape)>, EvaluationFailure> {
+    let mut faces = Vec::new();
     for (path_id, spine) in &path.edges {
         for (curve, profile) in region.edges() {
             let side = maker

@@ -274,3 +274,56 @@ fn join_taper_is_unchanged_after_cancel(world: &mut ApplicationWorld) {
     assert_eq!(seed.output, GuiSweepOutput::Join);
     assert_eq!(seed.taper, "0 deg");
 }
+
+#[given("a circular sketch curve and a straight path are available")]
+fn sweep_geometry_is_available(world: &mut ApplicationWorld) {
+    block_has_a_circular_top_profile(world);
+    straight_path_extends_upward(world);
+}
+
+#[when("the Sweep is switched to surface output")]
+fn select_surface_output(world: &mut ApplicationWorld) {
+    click_panel(world, "Surface");
+}
+
+#[then("Profiles shows 1 Curve and Body Name shows Srf1")]
+fn surface_inputs_and_name(world: &mut ApplicationWorld) {
+    let draft = world.state().sweep_preview.unwrap();
+    assert_eq!(draft.request.output, GuiSweepOutput::Surface);
+    assert_eq!(draft.result, GuiSweepPreview::Ready);
+    let panel = super::super::world::squeezed(&world.window_text("Sweep"));
+    assert!(panel.contains("Profiles1Curve"), "{panel}");
+    assert!(panel.contains("BodyNameSrf1"), "{panel}");
+    assert!(world.run_is_enabled("OK"));
+}
+
+#[when("the Sweep is accepted")]
+fn accept_surface_sweep(world: &mut ApplicationWorld) {
+    accept(world);
+}
+
+#[then("SweepSrf1 and Surface Bodies(1) appear")]
+fn named_surface_is_in_the_browser(world: &mut ApplicationWorld) {
+    world.expect_text("SweepSrf1");
+    world.expect_text("Surface Bodies (1)");
+    let browser = world.state().browser.unwrap();
+    assert_eq!(browser.surface_bodies.len(), 1);
+    assert_eq!(browser.surface_bodies[0].faces, 1);
+}
+
+#[then("the Surface Bodies folder contains Srf1")]
+fn the_surface_body_has_its_own_name(world: &mut ApplicationWorld) {
+    world.expect_text("Srf1");
+    assert_eq!(
+        world.state().browser.unwrap().surface_bodies[0].name,
+        "Srf1"
+    );
+}
+
+#[then("Solid Bodies(1) remains")]
+fn the_original_solid_is_retained(world: &mut ApplicationWorld) {
+    world.expect_text("Solid Bodies");
+    let browser = world.state().browser.unwrap();
+    assert_eq!(browser.bodies.len(), 1);
+    assert_eq!(browser.bodies[0].faces, 6);
+}

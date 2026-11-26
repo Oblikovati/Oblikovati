@@ -3,8 +3,8 @@
 use super::*;
 use oblikovati_api::{Error, client::Client, wire::featureargs::Sweep};
 use oblikovati_automation::{
-    PartUpdateAccess, automatic_sweep, prepare_sweep_for_target, prepare_sweep_taper,
-    prepare_sweep_twist, sweep_boolean_target,
+    PartUpdateAccess, PreparedSweep, automatic_sweep, prepare_surface_sweep,
+    prepare_sweep_for_target, prepare_sweep_taper, prepare_sweep_twist, sweep_boolean_target,
 };
 use oblikovati_gui::{
     GuiSweepAction, GuiSweepEditSeed, GuiSweepOrientation, GuiSweepOutput, GuiSweepPreview,
@@ -26,6 +26,7 @@ use std::collections::BTreeMap;
 #[derive(Clone)]
 enum SweepCommit {
     Create(Box<Sweep>),
+    CreateSurface(Box<PreparedSweep>),
     Edit(FeatureId, SketchSweepDefinition),
 }
 
@@ -63,18 +64,23 @@ pub(in crate::owner) fn edit_seeds(
                     taper,
                     twist,
                     orientation,
-                    output: match definition
-                        .boolean_target()
-                        .map(|(operation, _, _)| operation)
-                    {
-                        Some(PrismBoolean::Join) => GuiSweepOutput::Join,
-                        Some(PrismBoolean::Cut) => GuiSweepOutput::Cut,
-                        None => GuiSweepOutput::NewSolid,
-                    },
+                    output: saved_sweep_output(definition),
                 },
             ))
         })
         .collect()
+}
+
+fn saved_sweep_output(definition: &SketchSweepDefinition) -> GuiSweepOutput {
+    match definition
+        .boolean_target()
+        .map(|(operation, _, _)| operation)
+    {
+        Some(PrismBoolean::Join) => GuiSweepOutput::Join,
+        Some(PrismBoolean::Cut) => GuiSweepOutput::Cut,
+        None if definition.recipe().surface => GuiSweepOutput::Surface,
+        None => GuiSweepOutput::NewSolid,
+    }
 }
 
 fn angle_field(snapshot: &DocumentSnapshot, angle: Option<DatumAngle>) -> Option<String> {
@@ -306,6 +312,15 @@ impl<
                 input.twist.clone_from(&request.twist);
             }
         }
+        if request.output == GuiSweepOutput::Surface {
+            let prepared = prepare_surface_sweep(snapshot, &datums, policy, &input)
+                .map_err(|cause| cause.to_string())?;
+            let preview = prepared.clone();
+            self.preview_selected_blend(document, |candidate, ids| preview.create(candidate, ids))?;
+            return Ok(Some(SweepOutcome::Ready(SweepCommit::CreateSurface(
+                Box::new(prepared),
+            ))));
+        }
         let prepared = prepare_sweep_for_target(snapshot, &datums, policy, &input, target)
             .map_err(|cause| cause.to_string())?;
         self.preview_selected_blend(document, |candidate, ids| prepared.create(candidate, ids))?;
@@ -344,7 +359,7 @@ impl<
                 .with_boolean_target(operation, key)
                 .map_err(|cause| cause.to_string())?
         } else {
-            definition.without_boolean_target()
+            definition.with_surface_output(request.output == GuiSweepOutput::Surface)
         };
         let edited = if request.orientation == GuiSweepOrientation::Fixed {
             definition.with_fixed_orientation()
@@ -408,6 +423,16 @@ impl<
                     .add_feature(input.as_ref())
                     .map_err(|cause| cause.to_string())?;
             }
+            SweepCommit::CreateSurface(prepared) => {
+                oblikovati_automation::edit_part_with_checkpoints(
+                    &mut self.files,
+                    &mut self.part_scenes,
+                    document,
+                    "Surface Sweep",
+                    |snapshot, ids| prepared.create(snapshot, ids),
+                )
+                .map_err(|cause| cause.to_string())?;
+            }
             SweepCommit::Edit(id, definition) => {
                 oblikovati_automation::edit_part_with_checkpoints(
                     &mut self.files,
@@ -425,7 +450,7 @@ impl<
 
 fn sweep_boolean(output: GuiSweepOutput) -> Option<PrismBoolean> {
     match output {
-        GuiSweepOutput::NewSolid => None,
+        GuiSweepOutput::NewSolid | GuiSweepOutput::Surface => None,
         GuiSweepOutput::Join => Some(PrismBoolean::Join),
         GuiSweepOutput::Cut => Some(PrismBoolean::Cut),
     }

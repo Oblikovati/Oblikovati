@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Sweep: tmp/obk-surface-desktop.BL99Zf/features/solid-model/sweep/sweep.feature" package="testsuite/Feature: Sweep: tmp/obk-surface-desktop.BL99Zf/features/solid-model/sweep/sweep.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-26T23:02:47.017575683Z" time="6.218099639"><testcase name="Scenario: surface-sweep-automatic-inputs Create a surface with unambiguous inputs: tmp/obk-surface-desktop.BL99Zf/features/solid-model/sweep/sweep.feature:2:3" time="6.218099639"><system-out><![CDATA[  Scenario: surface-sweep-automatic-inputs Create a surface with unambiguous inputs
+   ✔  Given a disposable copy of the native fixture "fixtures/cad/sweep/block-outward-path.opd" is open
+   ✔  And a circular sketch curve and a straight path are available
+   ✔  When Sweep is clicked
+   ✔  And the Sweep is switched to surface output
+   ✔  Then Profiles shows 1 Curve and Body Name shows Srf1
+   ✔  When the Sweep is accepted
+   ✔  Then SweepSrf1 and Surface Bodies(1) appear
+   ✔  And the Surface Bodies folder contains Srf1
+   ✔  And Solid Bodies(1) remains
+]]></system-out></testcase></testsuite></testsuites>

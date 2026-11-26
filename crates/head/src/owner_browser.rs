@@ -80,7 +80,7 @@ impl<
                     .then(|| path.clone())
             });
         browser.selected_sketches = self.selected_browser_sketches(document);
-        browser.bodies = self.gui_browser_bodies(document);
+        (browser.bodies, browser.surface_bodies) = self.gui_browser_bodies(document);
         if matches!(
             browser.kind,
             oblikovati_gui::GuiBrowserKind::Part | oblikovati_gui::GuiBrowserKind::SheetMetal

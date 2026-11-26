@@ -40,6 +40,7 @@ impl<
         let evaluation = self.part_scenes.current(session)?;
         let bodies = evaluation
             .ordered_bodies()
+            .filter(|body| !body.is_surface())
             .map(|body| {
                 Ok(super::owner_shell_face_body::ShellBodyFaces {
                     body: body.body_reference_key(session.history(), guid)?.to_vec(),

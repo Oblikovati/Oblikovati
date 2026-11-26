@@ -185,7 +185,7 @@ fn feature_menu(
 pub(crate) fn body_row<'ui>(
     ui: &'ui Ui,
     state: &GuiCommandState,
-    _browser: &GuiModelBrowser,
+    browser: &GuiModelBrowser,
     body: &crate::GuiBrowserBody,
     expansion: Option<bool>,
     view: &mut BrowserView,
@@ -231,7 +231,7 @@ pub(crate) fn body_row<'ui>(
         });
     }
     if let Some(_menu) = ui.begin_popup(BODY_MENU) {
-        if ui.menu_item("Properties") {
+        if browser.has_solid(body.feature) && ui.menu_item("Properties") {
             view.body_properties.request(body.feature);
         }
         if ui

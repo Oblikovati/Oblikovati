@@ -31,6 +31,10 @@ mod sweep;
 pub(in crate::prism::named) use capture::CapturedBlendTopology;
 
 impl BlendNamedTopology {
+    pub(in crate::prism::named) fn is_surface(&self) -> bool {
+        matches!(self.shape.shape_type(), Ok(ShapeEnum::Shell))
+    }
+
     pub(in crate::prism::named) fn resolution(&self) -> Option<PrismResolution> {
         self.resolution
     }

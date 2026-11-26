@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::{
-    FIXED_VERSION, FeatureId, SketchSweepDefinition, SketchSweepError, SketchSweepOrientation,
-    SketchSweepRecipe, follow_path_version,
+    FIXED_VERSION, FeatureId, SURFACE_VERSION, SketchSweepDefinition, SketchSweepError,
+    SketchSweepOrientation, SketchSweepRecipe, follow_path_version,
 };
 use crate::feature::{fillet::reference_identity, sketch_prism::PrismBoolean};
 
@@ -23,6 +23,7 @@ impl SketchSweepDefinition {
             version: JOIN_VERSION,
             join_target: Some(key),
             boolean_target: None,
+            surface: false,
             ..self.0
         })
     }
@@ -45,6 +46,7 @@ impl SketchSweepDefinition {
             version: BOOLEAN_VERSION,
             join_target: None,
             boolean_target: Some(SweepBooleanRecipe { operation, key }),
+            surface: false,
             ..self.0
         })
     }
@@ -68,7 +70,11 @@ impl SketchSweepDefinition {
         };
         Self(
             SketchSweepRecipe {
-                version,
+                version: if self.0.surface {
+                    SURFACE_VERSION
+                } else {
+                    version
+                },
                 join_target: None,
                 boolean_target: None,
                 ..self.0
@@ -79,7 +85,9 @@ impl SketchSweepDefinition {
 }
 
 pub(super) fn target_version(recipe: &SketchSweepRecipe, base: u32) -> u32 {
-    if recipe.boolean_target.is_some() {
+    if recipe.surface {
+        SURFACE_VERSION
+    } else if recipe.boolean_target.is_some() {
         BOOLEAN_VERSION
     } else if recipe.join_target.is_some() {
         JOIN_VERSION
@@ -91,6 +99,11 @@ pub(super) fn target_version(recipe: &SketchSweepRecipe, base: u32) -> u32 {
 pub(super) fn target_source(
     recipe: &SketchSweepRecipe,
 ) -> Result<Option<FeatureId>, SketchSweepError> {
+    if recipe.surface && (recipe.boolean_target.is_some() || recipe.join_target.is_some()) {
+        return Err(SketchSweepError::Definition(
+            "surface Sweep: expected independent output without a Boolean target".into(),
+        ));
+    }
     if let Some(target) = &recipe.boolean_target
         && (recipe.join_target.is_some() || target.operation == PrismBoolean::Join)
     {

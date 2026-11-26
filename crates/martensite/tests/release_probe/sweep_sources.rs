@@ -26,6 +26,54 @@ const SECTION: SketchEntityId = SketchEntityId(3);
 const SPINE: SketchEntityId = SketchEntityId(7);
 
 #[test]
+fn surface_sweep_resolves_sources_and_retains_trim_and_face_roles() {
+    use martensite_tkg3d::top_abs::ShapeEnum;
+    use oblikovati_martensite::sweep::build_surface_sweep;
+
+    let (snapshot, sweep) = fixture_at([-2., -1.25, 2.]);
+    let datums = snapshot
+        .work_geometry
+        .evaluate_work_geometry(&snapshot.parameters)
+        .unwrap();
+    let input = sweep.resolve(&snapshot, &datums).unwrap();
+    let result = build_surface_sweep(input, resolution()).unwrap();
+    let [(role, face)] = result.faces() else {
+        panic!("expected one swept face");
+    };
+    assert_eq!(
+        *role,
+        SweepFaceRole::Side {
+            profile: SECTION,
+            path: SPINE
+        }
+    );
+    assert_eq!(face.shape_type().unwrap(), ShapeEnum::Face);
+    let [start, end] = result.trims();
+    assert_eq!(start.shape_type().unwrap(), ShapeEnum::Wire);
+    assert_eq!(end.shape_type().unwrap(), ShapeEnum::Wire);
+    assert!(!start.is_same(end));
+    assert!(result.achieved_tolerance().edge <= 1e-6);
+    super::create::verify_surface_area(result.shell(), 3. * PI).unwrap();
+}
+
+#[test]
+fn surface_sweep_refuses_fixed_orientation_until_it_can_preserve_the_trims() {
+    use oblikovati_martensite::{EvaluationFailureKind, sweep::build_surface_sweep};
+
+    let (snapshot, sweep) = fixture();
+    let sweep = sweep.with_fixed_orientation();
+    let datums = snapshot
+        .work_geometry
+        .evaluate_work_geometry(&snapshot.parameters)
+        .unwrap();
+    let input = sweep.resolve(&snapshot, &datums).unwrap();
+    let failure = build_surface_sweep(input, resolution())
+        .err()
+        .expect("expected unsupported surface orientation");
+    assert_eq!(failure.kind(), EvaluationFailureKind::Unsupported);
+}
+
+#[test]
 fn saved_sweep_rereads_its_path_from_the_current_document() {
     let (mut snapshot, sweep) = fixture();
     let recipe = serde_json::to_vec(sweep.recipe()).unwrap();
@@ -135,8 +183,14 @@ fn region_ray_picks_the_solved_circle_and_ignores_misses() {
 }
 
 fn fixture() -> (DocumentSnapshot, SketchSweepDefinition) {
+    fixture_at([0.; 3])
+}
+
+fn fixture_at(origin: [f64; 3]) -> (DocumentSnapshot, SketchSweepDefinition) {
     let mut snapshot = document_snapshot::empty_snapshot();
-    let frame = SketchPlane::new([0.; 3], [1., 0., 0.], [0., 0., 1.], Default::default()).unwrap();
+    let frame = SketchPlane::new(origin, [1., 0., 0.], [0., 0., 1.], Default::default()).unwrap();
+    let section_plane =
+        SketchPlane::new(origin, [1., 0., 0.], [0., 1., 0.], Default::default()).unwrap();
     snapshot
         .work_geometry
         .append(AuthoredFeature::work_plane(
@@ -147,7 +201,7 @@ fn fixture() -> (DocumentSnapshot, SketchSweepDefinition) {
         .unwrap();
     snapshot
         .sketches
-        .add(PROFILE, "Section", SketchPlane::xy(), profile())
+        .add(PROFILE, "Section", section_plane, profile())
         .unwrap();
     snapshot
         .sketches

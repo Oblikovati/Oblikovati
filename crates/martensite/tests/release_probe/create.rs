@@ -36,6 +36,54 @@ fn sweep_along_the_fixture_line_returns_a_cylinder_with_history() -> Result<(), 
 }
 
 #[test]
+fn sweep_the_fixture_circle_as_a_wire_returns_an_open_cylindrical_shell() -> Result<(), Failure> {
+    let start = Point3::new(-2., -1.25, 2.);
+    let end = Point3::new(-2., -1.25, 5.);
+    let spine = BRepBuilderAPIMakeEdge::from_points(start, end)?.edge()?;
+    let path = BRepBuilderAPIMakeWire::from_edge(&spine)?.wire()?;
+    let frame = Axis2::new(start, Direction3::Z)?;
+    let section = BRepBuilderAPIMakeEdge::from_circ(Circle3::new(frame, 0.5)?)?.edge()?;
+    let profile = BRepBuilderAPIMakeWire::from_edge(&section)?.wire()?;
+    let mut sweep = BRepOffsetAPIMakePipe::new(&path, profile.as_ref())?;
+    let shell = sweep.shape()?.clone();
+
+    assert_eq!(shell.shape_type()?, ShapeEnum::Shell);
+    assert!(BRepCheckAnalyzer::new(&shell, true, false, true)?.is_valid()?);
+    let wall = sweep.generated_by(spine.as_ref(), section.as_ref())?;
+    let faces = Explorer::new(&shell, ShapeEnum::Face, ShapeEnum::Shape)?.collect::<Vec<_>>();
+    assert_eq!(faces.len(), 1);
+    assert!(faces[0].is_same(&wall));
+
+    let start_wire = sweep.first_shape()?;
+    let end_wire = sweep.last_shape()?;
+    verify_surface_boundary(&shell, &start_wire)?;
+    verify_surface_boundary(&shell, &end_wire)?;
+    verify_surface_area(&shell, 3. * PI)
+}
+
+fn verify_surface_boundary(shell: &Shape, boundary: &Shape) -> Result<(), Failure> {
+    assert_eq!(boundary.shape_type()?, ShapeEnum::Wire);
+    let edges = Explorer::new(boundary, ShapeEnum::Edge, ShapeEnum::Shape)?.collect::<Vec<_>>();
+    assert_eq!(edges.len(), 1);
+    assert!(
+        Explorer::new(shell, ShapeEnum::Edge, ShapeEnum::Shape)?
+            .any(|edge| edge.is_same(&edges[0]))
+    );
+    let mut length = GProps::default();
+    BRepGProp::linear_properties(boundary, &mut length, true, false)?;
+    assert!((length.mass() - PI).abs() < 1e-8, "{length:?}");
+    Ok(())
+}
+
+pub(super) fn verify_surface_area(shell: &Shape, area: f64) -> Result<(), Failure> {
+    let mut properties = GProps::default();
+    let achieved = BRepGProp::surface_properties_eps(shell, &mut properties, 1e-9, false)?;
+    assert!(achieved.is_finite() && achieved.abs() <= 1e-9, "{achieved}");
+    assert!((properties.mass() - area).abs() < 1e-8, "{properties:?}");
+    Ok(())
+}
+
+#[test]
 fn loft_between_the_fixture_sections_returns_a_frustum_with_history() -> Result<(), Failure> {
     for ruled in [true, false] {
         verify_loft(ruled)?;

@@ -103,6 +103,7 @@ impl BrowserTree<'_> {
     ) {
         self.representations(view, actions);
         self.bodies(view, actions);
+        self.surface_bodies(view, actions);
         self.origin(view, actions);
         self.parameters();
         self.blocks(actions);
@@ -327,6 +328,18 @@ impl BrowserTree<'_> {
         };
         for body in &self.browser.bodies {
             self.body(body, children.or(self.expansion), view, actions);
+        }
+    }
+    fn surface_bodies(&self, view: &mut BrowserView, actions: &mut Vec<GuiShellAction>) {
+        let bodies = &self.browser.surface_bodies;
+        if bodies.is_empty() {
+            return;
+        }
+        let label = format!("Surface Bodies ({})", bodies.len());
+        if let Some(_folder) = self.branch(&label, true) {
+            for body in bodies {
+                self.body(body, self.expansion, view, actions);
+            }
         }
     }
     fn body(

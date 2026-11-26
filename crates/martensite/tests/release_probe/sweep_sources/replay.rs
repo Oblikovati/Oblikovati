@@ -8,6 +8,9 @@ use oblikovati_model::{
 };
 use oblikovati_persistence::package::DocumentPackage;
 
+#[path = "surface_replay.rs"]
+mod surface_replay;
+
 #[test]
 fn named_sweep_replays_through_creation_history_path_edit_and_reopen() {
     let (snapshot, sweep) = fixture();

@@ -376,7 +376,11 @@ impl SweepDialog {
             ui.text("Select Profiles");
             return;
         }
-        ui.text("1 Profile");
+        ui.text(if self.output == GuiSweepOutput::Surface {
+            "1 Curve"
+        } else {
+            "1 Profile"
+        });
         if self.feature.is_some() && crate::widget_abi::button(ui, "Clear Profile", [0., 0.]) {
             self.profile = GuiSweepProfile::Empty;
         }

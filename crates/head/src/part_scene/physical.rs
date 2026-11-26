@@ -23,7 +23,10 @@ impl DesktopPartScenes {
             .map_err(|cause| cause.to_string())?
             .internal_name;
         let evaluation = self.current(session)?;
-        let bodies: Vec<_> = evaluation.ordered_bodies().collect();
+        let bodies: Vec<_> = evaluation
+            .ordered_bodies()
+            .filter(|body| !body.is_surface())
+            .collect();
         if let Some(index) = index {
             let body = selected_body(&bodies, index)?;
             let key = body.body_reference_key(session.history(), guid)?;

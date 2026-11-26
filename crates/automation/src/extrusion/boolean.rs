@@ -28,7 +28,8 @@ pub(super) fn target<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFi
         .map_err(api_error)?
         .internal_name;
     let current = owner.current_part(files, document).map_err(Error)?;
-    let mut bodies = current.ordered_bodies();
+    let solids = || current.ordered_bodies().filter(|body| !body.is_surface());
+    let mut bodies = solids();
     match (bodies.next(), bodies.next()) {
         (Some(body), None) => body
             .body_reference_key(session.history(), guid)
@@ -36,7 +37,7 @@ pub(super) fn target<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFi
             .map_err(Error),
         _ => Err(Error(format!(
             "extrude {operation} target: expected one current body, found {}",
-            current.ordered_bodies().count()
+            solids().count()
         ))),
     }
 }

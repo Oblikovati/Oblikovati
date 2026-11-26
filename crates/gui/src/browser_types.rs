@@ -52,6 +52,8 @@ pub struct GuiModelBrowser {
     pub path: Option<String>,
     /// The part's solids, each made by a feature of the program.
     pub bodies: Vec<GuiBrowserBody>,
+    /// The part's named open shells, in their browser order.
+    pub surface_bodies: Vec<GuiBrowserBody>,
     pub appearances: Vec<crate::GuiAppearanceChoice>,
     /// Available part materials and the assigned part asset identities.
     pub materials: Vec<GuiMaterialChoice>,
@@ -147,6 +149,10 @@ pub struct GuiBrowserFeature {
     pub kind: &'static str,
 }
 impl GuiModelBrowser {
+    pub(crate) fn has_solid(&self, feature: FeatureId) -> bool {
+        self.bodies.iter().any(|body| body.feature == feature)
+    }
+
     pub(crate) fn validate(&self) -> Result<(), String> {
         self.validate_labels()?;
         self.validate_identities()?;

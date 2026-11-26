@@ -2,13 +2,14 @@
 //! Sweep result controls and their current document names.
 use super::*;
 
-/// The solid output authored by a Sweep.
+/// The output authored by a Sweep.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum GuiSweepOutput {
     #[default]
     NewSolid,
     Join,
     Cut,
+    Surface,
 }
 
 pub(super) const EDIT_WARNING: &str = "Edit Sweep Feature";
@@ -59,10 +60,10 @@ impl SweepDialog {
         let saved_boolean = self
             .feature
             .and_then(|id| browser.sweep_edits.get(&id))
-            .is_some_and(|seed| seed.output != GuiSweepOutput::NewSolid);
+            .is_some_and(|seed| matches!(seed.output, GuiSweepOutput::Join | GuiSweepOutput::Cut));
         ui.radio_button("New Solid", &mut self.output, GuiSweepOutput::NewSolid);
-        ui.same_line_with_pos(135.);
-        let boolean_available = self.output != GuiSweepOutput::NewSolid
+        ui.same_line_with_pos(104.);
+        let boolean_available = matches!(self.output, GuiSweepOutput::Join | GuiSweepOutput::Cut)
             || browser
                 .bodies
                 .iter()
@@ -72,10 +73,14 @@ impl SweepDialog {
             || saved_boolean;
         let disabled = ui.begin_disabled(!boolean_available);
         ui.radio_button("Join", &mut self.output, GuiSweepOutput::Join);
-        ui.same_line_with_pos(210.);
+        ui.same_line_with_pos(164.);
         ui.radio_button("Cut", &mut self.output, GuiSweepOutput::Cut);
         drop(disabled);
-        if self.output == GuiSweepOutput::NewSolid {
+        ui.same_line_with_pos(218.);
+        ui.radio_button("Surface", &mut self.output, GuiSweepOutput::Surface);
+        if self.output == GuiSweepOutput::Surface {
+            draw_surface_name(ui, browser, self.feature);
+        } else if self.output == GuiSweepOutput::NewSolid {
             crate::theme::property_label(ui, "Body Name");
             if let Some(body) = existing.filter(|_| !saved_boolean) {
                 ui.text(&body.name);
@@ -83,5 +88,18 @@ impl SweepDialog {
                 ui.text(format!("Solid{}", browser.bodies.len() + 1));
             }
         }
+    }
+}
+
+fn draw_surface_name(ui: &Ui, browser: &crate::GuiModelBrowser, feature: Option<FeatureId>) {
+    crate::theme::property_label(ui, "Body Name");
+    if let Some(body) = browser
+        .surface_bodies
+        .iter()
+        .find(|body| Some(body.feature) == feature)
+    {
+        ui.text(&body.name);
+    } else {
+        ui.text(format!("Srf{}", browser.surface_bodies.len() + 1));
     }
 }

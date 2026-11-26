@@ -19,23 +19,35 @@ impl<
     S: DispatchWakeup,
 > DesktopOwner<O, W, F, G, R, S>
 {
-    /// Each solid's browser row, with what the dialog needs of it.
-    pub(super) fn gui_browser_bodies(&self, document: u64) -> Vec<GuiBrowserBody> {
+    /// Each part body's browser row, grouped into the solid and surface folders.
+    pub(super) fn gui_browser_bodies(
+        &self,
+        document: u64,
+    ) -> (Vec<GuiBrowserBody>, Vec<GuiBrowserBody>) {
         // A part that cannot evaluate says so on the scene; its folder just stays empty.
         let rows = self.part_scenes.body_rows(&self.files, document);
-        rows.unwrap_or_default()
-            .into_iter()
-            .map(|row| GuiBrowserBody {
+        let mut solids = Vec::new();
+        let mut surfaces = Vec::new();
+        for row in rows.unwrap_or_default() {
+            let target = if row.surface {
+                &mut surfaces
+            } else {
+                &mut solids
+            };
+            target.push(GuiBrowserBody {
                 appearance: self.body_appearance(document, &row.key),
-                physical: self.calculated_physical(document, &row.key),
+                physical: (!row.surface)
+                    .then(|| self.calculated_physical(document, &row.key))
+                    .flatten(),
                 visible: self.session_shows_body(document, &row.key),
                 faces: row.faces,
                 name: row.name,
                 feature: row.feature,
                 key: row.key,
                 index: row.index,
-            })
-            .collect()
+            });
+        }
+        (solids, surfaces)
     }
     fn session_shows_body(&self, document: u64, key: &str) -> bool {
         let session = self.files.workspace().session(document);

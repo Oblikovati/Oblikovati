@@ -13,6 +13,11 @@ pub enum NamedSolid {
 }
 
 impl NamedSolid {
+    /// Identify an uncapped surface result. Example: `body.is_surface()` before computing mass.
+    pub fn is_surface(&self) -> bool {
+        matches!(self, Self::Derived(body) if body.is_surface())
+    }
+
     /// Capture a body without changing its document and generation guards.
     /// Example: `body.capture_current(&history, document)?` before a transaction.
     pub fn capture_current(
