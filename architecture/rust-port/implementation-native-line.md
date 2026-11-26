@@ -19,6 +19,11 @@ Placement uses the existing recipe validation before commit, including rejection
 of zero-length closing edges. The typed API's documented zero-length sketch
 entity behavior and its 80 Go parity fixtures remain unchanged.
 
+Untyped placement uses the projected pointer coordinates directly. This avoids
+rounding an endpoint off the original start when the user returns there. The
+desktop Close command requires two accepted segments and leaves the tool active
+when the closing edge would have zero length.
+
 Arming Line opens one bounded transaction. Save, Undo, Redo, and document exit
 retain their existing host guards. A GUI snapshot identifies an owned sketch-tool
 transaction so users can replace the tool without admitting commands into an

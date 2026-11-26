@@ -39,7 +39,6 @@
 - Draw midpoint lines with pointer or typed length and angle, including explicit point selection. (#4178)
 - Choose and select one relation when sketch constraint glyphs overlap. (#4169)
 - Added individual sketch constraint glyph hiding and Show All through the viewport and typed API. (#4166)
-
 - Enabled the Rust desktop application on Windows through a native Win32 window and Martensite Vulkan rendering.
 - Enabled isolated Lua scripting on Windows in the desktop and CLI.
 
@@ -291,6 +290,7 @@ Model tree reads reuse current part results and refresh them after edits. (#4079
 
 ### Fixed
 
+- Preserved exact pointer positions when drawing an untyped sketch Line and rejected Close for chains with fewer than two accepted segments. (#3830)
 - Rendered Windows windows at the monitor DPI and scaled layout, input, and fonts when display density changes. Linux X11 uses desktop DPI from X resources or XSETTINGS for the same layout, input, and font scaling. (#3850)
 - Made File Properties dockable from Open and restored the picker and its selection on close. (#4073) Fixed a thumbnail crash in large file lists, kept Details headings visible while scrolling, and kept long filenames out of the date column. Kept newly opened drawings in front when an existing document path used different separators. (#3889)
 - Matched the default viewport and status bar to the desktop theme while preserving explicit colour schemes. Gave status telemetry compact monospace text and highlighted Fully Constrained in the active theme’s success color. Projected ViewCube labels onto their faces, added directional shading and hover highlights, and added fading controls, roll arcs, and an options chevron. Strengthened foreshortened face lettering in both desktop themes. Centered the navigation bar under the cube and moved it beside the cube when the viewport is too short to stack them. Showed the viewport controls in Assembly. Kept the Orientation Options labels readable and its actions visible while scrolling at large text sizes. Restored padding around Quick Access selection commands, used the strong theme outline for asset swatches, and kept asset captions left-aligned and values clear of dropdown arrows during resize. Kept inactive dock tab titles legible in Dark and Light. (#4063)
