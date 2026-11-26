@@ -36,13 +36,16 @@ pub(crate) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
         .ok_or_else(|| Error("sweep: expected a certified resolution policy".into()))?;
     owner.ensure_part(files, document).map_err(Error)?;
     let datums = owner.datum_evaluation(files, document).map_err(Error)?;
+    let target = (input.operation == "join")
+        .then(|| sweep_join_target(files, owner, document, None))
+        .transpose()?;
     let workspace = files.workspace();
     let guid = workspace
         .identity(document)
         .map_err(api_error)?
         .internal_name;
     let snapshot = workspace.session(document).map_err(api_error)?.snapshot();
-    let prepared = prepare_sweep(snapshot, &datums, policy, &input)?;
+    let prepared = prepare_sweep_for_target(snapshot, &datums, policy, &input, target)?;
     let prefix = owner.candidate_prefix(files, document).map_err(Error)?;
     let ((reply, candidate), transition) = crate::part_feature_transaction::create(
         files,
@@ -55,6 +58,36 @@ pub(crate) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
     )?;
     crate::fillet::publish_blend_candidate(files, Some(owner), document, candidate, &transition)?;
     Ok(reply)
+}
+
+/// Find the sole other live solid for a Sweep Join.
+/// Example: `sweep_join_target(files, replay, document, None)?` before creating a Sweep.
+pub fn sweep_join_target<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+    files: &FileWorkspace<O, W, F>,
+    replay: &dyn crate::PartUpdateAccess<O, W, F>,
+    document: u64,
+    except: Option<FeatureId>,
+) -> Result<Vec<u8>, Error> {
+    let evaluated = replay.current_part(files, document).map_err(Error)?;
+    let mut bodies = evaluated
+        .health()
+        .iter()
+        .filter(|row| Some(row.feature) != except)
+        .filter_map(|row| evaluated.body(row.feature));
+    let (Some(body), None) = (bodies.next(), bodies.next()) else {
+        return Err(Error(
+            "sweep Join: expected one eligible target body".into(),
+        ));
+    };
+    let workspace = files.workspace();
+    let session = workspace.session(document).map_err(api_error)?;
+    let guid = workspace
+        .identity(document)
+        .map_err(api_error)?
+        .internal_name;
+    body.body_reference_key(session.history(), guid)
+        .map(<[u8]>::to_vec)
+        .map_err(Error)
 }
 
 /// A Sweep whose transient input indices have been resolved to authored sources.
@@ -123,6 +156,18 @@ pub fn prepare_sweep(
     policy: PrismResolutionPolicy,
     input: &Sweep,
 ) -> Result<PreparedSweep, Error> {
+    prepare_sweep_for_target(snapshot, datums, policy, input, None)
+}
+
+/// Prepare the typed Sweep and bind its optional Join target.
+/// Example: `prepare_sweep_for_target(snapshot, &datums, policy, &input, target)?`.
+pub fn prepare_sweep_for_target(
+    snapshot: &DocumentSnapshot,
+    datums: &WorkGeometryEvaluation,
+    policy: PrismResolutionPolicy,
+    input: &Sweep,
+    target: Option<Vec<u8>>,
+) -> Result<PreparedSweep, Error> {
     validate_options(input)?;
     let profile_sketch = sketch_index(snapshot, input.sketch_index)?;
     let path_sketch = sketch_index(snapshot, input.path_sketch_index)?;
@@ -162,6 +207,11 @@ pub fn prepare_sweep(
         definition
     } else {
         prepare_sweep_twist(snapshot, definition, &input.twist)?
+    };
+    let definition = match (input.operation.as_str(), target) {
+        ("join", Some(key)) => definition.with_join_target(key).map_err(api_error)?,
+        ("join", None) => return Err(Error("sweep Join: expected a named target body".into())),
+        (_, _) => definition,
     };
     definition.resolve(snapshot, datums).map_err(api_error)?;
     Ok(PreparedSweep {
@@ -204,7 +254,7 @@ fn validate_options(input: &Sweep) -> Result<(), Error> {
         ));
     }
     if !matches!(input.definition_type.as_str(), "" | "path")
-        || !matches!(input.operation.as_str(), "" | "new")
+        || !matches!(input.operation.as_str(), "" | "new" | "join")
         || !matches!(
             input.orientation.as_str(),
             "" | "normalToPath" | "parallelToOriginalProfile"
@@ -227,7 +277,7 @@ fn validate_options(input: &Sweep) -> Result<(), Error> {
         || !input.guide_face_key.is_empty()
         || input.tool_body_index.is_some()
     {
-        return Err(Error("sweep options: expected New Solid and Path with Follow Path or Fixed orientation, without a guide or station overrides".into()));
+        return Err(Error("sweep options: expected New Solid or Join with Follow Path or Fixed orientation, without a guide or station overrides".into()));
     }
     Ok(())
 }

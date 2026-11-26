@@ -27,20 +27,32 @@ impl NamedSolid {
         tools: Vec<BooleanTool>,
         kind: PrismBoolean,
     ) -> Result<BlendCandidate, String> {
-        match self {
-            Self::Prism(body) => body.extrusion_boolean_tools(history, document, tools, kind),
-            Self::Derived(body) => body.extrusion_boolean_candidate(history, document, tools, kind),
-        }
+        self.boolean_tools(history, document, tools, kind, &format!("extrude {kind}"))
     }
-}
 
-impl NamedPrismSnapshot {
-    fn extrusion_boolean_tools(
+    pub(in crate::prism::named) fn boolean_tools(
         &self,
         history: &DocumentEditHistory,
         document: DocumentGuid,
         tools: Vec<BooleanTool>,
         kind: PrismBoolean,
+        operation: &str,
+    ) -> Result<BlendCandidate, String> {
+        match self {
+            Self::Prism(body) => body.boolean_tools(history, document, tools, kind, operation),
+            Self::Derived(body) => body.boolean_tools(history, document, tools, kind, operation),
+        }
+    }
+}
+
+impl NamedPrismSnapshot {
+    fn boolean_tools(
+        &self,
+        history: &DocumentEditHistory,
+        document: DocumentGuid,
+        tools: Vec<BooleanTool>,
+        kind: PrismBoolean,
+        operation: &str,
     ) -> Result<BlendCandidate, String> {
         let body = self.body_reference_key(history, document)?.to_vec();
         super::solid_boolean::build_boolean_candidate(
@@ -58,7 +70,7 @@ impl NamedPrismSnapshot {
             document,
             tools,
             kind,
-            &format!("extrude {kind}"),
+            operation,
         )
     }
     fn boolean_tool(

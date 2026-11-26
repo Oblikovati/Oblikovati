@@ -43,8 +43,21 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
             })
             .map_err(PartFeatureFailure::Inputs)?;
         let result = backend.evaluate_prism_boolean(feature, body, input, target.operation())?;
+        self.accept_body_replacement(backend, feature, slot, target.key(), result)
+    }
+
+    pub(super) fn accept_body_replacement<
+        B: PartFeatureEvaluator<Body = Body, Failure = Failure>,
+    >(
+        &mut self,
+        backend: &B,
+        feature: FeatureId,
+        slot: FeatureId,
+        key: &[u8],
+        result: Body,
+    ) -> Result<(), PartFeatureFailure<Failure>> {
         backend
-            .verify_body_reference(&result, target.key())
+            .verify_body_reference(&result, key)
             .map_err(PartFeatureFailure::BodyReference)?;
         self.body_lineage
             .replace(slot, feature)

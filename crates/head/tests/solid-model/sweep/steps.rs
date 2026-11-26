@@ -6,6 +6,8 @@ use oblikovati_gui::GuiSweepPreview;
 use oblikovati_viewport::{ViewportNavigation, ViewportPhysicalKey};
 #[path = "draft_settings.rs"]
 mod draft_settings;
+#[path = "solid_result.rs"]
+mod solid_result;
 
 #[given(expr = "a disposable copy of the native fixture {string} is open")]
 fn open_sweep_fixture(world: &mut ApplicationWorld, relative: String) {

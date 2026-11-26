@@ -187,3 +187,14 @@ session. Choosing an expression updates the draft and validates it against
 the current geometry. Cancel discards that draft. The [native receipt](receipts/2026-11-26-sweep-recent-twist-3917/README.md)
 covers accepting 45 degrees, reusing the original expression, and
 cancelling without editing the saved feature or body.
+
+### Sweep New Solid and Join
+
+New Solid shows the next body name and creates an independent body.
+Join uses the sole eligible target and keeps its body reference when it
+replaces the target with the combined solid. The version 32 Part program
+stores the exact target key alongside the Sweep sources. The
+[replay probe](../../crates/martensite/tests/release_probe/sweep_sources/replay.rs)
+checks the target dependency, retained identity, and analytic volume.
+The [native receipt](receipts/2026-11-26-sweep-join-3917/README.md)
+covers creating Solid2 and editing the same Sweep to Join.

@@ -4,12 +4,13 @@ use super::*;
 use oblikovati_model::feature::sketch_prism::PrismBoolean;
 
 impl BlendNamedTopology {
-    pub(in crate::prism::named::blend) fn extrusion_boolean_candidate(
+    pub(in crate::prism::named::blend) fn boolean_tools(
         &self,
         history: &DocumentEditHistory,
         document: DocumentGuid,
         tools: Vec<BooleanTool>,
         kind: PrismBoolean,
+        operation: &str,
     ) -> Result<BlendCandidate, String> {
         let input = self.source_topology(history, document)?;
         super::super::solid_boolean::build_boolean_candidate(
@@ -27,7 +28,7 @@ impl BlendNamedTopology {
             document,
             tools,
             kind,
-            &format!("extrude {kind}"),
+            operation,
         )
     }
 }

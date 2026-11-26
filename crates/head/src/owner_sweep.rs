@@ -3,7 +3,8 @@
 use super::*;
 use oblikovati_api::{Error, client::Client, wire::featureargs::Sweep};
 use oblikovati_automation::{
-    PartUpdateAccess, automatic_sweep, prepare_sweep, prepare_sweep_taper, prepare_sweep_twist,
+    PartUpdateAccess, automatic_sweep, prepare_sweep_for_target, prepare_sweep_taper,
+    prepare_sweep_twist, sweep_join_target,
 };
 use oblikovati_gui::{
     GuiSweepAction, GuiSweepEditSeed, GuiSweepOrientation, GuiSweepPreview, GuiSweepPreviewState,
@@ -56,6 +57,7 @@ pub(in crate::owner) fn edit_seeds(
                     taper,
                     twist,
                     orientation,
+                    join: definition.join_target().is_some(),
                 },
             ))
         })
@@ -259,6 +261,15 @@ impl<
         let Some(mut input) = automatic_sweep(snapshot, &datums, policy) else {
             return Ok(None);
         };
+        let target = if request.join {
+            input.operation = "join".into();
+            Some(
+                sweep_join_target(&self.files, &self.part_scenes, document, None)
+                    .map_err(|cause| cause.to_string())?,
+            )
+        } else {
+            None
+        };
         if request.orientation == GuiSweepOrientation::Fixed {
             input.orientation = "parallelToOriginalProfile".into();
         } else {
@@ -275,8 +286,8 @@ impl<
                 input.twist.clone_from(&request.twist);
             }
         }
-        let prepared =
-            prepare_sweep(snapshot, &datums, policy, &input).map_err(|cause| cause.to_string())?;
+        let prepared = prepare_sweep_for_target(snapshot, &datums, policy, &input, target)
+            .map_err(|cause| cause.to_string())?;
         self.preview_selected_blend(document, |candidate, ids| prepared.create(candidate, ids))?;
         Ok(Some(SweepCommit::Create(Box::new(input))))
     }
@@ -298,6 +309,20 @@ impl<
                 .with_profile(profile.clone())
                 .map_err(|cause| cause.to_string())?,
             _ => definition,
+        };
+        let definition = if request.join {
+            if definition.join_target().is_some() {
+                definition
+            } else {
+                let key =
+                    sweep_join_target(&self.files, &self.part_scenes, request.document, Some(id))
+                        .map_err(|cause| cause.to_string())?;
+                definition
+                    .with_join_target(key)
+                    .map_err(|cause| cause.to_string())?
+            }
+        } else {
+            definition.without_join_target()
         };
         let edited = if request.orientation == GuiSweepOrientation::Fixed {
             definition.with_fixed_orientation()

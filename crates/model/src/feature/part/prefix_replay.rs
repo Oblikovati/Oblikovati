@@ -126,6 +126,16 @@ where
             .evaluate_sweep(feature, input)
             .map(PrefixBody::Created)
     }
+    fn evaluate_sweep_join(
+        &mut self,
+        feature: FeatureId,
+        body: &Self::Body,
+        input: crate::feature::sketch_sweep::ResolvedSketchSweep<'_>,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        self.0
+            .evaluate_sweep_join(feature, body.get(), input)
+            .map(PrefixBody::Created)
+    }
     fn evaluate_prism(
         &mut self,
         feature: FeatureId,

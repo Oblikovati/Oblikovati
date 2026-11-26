@@ -82,6 +82,47 @@ impl PartFeatureEvaluator for CertifiedNamedSolidEvaluator<'_> {
         })?;
         Ok(NamedSolid::Derived(Box::new(topology)))
     }
+    fn evaluate_sweep_join(
+        &mut self,
+        feature: FeatureId,
+        body: &NamedSolid,
+        input: oblikovati_model::feature::sketch_sweep::ResolvedSketchSweep<'_>,
+    ) -> Result<NamedSolid, PartFeatureFailure<EvaluationFailure>> {
+        use oblikovati_model::feature::sketch_prism::PrismBoolean;
+        let NamedSolid::Derived(tool) = self.evaluate_sweep(feature, input)? else {
+            return Err(PartFeatureFailure::Unsupported(
+                "sweep Join: expected a named Sweep tool".into(),
+            ));
+        };
+        let failure = |message| {
+            PartFeatureFailure::Kernel(
+                crate::EvaluationPhase::Sweep
+                    .refused(
+                        crate::EvaluationFailureKind::InvalidResult,
+                        crate::EvaluationEntity::Body,
+                        message,
+                    )
+                    .for_feature(feature),
+            )
+        };
+        let tool = tool
+            .sweep_boolean_tool(self.history, self.document)
+            .map_err(failure)?;
+        let joined = body
+            .boolean_tools(
+                self.history,
+                self.document,
+                vec![tool],
+                PrismBoolean::Join,
+                "sweep Join",
+            )
+            .and_then(|candidate| candidate.name_topology(self.history, self.document, feature))
+            .map_err(failure)?;
+        let result = NamedSolid::Derived(Box::new(joined));
+        self.verify_result_lineage(body, &result)
+            .map_err(PartFeatureFailure::BodyReference)?;
+        Ok(result)
+    }
     fn evaluate_prism(
         &mut self,
         feature: FeatureId,

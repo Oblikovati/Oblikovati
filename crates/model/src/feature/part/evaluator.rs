@@ -110,6 +110,17 @@ pub trait PartFeatureEvaluator {
             "sweep: expected an available named sweep evaluator".into(),
         ))
     }
+    /// Join the solved Sweep to a live target. Example: `backend.evaluate_sweep_join(feature, body, input)?`.
+    fn evaluate_sweep_join(
+        &mut self,
+        _feature: FeatureId,
+        _body: &Self::Body,
+        _input: crate::feature::sketch_sweep::ResolvedSketchSweep<'_>,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        Err(PartFeatureFailure::Unsupported(
+            "sweep Join: expected an available named Boolean evaluator".into(),
+        ))
+    }
     /// Construct an isolated result from checked inputs; example: `backend.evaluate_prism(feature.id(), input)?`.
     fn evaluate_prism(
         &mut self,

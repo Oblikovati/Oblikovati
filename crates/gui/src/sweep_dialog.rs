@@ -6,6 +6,8 @@ use crate::{
 use imgui::Ui;
 #[path = "sweep_orientation.rs"]
 mod orientation;
+#[path = "sweep_output.rs"]
+mod output;
 #[path = "sweep_presets.rs"]
 mod presets;
 use crate::icons::GuiRibbonIcons;
@@ -38,6 +40,8 @@ pub struct GuiSweepEditSeed {
     pub taper: String,
     pub twist: String,
     pub orientation: GuiSweepOrientation,
+    #[serde(skip)]
+    pub join: bool,
 }
 
 /// Document and generation whose Sweep inputs may be previewed or accepted.
@@ -48,6 +52,7 @@ pub struct GuiSweepRequest {
     pub feature: Option<FeatureId>,
     pub profile: GuiSweepProfile,
     pub path_cleared: bool,
+    pub join: bool,
     pub orientation: GuiSweepOrientation,
     pub taper: String,
     pub twist: String,
@@ -125,6 +130,7 @@ pub(crate) struct SweepDialog {
     feature: Option<FeatureId>,
     profile: GuiSweepProfile,
     path_cleared: bool,
+    join: bool,
     orientation: GuiSweepOrientation,
     selector: orientation::OrientationSelector,
     presets: presets::SweepPresets,
@@ -176,6 +182,7 @@ impl SweepDialog {
         self.feature = feature;
         self.profile = GuiSweepProfile::Saved;
         self.path_cleared = false;
+        self.join = seed.join;
         self.taper = seed.taper;
         self.twist = seed.twist;
         self.initial_twist.clone_from(&self.twist);
@@ -231,7 +238,7 @@ impl SweepDialog {
         let (Some(document), Some(generation)) = (self.document, state.document_generation) else {
             return;
         };
-        let height = if self.show_help { 423. } else { 349. };
+        let height = if self.show_help { 471. } else { 397. };
         crate::widget_abi::fit_viewport_properties(ui, "Sweep", area, [300., height]);
         let _border = crate::theme::property_window_border(ui);
         let mut open = true;
@@ -291,6 +298,9 @@ impl SweepDialog {
             let _width = ui.push_item_width(-1.);
             ui.input_text("##sweep-taper", &mut self.taper).build();
             self.twist_field(ui);
+        }
+        if !tip {
+            self.draw_operation(ui, state);
         }
         let mut request = self.request(document, generation);
         if !tip {
@@ -407,6 +417,7 @@ impl SweepDialog {
             feature: self.feature,
             profile: self.profile.clone(),
             path_cleared: self.path_cleared,
+            join: self.join,
             orientation: self.orientation,
             taper: if follows_path {
                 self.taper.clone()
@@ -435,6 +446,7 @@ impl SweepDialog {
                 taper: preset_angle(state, &request.taper),
                 twist: preset_angle(state, &request.twist),
                 orientation: request.orientation,
+                join: false,
             })
     }
 

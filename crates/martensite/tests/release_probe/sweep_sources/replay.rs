@@ -101,6 +101,106 @@ fn owner(snapshot: DocumentSnapshot) -> DocumentEditHistory {
     DocumentEditHistory::new(snapshot, RecipeIdAllocator::default()).unwrap()
 }
 
+#[test]
+fn sweep_join_replaces_the_named_base_and_retains_its_reference() {
+    let (snapshot, sweep) = fixture();
+    let mut history = owner(with_join_base(snapshot));
+    let document: DocumentGuid = "11111111-2222-3333-4444-555555555555".parse().unwrap();
+    let base = FeatureId(2);
+    let key = named(&history, document, base)
+        .body_reference_key(&history, document)
+        .unwrap()
+        .to_vec();
+    let token = history.begin("Sweep1").unwrap();
+    let feature = history
+        .edit(&token, |snapshot, ids| {
+            snapshot.create_sketch_sweep("Sweep1", sweep.clone(), ids)
+        })
+        .unwrap();
+    history.commit(&token, false).unwrap();
+    let mut backend = CertifiedNamedSolidEvaluator::with_policy(&history, document, resolution());
+    assert_eq!(
+        backend
+            .evaluate_private_candidate(history.snapshot())
+            .unwrap()
+            .ordered_bodies()
+            .count(),
+        2
+    );
+
+    let joined = sweep.with_join_target(key.clone()).unwrap();
+    let token = history.begin("Join Sweep1").unwrap();
+    history
+        .edit(&token, |snapshot, _| {
+            let reads = joined.reads(snapshot).unwrap();
+            assert!(reads.keys().contains(&FeatureReadKey::Feature(base)));
+            snapshot.work_geometry.replace(
+                feature,
+                PartFeatureDefinition::SketchSweep(Box::new(joined)),
+                reads,
+            )
+        })
+        .unwrap();
+    history.commit(&token, false).unwrap();
+    let mut recipe = history.snapshot().work_geometry.part_recipe().unwrap();
+    assert_eq!(recipe.version, 32);
+    let restored = oblikovati_model::feature::FeatureSequence::from_part_recipe(&recipe).unwrap();
+    assert!(matches!(restored.get(feature).unwrap().definition(),
+        PartFeatureDefinition::SketchSweep(sweep) if sweep.join_target() == Some((key.as_slice(), base))));
+    recipe.version = 31;
+    assert!(oblikovati_model::feature::FeatureSequence::from_part_recipe(&recipe).is_err());
+
+    let solid = named(&history, document, feature);
+    assert_eq!(
+        solid.body_reference_key(&history, document).unwrap(),
+        key.as_slice()
+    );
+    assert!((solid.volume(&history, document).unwrap() - (8. + 0.75 * PI)).abs() < 1e-8);
+}
+
+fn with_join_base(mut snapshot: DocumentSnapshot) -> DocumentSnapshot {
+    use oblikovati_model::feature::{
+        sketch_prism::SketchPrismDefinition, work_geometry::DatumLength,
+    };
+    let sketch = DocumentSketchId(3);
+    let mut outline = Sketch2D::default();
+    let points = [20, 21, 22, 23].map(SketchEntityId);
+    for (id, point) in points
+        .into_iter()
+        .zip([[-1., -1.], [1., -1.], [1., 1.], [-1., 1.]])
+    {
+        outline.add_point(id, point).unwrap();
+    }
+    for (i, id) in [24, 25, 26, 27].map(SketchEntityId).into_iter().enumerate() {
+        outline
+            .add_line(id, [points[i], points[(i + 1) % 4]])
+            .unwrap();
+    }
+    snapshot
+        .sketches
+        .add(sketch, "Block", SketchPlane::xy(), outline)
+        .unwrap();
+    solve(&mut snapshot);
+    let region = certified_sketch_regions_with_policy(&snapshot, sketch, resolution()).unwrap();
+    let base = SketchPrismDefinition::new(
+        sketch,
+        region[0].selection(),
+        [0., 0., -2.].map(DatumLength::Constant),
+    )
+    .unwrap();
+    let reads = base.reads(&snapshot).unwrap();
+    snapshot
+        .work_geometry
+        .append(AuthoredFeature::new(
+            FeatureId(2),
+            "Extrusion1",
+            PartFeatureDefinition::SketchPrism(Box::new(base)),
+            reads,
+        ))
+        .unwrap();
+    snapshot
+}
+
 fn named(history: &DocumentEditHistory, document: DocumentGuid, feature: FeatureId) -> NamedSolid {
     let mut backend = CertifiedNamedSolidEvaluator::with_policy(history, document, resolution());
     let result = backend

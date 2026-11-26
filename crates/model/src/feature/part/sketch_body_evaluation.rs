@@ -2,7 +2,9 @@
 //! Resolve sketches and construct solid features in program order.
 use super::{
     PartFeatureDefinition, PartFeatureEvaluation, PartFeatureEvaluator, PartFeatureFailure,
-    PartFeatureProgramError, body_resolution::resolve_body_face, evaluate::require_replay_current,
+    PartFeatureProgramError,
+    body_resolution::{resolve_body_face, resolve_body_slot},
+    evaluate::require_replay_current,
 };
 use crate::{
     feature::{
@@ -91,6 +93,12 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
         let input = definition
             .resolve_for_replay(snapshot, &self.datums)
             .map_err(|cause| PartFeatureFailure::SweepInput(Box::new(cause)))?;
+        if let Some((key, source)) = definition.join_target() {
+            let slot = resolve_body_slot(&self.bodies, &self.body_lineage, backend, source, key)
+                .map_err(PartFeatureFailure::BodyReference)?;
+            let joined = backend.evaluate_sweep_join(feature, &self.bodies[&slot], input)?;
+            return self.accept_body_replacement(backend, feature, slot, key, joined);
+        }
         let body = backend.evaluate_sweep(feature, input)?;
         self.body_lineage
             .register(feature)

@@ -7,6 +7,19 @@ use crate::sweep::{SweepCandidate, SweepFaceRole};
 use oblikovati_model::identity::SemanticReferenceName;
 
 impl BlendNamedTopology {
+    pub(in crate::prism::named) fn sweep_boolean_tool(
+        &self,
+        history: &DocumentEditHistory,
+        document: DocumentGuid,
+    ) -> Result<super::super::extrusion_boolean::BooleanTool, String> {
+        let source = self.source_topology(history, document)?;
+        Ok(super::super::extrusion_boolean::BooleanTool {
+            shape: source.body,
+            sources: source.entities,
+            resolution: self.resolution,
+        })
+    }
+
     pub(in crate::prism::named) fn from_sweep(
         history: &DocumentEditHistory,
         document: DocumentGuid,

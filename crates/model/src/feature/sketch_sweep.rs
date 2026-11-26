@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Authored sources for a Sweep, with current geometry resolved during replay.
 use super::{
-    FeatureReadFootprint, FeatureReadKey,
+    FeatureId, FeatureReadFootprint, FeatureReadKey,
+    fillet::reference_identity,
     sketch_prism::{SketchDirectedCurve, SketchPrismSelection, validation::validate_selection},
     work_geometry::{DatumAngle, DatumLength, WorkGeometryEvaluation},
 };
@@ -16,6 +17,7 @@ const VERSION: u32 = 1;
 const TAPER_VERSION: u32 = 2;
 const FIXED_VERSION: u32 = 3;
 const TWIST_VERSION: u32 = 4;
+const JOIN_VERSION: u32 = 5;
 
 /// How the source profile is transported along a Sweep path.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
@@ -45,11 +47,13 @@ pub struct SketchSweepRecipe {
     pub twist: Option<DatumAngle>,
     #[serde(default, skip_serializing_if = "SketchSweepOrientation::follows_path")]
     pub orientation: SketchSweepOrientation,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub join_target: Option<Vec<u8>>,
 }
 
 /// A validated Sweep recipe without evaluated or cached geometry.
 #[derive(Clone, Debug, PartialEq)]
-pub struct SketchSweepDefinition(SketchSweepRecipe);
+pub struct SketchSweepDefinition(SketchSweepRecipe, Option<FeatureId>);
 
 /// The current, converged geometry of both source sketches.
 #[derive(Debug)]
@@ -116,13 +120,14 @@ impl SketchSweepDefinition {
             taper: None,
             twist: None,
             orientation: SketchSweepOrientation::FollowPath,
+            join_target: None,
         })
     }
 
     /// Follow the path with the provided taper driver. Example: `untapered.with_taper(angle)?`.
     pub fn with_taper(self, angle: DatumAngle) -> Result<Self, SketchSweepError> {
         Self::from_recipe(SketchSweepRecipe {
-            version: follow_path_version(Some(angle), self.0.twist),
+            version: self.version_with_angles(follow_path_version(Some(angle), self.0.twist)),
             taper: Some(angle),
             orientation: SketchSweepOrientation::FollowPath,
             ..self.0
@@ -136,7 +141,7 @@ impl SketchSweepDefinition {
         }
         let twist = (!matches!(angle.source(), DatumLength::Constant(value) if value == 0.))
             .then_some(angle);
-        let version = follow_path_version(self.0.taper, twist);
+        let version = self.version_with_angles(follow_path_version(self.0.taper, twist));
         Self::from_recipe(SketchSweepRecipe {
             version,
             twist,
@@ -147,13 +152,54 @@ impl SketchSweepDefinition {
     /// Keep the source profile orientation while translating it along the path.
     /// Example: `definition.with_fixed_orientation()`.
     pub fn with_fixed_orientation(self) -> Self {
-        Self(SketchSweepRecipe {
-            version: FIXED_VERSION,
-            taper: None,
-            twist: None,
-            orientation: SketchSweepOrientation::Fixed,
+        Self(
+            SketchSweepRecipe {
+                version: self.version_with_angles(FIXED_VERSION),
+                taper: None,
+                twist: None,
+                orientation: SketchSweepOrientation::Fixed,
+                ..self.0
+            },
+            self.1,
+        )
+    }
+
+    /// Join this Sweep to a named body. Example: `sweep.with_join_target(body_key)?`.
+    pub fn with_join_target(self, key: Vec<u8>) -> Result<Self, SketchSweepError> {
+        Self::from_recipe(SketchSweepRecipe {
+            version: JOIN_VERSION,
+            join_target: Some(key),
             ..self.0
         })
+    }
+
+    /// Read the named Join target and its producing feature. Example: `sweep.join_target()`.
+    pub fn join_target(&self) -> Option<(&[u8], FeatureId)> {
+        self.0.join_target.as_deref().zip(self.1)
+    }
+
+    /// Clear the named Join target. Example: `sweep.without_join_target()`.
+    pub fn without_join_target(self) -> Self {
+        let version = match self.0.orientation {
+            SketchSweepOrientation::Fixed => FIXED_VERSION,
+            SketchSweepOrientation::FollowPath => follow_path_version(self.0.taper, self.0.twist),
+        };
+        Self(
+            SketchSweepRecipe {
+                version,
+                join_target: None,
+                ..self.0
+            },
+            None,
+        )
+    }
+
+    fn version_with_angles(&self, no_join: u32) -> u32 {
+        if self.1.is_some() {
+            JOIN_VERSION
+        } else {
+            no_join
+        }
     }
 
     /// Compare exact persisted sources. Example: `old.same_recipe(&candidate)` during replay planning.
@@ -184,7 +230,16 @@ impl SketchSweepDefinition {
         if let Some(twist) = recipe.twist {
             twist.validate_source().map_err(twist_error)?;
         }
-        Ok(Self(recipe))
+        let source = recipe
+            .join_target
+            .as_deref()
+            .map(|key| {
+                reference_identity(key, 4, "sweep Join target")
+                    .map(|(_, source)| source)
+                    .map_err(SketchSweepError::Definition)
+            })
+            .transpose()?;
+        Ok(Self(recipe, source))
     }
 
     /// Borrow the versioned source recipe. Example: `serde_json::to_string(sweep.recipe())?`.
@@ -208,7 +263,8 @@ impl SketchSweepDefinition {
                         .flatten()
                         .filter_map(DatumAngle::parameter_id)
                         .map(FeatureReadKey::Parameter),
-                ),
+                )
+                .chain(self.1.map(FeatureReadKey::Feature)),
             false,
         )
     }
@@ -289,7 +345,7 @@ impl SketchSweepDefinition {
 }
 
 fn recipe_version(recipe: &SketchSweepRecipe) -> Result<u32, SketchSweepError> {
-    match (recipe.orientation, recipe.taper, recipe.twist) {
+    let base = match (recipe.orientation, recipe.taper, recipe.twist) {
         (SketchSweepOrientation::FollowPath, taper, twist) => Ok(follow_path_version(taper, twist)),
         (SketchSweepOrientation::Fixed, None, None) => Ok(FIXED_VERSION),
         (SketchSweepOrientation::Fixed, _, Some(_)) => {
@@ -298,7 +354,12 @@ fn recipe_version(recipe: &SketchSweepRecipe) -> Result<u32, SketchSweepError> {
         (SketchSweepOrientation::Fixed, Some(_), None) => {
             Err(taper_error("Fixed orientation does not take a taper"))
         }
-    }
+    }?;
+    Ok(if recipe.join_target.is_some() {
+        JOIN_VERSION
+    } else {
+        base
+    })
 }
 
 fn follow_path_version(taper: Option<DatumAngle>, twist: Option<DatumAngle>) -> u32 {
