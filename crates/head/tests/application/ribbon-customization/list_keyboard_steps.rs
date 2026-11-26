@@ -6,6 +6,49 @@ use super::*;
 use oblikovati_viewport::{ViewportCapture, ViewportPhysicalKey};
 
 #[test]
+fn secondary_click_focuses_source_commands_for_keyboard_selection() {
+    let mut world = ApplicationWorld::new();
+    world.add_part();
+    empty_tools_customization(&mut world);
+    capture_plain_source_rows(&mut world);
+    let item = source_rows(&world)
+        .into_iter()
+        .find(|row| row.text == "2DSketches")
+        .expect("expected 2D Sketches in the source list");
+    world.right_click(diagnostics::pointer_pixels(item.center()));
+    expect_source_selection(&mut world, Some("2DSketches"), &["2DSketches"]);
+    world.key(ViewportPhysicalKey::A, true);
+    expect_source_selection(
+        &mut world,
+        None,
+        &["<Separator>", "2DSketches", "3DAnnotations"],
+    );
+    assert!(target_rows(&world).is_empty());
+    click_in_customize(&mut world, "Close");
+    world.close();
+}
+
+#[test]
+fn secondary_click_focuses_staged_commands_for_keyboard_selection() {
+    let mut world = ApplicationWorld::new();
+    world.add_part();
+    empty_tools_customization(&mut world);
+    stage_two_commands(&mut world);
+    click_in_customize(&mut world, "<Separator>");
+    let item = target_row_runs(&world)
+        .into_iter()
+        .find(|row| row.text == "2DSketches")
+        .expect("expected staged 2D Sketches");
+    world.right_click(diagnostics::pointer_pixels(item.center()));
+    expect_target_selection(&mut world, "2DSketches");
+    world.key(ViewportPhysicalKey::A, true);
+    expect_target_selections(&mut world, &["2DSketches", "3DAnnotations"]);
+    assert_eq!(target_rows(&world), ["2DSketches", "3DAnnotations"]);
+    click_in_customize(&mut world, "Cancel");
+    world.close();
+}
+
+#[test]
 fn source_page_keys_select_the_edges_of_the_visible_command_page() {
     let mut world = ApplicationWorld::new();
     let path = super::super::scenario_root().join("fixtures/cad/workspace-layout-native.opd");

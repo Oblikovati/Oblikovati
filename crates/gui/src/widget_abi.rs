@@ -243,6 +243,11 @@ pub(crate) fn popup_choice<Row: AsRef<str>>(
     let _list = ui.begin_popup(popup)?;
     rows.iter().position(|row| ui.menu_item(row.as_ref()))
 }
+/// Focus the current window, for example after selecting a row with a secondary click.
+pub(crate) fn focus_current_window(_: &Ui) {
+    // The borrowed UI keeps the current window and its context live during the call.
+    unsafe { imgui::sys::igSetWindowFocus_Nil() };
+}
 /// Leave no window focused; example: after the panel that held the keyboard has closed.
 pub(crate) fn release_keyboard_focus(_: &Ui) {
     // A null name is the documented form for removing focus; no string crosses the ABI.

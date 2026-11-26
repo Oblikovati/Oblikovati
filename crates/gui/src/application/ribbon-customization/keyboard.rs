@@ -1,7 +1,15 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Keyboard navigation of the source and target ribbon command lists.
 use super::{Command, ListFocus, RibbonCustomization};
-use imgui::{Key, Ui};
+use imgui::{Key, MouseButton, Ui};
+
+pub(super) fn secondary_select(ui: &Ui) -> bool {
+    if !ui.is_mouse_clicked(MouseButton::Right) || !ui.is_item_hovered() {
+        return false;
+    }
+    crate::widget_abi::focus_current_window(ui);
+    true
+}
 
 #[derive(Clone, Copy)]
 enum Navigation {

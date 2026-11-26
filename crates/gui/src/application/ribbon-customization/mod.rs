@@ -234,7 +234,6 @@ impl RibbonCustomization {
             .size(size)
             .border(true)
             .build(|| {
-                self.source_focused = ui.is_window_focused();
                 self.visible_source.clear();
                 let mut transfer = None;
                 for command in self.draft.available_commands() {
@@ -245,9 +244,7 @@ impl RibbonCustomization {
                                 || self.draft.source_extra.contains(&command),
                         )
                         .build();
-                    let secondary_clicked =
-                        ui.is_item_hovered() && ui.is_mouse_clicked(imgui::MouseButton::Right);
-                    if clicked || secondary_clicked {
+                    if clicked || keyboard::secondary_select(ui) {
                         self.draft.reset_source_selection(command);
                         self.list_focus = Some(ListFocus::Source);
                     }
@@ -269,6 +266,7 @@ impl RibbonCustomization {
                     }
                     locations::show(ui, command);
                 }
+                self.source_focused = ui.is_window_focused();
                 if let Some(command) = transfer {
                     self.draft.reset_source_selection(command);
                     self.transfer_source();
@@ -320,7 +318,6 @@ impl RibbonCustomization {
             .size(size)
             .border(true)
             .build(|| {
-                self.target_focused = ui.is_window_focused();
                 self.visible_target_rows = 0;
                 let mut selected = self.draft.selected;
                 let mut remove = false;
@@ -343,9 +340,7 @@ impl RibbonCustomization {
                         ui.set_scroll_here_y();
                         self.scroll_target_to_selection = false;
                     }
-                    let secondary_clicked =
-                        ui.is_item_hovered() && ui.is_mouse_clicked(imgui::MouseButton::Right);
-                    if clicked || secondary_clicked {
+                    if clicked || keyboard::secondary_select(ui) {
                         selected = Some(index);
                         clear_extra = true;
                         self.list_focus = Some(ListFocus::Target);
@@ -368,6 +363,7 @@ impl RibbonCustomization {
                             ui.is_mouse_released(imgui::MouseButton::Left);
                     }
                 }
+                self.target_focused = ui.is_window_focused();
                 self.draft.selected = selected;
                 if clear_extra && let Some(index) = selected {
                     self.draft.reset_target_selection(index);

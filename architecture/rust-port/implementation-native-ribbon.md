@@ -26,6 +26,9 @@ disabled. [Native missing-file scenario](receipts/2026-11-26-ribbon-missing-impo
 The [native selection scenarios](receipts/2026-11-24-ribbon-customization-selection-3856/README.md)
 cover source selection across target and category changes, separator-only
 drafts, and per-target display options.
+Secondary-click selection transfers keyboard focus to the clicked
+command list. Ctrl+A then selects rows in that list.
+[Native focus checks](receipts/2026-11-26-ribbon-secondary-focus-3856/README.md)
 Escape from the open category list discards the staged edit. The pinned
 and published scenarios continue into an unrelated Measure sequence.
 [Source defect and native results](scenario-defects/ribbon-category-escape-measure.md)
