@@ -9,7 +9,7 @@ use crate::application::file_system::{GuiFolders, NativeFolders};
 use crate::{GuiCommandState, GuiShellAction};
 use imgui::Ui;
 use oblikovati_api::wire::OpenDocumentArgs;
-use std::rc::Rc;
+use std::{path::Path, rc::Rc};
 
 #[path = "file_choices.rs"]
 mod file_choices;
@@ -462,7 +462,7 @@ fn in_opening_order(
         state
             .document_storage
             .values()
-            .any(|storage| storage.path.as_deref() == Some(path.as_str()))
+            .any(|storage| storage.path.as_deref().map(Path::new) == Some(Path::new(path)))
     };
     paths.sort_by_key(|path| !is_open(path));
     paths

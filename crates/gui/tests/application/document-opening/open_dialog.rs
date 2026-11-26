@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 use crate::application::file_system::{FileFacts, FolderEntry};
+const WORK: &str = if cfg!(windows) { r"C:\work" } else { "/work" };
 struct FakeFolders;
 impl GuiFolders for FakeFolders {
     fn default_folder(&self) -> String {
-        "/work".into()
+        WORK.into()
     }
     fn entries(&self, _: &str) -> Result<Vec<FolderEntry>, String> {
         Ok(Vec::new())
@@ -60,14 +61,14 @@ fn what_is_open_opens_first_so_a_closed_file_ends_in_front() {
     state.document_storage.insert(
         1,
         crate::GuiDocumentStorage {
-            path: Some("/work/b.odd".into()),
+            path: Some(format!("{WORK}//b.odd")),
             ..Default::default()
         },
     );
     let names = vec!["a.odd".to_string(), "b.odd".to_string()];
     assert_eq!(
         in_opening_order(&browser, &names, &state),
-        ["/work/b.odd", "/work/a.odd"]
+        [full_path(WORK, "b.odd"), full_path(WORK, "a.odd")]
     );
 }
 #[test]
