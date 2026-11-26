@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Find and select a row through the file picker's visible list and wheel input.
-use super::super::diagnostics::{ChildScroll, child_scroll, pointer_pixels};
+use super::super::diagnostics::{ChildScroll, child_scroll, pointer_pixels, tooltip_draw_list};
 use super::super::world::squeezed;
 use super::{ApplicationWorld, settle};
 use oblikovati_viewport::{ViewportEvent, ViewportInput};
@@ -56,23 +56,69 @@ fn scan_rows(
     }
 }
 
-fn visible_file_row(world: &ApplicationWorld, name: &str, list: usize) -> Option<[f32; 2]> {
+fn visible_file_row(world: &mut ApplicationWorld, name: &str, list: usize) -> Option<[f32; 2]> {
+    let mut shortened = Vec::new();
+    for run in world.frame.runs.iter().filter(|run| run.list == list) {
+        let rendered = squeezed(&run.text);
+        let position = [run.minimum[0] + 1., run.center()[1]];
+        if rendered == name {
+            return Some(position);
+        }
+        if rendered
+            .strip_suffix("...")
+            .is_some_and(|prefix| !prefix.is_empty() && name.starts_with(prefix))
+        {
+            shortened.push(position);
+        }
+    }
+    shortened.into_iter().find(|&position| {
+        world.hover(pointer_pixels(position));
+        tooltip_shows(world, name)
+    })
+}
+
+fn tooltip_shows(world: &ApplicationWorld, name: &str) -> bool {
+    let list = tooltip_draw_list();
     world
         .frame
         .runs
         .iter()
-        .filter(|run| run.list == list)
-        .find_map(|run| {
-            let rendered = squeezed(&run.text);
-            let suffix = rendered.strip_prefix(name)?;
-            // The draw reader may join the filename and the modification date into one run.
-            (suffix.is_empty() || starts_with_date(suffix))
-                .then(|| [run.minimum[0] + 1., run.center()[1]])
-        })
+        .any(|run| list == Some(run.list) && squeezed(&run.text) == name)
 }
 
-fn starts_with_date(text: &str) -> bool {
-    text.as_bytes()
-        .get(..5)
-        .is_some_and(|prefix| prefix[4] == b'-' && prefix[..4].iter().all(u8::is_ascii_digit))
+#[test]
+fn details_keeps_long_names_clear_of_the_date_and_selects_the_exact_file() {
+    use super::{
+        choose_open, file_name_shown, look_in, models_folder, open_dialog, saved_document,
+    };
+    use oblikovati_gui::GuiTemplateKind;
+    const FIRST: &str = "production-assembly-revision-with-a-shared-identifier-front-panel.opd";
+    const SECOND: &str = "production-assembly-revision-with-a-shared-identifier-rear-panel.opd";
+    let mut world = ApplicationWorld::new();
+    let folder = models_folder(&mut world);
+    let first = saved_document(&mut world, GuiTemplateKind::Part, &folder, FIRST);
+    saved_document(&mut world, GuiTemplateKind::Part, &folder, SECOND);
+    open_dialog(&mut world);
+    look_in(&mut world, &folder);
+    let date_x = world.run("Date modified").minimum[0];
+    let shortened: Vec<_> = world
+        .frame
+        .runs
+        .iter()
+        .filter(|run| run.text.starts_with("production-assembly") && run.text.ends_with("..."))
+        .collect();
+    assert_eq!(
+        shortened.len(),
+        2,
+        "expected both filenames to be shortened"
+    );
+    assert!(shortened.iter().all(|run| run.maximum[0] < date_x));
+    select_row(&mut world, SECOND);
+    assert!(tooltip_shows(&world, SECOND));
+    assert_eq!(file_name_shown(&world), SECOND);
+    select_row(&mut world, FIRST);
+    assert_eq!(file_name_shown(&world), FIRST);
+    choose_open(&mut world);
+    world.expect_active(first);
+    world.close();
 }

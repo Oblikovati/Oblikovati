@@ -3,6 +3,7 @@
 use super::{FileListView, row_label};
 use crate::application::document_saving::save_as::draw_preview_cells;
 use crate::application::file_system::FolderEntry;
+use crate::application::home_recent_documents::recent_rows::fit_recent_cell;
 use imgui::Ui;
 use std::path::Path;
 
@@ -25,8 +26,7 @@ pub(in super::super) fn details_heading(ui: &Ui) -> bool {
     ui.is_item_clicked()
 }
 pub(in super::super) fn details_row(ui: &Ui, row: &FolderEntry, highlighted: bool) -> RowHit {
-    let chosen = crate::widget_abi::dialog_selectable(ui, &row_label(row), highlighted);
-    let hit = RowHit::current(ui, chosen);
+    let hit = detail_name(ui, row, highlighted);
     ui.same_line_with_pos(DATE_COLUMN);
     ui.text_disabled(modified_text(row));
     ui.same_line_with_pos(TYPE_COLUMN);
@@ -34,6 +34,27 @@ pub(in super::super) fn details_row(ui: &Ui, row: &FolderEntry, highlighted: boo
     if !row.is_folder {
         ui.same_line_with_pos(SIZE_COLUMN);
         ui.text_disabled(format!("{} B", row.size));
+    }
+    hit
+}
+fn detail_name(ui: &Ui, row: &FolderEntry, highlighted: bool) -> RowHit {
+    let _id = ui.push_id(&row.name);
+    let position = ui.cursor_screen_pos();
+    let chosen = crate::widget_abi::dialog_selectable(ui, "##file", highlighted);
+    let hit = RowHit::current(ui, chosen);
+    if ui.is_item_visible() {
+        let name = row_label(row);
+        let date_x = ui.window_pos()[0] + DATE_COLUMN;
+        let width = date_x - position[0] - ui.clone_style().item_spacing[0];
+        let shown = fit_recent_cell(&name, width, |text| ui.calc_text_size(text)[0]);
+        ui.get_window_draw_list().add_text(
+            position,
+            ui.style_color(imgui::StyleColor::Text),
+            &shown,
+        );
+        if hit.hovered && name != shown && ui.io().mouse_pos[0] < date_x {
+            ui.tooltip_text(&name);
+        }
     }
     hit
 }

@@ -13,7 +13,8 @@ checks the index count and the position of the final rectangle.
 
 Once the crash was fixed, the same scenario showed that the Details column
 headings could scroll out of view. The headings now stay above the scrolling
-rows. Long filenames can still overlap the modification-date column.
+rows. A [follow-up fix](../2026-11-26-file-picker-name-column-3889/README.md)
+kept long filenames from overlapping the modification-date column.
 
 Both thumbnail scenarios and the size-sort scenario passed all 29 steps on
 each backend. The Save As view-switch scenario passed all 14 steps on Wayland
