@@ -160,6 +160,7 @@ impl DatumCollection {
         let kind = match definition {
             WorkGeometryDefinition::SketchPrism(_)
             | WorkGeometryDefinition::SketchSweep(_)
+            | WorkGeometryDefinition::SketchLoft(_)
             | WorkGeometryDefinition::DeleteBody(_)
             | WorkGeometryDefinition::Fillet(_)
             | WorkGeometryDefinition::Chamfer(_)

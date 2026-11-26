@@ -135,6 +135,7 @@ impl WorkGeometryEvaluation {
             feature.definition(),
             WorkPlaneDefinition::SketchPrism(_)
                 | WorkPlaneDefinition::SketchSweep(_)
+                | WorkPlaneDefinition::SketchLoft(_)
                 | WorkPlaneDefinition::DeleteBody(_)
                 | WorkPlaneDefinition::Fillet(_)
                 | WorkPlaneDefinition::Chamfer(_)

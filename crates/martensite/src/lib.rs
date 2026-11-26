@@ -117,6 +117,7 @@ pub use prism::{
     retain_certified_profile_prism, retain_named_sketch_prism, retain_planar_prism,
     retain_prism_on_plane, validate_full_named_snapshot,
 };
+mod loft;
 mod revolve;
 pub mod sweep;
 pub use revolve::{

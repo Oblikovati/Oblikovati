@@ -26,6 +26,7 @@ mod feature_suppression;
 mod file_host;
 mod fillet;
 mod hole;
+mod loft;
 mod shell;
 mod sweep;
 pub use extrusion::{
@@ -37,6 +38,7 @@ pub use fillet::{
     PreparedFillet, prepare_fillet,
 };
 pub use hole::{PreparedHole, prepare_hole};
+pub use loft::{PreparedLoft, prepare_loft};
 pub use shell::{PreparedShell, prepare_shell};
 pub use sweep::{
     PreparedSweep, automatic_sweep, prepare_surface_sweep, prepare_sweep, prepare_sweep_for_target,

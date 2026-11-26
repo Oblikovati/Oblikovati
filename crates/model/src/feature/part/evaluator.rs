@@ -103,6 +103,16 @@ pub trait PartFeatureEvaluator {
             "rectangular pattern: expected a named tool replay backend".into(),
         ))
     }
+    /// Construct a named solid from solved Loft sections. Example: `backend.evaluate_loft(feature, sections)?`.
+    fn evaluate_loft(
+        &mut self,
+        _feature: FeatureId,
+        _input: [crate::feature::sketch_loft::ResolvedLoftCircle; 2],
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        Err(PartFeatureFailure::Unsupported(
+            "loft: expected an available section evaluator".into(),
+        ))
+    }
     /// Construct a named solid from a solved profile and path. Example: `backend.evaluate_sweep(feature, input)?`.
     fn evaluate_sweep(
         &mut self,

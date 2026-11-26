@@ -44,6 +44,10 @@ fn loft_is_open_on_the_parallel_circles(world: &mut ApplicationWorld) {
             .iter()
             .any(|sketch| sketch.name == "Sketch1" && sketch.visible)
     );
+    open_loft_with_fitted_view(world);
+}
+
+fn open_loft_with_fitted_view(world: &mut ApplicationWorld) {
     open_loft(world);
     crate::HeadWindow::navigate_view(
         &mut world.app().window.native,
@@ -54,7 +58,11 @@ fn loft_is_open_on_the_parallel_circles(world: &mut ApplicationWorld) {
 
 #[when("the center point and then the circle edge are clicked")]
 fn pick_center_then_circumference(world: &mut ApplicationWorld) {
-    for point in [[0., 0., 0.], [1., 0., 0.]] {
+    pick_model_points(world, [[0., 0., 0.], [1., 0., 0.]]);
+}
+
+fn pick_model_points(world: &mut ApplicationWorld, points: [[f64; 3]; 2]) {
+    for point in points {
         let pixel = crate::HeadWindow::model_pixel(&world.app().window.native, point).unwrap();
         world.click(pixel);
         world.pump(Vec::new());
@@ -80,4 +88,99 @@ fn loft_lists_both_sketch_entities(world: &mut ApplicationWorld) {
     );
     let text = world::squeezed(&world.window_text("Loft"));
     assert!(text.contains("SectionsPointSketch1Sketch1"), "{text}");
+}
+
+#[given("both circular sketches on separate parallel planes are visible")]
+fn independent_circles_are_visible(world: &mut ApplicationWorld) {
+    let browser = world.state().browser.unwrap();
+    let names: Vec<_> = browser
+        .sketches
+        .iter()
+        .filter(|sketch| sketch.visible)
+        .map(|sketch| sketch.name.as_str())
+        .collect();
+    assert_eq!(names, ["Sketch1", "Sketch2"]);
+    assert!(browser.bodies.is_empty());
+}
+
+#[when("their circular edges are selected in a fresh Loft dialog")]
+fn pick_both_circles(world: &mut ApplicationWorld) {
+    open_loft_with_fitted_view(world);
+    pick_model_points(world, [[1., 0., 0.], [0.5, 0., 3.]]);
+}
+
+#[then("the Sections list contains both sketches and a tapered solid preview appears")]
+fn tapped_circles_display_a_frustum(world: &mut ApplicationWorld) {
+    let state = world.state();
+    let sections = &state.loft_sections;
+    assert_eq!(
+        sections
+            .iter()
+            .map(|section| section.name.as_str())
+            .collect::<Vec<_>>(),
+        ["Sketch1", "Sketch2"]
+    );
+    assert!(
+        sections
+            .iter()
+            .all(|section| matches!(section.element, GuiLoftElement::Profile(_)))
+    );
+    assert_eq!(state.loft_preview, Some(Ok(())));
+    assert!(world.run_is_enabled("OK"));
+    let text = world::squeezed(&world.window_text("Loft"));
+    assert!(text.contains("SectionsSketch1Sketch2"), "{text}");
+    let triangles = &world.app().window.scene_triangles;
+    for (height, expected_radius) in [(0., 1.), (3., 0.5)] {
+        let radius = triangles
+            .iter()
+            .filter(|triangle| triangle.color == crate::part_scene::NEW_SOLID_PREVIEW)
+            .flat_map(|triangle| triangle.positions)
+            .filter(|point| (point[2] - height).abs() < 0.001)
+            .map(|point| point[0].hypot(point[1]))
+            .fold(0.0_f32, f32::max);
+        assert!(
+            (radius - expected_radius).abs() < 0.005,
+            "preview radius at {height}: {radius}"
+        );
+    }
+    assert!(state.browser.unwrap().bodies.is_empty());
+    let capture = capture_framebuffer(&mut world.app().window.native);
+    assert!(solid_visibility::visible_preview_fill(
+        &capture,
+        &diagnostics::window_occlusions()
+    ));
+    world.save_capture("loft-tapered-solid-preview");
+}
+
+#[when("OK is clicked with the default settings")]
+fn accept_loft(world: &mut ApplicationWorld) {
+    let pixel = diagnostics::pointer_pixels(world.run_in_window("Loft", "OK").center());
+    world.click(pixel);
+    world.pump(Vec::new());
+}
+
+#[then("Loft1 appears in the browser and the part contains one solid body")]
+fn committed_loft_owns_one_solid(world: &mut ApplicationWorld) {
+    assert!(diagnostics::window_geometry("Loft").is_none());
+    let before = loft_body_key(world);
+    let path = world.scratch_folder().join("accepted-loft.opd");
+    solid_extrusion::acceptance::save_and_reopen(world, &path);
+    world.pump(Vec::new());
+    assert_eq!(loft_body_key(world), before);
+}
+
+fn loft_body_key(world: &mut ApplicationWorld) -> String {
+    let browser = world.state().browser.unwrap();
+    assert_eq!(browser.bodies.len(), 1);
+    assert_eq!(browser.bodies[0].faces, 3);
+    assert!(browser.surface_bodies.is_empty());
+    assert!(
+        browser
+            .features
+            .iter()
+            .any(|feature| feature.name == "Loft1" && feature.id == browser.bodies[0].feature)
+    );
+    assert!(browser.sketches.iter().all(|sketch| !sketch.visible));
+    world.expect_text("Loft1");
+    browser.bodies[0].key.clone()
 }

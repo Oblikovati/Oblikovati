@@ -25,6 +25,7 @@ pub enum WorkPlaneDefinitionRecipe {
     CircularPattern(crate::feature::circular_pattern::CircularPatternRecipe),
     RectangularPattern(crate::feature::rectangular_pattern::RectangularPatternRecipe),
     SketchPrism(crate::feature::sketch_prism::SketchPrismRecipe),
+    SketchLoft(crate::feature::sketch_loft::SketchLoftRecipe),
     SketchSweep(crate::feature::sketch_sweep::SketchSweepRecipe),
     AtAngleAboutAxis(crate::feature::work_geometry::WorkPlaneLineAngle),
     ThroughTwoAxes([crate::feature::work_axis::WorkAxisReference; 2]),
@@ -70,6 +71,7 @@ impl WorkPlaneDefinition {
             Self::RectangularPattern(pattern) => {
                 Source::RectangularPattern(pattern.recipe().clone())
             }
+            Self::SketchLoft(definition) => Source::SketchLoft(definition.recipe().clone()),
             Self::SketchSweep(definition) => Source::SketchSweep(definition.recipe().clone()),
             Self::SketchPrism(definition) => Source::SketchPrism(definition.recipe()),
             Self::AtAngleAboutAxis(source) => Source::AtAngleAboutAxis(source.clone()),
@@ -133,6 +135,11 @@ fn restore_definition(
         DeleteBody(key) => crate::feature::part::DeleteBodyDefinition::new(key)
             .map(WorkPlaneDefinition::DeleteBody)
             .map_err(WorkPlaneError::BodyReference),
+        SketchLoft(recipe) => {
+            crate::feature::sketch_loft::SketchLoftDefinition::from_recipe(recipe)
+                .map(|definition| WorkPlaneDefinition::SketchLoft(Box::new(definition)))
+                .map_err(WorkPlaneError::BodyReference)
+        }
         SketchSweep(recipe) => {
             crate::feature::sketch_sweep::SketchSweepDefinition::from_recipe(recipe)
                 .map(|definition| WorkPlaneDefinition::SketchSweep(Box::new(definition)))
@@ -199,6 +206,7 @@ impl WorkPlaneDefinitionRecipe {
             Self::Hole(_) => 17,
             Self::MoveBody(_) => 18,
             Self::Shell(_) => 19,
+            Self::SketchLoft(_) => 30,
             Self::SketchSweep(recipe) => match recipe.version {
                 7 => 29,
                 6 => 28,
@@ -238,6 +246,7 @@ impl WorkPlaneDefinitionRecipe {
             Self::Hole(_) => 22,
             Self::MoveBody(_) => 23,
             Self::Shell(_) => 24,
+            Self::SketchLoft(_) => 35,
             Self::SketchSweep(recipe) => match recipe.version {
                 7 => 34,
                 6 => 33,

@@ -54,6 +54,7 @@ pub(crate) fn feature_glyph(kind: &str) -> Option<IconGlyph> {
     Some(match kind {
         "Extrusion" => IconGlyph::Extrude,
         "Sweep" => IconGlyph::Sweep,
+        "Loft" => IconGlyph::Loft,
         "Revolution" | "Revolve" => IconGlyph::Revolve,
         "Hole" => IconGlyph::Hole,
         "Fillet" => IconGlyph::Fillet,

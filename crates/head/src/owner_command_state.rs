@@ -244,6 +244,7 @@ impl<
                 |(id, generation, _, _)| *id == document && *generation == session.generation(),
             ),
             loft_sections: self.gui_loft_sections(document, session.generation()),
+            loft_preview: self.gui_loft_preview(document, session.generation()),
             sweep_preview: self.gui_sweep_preview(document, session.generation()),
             extrude_reference_preview: self
                 .extrusion_reference_preview

@@ -229,7 +229,7 @@ fn free_rectangle_extrusion_survives_undo_and_redo() {
     world.close();
 }
 
-fn save_and_reopen(world: &mut ApplicationWorld, path: &std::path::Path) {
+pub(in super::super) fn save_and_reopen(world: &mut ApplicationWorld, path: &std::path::Path) {
     use oblikovati_api::{
         client::Client,
         wire::{CloseDocumentArgs, OpenDocumentArgs, SaveDocumentAsArgs},

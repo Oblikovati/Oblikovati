@@ -11,7 +11,7 @@ use crate::{
     sketch_prism::regions::{region_boundary, resolved_regions},
 };
 use martensite_tkbo::profile_extrusion::{PlanarRegion, PlanarRegionSet};
-use martensite_tkbrep::{brep::BRepTool, topexp::Explorer, topods::Shape};
+use martensite_tkbrep::{topexp::Explorer, topods::Shape};
 use martensite_tkernel::standard::Failure;
 use martensite_tkg3d::top_abs::ShapeEnum;
 use martensite_tkoffset::brep_offset_api::BRepOffsetAPIMakePipe;
@@ -106,7 +106,8 @@ fn checked_candidate(
 ) -> Result<SweepCandidate, EvaluationFailure> {
     require_solid(&shape)?;
     require_surface_error(surface_error, resolution.maximum_tolerance)?;
-    let achieved = measured_tolerances(&shape, resolution.maximum_tolerance)?;
+    let achieved =
+        crate::checked_shape::measured_tolerances(&shape, resolution.maximum_tolerance, "sweep")?;
     verify_faces(&shape, &faces)?;
     Ok(SweepCandidate {
         shape,
@@ -114,32 +115,6 @@ fn checked_candidate(
         resolution,
         surface_error,
         achieved,
-    })
-}
-
-fn measured_tolerances(
-    shape: &Shape,
-    maximum: f64,
-) -> Result<PrismAchievedTolerance, EvaluationFailure> {
-    let measure = |kind| {
-        let tolerance = BRepTool::max_tolerance(shape, kind).map_err(|cause| {
-            Phase::Validation.native(Entity::Body, format!("sweep {kind:?} tolerance"), cause)
-        })?;
-        if !tolerance.is_finite() || !(0.0..=maximum).contains(&tolerance) {
-            return Err(Phase::Validation.refused(
-                Kind::ToleranceExceeded,
-                Entity::Body,
-                format!(
-                    "sweep {kind:?} tolerance {tolerance}: expected a finite value in 0..={maximum}"
-                ),
-            ));
-        }
-        Ok(tolerance)
-    };
-    Ok(PrismAchievedTolerance {
-        vertex: measure(ShapeEnum::Vertex)?,
-        edge: measure(ShapeEnum::Edge)?,
-        face: measure(ShapeEnum::Face)?,
     })
 }
 

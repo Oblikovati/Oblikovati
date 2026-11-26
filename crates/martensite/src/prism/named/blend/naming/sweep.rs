@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::{
-    result_names::{incident_name, require_unique},
+    result_names::require_unique,
+    section_body::{bind_section_body, incident_names},
     *,
 };
 use crate::sweep::{SweepCandidate, SweepFaceRole};
@@ -70,7 +71,7 @@ impl BlendNamedTopology {
             &edges,
         )?;
         let subentities = faces.into_iter().chain(edges).chain(vertices).collect();
-        bind_sweep(
+        bind_section_body(
             history,
             document,
             body,
@@ -80,58 +81,4 @@ impl BlendNamedTopology {
             subentities,
         )
     }
-}
-
-fn bind_sweep(
-    history: &DocumentEditHistory,
-    document: DocumentGuid,
-    body: Vec<u8>,
-    shape: Shape,
-    resolution: PrismResolution,
-    achieved_tolerance: Option<PrismAchievedTolerance>,
-    subentities: Vec<(Vec<u8>, Shape)>,
-) -> Result<BlendNamedTopology, String> {
-    let entries: Vec<_> = std::iter::once((body.clone(), shape.clone()))
-        .chain(subentities)
-        .collect();
-    let bindings = ExactReferenceBindings::from_entries(
-        document,
-        history.evaluation_scope(),
-        entries.clone(),
-    )?;
-    verify_round_trip(&bindings, history, document, &entries)?;
-    let live = bindings
-        .encoded_keys(history, document)?
-        .map(<[u8]>::to_vec)
-        .collect();
-    Ok(BlendNamedTopology {
-        resolution: Some(resolution),
-        achieved_tolerance,
-        live,
-        deleted: Vec::new(),
-        splits: BTreeMap::new(),
-        bindings,
-        active_body: body.clone(),
-        primary_body: body,
-        shape,
-    })
-}
-
-fn incident_names(
-    document: DocumentGuid,
-    feature: FeatureId,
-    solid: &Shape,
-    kind: ShapeEnum,
-    reference_kind: u32,
-    parents: &[(Vec<u8>, Shape)],
-) -> Result<Vec<(Vec<u8>, Shape)>, String> {
-    let names = shapes(solid, kind)?
-        .into_iter()
-        .map(|shape| {
-            let name = incident_name(document, feature, reference_kind, kind, &shape, parents)?;
-            Ok((name, shape))
-        })
-        .collect::<Result<Vec<_>, String>>()?;
-    require_unique(&names)?;
-    Ok(names)
 }

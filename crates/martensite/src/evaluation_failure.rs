@@ -15,6 +15,7 @@ pub enum EvaluationPhase {
     Profile,
     Prism,
     Sweep,
+    Loft,
     Fillet,
     Chamfer,
     Hole,

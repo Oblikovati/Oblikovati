@@ -3,12 +3,13 @@
 use super::*;
 use oblikovati_automation::PartUpdateAccess;
 use oblikovati_gui::{GuiLoftAction, GuiLoftElement, GuiLoftSection};
-use oblikovati_model::history::ResolvedDocumentSketch;
+use oblikovati_model::{feature::sketch_loft::SketchLoftSection, history::ResolvedDocumentSketch};
 
 pub(super) struct LoftSelection {
     document: u64,
     generation: u64,
     sections: Vec<GuiLoftSection>,
+    preview: Option<Result<(), String>>,
 }
 
 impl<
@@ -23,18 +24,29 @@ impl<
     pub(super) fn loft_command(&mut self, action: GuiLoftAction) -> Result<bool, String> {
         match action {
             GuiLoftAction::Open => Ok(false),
-            GuiLoftAction::Clear => Ok(self.loft_selection.take().is_some()),
+            GuiLoftAction::Clear => {
+                if self.loft_selection.is_none() {
+                    return Ok(false);
+                }
+                self.clear_loft_preview();
+                self.loft_selection = None;
+                Ok(true)
+            }
+            GuiLoftAction::Commit(document) => self.commit_loft(document),
             GuiLoftAction::Begin(document) => {
                 self.require_browser_document(document)?;
-                let session = self
+                let generation = self
                     .files
                     .workspace()
                     .session(document)
-                    .map_err(|cause| cause.to_string())?;
+                    .map_err(|cause| cause.to_string())?
+                    .generation();
+                self.clear_extrusion_preview();
                 self.loft_selection = Some(LoftSelection {
                     document,
-                    generation: session.generation(),
+                    generation,
                     sections: Vec::new(),
+                    preview: None,
                 });
                 Ok(true)
             }
@@ -46,6 +58,78 @@ impl<
             .as_ref()
             .filter(|draft| draft.document == document && draft.generation == generation)
             .map_or_else(Vec::new, |draft| draft.sections.clone())
+    }
+
+    pub(super) fn gui_loft_preview(
+        &self,
+        document: u64,
+        generation: u64,
+    ) -> Option<Result<(), String>> {
+        let draft = self.loft_selection.as_ref()?;
+        if draft.document != document || draft.generation != generation {
+            return None;
+        }
+        draft.preview.clone()
+    }
+
+    fn clear_loft_preview(&mut self) {
+        if self
+            .loft_selection
+            .as_ref()
+            .and_then(|draft| draft.preview.as_ref())
+            .is_some_and(Result::is_ok)
+        {
+            self.clear_extrusion_preview();
+        }
+    }
+
+    fn commit_loft(&mut self, document: u64) -> Result<bool, String> {
+        self.require_browser_document(document)?;
+        let session = self
+            .files
+            .workspace()
+            .session(document)
+            .map_err(|cause| cause.to_string())?;
+        let draft = self
+            .loft_selection
+            .as_ref()
+            .filter(|draft| {
+                draft.document == document
+                    && draft.generation == session.generation()
+                    && draft.preview.as_ref().is_some_and(Result::is_ok)
+            })
+            .ok_or("Loft requires a valid preview in the current Part.")?;
+        let sections =
+            solid_sections(&draft.sections).ok_or("Loft requires two circular sections.")?;
+        let prepared = oblikovati_automation::prepare_loft(session.snapshot(), sections)
+            .map_err(|cause| cause.to_string())?;
+        oblikovati_automation::edit_part_with_checkpoints(
+            &mut self.files,
+            &mut self.part_scenes,
+            document,
+            "Loft",
+            |candidate, ids| prepared.create(candidate, ids),
+        )
+        .map_err(|cause| cause.to_string())?;
+        self.clear_loft_preview();
+        self.loft_selection = None;
+        Ok(true)
+    }
+
+    fn preview_loft(
+        &mut self,
+        document: u64,
+        sections: [SketchLoftSection; 2],
+    ) -> Result<(), String> {
+        let session = self
+            .files
+            .workspace()
+            .session(document)
+            .map_err(|cause| cause.to_string())?;
+        let prepared = oblikovati_automation::prepare_loft(session.snapshot(), sections)
+            .map_err(|cause| cause.to_string())?;
+        self.preview_selected_blend(document, |candidate, ids| prepared.create(candidate, ids))?;
+        Ok(())
     }
 
     pub(super) fn pick_loft_section(
@@ -77,6 +161,12 @@ impl<
             return Ok(Some(false));
         }
         draft.sections.push(section);
+        let sections = solid_sections(&draft.sections);
+        self.clear_loft_preview();
+        let preview = sections.map(|sections| self.preview_loft(document, sections));
+        if let Some(draft) = &mut self.loft_selection {
+            draft.preview = preview;
+        }
         Ok(Some(true))
     }
 
@@ -115,6 +205,20 @@ impl<
         }
         Ok(closest.map(|hit| hit.section))
     }
+}
+
+fn solid_sections(sections: &[GuiLoftSection]) -> Option<[SketchLoftSection; 2]> {
+    let [first, last] = sections else {
+        return None;
+    };
+    let section = |picked: &GuiLoftSection| match picked.element {
+        GuiLoftElement::Profile(circle) => Some(SketchLoftSection {
+            sketch: picked.sketch,
+            circle,
+        }),
+        GuiLoftElement::Point(_) => None,
+    };
+    Some([section(first)?, section(last)?])
 }
 
 struct LoftHit {

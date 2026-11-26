@@ -156,7 +156,8 @@ impl DesktopPartScenes {
             .map_err(|cause| cause.to_string())?
             .definition()
         {
-            oblikovati_model::feature::part::PartFeatureDefinition::SketchSweep(_) => {
+            oblikovati_model::feature::part::PartFeatureDefinition::SketchSweep(_)
+            | oblikovati_model::feature::part::PartFeatureDefinition::SketchLoft(_) => {
                 NEW_SOLID_PREVIEW
             }
             _ => [1., 0.65, 0.1, 1.],

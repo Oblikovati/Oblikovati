@@ -42,6 +42,7 @@ pub enum PartFeatureFailure<Failure> {
     Metadata(Box<WorkGeometryError>),
     Inputs(SketchPrismError),
     SweepInput(Box<crate::feature::sketch_sweep::SketchSweepError>),
+    LoftInput(String),
     Kernel(Failure),
     BodyReference(String),
     FilletInput(String),
@@ -341,6 +342,7 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
             feature.definition(),
             PartFeatureDefinition::SketchPrism(_)
                 | PartFeatureDefinition::SketchSweep(_)
+                | PartFeatureDefinition::SketchLoft(_)
                 | PartFeatureDefinition::DeleteBody(_)
                 | PartFeatureDefinition::Fillet(_)
                 | PartFeatureDefinition::Chamfer(_)
@@ -358,6 +360,9 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
         match feature.definition() {
             PartFeatureDefinition::SketchPrism(definition) => {
                 self.evaluate_prism(snapshot, backend, feature, definition)
+            }
+            PartFeatureDefinition::SketchLoft(definition) => {
+                self.evaluate_loft(snapshot, backend, id, definition)
             }
             PartFeatureDefinition::SketchSweep(definition) => {
                 self.evaluate_sweep(snapshot, backend, id, definition)

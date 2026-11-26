@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Sweep a certified closed contour as a wire to produce an uncapped surface.
 use super::{
-    BRepOffsetAPIMakePipe, BRepTool, Entity, EvaluationFailure, Explorer, Kind, Phase,
+    BRepOffsetAPIMakePipe, Entity, EvaluationFailure, Explorer, Kind, Phase,
     PrismAchievedTolerance, PrismResolution, PrismResolutionPolicy, ResolvedSketchSweep, Shape,
-    ShapeEnum, SweepFaceRole, history_failure, measured_tolerances, path, require_surface_error,
-    resolved_regions, selected_region, side_history, sweep_failure, verify_faces,
+    ShapeEnum, SweepFaceRole, history_failure, path, require_surface_error, resolved_regions,
+    selected_region, side_history, sweep_failure, verify_faces,
 };
+use martensite_tkbrep::brep::BRepTool;
 use martensite_tkbrep::{brep_tools::outer_wire, topods};
 use martensite_tkprim::brep_prim_api::BRepPrimAPIMakeSweep;
 use martensite_tktopalgo::brep_builder_api::BRepBuilderAPIMakeShape;
@@ -62,7 +63,11 @@ pub fn build_surface_sweep(
         .map_err(|cause| sweep_failure("expected a completed surface", cause))?;
     require_open_shell(&shell)?;
     require_surface_error(maker.error_on_surface(), resolution.maximum_tolerance)?;
-    let achieved = measured_tolerances(&shell, resolution.maximum_tolerance)?;
+    let achieved = crate::checked_shape::measured_tolerances(
+        &shell,
+        resolution.maximum_tolerance,
+        "surface sweep",
+    )?;
     let faces = side_history(&mut maker, region, &path)?;
     verify_faces(&shell, &faces)?;
     let trims = trim_history(&mut maker, &shell)?;

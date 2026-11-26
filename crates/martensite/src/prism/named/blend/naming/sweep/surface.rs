@@ -31,7 +31,7 @@ impl BlendNamedTopology {
             &edges,
         )?;
         let subentities = faces.into_iter().chain(edges).chain(vertices).collect();
-        bind_sweep(
+        bind_section_body(
             history,
             document,
             name(4, "body")?,

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Loft: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/loft/loft.feature" package="testsuite/Feature: Loft: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/loft/loft.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-26T23:41:55.336482861Z" time="5.8076689"><testcase name="Scenario: loft-03 Preview and create a solid from two circular sections: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/loft/loft.feature:24:3" time="5.8076689"><system-out><![CDATA[  Scenario: loft-03 Preview and create a solid from two circular sections
+   ✔  Given a disposable copy of the native fixture "fixtures/cad/loft/parallel-circles.opd" is open
+   ✔  And both circular sketches on separate parallel planes are visible
+   ✔  When their circular edges are selected in a fresh Loft dialog
+   ✔  Then the Sections list contains both sketches and a tapered solid preview appears
+   ✔  When OK is clicked with the default settings
+   ✔  Then Loft1 appears in the browser and the part contains one solid body
+]]></system-out></testcase></testsuite></testsuites>

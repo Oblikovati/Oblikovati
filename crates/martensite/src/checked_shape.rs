@@ -2,9 +2,10 @@
 //! Shared checked operations preserve native causes before legacy callers render text.
 use crate::{
     EvaluationEntity as Entity, EvaluationFailure, EvaluationFailureKind as Kind,
-    EvaluationPhase as Phase, ReleaseProbeProperties,
+    EvaluationPhase as Phase, PrismAchievedTolerance, ReleaseProbeProperties,
 };
-use martensite_tkbrep::topods::Shape;
+use martensite_tkbrep::{brep::BRepTool, topods::Shape};
+use martensite_tkg3d::top_abs::ShapeEnum;
 use martensite_tkgeombase::gprop::GProps;
 use martensite_tktopalgo::{
     brep_builder_api::{BRepBuilderAPICopy, BRepBuilderAPIMakeShape},
@@ -31,6 +32,33 @@ pub(crate) fn require_geometry(shape: &Shape, context: &str) -> Result<(), Evalu
     }
     Ok(())
 }
+pub(crate) fn measured_tolerances(
+    shape: &Shape,
+    maximum: f64,
+    context: &str,
+) -> Result<PrismAchievedTolerance, EvaluationFailure> {
+    let measure = |kind| {
+        let tolerance = BRepTool::max_tolerance(shape, kind).map_err(|cause| {
+            Phase::Validation.native(Entity::Body, format!("{context} {kind:?} tolerance"), cause)
+        })?;
+        if !tolerance.is_finite() || !(0.0..=maximum).contains(&tolerance) {
+            return Err(Phase::Validation.refused(
+                Kind::ToleranceExceeded,
+                Entity::Body,
+                format!(
+                    "{context} {kind:?} tolerance {tolerance}: expected a finite value in 0..={maximum}"
+                ),
+            ));
+        }
+        Ok(tolerance)
+    };
+    Ok(PrismAchievedTolerance {
+        vertex: measure(ShapeEnum::Vertex)?,
+        edge: measure(ShapeEnum::Edge)?,
+        face: measure(ShapeEnum::Face)?,
+    })
+}
+
 /// Detach the same native topology, geometry, and mesh; example: `copy_shape(shape, "copy")?`.
 pub(crate) fn copy_shape(
     source: &Shape,

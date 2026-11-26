@@ -15,6 +15,11 @@ impl crate::feature::FeatureSequence<PartFeatureDefinition> {
             .iter()
             .filter(move |feature| match feature.definition() {
                 PartFeatureDefinition::SketchPrism(definition) => definition.sketch() == sketch,
+                PartFeatureDefinition::SketchLoft(definition) => definition
+                    .recipe()
+                    .sections
+                    .iter()
+                    .any(|input| input.sketch == sketch),
                 PartFeatureDefinition::SketchSweep(definition) => {
                     let recipe = definition.recipe();
                     recipe.profile_sketch == sketch || recipe.path_sketch == sketch
@@ -62,6 +67,12 @@ impl DocumentSnapshot {
                     PartFeatureDefinition::SketchPrism(definition) => definition
                         .reads(self)
                         .map_err(|cause| PartFeatureProgramError::Prism {
+                            feature: feature.id(),
+                            cause,
+                        })?,
+                    PartFeatureDefinition::SketchLoft(definition) => definition
+                        .reads(self)
+                        .map_err(|cause| PartFeatureProgramError::Loft {
                             feature: feature.id(),
                             cause,
                         })?,

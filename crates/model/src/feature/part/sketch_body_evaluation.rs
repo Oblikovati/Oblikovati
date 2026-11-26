@@ -8,8 +8,8 @@ use super::{
 };
 use crate::{
     feature::{
-        AuthoredFeature, FeatureId, sketch_prism::SketchPrismDefinition,
-        sketch_sweep::SketchSweepDefinition,
+        AuthoredFeature, FeatureId, sketch_loft::SketchLoftDefinition,
+        sketch_prism::SketchPrismDefinition, sketch_sweep::SketchSweepDefinition,
     },
     history::DocumentSnapshot,
 };
@@ -29,6 +29,10 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
         };
         let sketches = match feature.definition() {
             PartFeatureDefinition::SketchPrism(definition) => [Some(definition.sketch()), None],
+            PartFeatureDefinition::SketchLoft(definition) => definition
+                .recipe()
+                .sections
+                .map(|section| Some(section.sketch)),
             PartFeatureDefinition::SketchSweep(definition) => {
                 let recipe = definition.recipe();
                 [
@@ -80,6 +84,24 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
             .register(feature.id())
             .map_err(PartFeatureFailure::BodyReference)?;
         self.bodies.insert(feature.id(), body);
+        Ok(())
+    }
+
+    pub(super) fn evaluate_loft<B: PartFeatureEvaluator<Body = Body, Failure = Failure>>(
+        &mut self,
+        snapshot: &DocumentSnapshot,
+        backend: &mut B,
+        feature: FeatureId,
+        definition: &SketchLoftDefinition,
+    ) -> Result<(), PartFeatureFailure<Failure>> {
+        let sections = definition
+            .resolve(snapshot, &self.datums)
+            .map_err(PartFeatureFailure::LoftInput)?;
+        let body = backend.evaluate_loft(feature, sections)?;
+        self.body_lineage
+            .register(feature)
+            .map_err(PartFeatureFailure::BodyReference)?;
+        self.bodies.insert(feature, body);
         Ok(())
     }
 

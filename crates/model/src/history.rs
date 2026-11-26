@@ -17,6 +17,7 @@ mod extrusion_pattern_create;
 mod feature_ids;
 mod fillet_create;
 mod hole_create;
+mod loft_create;
 mod move_body_create;
 mod occurrence_ids;
 mod prism_create;
@@ -123,7 +124,6 @@ pub struct DocumentSnapshot {
     pub parameters: ParameterCollection<u64>,
     pub properties: DocumentProperties,
 }
-
 /// Bind an immutable recipe to storage before its save identity is prepared.
 pub trait DocumentSnapshotTarget: crate::identity::DocumentSaveTarget {
     /// Prepare without replacing storage; return the exact candidate recipe digest.

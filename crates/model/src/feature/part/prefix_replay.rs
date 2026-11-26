@@ -117,6 +117,15 @@ where
             .evaluate_extrusion_pattern(feature, body.get(), sources, occurrences)
             .map(PrefixBody::Created)
     }
+    fn evaluate_loft(
+        &mut self,
+        feature: FeatureId,
+        input: [crate::feature::sketch_loft::ResolvedLoftCircle; 2],
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        self.0
+            .evaluate_loft(feature, input)
+            .map(PrefixBody::Created)
+    }
     fn evaluate_sweep(
         &mut self,
         feature: FeatureId,

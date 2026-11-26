@@ -49,6 +49,36 @@ impl PartFeatureEvaluator for CertifiedNamedSolidEvaluator<'_> {
     fn resolve_frame_origin(&self, body: &NamedSolid, key: &[u8]) -> Result<[f64; 3], String> {
         body.frame_origin(self.history, self.document, key)
     }
+    fn evaluate_loft(
+        &mut self,
+        feature: FeatureId,
+        input: [oblikovati_model::feature::sketch_loft::ResolvedLoftCircle; 2],
+    ) -> Result<NamedSolid, PartFeatureFailure<EvaluationFailure>> {
+        let Some(prism) = &self.prism else {
+            return Err(PartFeatureFailure::Unsupported(
+                "loft: expected an explicit model resolution policy".into(),
+            ));
+        };
+        let failure =
+            |error: EvaluationFailure| PartFeatureFailure::Kernel(error.for_feature(feature));
+        let candidate =
+            crate::loft::build_loft(&input, prism.resolution_policy()).map_err(failure)?;
+        let topology = BlendNamedTopology::from_loft(
+            self.history,
+            self.document,
+            feature,
+            input.map(|section| section.source),
+            candidate,
+        )
+        .map_err(|cause| {
+            failure(crate::EvaluationPhase::Naming.refused(
+                crate::EvaluationFailureKind::InvalidReference,
+                crate::EvaluationEntity::Body,
+                format!("loft topology: {cause}"),
+            ))
+        })?;
+        Ok(NamedSolid::Derived(Box::new(topology)))
+    }
     fn evaluate_sweep(
         &mut self,
         feature: FeatureId,

@@ -33,6 +33,7 @@ pub struct GuiLoftSection {
 pub enum GuiLoftAction {
     Open,
     Begin(u64),
+    Commit(u64),
     Clear,
 }
 
@@ -45,6 +46,11 @@ impl GuiLoftAction {
         match self {
             Self::Open => available,
             Self::Begin(document) => available && state.document == Some(document),
+            Self::Commit(document) => {
+                available
+                    && state.document == Some(document)
+                    && state.loft_preview.as_ref().is_some_and(Result::is_ok)
+            }
             Self::Clear => true,
         }
     }
@@ -114,7 +120,7 @@ impl LoftDialog {
         let mut open = true;
         Self::dockable_window(ui, TITLE, &mut open).build(|| {
             crate::theme::floating_property_shadow(ui);
-            if self.contents(ui, state, tip) {
+            if self.contents(ui, state, tip, actions) {
                 self.close(actions);
             }
         });
@@ -123,17 +129,33 @@ impl LoftDialog {
         }
     }
 
-    fn contents(&mut self, ui: &Ui, state: &GuiCommandState, tip: bool) -> bool {
+    fn contents(
+        &mut self,
+        ui: &Ui,
+        state: &GuiCommandState,
+        tip: bool,
+        actions: &mut Vec<GuiShellAction>,
+    ) -> bool {
         if tip {
             ui.text_wrapped(EMPTY_PART);
         } else {
             draw_sections(ui, &state.loft_sections);
+            if let Some(Err(cause)) = &state.loft_preview {
+                ui.text_wrapped(cause);
+            }
         }
         if self.show_help {
             ui.text_wrapped(HELP);
         }
         ui.separator();
-        let accepted = crate::theme::property_accept(ui, tip);
+        let commit = self
+            .document
+            .map(|(document, _)| GuiLoftAction::Commit(document))
+            .filter(|action| action.enabled(state));
+        let accepted = crate::theme::property_accept(ui, tip || commit.is_some());
+        if accepted && let Some(commit) = commit {
+            actions.push(GuiShellAction::Loft(commit));
+        }
         ui.same_line();
         let cancelled = !tip && crate::widget_abi::button(ui, "Cancel", [58., 28.]);
         if !tip {
@@ -142,7 +164,7 @@ impl LoftDialog {
         if crate::widget_abi::button(ui, "Help", [58., 28.]) {
             self.show_help = !self.show_help;
         }
-        accepted || cancelled || ui.is_key_pressed_no_repeat(imgui::Key::Escape)
+        (accepted && tip) || cancelled || ui.is_key_pressed_no_repeat(imgui::Key::Escape)
     }
 }
 
@@ -153,7 +175,7 @@ fn empty_part(browser: &crate::GuiModelBrowser) -> bool {
 }
 
 fn draw_sections(ui: &Ui, sections: &[GuiLoftSection]) {
-    crate::theme::property_label(ui, "Sections");
+    ui.text("Sections");
     for section in sections {
         match section.element {
             GuiLoftElement::Point(_) => ui.text(format!("Point {}", section.name)),

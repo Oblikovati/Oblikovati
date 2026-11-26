@@ -59,6 +59,10 @@ fn track_replacement(
                 return;
             }
         },
+        PartFeatureDefinition::SketchLoft(_) => {
+            owners.insert(id, id);
+            return;
+        }
         PartFeatureDefinition::SketchSweep(sweep) => match sweep.boolean_target() {
             Some((_, _, source)) => source,
             None => {

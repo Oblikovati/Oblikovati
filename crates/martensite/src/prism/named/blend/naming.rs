@@ -23,8 +23,10 @@ pub struct BlendNamedTopology {
 mod capture;
 mod extrusion_boolean;
 mod hole;
+mod loft;
 mod result_names;
 mod rigid_motion;
+mod section_body;
 mod shell;
 mod source;
 mod sweep;

@@ -16,6 +16,10 @@ pub enum PartFeatureProgramError {
         feature: FeatureId,
         cause: Box<crate::feature::sketch_sweep::SketchSweepError>,
     },
+    Loft {
+        feature: FeatureId,
+        cause: String,
+    },
     Sequence(FeatureSequenceError),
     Reads(FeatureReplayError),
 }
@@ -28,6 +32,7 @@ impl fmt::Display for PartFeatureProgramError {
             ),
             Self::Prism { feature, cause } => write!(output, "part feature {feature:?}: {cause}"),
             Self::Sweep { feature, cause } => write!(output, "part feature {feature:?}: {cause}"),
+            Self::Loft { feature, cause } => write!(output, "part Loft {feature:?}: {cause}"),
             Self::Sequence(cause) => cause.fmt(output),
             Self::Reads(cause) => cause.fmt(output),
         }
@@ -36,7 +41,7 @@ impl fmt::Display for PartFeatureProgramError {
 impl Error for PartFeatureProgramError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self {
-            Self::Cancelled { .. } => None,
+            Self::Cancelled { .. } | Self::Loft { .. } => None,
             Self::Prism { cause, .. } => Some(cause),
             Self::Sweep { cause, .. } => Some(cause.as_ref()),
             Self::Sequence(cause) => Some(cause),
