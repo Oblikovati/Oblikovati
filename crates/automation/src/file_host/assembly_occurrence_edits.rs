@@ -116,6 +116,34 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext
         let encoded = encode(&reply)?;
         let before = self.source_bindings()?;
         remove_occurrence_recipe(self.files, owner, ordinal, args.id)?;
+        self.finish_reference_edit(owner, &before, METHOD_ASSEMBLY_REMOVE, encoded)
+    }
+
+    pub(super) fn replace_occurrence(
+        &mut self,
+        args: ReplaceOccurrenceArgs,
+    ) -> Result<Vec<u8>, Error> {
+        let (owner, _, _) = locate_occurrence(self.files, args.id)?;
+        let children = super::assembly_placement::component_children(self.files, args.document)?;
+        let before = self.source_bindings()?;
+        let encoded = self
+            .files
+            .replace_occurrence(owner, args.id, args.document, |row| {
+                let occurrence = crate::file_queries::assembly::occurrence_info(row, children)
+                    .map_err(|cause| cause.to_string())?;
+                encode(&OccurrenceResult { occurrence }).map_err(|cause| cause.to_string())
+            })
+            .map_err(Error)?;
+        self.finish_reference_edit(owner, &before, METHOD_ASSEMBLY_REPLACE, encoded)
+    }
+
+    fn finish_reference_edit(
+        &mut self,
+        owner: u64,
+        before: &super::lifecycle::SourceBindings,
+        method: &str,
+        reply: Vec<u8>,
+    ) -> Result<Vec<u8>, Error> {
         if !self
             .files
             .workspace()
@@ -127,8 +155,8 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext
                 .reconcile_document_references(owner)
                 .map_err(|cause| Error(cause.to_string()))?;
         }
-        let refresh = self.refresh_after_native_file_change(&before, METHOD_ASSEMBLY_REMOVE);
-        super::lifecycle::combine_lifecycle_result(METHOD_ASSEMBLY_REMOVE, Ok(encoded), refresh)
+        let refresh = self.refresh_after_native_file_change(before, method);
+        super::lifecycle::combine_lifecycle_result(method, Ok(reply), refresh)
     }
 }
 

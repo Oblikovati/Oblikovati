@@ -60,3 +60,21 @@ The Wayland MCP run removed one occurrence from a 16-box grid. The reply
 contained all 15 surviving IDs in order. The viewport crop changed by
 20,719 pixels. Undo restored the original crop exactly, and redo restored
 the removal crop.
+
+## Occurrence replacement
+
+`assembly.replace` swaps the definition of an existing occurrence for
+a saved, open part or assembly. It retains the occurrence ID, name,
+transform, and instance state. It prepares the reply from the proposed
+definition before adoption. The file owner validates the proposed
+reference graph and rolls back the binding if the edit is vetoed.
+
+Other occurrences retain their original component binding. The file
+owner releases a clean hidden component after its last use and
+resolves it again on undo. Tests cover cycles, a veto, a repeated
+replacement with the same definition, and save and reopen.
+
+A Wayland MCP run swapped a 40 mm box for a saved 20 mm box at the same
+placement and checked the unchanged occurrence ID, name, transform, and
+grounding. The viewport crop changed by 15,946 pixels. Undo and redo
+reproduced the original and replacement crops pixel for pixel.

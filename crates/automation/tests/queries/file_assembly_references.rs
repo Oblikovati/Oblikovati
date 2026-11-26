@@ -427,3 +427,6 @@ fn occurrence_suppression_and_removal_honor_a_transaction_veto() {
 
 #[path = "file_assembly_references/removal.rs"]
 mod removal;
+
+#[path = "file_assembly_references/replacement.rs"]
+mod replacement;

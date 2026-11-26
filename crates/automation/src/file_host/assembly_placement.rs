@@ -167,19 +167,7 @@ pub(super) fn place<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
         .workspace()
         .active_document()
         .ok_or_else(|| Error("assembly.place: expected an active assembly".into()))?;
-    let target = files
-        .workspace()
-        .session(args.document)
-        .map_err(|cause| Error(cause.to_string()))?;
-    let children = if target.snapshot().assembly.is_some() {
-        Some(crate::file_queries::assembly::rows(
-            files,
-            args.document,
-            1,
-        )?)
-    } else {
-        None
-    };
+    let children = component_children(files, args.document)?;
     files
         .place_occurrence(
             owner,
@@ -201,4 +189,20 @@ pub(super) fn place<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
             },
         )
         .map_err(Error)
+}
+
+pub(super) fn component_children<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+    files: &FileWorkspace<O, W, F>,
+    component: u64,
+) -> Result<Option<Vec<OccurrenceInfo>>, Error> {
+    let target = files
+        .workspace()
+        .session(component)
+        .map_err(|cause| Error(cause.to_string()))?;
+    if target.snapshot().assembly.is_none() {
+        return Ok(None);
+    }
+    Ok(Some(crate::file_queries::assembly::rows(
+        files, component, 1,
+    )?))
 }
