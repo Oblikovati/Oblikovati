@@ -18,10 +18,9 @@ using this status; the live scenario directory can change.
 - Viewport Orbit (#3872) passed all ten current cases and 94 steps on
   [Wayland and X11](receipts/2026-11-26-viewport-pan-orbit-wayland-3881/README.md),
   including both adjacent-pair examples. Direct drag and Escape tests passed on both backends.
-- File Menu (#3894) passed all eight current scenarios and 67 steps on Wayland.
-  The published Part and Drawing fixtures cover menu dismissal, the recent
-  row, Save As, New, and Home. See the
-  [current run](receipts/2026-11-26-file-menu-wayland-3894/README.md)
+- File Menu (#3894) passed all nine amended scenarios and 73 steps on Wayland and X11.
+  The visual checks cover active controls, row alignment, and the overlay shadow.
+  See the [current run](receipts/2026-11-26-file-menu-visual-contract-3894/README.md)
   and the [pinned run](receipts/2026-11-21-file-menu-r0-3894/README.md).
 - Body Properties (#3954) passed all six current scenarios and 69 steps.
   The published Part verified calculated values, appearance changes, and
