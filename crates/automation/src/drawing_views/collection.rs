@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//! Read or delete an authored view on the drawing's active sheet.
+//! Read or edit authored views on the drawing's active sheet.
 use super::*;
-use oblikovati_api::wire::{DeleteViewArgs, ListDrawingViewsResult};
+use oblikovati_api::wire::{DeleteViewArgs, ListDrawingViewsResult, RotateViewArgs};
 use oblikovati_model::drawing::DrawingDocument;
 
 pub(crate) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
@@ -16,31 +16,27 @@ pub(crate) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
         .active_document()
         .ok_or_else(|| Error("drawing views: expected an active drawing".into()))?;
     let mut drawing = active_drawing(files, owner)?.clone();
-    let sheet_index = drawing.active_sheet();
     if method == wire::METHOD_DRAWING_VIEWS_LIST {
         if !request.is_empty() {
             crate::decode::<oblikovati_api::json::EmptyObject>(method, request)?;
         }
         return response(files, backend, replay, owner, &drawing);
     }
-    let args: DeleteViewArgs = crate::decode(method, request)?;
     if files
         .deferred_drawing_views(owner)
         .map_err(api_error)?
         .is_some()
     {
         return Err(Error(format!(
-            "drawing {owner}: reopen with updates enabled before deleting views"
+            "drawing {owner}: reopen with updates enabled before editing views"
         )));
     }
-    drawing
-        .remove_view(sheet_index, &args.name)
-        .map_err(api_error)?;
+    let command = edit_view(&mut drawing, method, request)?;
     let reply = response(files, backend, replay, owner, &drawing)?;
     files
         .commands(owner)
         .map_err(api_error)?
-        .run("Delete Drawing View", |snapshot, _| {
+        .run(command, |snapshot, _| {
             snapshot.drawing = Some(drawing);
             Ok::<(), Error>(())
         })
@@ -48,6 +44,32 @@ pub(crate) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
     Ok(reply)
 }
 
+fn edit_view(
+    drawing: &mut DrawingDocument,
+    method: &str,
+    request: &[u8],
+) -> Result<&'static str, Error> {
+    let sheet_index = drawing.active_sheet();
+    match method {
+        wire::METHOD_DRAWING_VIEWS_DELETE => {
+            let args: DeleteViewArgs = crate::decode(method, request)?;
+            drawing
+                .remove_view(sheet_index, &args.name)
+                .map_err(api_error)?;
+            Ok("Delete Drawing View")
+        }
+        wire::METHOD_DRAWING_VIEWS_ROTATE => {
+            let args: RotateViewArgs = crate::decode(method, request)?;
+            drawing
+                .rotate_view(sheet_index, &args.name, args.angle_deg)
+                .map_err(api_error)?;
+            Ok("Rotate View")
+        }
+        _ => Err(Error(format!(
+            "method {method:?}: expected a drawing view edit"
+        ))),
+    }
+}
 fn active_drawing<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     files: &FileWorkspace<O, W, F>,
     owner: u64,

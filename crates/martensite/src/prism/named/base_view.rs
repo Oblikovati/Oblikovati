@@ -13,6 +13,7 @@ pub struct DrawingBaseProjection {
     pub curves: DrawingProjection,
     center: [f64; 2],
     scale: f64,
+    rotation: [f64; 2],
 }
 impl DrawingBaseProjection {
     /// Sample a curve for sheet display; example: `view.sheet_polyline(true, 0, history, guid, 0.05)?`.
@@ -63,9 +64,11 @@ impl DrawingBaseProjection {
             )
         })?;
         let point = curve.point_at(history, document, parameter)?;
+        let [x, y] = [point[0] * self.scale * 10., -point[1] * self.scale * 10.];
+        let [sin, cos] = self.rotation;
         let result = [
-            self.center[0] + point[0] * self.scale * 10.,
-            self.center[1] - point[1] * self.scale * 10.,
+            self.center[0] + (x * cos - y * sin),
+            self.center[1] + (x * sin + y * cos),
         ];
         if result.iter().any(|value| !value.is_finite()) {
             return Err(format!(
@@ -135,10 +138,28 @@ fn base_projection(
         ));
     }
     let frame = standard_frame(view.orientation, body_bounds_center(shapes)?)?;
+    let rotation = sheet_rotation(view.rotation_deg)?;
     Ok(DrawingBaseProjection {
         curves: project(frame)?,
         center,
         scale: view.scale,
+        rotation,
+    })
+}
+fn sheet_rotation(angle: f64) -> Result<[f64; 2], String> {
+    if !angle.is_finite() {
+        return Err(format!("drawing rotation {angle}: expected finite degrees"));
+    }
+    // Preserve exact axes for quarter turns and avoid overflow for large authored angles.
+    Ok(match angle.rem_euclid(360.) {
+        0. => [0., 1.],
+        90. => [1., 0.],
+        180. => [0., -1.],
+        270. => [-1., 0.],
+        angle => {
+            let (sin, cos) = angle.to_radians().sin_cos();
+            [sin, cos]
+        }
     })
 }
 fn body_bounds_center(shapes: &[&super::Shape]) -> Result<[f64; 3], String> {
@@ -189,6 +210,22 @@ fn standard_frame(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn sheet_rotation_uses_ccw_degrees_and_reduces_large_angles() {
+        assert_eq!(sheet_rotation(-90.).unwrap(), [-1., 0.]);
+        assert_eq!(sheet_rotation(720.).unwrap(), [0., 1.]);
+        let [sin, cos] = sheet_rotation(390.).unwrap();
+        assert!((sin - 0.5).abs() < 1e-14);
+        assert!((cos - 3_f64.sqrt() / 2.).abs() < 1e-14);
+        assert!(
+            sheet_rotation(f64::MAX)
+                .unwrap()
+                .iter()
+                .all(|value| value.is_finite())
+        );
+        assert!(sheet_rotation(f64::NAN).is_err());
+    }
 
     #[test]
     fn standard_frames_follow_go_screen_right_and_up_axes() {

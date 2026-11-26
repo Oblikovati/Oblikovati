@@ -227,22 +227,26 @@ impl DrawingDocument {
     }
     /// Delete a named view from one sheet; example: `drawing.remove_view(0, "Front")?`.
     pub fn remove_view(&mut self, sheet: usize, name: &str) -> Result<(), DrawingError> {
-        let count = self.recipe.sheets.len();
-        let target = self.recipe.sheets.get_mut(sheet).ok_or_else(|| {
-            DrawingError(format!(
-                "sheet index {sheet}: expected an index below {count}"
-            ))
-        })?;
-        let index = target
-            .views
-            .iter()
-            .position(|view| view.name == name)
-            .ok_or_else(|| {
-                DrawingError(format!(
-                    "drawing view {name:?}: expected a view on sheet {sheet}"
-                ))
-            })?;
+        let target = self.sheet_mut(sheet)?;
+        let index = view_index(target, name)?;
         target.views.remove(index);
+        Ok(())
+    }
+    /// Set the absolute sheet rotation in degrees. Example: `drawing.rotate_view(0, "Front", 90.)?`.
+    pub fn rotate_view(
+        &mut self,
+        sheet: usize,
+        name: &str,
+        angle_deg: f64,
+    ) -> Result<(), DrawingError> {
+        let target = self.sheet_mut(sheet)?;
+        let index = view_index(target, name)?;
+        if !angle_deg.is_finite() {
+            return Err(DrawingError(format!(
+                "drawing view {name:?} rotation {angle_deg}: expected finite degrees"
+            )));
+        }
+        target.views[index].rotation_deg = angle_deg;
         Ok(())
     }
     /// Append an authored parts list; example: `drawing.add_annotation_definition(0, annotation)?`.
@@ -280,4 +284,17 @@ impl DrawingDocument {
             ))
         })
     }
+}
+
+fn view_index(sheet: &DrawingSheetRecipe, name: &str) -> Result<usize, DrawingError> {
+    sheet
+        .views
+        .iter()
+        .position(|view| view.name == name)
+        .ok_or_else(|| {
+            DrawingError(format!(
+                "drawing view {name:?}: expected a view on sheet {:?}",
+                sheet.name
+            ))
+        })
 }

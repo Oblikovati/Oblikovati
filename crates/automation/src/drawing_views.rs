@@ -87,11 +87,12 @@ pub fn with_current_drawing_part<
     project(session.history(), guid, owner.current_part(files, source)?)
 }
 /// Drawing calls served by the document owner.
-pub const DRAWING_COMMAND_METHODS: [&str; 4] = [
+pub const DRAWING_COMMAND_METHODS: [&str; 5] = [
     wire::METHOD_DRAWING_SET_MODEL_REFERENCE,
     wire::METHOD_DRAWING_VIEWS_ADD_BASE,
     wire::METHOD_DRAWING_VIEWS_LIST,
     wire::METHOD_DRAWING_VIEWS_DELETE,
+    wire::METHOD_DRAWING_VIEWS_ROTATE,
 ];
 
 pub(super) fn add_base<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
@@ -280,6 +281,7 @@ fn view_info(
         scale: view.scale,
         center_xmm: view.center_x_mm,
         center_ymm: view.center_y_mm,
+        rotation_deg: view.rotation_deg,
         visible_count: count(counts[0])?,
         hidden_count: count(counts[1])?,
         display_tangent_edges: true,

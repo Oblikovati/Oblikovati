@@ -22,6 +22,8 @@ pub struct DrawingBaseViewDefinition {
     pub center_x_mm: f64,
     #[serde(default, rename = "centerYmm")]
     pub center_y_mm: f64,
+    #[serde(default, skip_serializing_if = "zero_rotation")]
+    pub rotation_deg: f64,
 }
 impl DrawingBaseViewDefinition {
     /// Define a base view without inventing its projection; example: `DrawingBaseViewDefinition::new("Front", BASE_VIEW_FRONT, 1., [100.,100.])?`.
@@ -39,6 +41,7 @@ impl DrawingBaseViewDefinition {
             style: HIDDEN_LINE_VIEW_STYLE,
             center_x_mm: center[0],
             center_y_mm: center[1],
+            rotation_deg: 0.,
         };
         view.validate()?;
         Ok(view)
@@ -71,9 +74,18 @@ impl DrawingBaseViewDefinition {
                 self.name, self.scale, self.center_x_mm, self.center_y_mm
             )));
         }
+        if !self.rotation_deg.is_finite() {
+            return Err(DrawingError(format!(
+                "view {:?} rotation {}: expected finite degrees",
+                self.name, self.rotation_deg
+            )));
+        }
         Ok(())
     }
 }
 fn unit_scale() -> f64 {
     1.
+}
+fn zero_rotation(angle: &f64) -> bool {
+    *angle == 0.
 }

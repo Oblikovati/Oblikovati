@@ -487,3 +487,6 @@ mod drawing_sheet_format;
 
 #[path = "drawing_styles.rs"]
 mod drawing_styles;
+
+#[path = "drawing_view_rotation.rs"]
+mod drawing_view_rotation;
