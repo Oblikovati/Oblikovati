@@ -27,14 +27,29 @@ fn wheel(world: &mut ApplicationWorld, notches: i32) {
     let position = [(low[0] + high[0]) as i32 / 2, (low[1] + high[1]) as i32 / 2];
     #[cfg(target_os = "linux")]
     {
-        super::x11_input::scroll(position, notches);
-        world.pump(Vec::new());
+        scroll_native(world, position, notches);
     }
     #[cfg(not(target_os = "linux"))]
     world.pump(vec![ViewportEvent::Input(ViewportInput::Wheel {
         notches,
         position,
     })]);
+    world.pump(Vec::new());
+}
+
+#[cfg(target_os = "linux")]
+fn scroll_native(world: &mut ApplicationWorld, position: [i32; 2], notches: i32) {
+    use super::{main_window_frame::wayland, x11_input};
+
+    if world.app().window.native.view.uses_wayland() {
+        let [x, y, _, _] = wayland::main_toplevel_bounds(world);
+        let target = [x + position[0], y + position[1]];
+        x11_input::window_targets::move_fullscreen_pointer(target);
+        world.pump(Vec::new());
+        x11_input::window_targets::scroll_fullscreen_output(target, notches);
+    } else {
+        x11_input::scroll(position, notches);
+    }
     world.pump(Vec::new());
 }
 fn orientation_of(camera: ViewportCamera) -> [[f64; 3]; 2] {

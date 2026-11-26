@@ -73,11 +73,15 @@ pub(super) fn right_click(position: [i32; 2]) {
 }
 
 pub(super) fn scroll(position: [i32; 2], notches: i32) {
+    let (connection, root, x, y) = pointer_target(position);
+    send_scroll(&connection, root, [x, y], notches);
+}
+
+fn send_scroll(connection: &RustConnection, root: Window, [x, y]: [i16; 2], notches: i32) {
     assert!(
         (1..=20).contains(&notches.unsigned_abs()),
         "wheel notches {notches}: expected 1 to 20 steps in either direction"
     );
-    let (connection, root, x, y) = pointer_target(position);
     connection
         .xtest_fake_input(MOTION_NOTIFY_EVENT, 0, 0, root, x, y, 0)
         .unwrap()

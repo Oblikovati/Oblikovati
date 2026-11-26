@@ -36,6 +36,18 @@ pub(in super::super) fn move_fullscreen_pointer(position: [i32; 2]) {
     fullscreen_pointer_event(position, MOTION_NOTIFY_EVENT, 0);
 }
 
+/// Scroll at the cursor position on the private nested compositor's output.
+pub(in super::super) fn scroll_fullscreen_output([x, y]: [i32; 2], notches: i32) {
+    let (connection, screen) = x11rb::connect(None).expect("expected the compositor host display");
+    let root = connection.setup().roots[screen].root;
+    send_scroll(
+        &connection,
+        root,
+        [x.try_into().unwrap(), y.try_into().unwrap()],
+        notches,
+    );
+}
+
 pub(in super::super) fn fullscreen_left_button(position: [i32; 2], pressed: bool) {
     fullscreen_button(position, 1, pressed);
 }

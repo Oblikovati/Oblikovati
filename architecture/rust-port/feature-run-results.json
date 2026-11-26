@@ -123,18 +123,21 @@
       "89899bca3d06c042c7e2090f3ce2b18d332fe3ba67c22b8382fb7b80dbde58f2": {
         "feature_sha256": "89899bca3d06c042c7e2090f3ce2b18d332fe3ba67c22b8382fb7b80dbde58f2",
         "supporting_files": {
+          "features/application/viewport-zoom/BLOCKERS.md": "fee5f68b346d88ba74c483358fc8ceb27f7a9cb37e0a36517477fe291767e919",
+          "features/application/viewport-zoom/FIXTURES.md": "79a1c46e4019b46bdf0b4c9845320bd0e54199e28016eb382c3af4e7b631e23c",
+          "features/application/viewport-zoom/FUNCTIONAL.md": "862fcccf50d0fa2ebb78b585b0844483183c94d18f0261017ce93c2437dc2f6b",
+          "features/application/viewport-zoom/VISUAL.md": "efaf4bc78cbecb757e9bd3967b2148d2a0080fb715c07837022a78f6bedcd7d5",
+          "features/application/viewport-zoom/zoom-icon.svg": "17d84e5c8ac80cd1a004984821d73af6cf007c2ddd424b708bf086e602d54c17",
           "fixtures/cad/docking-visible-solid-current.opd": "54a6f807b8084cc19061bce4079aaee3d4cefc03eaad2ac33123544997999f8a"
         },
-        "cucumber": "architecture/rust-port/receipts/2026-11-24-viewport-zoom-current-3940/cucumber.json",
-        "cucumber_sha256": "47588e3f3bb4f10486bf0cda3c78fa556642c882c73e772e09156ec6d6ed8ca5",
-        "scenario_inventory": "architecture/rust-port/receipts/2026-11-24-viewport-zoom-current-3940/scenario-inventory.json",
-        "scenario_inventory_sha256": "d914f236e5a2e88558917e209c14ea117da6affba795257b887e1d9a0123583a",
-        "scenario_arguments": "architecture/rust-port/receipts/2026-11-24-viewport-zoom-current-3940/scenario-arguments.json",
-        "scenario_arguments_sha256": "934bc8c2495c6f292f2476399770fa43b175ecf94e33b62fc7349c63b72253f9",
-        "application_commit": "216b13e044035d606567b5e2a0081a919216cac1",
-        "command": "OBK_BDD_AREA=application OBK_BDD_FEATURE=viewport-zoom OBK_BDD_SCENARIO=<case> <head-test-binary> application_scenarios_use_the_native_window --nocapture",
-        "environment": "Linux X11 with Xvfb, Openbox, and Vulkan Lavapipe",
-        "notes": "All seven current scenarios passed with the published native Part. The wheel used actual X11 scroll events. Strict build and runtime provenance remains open under #3978."
+        "cucumber": "architecture/rust-port/receipts/2026-11-26-viewport-zoom-wayland-3940/wayland.json",
+        "cucumber_sha256": "9a2dc3a05e6ad271aa40ac65664592ad1bd2f2ade6e9520a46b7673e03743487",
+        "scenario_arguments": "architecture/rust-port/receipts/2026-11-26-viewport-zoom-wayland-3940/wayland-arguments.json",
+        "scenario_arguments_sha256": "17bcd16e6827238e0b5b347c14a18ded43ac9e93a2ec0fa90f25fcdfce3b8a9d",
+        "application_commit": "2b4c55ca9c486dfa9aa534e1182f959464566504",
+        "command": "Full native Viewport Zoom run and focused Wayland wheel trace. See the receipt.",
+        "environment": "Linux Wayland with nested Weston 13 and Vulkan Lavapipe. X11 cross-check used Xvfb and Openbox.",
+        "notes": "All seven scenarios and 74 steps passed on both backends. Wayland and X11 used native discrete wheel input. Strict build and runtime provenance remains open under #3978."
       }
     }
   },

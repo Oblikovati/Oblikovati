@@ -148,3 +148,10 @@ avoids multiplying the viewer's ambient light by the default material's 0.25
 coefficient. The desktop capture and the bounded Go shaded-mode floor
 comparison are in `receipts/2026-11-17-ambient-material-4044/`. Full lighting
 and material parity are not established by this check.
+
+## Mouse-wheel zoom
+
+The [native Wayland and X11 runs](receipts/2026-11-26-viewport-zoom-wayland-3940/README.md)
+verify wheel magnification on the saved Part. The projected solid shrank
+when zooming out and grew when scrolling in the other direction. The
+active document and camera orientation stayed the same.

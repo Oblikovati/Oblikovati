@@ -309,9 +309,9 @@ using this status; the live scenario directory can change.
 - Viewport Pan (#3881) passed all four current scenarios and 32 steps with the native Part.
   See the [current run](receipts/2026-11-24-viewport-pan-current-3881/README.md).
   Separate X11 mouse tests previously passed for Pan dragging and context-menu actions.
-- Viewport Zoom (#3940) passed all seven current scenarios and 74 steps with the native Part.
-  The wheel used X11 input. Other actions used scripted window input.
-  See the [current run](receipts/2026-11-24-viewport-zoom-current-3940/README.md).
+- Viewport Zoom (#3940) passed all seven current scenarios and 74 steps on Wayland and X11.
+  The [current runs](receipts/2026-11-26-viewport-zoom-wayland-3940/README.md) include native wheel input on both backends.
+  Other actions used window frame-loop input.
   All seven pinned scenarios also have R0 baseline records.
   See the [pinned run](receipts/2026-11-20-viewport-zoom-r0-3940/README.md).
 - Viewport navigation wheel (#3881): all 12 scenarios and 143 steps passed
