@@ -75,3 +75,16 @@ The Cut result must meet the tighter of the target and tool tolerance caps.
 Each operand is checked against its own cap. Cut refuses an empty result,
 a split result, or a tool that removes no volume. Join and the Through All
 extent still require separate integration.
+
+The checked run passed all 32 desktop-owner extrusion tests, 14 authored
+recipe tests, and 252 executed adapter tests. The Cut regression checked
+analytic volume and the original body key after resize, undo, redo, and
+file reopen. A disposable native Wayland host also passed the v0.166.0 MCP
+Bridge Cut workflow with a circular tool and a subsequent depth edit.
+
+The 11 live cases that previously stopped at a distance Cut all reached a
+result or a later blocker. Corner bracket passed on a fresh host. Carriage
+end advanced to Join. Four cases exposed split or merged topology naming
+gaps, two returned multiple solids, and two reached region certification
+refusals. The fan frame reached its third mounting-hole request before the
+owner dispatch timed out. The 14 prior Through All cases remain open.
