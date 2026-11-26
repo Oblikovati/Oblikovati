@@ -58,6 +58,7 @@ fn presentation_coordinates_and_channels_decline_nonfinite_and_out_of_range_valu
     let mut scene = ViewportScene {
         background: [0.; 3],
         triangles: vec![ViewportTriangle {
+            face_index: None,
             positions: [[0.; 3]; 3],
             color: [1.; 4],
         }],

@@ -5,6 +5,7 @@ fn scene() -> ViewportScene {
     ViewportScene {
         background: [0., 0., 1.],
         triangles: vec![ViewportTriangle {
+            face_index: None,
             positions: [[1., 0., 0.], [0., 1., 0.], [0., 0., 1.]],
             color: [0., 1., 0., 1.],
         }],

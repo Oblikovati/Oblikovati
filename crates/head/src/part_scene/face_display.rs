@@ -91,9 +91,9 @@ fn append_named_body(
     part: Result<Option<ViewportScene>, String>,
 ) {
     match part {
-        Ok(Some(mut scene)) => {
+        Ok(Some(scene)) => {
             result.status.visible_bodies += 1;
-            result.scene.triangles.append(&mut scene.triangles);
+            result.scene.append_triangles(scene);
         }
         Ok(None) => {}
         Err(cause) => result
@@ -118,24 +118,21 @@ fn build_body_scene(
     validate_selected_meshes(meshes, selection, feature)?;
     let selected = selection.3.map(|channel| f32::from(channel) / 255.);
     let selected = [selected[0], selected[1], selected[2], 1.];
-    let triangles = meshes
-        .iter()
-        .flat_map(|face| {
-            let color = if selection
-                .2
-                .iter()
-                .any(|(id, key)| *id == feature && *key == face.key)
-            {
-                selected
-            } else {
-                body_color
-            };
-            face.triangles
-                .iter()
-                .map(move |triangle| (*triangle, color))
-        })
-        .collect::<Vec<_>>();
-    ViewportScene::from_colored_triangles([0., 0., 1.], &triangles)
+    let triangles = meshes.iter().enumerate().flat_map(|(index, face)| {
+        let color = if selection
+            .2
+            .iter()
+            .any(|(id, key)| *id == feature && *key == face.key)
+        {
+            selected
+        } else {
+            body_color
+        };
+        face.triangles
+            .iter()
+            .map(move |triangle| (*triangle, color, Some(index)))
+    });
+    ViewportScene::from_indexed_triangles([0., 0., 1.], triangles)
 }
 
 fn validate_selected_meshes(

@@ -6,7 +6,6 @@ impl HeadWindow for NativeHeadWindow {
     fn open_directory(&mut self, path: &std::path::Path) -> Result<(), String> {
         crate::frames::resource_browser::open_directory(path)
     }
-
     fn synchronize_projection_extent(&mut self) -> Result<bool, String> {
         self.view.synchronize_projection_extent()
     }
@@ -18,7 +17,6 @@ impl HeadWindow for NativeHeadWindow {
     )> {
         self.glyph_target
     }
-
     fn hovered_constraint_glyphs(
         &self,
     ) -> Option<(
@@ -27,7 +25,6 @@ impl HeadWindow for NativeHeadWindow {
     )> {
         self.glyph_candidates.clone()
     }
-
     fn capture_window(&self) -> Result<oblikovati_viewport::ViewportCapture, String> {
         self.view.capture()
     }
@@ -295,7 +292,6 @@ impl HeadWindow for NativeHeadWindow {
         Ok(true)
     }
     native_view_inputs!();
-
     fn sketch_pixels(
         &self,
         plane: oblikovati_model::sketch::SketchPlane,
@@ -325,6 +321,10 @@ impl HeadWindow for NativeHeadWindow {
     }
     fn set_normal_debug(&mut self, on: bool) -> Result<bool, String> {
         self.view.set_normal_debug(self.current_scene.as_ref(), on)
+    }
+    fn set_mesh_colors(&mut self, on: bool, per_triangle: bool) -> Result<(), String> {
+        self.view
+            .set_mesh_colors(self.current_scene.as_ref(), on, per_triangle)
     }
     fn wire_camera(&self, slot: u64) -> Result<oblikovati_api::wire::CameraView, String> {
         self.camera_for_slot(slot)
@@ -361,7 +361,6 @@ impl HeadWindow for NativeHeadWindow {
     fn view_line(&self, pixel: [i32; 2]) -> Result<[[f64; 3]; 2], String> {
         self.view.view_line(pixel)
     }
-
     fn navigate_view(
         &mut self,
         command: oblikovati_viewport::ViewportNavigation,

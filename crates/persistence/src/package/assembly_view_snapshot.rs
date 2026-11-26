@@ -31,6 +31,9 @@ pub struct AssemblySourceRecord {
 pub struct SavedAssemblyTriangle {
     pub positions: [[f32; 3]; 3],
     pub color: [f32; 4],
+    /// Zero-based display face ordinal when the cache was written from indexed geometry.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub face_index: Option<usize>,
 }
 
 /// A versioned display-only assembly snapshot and its source provenance.
@@ -186,7 +189,16 @@ fn validate_content(view: &SavedAssemblyView) -> Result<(), PackageCodecError> {
         occurrence.validate().map_err(PackageCodecError)?;
     }
     validate_sources(&view.occurrences, &view.sources)?;
+    let mut previous_face = 0;
     for (index, triangle) in view.triangles.iter().enumerate() {
+        if let Some(face) = triangle.face_index {
+            if face < previous_face || face >= view.triangles.len() {
+                return Err(PackageCodecError(format!(
+                    "assembly view triangle {index} face {face}: expected an ordered face ordinal within the mesh"
+                )));
+            }
+            previous_face = face;
+        }
         if triangle.positions.iter().flatten().any(|v| !v.is_finite())
             || triangle
                 .color

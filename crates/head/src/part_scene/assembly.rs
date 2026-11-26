@@ -219,6 +219,7 @@ impl DesktopPartScenes {
                 .map(|triangle| oblikovati_viewport::ViewportTriangle {
                     positions: triangle.positions,
                     color: triangle.color,
+                    face_index: triangle.face_index,
                 })
                 .collect();
             result.status.source = Some((document, generation));
@@ -302,7 +303,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>
         }
     }
     fn append(&self, result: &mut Self::Output, scene: Self::Output) {
-        result.scene.triangles.extend(scene.scene.triangles);
+        result.scene.append_triangles(scene.scene);
         result.status.visible_bodies += scene.status.visible_bodies;
         result.status.health.extend(scene.status.health);
         result.status.scene_errors.extend(scene.status.scene_errors);

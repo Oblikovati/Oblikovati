@@ -10,6 +10,7 @@ use std::{
     collections::VecDeque,
     rc::Rc,
 };
+mod debug_colors;
 mod fit;
 #[cfg(target_os = "linux")]
 mod preview_capture;
@@ -130,27 +131,6 @@ impl Viewport {
         self.scene = next;
         self.completed = None;
         Ok(())
-    }
-    /// Color the displayed model by face winding; example: `viewport.set_normal_debug(Some(&scene), true)?`.
-    pub fn set_normal_debug(
-        &mut self,
-        scene: Option<&ViewportScene>,
-        on: bool,
-    ) -> Result<bool, String> {
-        if self.live()?.normal_debug == on {
-            return Ok(false);
-        }
-        if let Some(scene) = scene {
-            scene.validate()?;
-        }
-        let next = next_generation(self.scene)?;
-        self.render
-            .as_mut()
-            .expect("live view")
-            .set_normal_debug(scene, on)?;
-        self.scene = next;
-        self.completed = None;
-        Ok(true)
     }
     /// Replace a validated orthographic camera atomically; example: `viewport.set_camera(camera)?`.
     pub fn set_camera(&mut self, camera: ViewportCamera) -> Result<(), String> {

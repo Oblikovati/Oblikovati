@@ -351,6 +351,12 @@ pub trait HeadWindow {
             "viewport normal debug {on}: expected a native render owner"
         ))
     }
+    /// Color B-rep faces or mesh triangles; example: `window.set_mesh_colors(true, false)?`.
+    fn set_mesh_colors(&mut self, on: bool, per_triangle: bool) -> Result<(), String> {
+        Err(format!(
+            "viewport mesh colors {on}/{per_triangle}: expected a native render owner"
+        ))
+    }
     /// Read one view slot's camera. Example: `window.wire_camera(slot)?`.
     fn wire_camera(&self, slot: u64) -> Result<oblikovati_api::wire::CameraView, String> {
         Err(format!("camera slot {slot}: expected a native view owner"))

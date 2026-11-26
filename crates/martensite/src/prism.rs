@@ -100,15 +100,29 @@ pub trait PrismPresentationSource {
 /// Display-only triangles for a current solid body.
 pub trait BodyPresentationSource {
     /// Tessellate the body for display; example: `body.body_triangles(options)?`.
-    fn body_triangles(&self, options: PrismMeshOptions) -> Result<Vec<[[f64; 3]; 3]>, String>;
+    fn body_triangles(&self, options: PrismMeshOptions) -> Result<Vec<[[f64; 3]; 3]>, String> {
+        Ok(self
+            .body_face_triangles(options)?
+            .into_iter()
+            .flatten()
+            .collect())
+    }
+    /// Tessellate a body in face order; example: `body.body_face_triangles(options)?`.
+    fn body_face_triangles(
+        &self,
+        options: PrismMeshOptions,
+    ) -> Result<Vec<Vec<[[f64; 3]; 3]>>, String>;
 }
 impl<T: PrismPresentationSource> BodyPresentationSource for T {
-    fn body_triangles(&self, options: PrismMeshOptions) -> Result<Vec<[[f64; 3]; 3]>, String> {
+    fn body_face_triangles(
+        &self,
+        options: PrismMeshOptions,
+    ) -> Result<Vec<Vec<[[f64; 3]; 3]>>, String> {
         Ok(self
             .presentation(options)?
             .faces
             .into_iter()
-            .flat_map(|face| face.triangles)
+            .map(|face| face.triangles)
             .collect())
     }
 }

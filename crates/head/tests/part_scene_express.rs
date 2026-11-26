@@ -32,6 +32,7 @@ fn save_qualified_assembly(
         .triangles
         .iter()
         .map(|item| SavedAssemblyTriangle {
+            face_index: item.face_index,
             positions: item.positions,
             color: item.color,
         })
@@ -91,6 +92,19 @@ fn express_scene_uses_saved_triangles_and_full_load_replaces_it() {
     assert_eq!(cached.scene.triangles.len(), expected.len());
     assert_eq!(cached.scene.triangles[0].positions, expected[0].positions);
     assert_eq!(cached.scene.triangles[0].color, expected[0].color);
+    assert!(
+        expected
+            .iter()
+            .any(|triangle| triangle.face_index.is_some())
+    );
+    assert!(
+        cached
+            .scene
+            .triangles
+            .iter()
+            .zip(&expected)
+            .all(|(actual, expected)| actual.face_index == expected.face_index)
+    );
     let part = files
         .open(
             &part_path,

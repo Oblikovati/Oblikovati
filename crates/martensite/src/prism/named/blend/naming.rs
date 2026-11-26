@@ -99,7 +99,18 @@ impl BlendNamedTopology {
         &self,
         options: PrismMeshOptions,
     ) -> Result<Vec<[[f64; 3]; 3]>, String> {
-        super::super::super::mesh::body_triangles(&self.shape, options)
+        Ok(self
+            .display_face_triangles(options)?
+            .into_iter()
+            .flatten()
+            .collect())
+    }
+
+    pub(crate) fn display_face_triangles(
+        &self,
+        options: PrismMeshOptions,
+    ) -> Result<Vec<Vec<[[f64; 3]; 3]>>, String> {
+        super::super::super::mesh::body_face_triangles(&self.shape, options)
     }
     /// Integrate the current result; example: `named.volume(&history, document)?`.
     pub fn volume(

@@ -8,9 +8,22 @@ impl ViewportScene {
         background: [f64; 3],
         triangles: &[([[f64; 3]; 3], [f32; 4])],
     ) -> Result<Self, String> {
+        Self::from_indexed_triangles(
+            background,
+            triangles
+                .iter()
+                .map(|&(points, color)| (points, color, None)),
+        )
+    }
+    /// Convert triangles with optional zero-based face ordinals in ascending face order.
+    /// Example: `ViewportScene::from_indexed_triangles(background, [(points, color, Some(0))])?`.
+    pub fn from_indexed_triangles(
+        background: [f64; 3],
+        triangles: impl IntoIterator<Item = ([[f64; 3]; 3], [f32; 4], Option<usize>)>,
+    ) -> Result<Self, String> {
         let triangles = triangles
-            .iter()
-            .map(|(points, color)| display_triangle(*points, *color))
+            .into_iter()
+            .map(|(points, color, face_index)| display_triangle(points, color, face_index))
             .collect::<Result<Vec<_>, _>>()?;
         let scene = Self {
             background,
@@ -26,21 +39,41 @@ impl ViewportScene {
         background: [f64; 3],
         color: [f32; 4],
     ) -> Result<Self, String> {
-        let mut triangles = Vec::new();
-        for face in &presentation.faces {
-            for positions in &face.triangles {
-                triangles.push(display_triangle(*positions, color)?);
-            }
-        }
-        let scene = Self {
+        Self::from_indexed_triangles(
             background,
-            triangles,
-        };
-        scene.validate()?;
-        Ok(scene)
+            presentation
+                .faces
+                .iter()
+                .enumerate()
+                .flat_map(|(index, face)| {
+                    face.triangles
+                        .iter()
+                        .map(move |&points| (points, color, Some(index)))
+                }),
+        )
+    }
+
+    /// Combine ordered scene meshes while keeping face ordinals distinct.
+    /// Example: `assembly.append_triangles(component)`.
+    pub fn append_triangles(&mut self, other: Self) {
+        let offset = self
+            .triangles
+            .iter()
+            .rev()
+            .find_map(|triangle| triangle.face_index)
+            .map_or(0, |index| index + 1);
+        self.triangles
+            .extend(other.triangles.into_iter().map(|mut triangle| {
+                triangle.face_index = triangle.face_index.map(|index| index + offset);
+                triangle
+            }));
     }
 }
-fn display_triangle(positions: [[f64; 3]; 3], color: [f32; 4]) -> Result<ViewportTriangle, String> {
+fn display_triangle(
+    positions: [[f64; 3]; 3],
+    color: [f32; 4],
+    face_index: Option<usize>,
+) -> Result<ViewportTriangle, String> {
     let converted = positions.map(|point| point.map(|value| value as f32));
     if converted.iter().flatten().any(|value| !value.is_finite()) {
         return Err(format!(
@@ -50,6 +83,7 @@ fn display_triangle(positions: [[f64; 3]; 3], color: [f32; 4]) -> Result<Viewpor
     Ok(ViewportTriangle {
         positions: converted,
         color,
+        face_index,
     })
 }
 #[cfg(test)]
@@ -141,12 +175,18 @@ impl PartPresentation {
         options: oblikovati_martensite::PrismMeshOptions,
         color: [f32; 4],
     ) {
-        let scene = body
-            .body_triangles(options)
-            .and_then(|triangles| body_scene(triangles, self.scene.background, color));
+        let scene = body.body_face_triangles(options).and_then(|faces| {
+            ViewportScene::from_indexed_triangles(
+                self.scene.background,
+                faces.into_iter().enumerate().flat_map(|(index, face)| {
+                    face.into_iter()
+                        .map(move |points| (points, color, Some(index)))
+                }),
+            )
+        });
         match scene {
-            Ok(mut scene) => {
-                self.scene.triangles.append(&mut scene.triangles);
+            Ok(scene) => {
+                self.scene.append_triangles(scene);
                 self.visible_bodies += 1;
             }
             Err(cause) => self
@@ -154,23 +194,6 @@ impl PartPresentation {
                 .push(PartPresentationDecline { feature, cause }),
         }
     }
-}
-
-fn body_scene(
-    triangles: Vec<[[f64; 3]; 3]>,
-    background: [f64; 3],
-    color: [f32; 4],
-) -> Result<ViewportScene, String> {
-    let triangles = triangles
-        .into_iter()
-        .map(|triangle| display_triangle(triangle, color))
-        .collect::<Result<_, _>>()?;
-    let scene = ViewportScene {
-        background,
-        triangles,
-    };
-    scene.validate()?;
-    Ok(scene)
 }
 
 #[cfg(test)]

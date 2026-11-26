@@ -37,7 +37,7 @@ pub(crate) struct RenderView {
     pub view: Handle<dyn V3dViewSource>,
     pub renderer: Handle<Graphic3dRenderView>,
     structures: Vec<Handle<Graphic3dStructure>>,
-    pub(super) normal_debug: bool,
+    pub(super) mesh_debug: crate::scene::MeshDebug,
     datums: datum_plane::DatumOverlay,
     status: status_text::StatusTextOverlay,
     preview: sketch_preview::SketchPreviewOverlay,
@@ -68,7 +68,7 @@ impl RenderView {
                 &oblikovati_model::theme::ThemeDefinition::dark()?,
             ),
             structures: Vec::new(),
-            normal_debug: false,
+            mesh_debug: Default::default(),
             datums: Default::default(),
             status: Default::default(),
             preview: Default::default(),
@@ -101,21 +101,21 @@ impl RenderView {
     pub fn submit(&mut self, scene: &ViewportScene) -> Result<(), String> {
         scene.validate()?;
         let structures =
-            crate::scene::build_scene(&self.viewer, &scene.triangles, self.normal_debug)?;
+            crate::scene::build_scene(&self.viewer, &scene.triangles, self.mesh_debug)?;
         background::apply_scene_background(&self.view, self.background, scene.background)?;
         self.replace_structures(structures);
         Ok(())
     }
-    pub(super) fn set_normal_debug(
+    pub(super) fn set_mesh_debug(
         &mut self,
         scene: Option<&ViewportScene>,
-        on: bool,
+        debug: crate::scene::MeshDebug,
     ) -> Result<(), String> {
         if let Some(scene) = scene {
-            let structures = crate::scene::build_scene(&self.viewer, &scene.triangles, on)?;
+            let structures = crate::scene::build_scene(&self.viewer, &scene.triangles, debug)?;
             self.replace_structures(structures);
         }
-        self.normal_debug = on;
+        self.mesh_debug = debug;
         Ok(())
     }
     fn replace_structures(&mut self, structures: Vec<Handle<Graphic3dStructure>>) {

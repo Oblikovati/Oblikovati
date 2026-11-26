@@ -6,26 +6,43 @@ use martensite_tkernel::{
 };
 use martensite_tkservice::graphic3d::*;
 use martensite_tkv3d::v3d::V3dViewer;
+#[derive(Clone, Copy, Default, PartialEq, Eq)]
+pub(crate) struct MeshDebug {
+    pub normals: bool,
+    /// None for ordinary shading, Some(false) for faces, Some(true) for triangles.
+    pub colors: Option<bool>,
+}
+
+mod mesh_palette;
+
 pub(crate) fn build_scene(
     viewer: &V3dViewer,
     triangles: &[ViewportTriangle],
-    normal_debug: bool,
+    debug: MeshDebug,
 ) -> Result<Vec<Handle<Graphic3dStructure>>, String> {
-    let mut structures = Vec::new();
-    for triangle in triangles {
-        structures.push(build_triangle(viewer, triangle, normal_debug)?);
+    let mut structures = Vec::with_capacity(triangles.len());
+    for (index, triangle) in triangles.iter().enumerate() {
+        let color_index = match debug.colors {
+            Some(true) => Some(index),
+            Some(false) => triangle.face_index,
+            None => None,
+        };
+        let color = color_index.map_or(triangle.color, mesh_palette::index_color);
+        let normals = debug.normals && color_index.is_none();
+        structures.push(build_triangle(viewer, triangle, color, normals)?);
     }
     Ok(structures)
 }
 fn build_triangle(
     viewer: &V3dViewer,
     triangle: &ViewportTriangle,
+    color: [f32; 4],
     normal_debug: bool,
 ) -> Result<Handle<Graphic3dStructure>, String> {
     let structure = Graphic3dStructure::new(&viewer.structure_manager(), &Handle::default())
         .map_err(|error| error.to_string())?;
     let group = structure.new_group().map_err(|error| error.to_string())?;
-    let aspects = triangle_aspect(triangle.color, normal_debug)?;
+    let aspects = triangle_aspect(color, normal_debug)?;
     group.set_group_primitives_aspect(&aspects.cast());
     group.add_primitive_array(&triangle_vertices(triangle)?.cast(), true);
     Ok(structure)

@@ -138,6 +138,7 @@ fn synthetic_view(
         chord_error: 0.05,
         angular_error: 0.5,
         triangles: vec![SavedAssemblyTriangle {
+            face_index: None,
             positions: [[0., 0., 0.], [1., 0., 0.], [0., 1., 0.]],
             color: [0.2, 0.3, 0.4, 1.],
         }],

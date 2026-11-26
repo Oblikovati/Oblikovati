@@ -67,5 +67,6 @@ fn updates_window(method: &str) -> bool {
         oblikovati_api::wire::METHOD_VIEWPORT_CAPTURE
             | oblikovati_api::wire::METHOD_VIEWPORT_CAPTURE_WINDOW
             | oblikovati_api::wire::METHOD_VIEWPORT_SET_NORMAL_DEBUG
+            | oblikovati_api::wire::METHOD_VIEWPORT_SET_MESH_COLORS
     )
 }

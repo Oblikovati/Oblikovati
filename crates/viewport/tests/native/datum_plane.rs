@@ -56,6 +56,7 @@ fn solid_in_front_of_datum_occludes_its_fill() {
     let scene = ViewportScene {
         background: [0.; 3],
         triangles: vec![ViewportTriangle {
+            face_index: None,
             positions: [[-8., -8., 1.], [8., -8., 1.], [0., 8., 1.]],
             color: [1., 0., 0., 1.],
         }],
@@ -75,6 +76,7 @@ fn datum_in_front_blends_with_the_solid_behind_it() {
     let scene = ViewportScene {
         background: [0.; 3],
         triangles: vec![ViewportTriangle {
+            face_index: None,
             positions: [[-8., -8., 0.], [8., -8., 0.], [0., 8., 0.]],
             color: [1., 0., 0., 1.],
         }],

@@ -40,7 +40,7 @@ fn place_triangle(
     }
     Ok(ViewportTriangle {
         positions,
-        color: triangle.color,
+        ..*triangle
     })
 }
 

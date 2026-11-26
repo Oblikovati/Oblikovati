@@ -16,6 +16,8 @@ impl Default for ViewportOptions {
 pub struct ViewportTriangle {
     pub positions: [[f32; 3]; 3],
     pub color: [f32; 4],
+    /// Scene-local B-rep face ordinal for mesh diagnostics, when available.
+    pub face_index: Option<usize>,
 }
 #[derive(Clone, Debug)]
 pub struct ViewportScene {

@@ -28,6 +28,7 @@ fn scene(z: f32) -> ViewportScene {
     ViewportScene {
         background: [0.; 3],
         triangles: vec![ViewportTriangle {
+            face_index: None,
             positions: [[0., 0., z], [1., 0., z], [0., 1., z]],
             color: [1.; 4],
         }],

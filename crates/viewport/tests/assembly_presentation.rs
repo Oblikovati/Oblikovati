@@ -50,6 +50,7 @@ impl AssemblyPresentationSource for FakeAssemblySource {
     }
     fn part(&mut self, component: u64) -> Result<FakeScene, String> {
         let triangle = ViewportTriangle {
+            face_index: None,
             positions: [[component as f32, 0., 0.]; 3],
             color: [0.2, 0.3, 0.4, 1.],
         };

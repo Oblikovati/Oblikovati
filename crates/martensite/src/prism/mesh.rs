@@ -124,10 +124,10 @@ fn require_face_mesh(mesh: &Triangulation, context: &str) -> Result<(), String> 
     Ok(())
 }
 
-pub(super) fn body_triangles(
+pub(super) fn body_face_triangles(
     source: &Shape,
     options: PrismMeshOptions,
-) -> Result<Vec<[[f64; 3]; 3]>, String> {
+) -> Result<Vec<Vec<[[f64; 3]; 3]>>, String> {
     use martensite_tkbrep::{topexp, toptools::IndexedMapOfShape};
     use martensite_tkg3d::top_abs::ShapeEnum;
     validate_options(options)?;
@@ -141,7 +141,7 @@ pub(super) fn body_triangles(
     let mut triangles = Vec::new();
     for index in 1..=faces.extent() {
         let face = faces.find_key(index).map_err(|cause| cause.to_string())?;
-        triangles.extend(face_triangles(face, "display body face")?);
+        triangles.push(face_triangles(face, "display body face")?);
     }
     if triangles.is_empty() {
         return Err("display body triangles 0: expected a nonempty solid mesh".into());

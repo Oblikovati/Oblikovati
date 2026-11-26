@@ -10,10 +10,12 @@ fn native_light_distinguishes_faces_with_the_same_material() {
         background: [0., 0., 0.],
         triangles: vec![
             ViewportTriangle {
+                face_index: None,
                 positions: [[-8., -4., 0.], [-2., -4., 0.], [-5., 5., 0.]],
                 color,
             },
             ViewportTriangle {
+                face_index: None,
                 positions: [[2., -4., -3.], [8., -4., 3.], [5., 5., 0.]],
                 color,
             },
@@ -44,10 +46,12 @@ fn lighting_retains_each_faces_material_color() {
         background: [0.; 3],
         triangles: vec![
             ViewportTriangle {
+                face_index: None,
                 positions: [[-8., -4., 0.], [-2., -4., 0.], [-5., 5., 0.]],
                 color: [1., 0., 0., 1.],
             },
             ViewportTriangle {
+                face_index: None,
                 positions: [[2., -4., 0.], [8., -4., 0.], [5., 5., 0.]],
                 color: [0., 1., 0., 1.],
             },
@@ -79,7 +83,11 @@ fn isometric_cube_has_three_visible_face_tones() {
         [[-5., -5., 5.], [5., -5., 5.], [5., 5., 5.], [-5., 5., 5.]],
     ] {
         for positions in [[quad[0], quad[1], quad[2]], [quad[0], quad[2], quad[3]]] {
-            triangles.push(ViewportTriangle { positions, color });
+            triangles.push(ViewportTriangle {
+                positions,
+                color,
+                face_index: None,
+            });
         }
     }
     let mut scene = ViewportScene {
@@ -146,6 +154,7 @@ fn reversed_visible_face_keeps_ambient_color() {
     let runtime = ViewportRuntime::new(Default::default()).unwrap();
     let mut view = runtime.open_offscreen([320, 240]).unwrap();
     let triangle = ViewportTriangle {
+        face_index: None,
         positions: [[-8., -4., 0.], [0., 8., 0.], [8., -4., 0.]],
         color: [0.7, 0., 0., 1.],
     };

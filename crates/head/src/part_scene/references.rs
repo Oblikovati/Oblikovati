@@ -245,6 +245,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartTopolog
             .into_iter()
             .map(
                 |triangle| oblikovati_persistence::package::SavedAssemblyTriangle {
+                    face_index: triangle.face_index,
                     positions: triangle.positions,
                     color: triangle.color,
                 },

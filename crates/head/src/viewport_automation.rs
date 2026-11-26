@@ -21,6 +21,7 @@ pub(crate) fn apply(
         METHOD_VIEWPORT_KEY => key(window, method, bytes),
         METHOD_VIEWPORT_SCROLL => scroll(window, method, bytes),
         METHOD_VIEWPORT_SET_NORMAL_DEBUG => normal_debug(window, method, bytes),
+        METHOD_VIEWPORT_SET_MESH_COLORS => mesh_colors(window, method, bytes),
         _ => return None,
     };
     Some(result)
@@ -30,6 +31,17 @@ fn normal_debug(window: &mut dyn HeadWindow, method: &str, bytes: &[u8]) -> Resu
     let args: SetNormalDebugArgs = decode_wire_arguments(method, bytes)?;
     window.set_normal_debug(args.on).map_err(Error)?;
     encode_wire_reply(&NormalDebugResult { on: args.on })
+}
+
+fn mesh_colors(window: &mut dyn HeadWindow, method: &str, bytes: &[u8]) -> Result<Vec<u8>, Error> {
+    let args: SetMeshColorsArgs = decode_wire_arguments(method, bytes)?;
+    window
+        .set_mesh_colors(args.on, args.per_triangle)
+        .map_err(Error)?;
+    encode_wire_reply(&MeshColorsResult {
+        on: args.on,
+        per_triangle: args.per_triangle,
+    })
 }
 
 fn capture(window: &mut dyn HeadWindow, method: &str, bytes: &[u8]) -> Result<Vec<u8>, Error> {

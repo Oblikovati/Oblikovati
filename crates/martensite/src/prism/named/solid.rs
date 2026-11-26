@@ -328,12 +328,15 @@ pub fn named_solid_part_properties<'a>(
 }
 
 impl crate::BodyPresentationSource for NamedSolid {
-    fn body_triangles(&self, options: PrismMeshOptions) -> Result<Vec<[[f64; 3]; 3]>, String> {
+    fn body_face_triangles(
+        &self,
+        options: PrismMeshOptions,
+    ) -> Result<Vec<Vec<[[f64; 3]; 3]>>, String> {
         match self {
             Self::Prism(body) => {
-                super::super::BodyPresentationSource::body_triangles(body.as_ref(), options)
+                super::super::BodyPresentationSource::body_face_triangles(body.as_ref(), options)
             }
-            Self::Derived(body) => body.display_triangles(options),
+            Self::Derived(body) => body.display_face_triangles(options),
         }
     }
 }
