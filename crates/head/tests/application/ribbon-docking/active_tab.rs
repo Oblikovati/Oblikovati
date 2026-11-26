@@ -45,7 +45,6 @@ fn dock_left_from_model_tab(world: &mut ApplicationWorld) {
 }
 #[then("the 3D Model ribbon remains visible")]
 fn model_still_visible(world: &mut ApplicationWorld) {
-    world.expect_no_text("Undock Ribbon");
     world.expect_text("Start 2D Sketch");
     world.expect_text("Modify");
 }

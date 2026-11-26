@@ -73,6 +73,11 @@ to the right. Hiding Primitives restores both positions. The selector stays open
 after each click.
 [Native reflow scenario](receipts/2026-11-26-ribbon-primitives-reflow-3856/README.md)
 
+With 3D Model active, the Show Panels submenu opened from inactive View
+or Tools shows Primitives unchecked and Modify checked. The 3D Model
+command strip stays visible while the menu is open.
+[Native inactive-tab examples](receipts/2026-11-26-ribbon-inactive-tab-panel-menu-3856/README.md)
+
 The direct checklist wraps keyboard focus from the first row to the last
 with Up and from the last row to the first with Down. The
 [native regression](receipts/2026-11-24-selector-keyboard-wrap-3856/README.md)
