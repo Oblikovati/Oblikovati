@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
+mod chooser_modal;
 #[path = "component_dialog.rs"]
 pub(crate) mod component_dialog;
 mod kind_selection;
@@ -13,7 +14,7 @@ pub(crate) mod templates;
 #[path = "workspaces.rs"]
 pub(crate) mod workspaces;
 use crate::{GuiCommandState, GuiDrawingLayoutAction, GuiShellAction};
-use imgui::{Condition, Ui};
+use imgui::Ui;
 use template_catalog::TemplateChoice;
 use template_sort::{TemplateSort, size_heading};
 use templates::{
@@ -47,6 +48,7 @@ pub(crate) struct TemplateChooser {
     /// A double click on a tile asks for what Create does.
     create_requested: bool,
     projects: crate::application::project_dialog::ProjectsDialog,
+    projects_return_geometry: Option<([f32; 2], [f32; 2])>,
 }
 /// What a drawing template's previews offer.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -112,48 +114,6 @@ impl TemplateChooser {
         }
         let style = ui.clone_style();
         DetailsLayout::new(widths, style.indent_spacing, style.item_spacing[0])
-    }
-    pub(crate) fn request(&mut self) {
-        self.clear_gallery_navigation();
-        self.requested = true;
-    }
-    pub(crate) fn panel(
-        &mut self,
-        ui: &Ui,
-        state: &GuiCommandState,
-        actions: &mut Vec<GuiShellAction>,
-        icons: &crate::icons::GuiRibbonIcons,
-    ) {
-        self.sync_active_project(state);
-        if ui.io().key_ctrl && ui.is_key_pressed(imgui::Key::N) && !state.transaction_open {
-            self.request();
-        }
-        if std::mem::take(&mut self.requested) {
-            if has_layout_sources(state) {
-                actions.push(GuiShellAction::DrawingLayout(
-                    GuiDrawingLayoutAction::CaptureSources,
-                ));
-            }
-            self.reveal_project_folder(state);
-            self.restore_project_selection(state);
-            ui.open_popup("New document");
-            dialog_geometry(ui);
-        }
-        if let Some(_dialog) = ui.begin_modal_popup("New document") {
-            self.contents(ui, state, icons);
-            self.buttons(ui, state, actions);
-            self.projects.panel(ui, state, actions);
-        } else {
-            self.projects.close();
-            self.clear_gallery_navigation();
-        }
-        self.component.panel(ui, state, actions);
-    }
-    /// A frame must follow so a nested dialog opens without waiting for an event.
-    pub(crate) fn needs_frame(&self) -> bool {
-        self.projects.needs_frame()
-            || self.component.needs_frame()
-            || self.gallery_scroll_frames > 0
     }
     fn contents(&mut self, ui: &Ui, state: &GuiCommandState, icons: &crate::icons::GuiRibbonIcons) {
         let gallery_width = gallery_column_width(ui.content_region_avail()[0]);
@@ -484,14 +444,6 @@ impl DetailsLayout {
     }
 }
 const DISPLAY_MENU: &str = "##template-display";
-fn dialog_geometry(ui: &Ui) {
-    let size = [
-        820_f32.min(ui.io().display_size[0] - 24.),
-        400_f32.min(ui.io().display_size[1] - 24.),
-    ];
-    let position = std::array::from_fn(|axis| (ui.io().display_size[axis] - size[axis]) * 0.5);
-    crate::widget_abi::window_geometry(ui, position, size, Condition::Appearing);
-}
 #[cfg(test)]
 #[path = "../../../tests/application/document-creation/templates.rs"]
 mod tests;

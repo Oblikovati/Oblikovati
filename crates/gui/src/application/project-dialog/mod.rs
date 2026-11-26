@@ -52,6 +52,19 @@ impl ProjectsDialog {
         self.opening = true;
         self.inspected = None;
     }
+    pub(crate) fn is_requested(&self) -> bool {
+        self.opening || self.open.is_requested()
+    }
+    pub(crate) fn opens_in_dock(&self, ui: &Ui) -> bool {
+        self.opening && crate::widget_abi::window_has_dock(ui, self.title())
+    }
+    fn title(&self) -> &str {
+        if self.dock_title.is_empty() {
+            TITLE
+        } else {
+            &self.dock_title
+        }
+    }
     /// Close with its parent; example: `projects.close()` when the chooser closes.
     pub(crate) fn close(&mut self) {
         self.open.set_open(false);
@@ -78,6 +91,7 @@ impl ProjectsDialog {
         actions: &mut Vec<GuiShellAction>,
     ) {
         self.inspection_redraw = false;
+        let focus_dock = self.opens_in_dock(ui);
         if std::mem::take(&mut self.opening) {
             self.open.set_open(true);
         }
@@ -86,15 +100,12 @@ impl ProjectsDialog {
         }
         self.finish_activation(state);
         self.editor.finish(state);
-        let title = if self.dock_title.is_empty() {
-            TITLE.to_owned()
-        } else {
-            self.dock_title.clone()
-        };
+        let title = self.title().to_owned();
         Self::center_dockable(ui, &title, SIZE);
         let mut open = true;
         let mut done = false;
-        Self::dockable_window(ui, &title, &mut open).build(|| {
+        let window = Self::dockable_window(ui, &title, &mut open).focused(focus_dock);
+        window.build(|| {
             {
                 let _disabled = ui.begin_disabled(self.editor.is_open());
                 self.project_rows(ui, &state.projects);

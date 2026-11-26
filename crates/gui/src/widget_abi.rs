@@ -47,6 +47,7 @@ unsafe extern "C" {
     fn oblikovati_gui_begin_scroll_region(identity: *const u8, width: f32, height: f32) -> bool;
     fn oblikovati_gui_dummy(width: f32, height: f32);
     fn oblikovati_gui_window_is_docked() -> bool;
+    fn oblikovati_gui_window_has_dock(title: *const u8) -> bool;
     fn oblikovati_gui_fit_viewport_properties(
         title: *const u8,
         left: f32,
@@ -343,6 +344,13 @@ pub(crate) fn dummy(_: &Ui, size: [f32; 2]) {
 pub(crate) fn window_is_docked(_: &Ui) -> bool {
     // The Ui borrow keeps the active Dear ImGui window available.
     unsafe { oblikovati_gui_window_is_docked() }
+}
+
+/// Whether a named window has a valid dock, even before its first frame.
+pub(crate) fn window_has_dock(_: &Ui, title: &str) -> bool {
+    let title = ImString::new(title);
+    // The UI and title outlive this read of the current context's window settings.
+    unsafe { oblikovati_gui_window_has_dock(title.as_ptr().cast()) }
 }
 
 /// Keep floating properties inside the live viewport. Docked properties follow their dock.

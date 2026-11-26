@@ -453,7 +453,7 @@ using this status; the live scenario directory can change.
   conservative (#4079).
 - Standalone Projects passed [pointer docking, close, and saved-layout restart](receipts/2026-11-25-projects-docking-4073/README.md).
   [File Properties docks, closes, and reopens in the same tab group](receipts/2026-11-26-file-properties-dock-4073/README.md) on Wayland and X11.
-  Restored input for the Projects child of the template chooser remains open under #4073.
+  [Restored Projects accepts Done and Escape and returns to the selected template](receipts/2026-11-26-template-projects-dock-4073/README.md) on Wayland and X11.
 - The 60 fps sketch target remains unproven. The recorded 1440 × 900 probe
   measured 20.738 ms median and 24.861 ms p95 against a 16.67 ms frame budget.
   See `receipts/2026-11-16-sketch-frame-baseline-4031/` and #4032.

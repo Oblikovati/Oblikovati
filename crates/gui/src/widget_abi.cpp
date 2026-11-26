@@ -278,6 +278,14 @@ void oblikovati_gui_fit_dialog(const unsigned char* title, float x, float y, flo
 
 bool oblikovati_gui_window_is_docked() { return ImGui::IsWindowDocked(); }
 
+bool oblikovati_gui_window_has_dock(const unsigned char* title) {
+    const char* name = reinterpret_cast<const char*>(title);
+    const ImGuiWindow* window = ImGui::FindWindowByName(name);
+    const auto* saved = window ? nullptr : ImGui::FindWindowSettings(ImHashStr(name));
+    const ImGuiID dock = window ? window->DockId : saved ? saved->DockId : 0;
+    return dock != 0 && ImGui::DockBuilderGetNode(dock) != nullptr;
+}
+
 void oblikovati_gui_fit_viewport_properties(const unsigned char* title, float left, float top,
                                            float right, float bottom, float width, float height) {
     const char* name = reinterpret_cast<const char*>(title);

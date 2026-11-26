@@ -117,12 +117,7 @@ fn open_template_projects(world: &mut ApplicationWorld) {
 }
 
 fn restore_template_project_dock(world: &mut ApplicationWorld, node: u32) {
-    let title = std::ffi::CString::new(TEMPLATE_PROJECTS).unwrap();
-    // Seed the saved child placement without requiring a drag out of a modal.
-    unsafe {
-        imgui::sys::igDockBuilderDockWindow(title.as_ptr(), node);
-        imgui::sys::igDockBuilderFinish(node);
-    }
+    seed_template_project_dock(node);
     world.pump(Vec::new());
     assert_eq!(
         super::super::diagnostics::window_dock_id(TEMPLATE_PROJECTS),
@@ -130,8 +125,56 @@ fn restore_template_project_dock(world: &mut ApplicationWorld, node: u32) {
     );
 }
 
+fn seed_template_project_dock(node: u32) {
+    let title = std::ffi::CString::new(TEMPLATE_PROJECTS).unwrap();
+    // Seed the saved child placement without requiring a drag out of a modal.
+    unsafe {
+        imgui::sys::igDockBuilderDockWindow(title.as_ptr(), node);
+        imgui::sys::igDockBuilderFinish(node);
+    }
+}
+
+#[test]
+fn restored_projects_accepts_done_and_returns_to_the_selected_template() {
+    use super::super::{diagnostics, project_dialog, refinements};
+    let mut world = ApplicationWorld::with_asset_tools_closed();
+    world.add_part();
+    let node = dock_material_browser(&mut world);
+    seed_template_project_dock(node);
+    world.pump(Vec::new());
+    world.reopen_application();
+    let part = world.add_part();
+    assert_eq!(material_node(), node);
+
+    world.key(oblikovati_viewport::ViewportPhysicalKey::N, true);
+    world.click_text("Metric");
+    world.click_text("Standard metric part");
+    world.expect_text("Length: millimeters (mm)");
+    let details = refinements::selected_template_details(&world);
+    let geometry = window_geometry("New document").unwrap();
+    for close in ["Done", "Escape"] {
+        project_dialog::choose_projects(&mut world);
+        assert_eq!(diagnostics::window_dock_id(TEMPLATE_PROJECTS), Some(node));
+        if close == "Done" {
+            click_before_dock_frame(&mut world, TEMPLATE_PROJECTS, "Done");
+        } else {
+            escape_before_dock_frame(&mut world);
+        }
+        assert_closed_with_visible_tab(&mut world, TEMPLATE_PROJECTS, MATERIAL_BROWSER);
+        world.pump(Vec::new());
+        assert_eq!(window_geometry("New document"), Some(geometry));
+        assert_eq!(refinements::selected_template_details(&world), details);
+    }
+    world.expect_active(part);
+    world.close();
+}
+
 fn close_template_chooser(world: &mut ApplicationWorld) {
-    click_before_dock_frame(world, "New document", "Cancel");
+    let center = world.run_in_window("New document", "Cancel").center();
+    let point = super::super::diagnostics::pointer_pixels(center);
+    // The dock was injected into an already-open modal child. Deliver Cancel in
+    // the next frame so this test isolates the resulting dock-tab transition.
+    world.app().window.scripted = super::super::pointer_click_events(point, 1);
     assert_closed_with_visible_tab(world, TEMPLATE_PROJECTS, MATERIAL_BROWSER);
     assert!(window_geometry("New document").is_none());
 }
