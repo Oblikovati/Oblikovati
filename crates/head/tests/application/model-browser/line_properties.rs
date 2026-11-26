@@ -201,8 +201,17 @@ fn weight_default(world: &mut ApplicationWorld) {
     expect_field_and_apply(world, "Line Weight", "Default", false);
 }
 // Scale
-fn scale_field_enabled(world: &ApplicationWorld) -> bool {
-    world.run_is_enabled("1.00")
+fn scale_field_enabled(world: &mut ApplicationWorld) -> bool {
+    let list = diagnostics::window_draw_list(TITLE).expect("expected Geometry Properties");
+    let value = world
+        .frame
+        .runs
+        .iter()
+        .find(|run| run.list == list && run.text.ends_with("1.00"))
+        .expect("expected the scale value 1.00");
+    let point = diagnostics::pointer_pixels([value.maximum[0] - 4., value.center()[1]]);
+    world.click(point);
+    diagnostics::window_input_active(TITLE, "##line-scale")
 }
 #[then("the scale value is shown as 1.00 and its field is disabled")]
 #[then("the scale field is disabled and still shows 1.00")]
@@ -215,7 +224,10 @@ fn scale_off(world: &mut ApplicationWorld) {
 #[when("I clear Scale")]
 #[when("the user clears Scale")]
 fn toggle_scale(world: &mut ApplicationWorld) {
-    choose_row(world, "Scale");
+    let row = world.run("Scale");
+    let point = diagnostics::pointer_pixels([row.minimum[0] - 6., row.center()[1]]);
+    world.click(point);
+    settle(world);
 }
 #[then("the scale field is enabled and shows 1.00")]
 fn scale_on(world: &mut ApplicationWorld) {

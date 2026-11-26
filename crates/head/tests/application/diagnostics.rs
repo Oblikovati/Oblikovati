@@ -21,6 +21,19 @@ pub(super) fn window_draw_list(title: &str) -> Option<usize> {
         .then(|| rendered_draw_list_index(window.DrawList))?
 }
 
+/// Check whether a pointer interaction activated a named input in its window.
+pub(super) fn window_input_active(title: &str, label: &str) -> bool {
+    let title = CString::new(title).unwrap();
+    let label = CString::new(label).unwrap();
+    // The window and its root ID stack belong to the completed native frame.
+    let window = unsafe { sys::igFindWindowByName(title.as_ptr()) };
+    if window.is_null() {
+        return false;
+    }
+    let id = unsafe { sys::ImGuiWindow_GetID_Str(window, label.as_ptr(), std::ptr::null()) };
+    !unsafe { sys::igGetInputTextState(id) }.is_null() && unsafe { sys::igGetActiveID() } == id
+}
+
 pub(super) fn tooltip_draw_list() -> Option<usize> {
     (0..8).find_map(|index| window_draw_list(&format!("##Tooltip_{index:02}")))
 }
