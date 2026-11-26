@@ -81,9 +81,11 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext
             .into_iter()
             .map(str::to_owned)
             .collect();
-        self.files
-            .reconcile_document_references(owner)
-            .map_err(|cause| Error(cause.to_string()))?;
+        if !session.in_transaction() {
+            self.files
+                .reconcile_document_references(owner)
+                .map_err(|cause| Error(cause.to_string()))?;
+        }
         let mut report = AssemblyReferenceReport::default();
         for name in names {
             self.resolve_assembly_reference(owner, name, &mut report)?;

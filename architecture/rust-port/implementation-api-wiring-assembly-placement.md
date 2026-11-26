@@ -41,3 +41,22 @@ moved it, undid and redid the transform, then grounded it at the new
 position. The transform changed 31,606 pixels in the viewport crop. Undo
 restored the original crop pixel for pixel. The frame after redo and
 grounding matched the moved crop.
+
+## Occurrence removal
+
+The API deletes an occurrence by its session ID and returns the surviving
+tree in assembly order. Unresolved component files appear in this reply
+as authored occurrences with no child entries. A missing file can
+therefore be repaired or removed by ID.
+
+The remaining copies continue to share their document binding. When the
+last copy is removed, the workspace releases its clean hidden component
+after the transaction commits. Undo resolves that component again. A
+nested transaction leaves the reference available for an outer abort.
+The file-host regressions cover these cases, a transaction veto, and
+save and reopen after removal.
+
+The Wayland MCP run removed one occurrence from a 16-box grid. The reply
+contained all 15 surviving IDs in order. The viewport crop changed by
+20,719 pixels. Undo restored the original crop exactly, and redo restored
+the removal crop.

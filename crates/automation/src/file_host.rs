@@ -56,8 +56,9 @@ pub const FILE_COMMAND_METHODS: [&str; 13] = [
     METHOD_DOCUMENTS_CLOSE_ALL,
 ];
 /// Assembly mutations currently owned by the file host.
-pub const ASSEMBLY_COMMAND_METHODS: [&str; 6] = [
+pub const ASSEMBLY_COMMAND_METHODS: [&str; 7] = [
     METHOD_ASSEMBLY_SUPPRESS,
+    METHOD_ASSEMBLY_REMOVE,
     METHOD_ASSEMBLY_GROUND,
     METHOD_ASSEMBLY_TRANSFORM,
     METHOD_ASSEMBLY_PLACE,
@@ -331,6 +332,9 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext
                 self.files,
                 decode(method, request)?,
             );
+        }
+        if method == METHOD_ASSEMBLY_REMOVE {
+            return self.remove_occurrence(decode(method, request)?);
         }
         if method == METHOD_ASSEMBLY_GROUND {
             return assembly_occurrence_edits::ground_wire(self.files, decode(method, request)?);

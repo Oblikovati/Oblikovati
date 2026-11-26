@@ -387,7 +387,7 @@ fn occurrence_edit_rejects_a_path_through_an_unrelated_owner() {
 }
 
 #[test]
-fn occurrence_suppression_honors_a_transaction_veto() {
+fn occurrence_suppression_and_removal_honor_a_transaction_veto() {
     let mut files = DiscoveryWorkspace::new(QueryObserver::default(), DiscoveryFiles::default());
     let mut source = QueryGuids(0);
     let path = Path::new("/fixtures/veto.oad");
@@ -413,8 +413,17 @@ fn occurrence_suppression_honors_a_transaction_veto() {
         true,
     );
     assert!(result.is_err());
+    assert!(
+        Client::new(FileHost::new(&mut files, &mut source, "test"))
+            .assembly()
+            .remove(&RemoveOccurrenceArgs { id: 1 })
+            .is_err()
+    );
     let session = files.workspace().session(root).unwrap();
     assert!(!session.snapshot().assembly.as_ref().unwrap()[0].suppressed);
     assert_eq!(session.history_entries(), history);
     assert!(!session.in_transaction());
 }
+
+#[path = "file_assembly_references/removal.rs"]
+mod removal;

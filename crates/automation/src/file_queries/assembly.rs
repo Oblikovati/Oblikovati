@@ -20,6 +20,15 @@ pub(crate) fn rows<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFile
     document: u64,
     depth: usize,
 ) -> Result<Vec<OccurrenceInfo>, Error> {
+    project_rows(files, document, depth, true)
+}
+
+fn project_rows<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+    files: &FileWorkspace<O, W, F>,
+    document: u64,
+    depth: usize,
+    require_resolution: bool,
+) -> Result<Vec<OccurrenceInfo>, Error> {
     if depth > 128 {
         return Err(Error(format!(
             "assembly document {document}: expected at most 128 nested levels"
@@ -37,7 +46,7 @@ pub(crate) fn rows<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFile
     validate_ids(document, records)?;
     records
         .iter()
-        .map(|record| occurrence(files, document, record, depth))
+        .map(|record| project_occurrence(files, document, record, depth, require_resolution))
         .collect()
 }
 
@@ -63,20 +72,53 @@ pub(crate) fn occurrence<O: TransactionObserver, W: WorkspaceObserver, F: Docume
     record: &AssemblyOccurrenceRecipe,
     depth: usize,
 ) -> Result<OccurrenceInfo, Error> {
-    let children = if let Some(name) = record.component_reference() {
-        let target = files.document_reference(owner, name).ok_or_else(|| {
-            let reason = files.document_reference_error(owner, name).unwrap_or("reference is not resolved");
-            Error(format!("assembly {owner} occurrence {:?} component {name:?}: expected a resolved reference: {reason}", record.name))
-        })?;
-        let session = files
-            .workspace()
-            .session(target)
-            .map_err(|error| Error(error.to_string()))?;
-        if session.snapshot().assembly.is_some() {
-            Some(rows(files, target, depth + 1)?)
-        } else {
-            None
+    project_occurrence(files, owner, record, depth, true)
+}
+
+pub(crate) fn after_removal<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+    files: &FileWorkspace<O, W, F>,
+    owner: u64,
+    removed: u64,
+    records: &[AssemblyOccurrenceRecipe],
+) -> Result<OccurrencesResult, Error> {
+    let occurrences = records
+        .iter()
+        .filter(|row| row.session_id != removed)
+        .map(|row| project_occurrence(files, owner, row, 0, false))
+        .collect::<Result<Vec<_>, _>>()?;
+    Ok(OccurrencesResult {
+        occurrences: Some(occurrences),
+    })
+}
+
+fn project_occurrence<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+    files: &FileWorkspace<O, W, F>,
+    owner: u64,
+    record: &AssemblyOccurrenceRecipe,
+    depth: usize,
+    require_resolution: bool,
+) -> Result<OccurrenceInfo, Error> {
+    let Some(name) = record.component_reference() else {
+        return occurrence_info(record, None);
+    };
+    let Some(target) = files.document_reference(owner, name) else {
+        if !require_resolution {
+            return occurrence_info(record, None);
         }
+        let reason = files
+            .document_reference_error(owner, name)
+            .unwrap_or("reference is not resolved");
+        return Err(Error(format!(
+            "assembly {owner} occurrence {:?} component {name:?}: expected a resolved reference: {reason}",
+            record.name
+        )));
+    };
+    let session = files
+        .workspace()
+        .session(target)
+        .map_err(|error| Error(error.to_string()))?;
+    let children = if session.snapshot().assembly.is_some() {
+        Some(project_rows(files, target, depth + 1, require_resolution)?)
     } else {
         None
     };

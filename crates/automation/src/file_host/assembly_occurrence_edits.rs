@@ -93,7 +93,8 @@ fn edit_wire<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     label: &str,
     update: impl FnOnce(&mut AssemblyOccurrenceRecipe) -> Result<(), Error>,
 ) -> Result<Vec<u8>, Error> {
-    let (owner, ordinal, previous) = active_occurrence(files, id)?;
+    let (owner, ordinal, records) = locate_occurrence(files, id)?;
+    let previous = &records[ordinal];
     let mut candidate = previous.clone();
     update(&mut candidate)?;
     let occurrence = crate::file_queries::assembly::occurrence(files, owner, &candidate, 0)?;
@@ -104,10 +105,62 @@ fn edit_wire<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     Ok(response)
 }
 
-fn active_occurrence<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext<'_, O, W, F> {
+    pub(super) fn remove_occurrence(
+        &mut self,
+        args: RemoveOccurrenceArgs,
+    ) -> Result<Vec<u8>, Error> {
+        let (owner, ordinal, records) = locate_occurrence(self.files, args.id)?;
+        let reply =
+            crate::file_queries::assembly::after_removal(self.files, owner, args.id, records)?;
+        let encoded = encode(&reply)?;
+        let before = self.source_bindings()?;
+        remove_occurrence_recipe(self.files, owner, ordinal, args.id)?;
+        if !self
+            .files
+            .workspace()
+            .session(owner)
+            .map_err(|cause| Error(cause.to_string()))?
+            .in_transaction()
+        {
+            self.files
+                .reconcile_document_references(owner)
+                .map_err(|cause| Error(cause.to_string()))?;
+        }
+        let refresh = self.refresh_after_native_file_change(&before, METHOD_ASSEMBLY_REMOVE);
+        super::lifecycle::combine_lifecycle_result(METHOD_ASSEMBLY_REMOVE, Ok(encoded), refresh)
+    }
+}
+
+fn remove_occurrence_recipe<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+    files: &mut FileWorkspace<O, W, F>,
+    owner: u64,
+    ordinal: usize,
+    id: u64,
+) -> Result<(), Error> {
+    files
+        .commands(owner)
+        .map_err(|cause| Error(cause.to_string()))?
+        .run("Delete Component", |snapshot, _| {
+            let rows = snapshot
+                .assembly
+                .as_mut()
+                .filter(|rows| rows.get(ordinal).is_some_and(|row| row.session_id == id))
+                .ok_or_else(|| {
+                    Error(format!(
+                        "assembly {owner} index {ordinal}: expected occurrence {id}"
+                    ))
+                })?;
+            rows.remove(ordinal);
+            Ok::<(), Error>(())
+        })
+        .map_err(|cause| Error(cause.to_string()))
+}
+
+fn locate_occurrence<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     files: &FileWorkspace<O, W, F>,
     id: u64,
-) -> Result<(u64, usize, &AssemblyOccurrenceRecipe), Error> {
+) -> Result<(u64, usize, &[AssemblyOccurrenceRecipe]), Error> {
     let owner = files
         .workspace()
         .active_document()
@@ -122,16 +175,15 @@ fn active_occurrence<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFi
         .as_deref()
         .ok_or_else(|| Error(format!("document {owner}: expected an assembly")))?;
     crate::file_queries::assembly::validate_ids(owner, records)?;
-    records
+    let ordinal = records
         .iter()
-        .enumerate()
-        .find(|(_, row)| row.session_id == id)
-        .map(|(ordinal, row)| (owner, ordinal, row))
+        .position(|row| row.session_id == id)
         .ok_or_else(|| {
             Error(format!(
                 "assembly {owner} occurrence ID {id}: expected a current top-level occurrence"
             ))
-        })
+        })?;
+    Ok((owner, ordinal, records))
 }
 
 fn commit_occurrence<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
