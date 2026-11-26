@@ -312,7 +312,7 @@ fn select_surface_sources_in_the_viewport(world: &mut ApplicationWorld) {
 }
 
 fn click_sweep_point(world: &mut ApplicationWorld, point: [f64; 3]) {
-    let pixel = crate::HeadWindow::model_pixel(&mut world.app().window.native, point).unwrap();
+    let pixel = crate::HeadWindow::model_pixel(&world.app().window.native, point).unwrap();
     world.click(pixel);
     world.pump(Vec::new());
 }

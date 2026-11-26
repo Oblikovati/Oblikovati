@@ -53,14 +53,15 @@ impl SweepDialog {
             return false;
         };
         ui.text("The Sweep edit could not be accepted.");
-        if ui.collapsing_header("Details", imgui::TreeNodeFlags::empty()) {
-            ui.text_wrapped(cause);
-        }
         let cancel = ui.button("Cancel") || ui.is_key_pressed_no_repeat(imgui::Key::Escape);
         if cancel {
             ui.close_current_popup();
+            return true;
         }
-        cancel
+        if ui.collapsing_header("Details", imgui::TreeNodeFlags::empty()) {
+            ui.text_wrapped(cause);
+        }
+        false
     }
 
     pub(super) fn draw_operation(&mut self, ui: &Ui, state: &GuiCommandState) {
