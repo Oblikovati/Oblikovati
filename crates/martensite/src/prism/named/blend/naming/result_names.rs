@@ -82,21 +82,74 @@ fn split_names(
             entries.push((parent, shape.clone()));
             continue;
         }
-        let mut child_names = Vec::new();
-        for shape in descendants {
-            let mut witnesses = incident_sources(&shape, history, upper, kind)?;
-            witnesses.insert(parent.clone());
-            let parents: Vec<_> = witnesses.into_iter().collect();
-            let child = DerivedReferenceName::new(document, feature.0, kind, "split", &parents)?
-                .encode()?;
-            child_names.push(child.clone());
-            entries.push((child, shape));
-        }
+        let witnesses = descendants
+            .iter()
+            .map(|shape| incident_sources(shape, history, upper, kind))
+            .collect::<Result<Vec<_>, _>>()?;
+        let mut child_names = encode_split_names(&parent, &witnesses, document, feature, kind)?;
+        entries.extend(child_names.iter().cloned().zip(descendants));
         child_names.sort();
         splits.insert(parent, child_names);
     }
     require_unique(&entries)?;
     Ok(entries)
+}
+
+fn encode_split_names(
+    parent: &[u8],
+    witnesses: &[BTreeSet<Vec<u8>>],
+    document: DocumentGuid,
+    feature: FeatureId,
+    kind: u32,
+) -> Result<Vec<Vec<u8>>, String> {
+    let encode = |signature: &BTreeSet<Vec<u8>>| {
+        let mut parents = signature.clone();
+        parents.insert(parent.to_vec());
+        let parents: Vec<_> = parents.into_iter().collect();
+        DerivedReferenceName::new(document, feature.0, kind, "split", &parents)?.encode()
+    };
+    match witnesses.iter().map(encode).collect::<Result<_, _>>() {
+        Ok(names) => Ok(names),
+        Err(limit) => {
+            // Use a bounded exact signature when the complete ancestry does
+            // not fit. A witness is useful only if it separates siblings.
+            let signatures = distinguishing_signatures(parent, witnesses).ok_or(limit)?;
+            signatures.iter().map(encode).collect()
+        }
+    }
+}
+
+fn distinguishing_signatures(
+    parent: &[u8],
+    witnesses: &[BTreeSet<Vec<u8>>],
+) -> Option<Vec<BTreeSet<Vec<u8>>>> {
+    let candidates: BTreeSet<_> = witnesses
+        .iter()
+        .flatten()
+        .filter(|key| key.as_slice() != parent)
+        .map(|key| (key.len(), key))
+        .collect();
+    let mut unresolved: Vec<_> = (0..witnesses.len())
+        .flat_map(|first| ((first + 1)..witnesses.len()).map(move |second| (first, second)))
+        .collect();
+    let mut signatures = vec![BTreeSet::new(); witnesses.len()];
+    for (_, key) in candidates {
+        let remaining = unresolved.len();
+        unresolved.retain(|&(first, second)| {
+            witnesses[first].contains(key) == witnesses[second].contains(key)
+        });
+        if unresolved.len() != remaining {
+            for (witnesses, signature) in witnesses.iter().zip(&mut signatures) {
+                if witnesses.contains(key) {
+                    signature.insert(key.clone());
+                }
+            }
+        }
+        if unresolved.is_empty() {
+            return Some(signatures);
+        }
+    }
+    None
 }
 
 fn incident_sources(
@@ -261,5 +314,36 @@ mod tests {
             &mut SplitTopologyNames::new(),
         );
         assert!(ambiguous.is_err());
+    }
+    #[test]
+    fn oversized_split_ancestry_uses_a_stable_distinguishing_witness() {
+        let document: DocumentGuid = "11111111-2222-3333-4444-555555555555".parse().unwrap();
+        let name = |id, kind| {
+            SemanticReferenceName::new(document, id, kind, "fixture", "source", &[1])
+                .unwrap()
+                .encode()
+                .unwrap()
+        };
+        let first: BTreeSet<_> = (2..22).map(|id| name(id, 2)).collect();
+        let mut second = first.clone();
+        second.insert(name(22, 2));
+        let parent = name(1, 1);
+        let feature = FeatureId(23);
+        let keys = encode_split_names(
+            &parent,
+            &[first.clone(), second.clone()],
+            document,
+            feature,
+            1,
+        )
+        .unwrap();
+        let reversed =
+            encode_split_names(&parent, &[second, first.clone()], document, feature, 1).unwrap();
+        assert_eq!(keys[0], reversed[1]);
+        assert_eq!(keys[1], reversed[0]);
+        assert_ne!(keys[0], keys[1]);
+        assert!(
+            encode_split_names(&parent, &[first.clone(), first], document, feature, 1).is_err()
+        );
     }
 }

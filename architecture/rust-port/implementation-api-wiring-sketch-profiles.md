@@ -154,3 +154,18 @@ later body features. The ordering test reverses the candidate topology
 and checks identical bindings. The desktop regression uses an overlapping
 Join, checks both descendants of the original cap, and verifies their
 names and analytic volume after resize and reopen.
+
+When the full witness set exceeds the reference format's limits, the
+adapter selects exact witnesses until every pair of descendants is
+distinguished. It keeps the original parent in each encoded name. Tests
+cover order independence, over-limit signatures, and refusal when two
+descendants have identical evidence.
+
+The focused run passed 36 desktop-owner extrusion tests and 255 executed
+adapter tests. The Wayland MCP smoke test also passed. Of the 12 Join
+workflows previously stopped by split names, seven now pass. PCB mount
+and faceplate reach rectangular pattern. Extrusion center section
+advances to a Cut that produces four solids, and square button advances
+to a later Join that adds no volume. Belt B still has indistinguishable
+descendants. In a separate rerun of seven Cut naming failures, adjust and
+light strip clip passed and five cases still had indistinguishable names.
