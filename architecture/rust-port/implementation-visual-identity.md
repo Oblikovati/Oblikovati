@@ -27,7 +27,9 @@ values come from the same handoff.
   keeps its projected label inside the visible part of the same surface.
   The label backing follows that projection and fades with the text.
   The navigation bar moves alongside the ViewCube when the viewport
-  is too short to stack them. The picker calibrates its warm fill to the viewport backdrop before
+  is too short to stack them. ViewCube face labels use heavier glyphs so
+  their strokes remain distinct when the face foreshortens. Their scale
+  is capped by the width of each face. The picker calibrates its warm fill to the viewport backdrop before
   the renderer blends it in linear light.
 - Hole uses the shared left-aligned property labels and outlined numeric
   fields. An empty Depth field displays Through all. The floating panel

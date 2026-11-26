@@ -24,6 +24,9 @@ mod fixture;
 pub(super) mod hover;
 pub(super) use behaviour::whole_block_visible;
 pub(super) use fixture::{open_saved_navigation_block, orientation_part_upright};
+#[cfg(target_os = "linux")]
+#[path = "hud_contract.rs"]
+pub(super) mod hud_contract;
 #[path = "native_input.rs"]
 mod native_input;
 #[path = "option_rows.rs"]

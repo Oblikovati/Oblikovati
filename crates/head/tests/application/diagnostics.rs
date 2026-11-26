@@ -164,9 +164,9 @@ pub(super) fn has_caption_icon(run: &RenderedRun) -> bool {
 }
 
 #[cfg(test)]
-use drawn_text::{
-    current_font_size, frame_of_draw_data, glyph_for_uv, glyph_lookup, inside_clip, quad_glyph,
-};
+use drawn_text::{current_font_size, frame_of_draw_data, inside_clip, quad_glyph};
+#[cfg(test)]
+pub(super) use drawn_text::{glyph_for_uv, glyph_lookup};
 #[cfg(test)]
 use imgui::DrawVert;
 #[cfg(test)]

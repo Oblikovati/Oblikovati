@@ -80,6 +80,9 @@ pub(super) fn draw_control(
     } else {
         alpha
     };
+    // A heavier glyph keeps a visible core when the projected face is foreshortened.
+    let _font =
+        crate::ui_scale::sketch_content_font(ui, true, false).map(|font| ui.push_font(font));
     for shown in faces.iter().filter(|shown| shown.facing > LABEL_SHOWS_FROM) {
         draw_face_label(ui, shown, layout.half, faded(paint.label, label_alpha));
     }
@@ -88,13 +91,13 @@ fn draw_face_label(ui: &Ui, shown: &ShownFace, half: f32, color: [f32; 4]) {
     let center: [f32; 2] = std::array::from_fn(|axis| {
         shown.corners.iter().map(|corner| corner[axis]).sum::<f32>() / 4.
     });
-    crate::widget_abi::projected_text(
-        ui,
-        center,
-        color,
-        &shown.face.label().to_ascii_uppercase(),
-        shown.label_basis(half),
-    );
+    let label = shown.face.label().to_ascii_uppercase();
+    let width = ui.calc_text_size(&label)[0];
+    let scale = (1.7 * half / width).min(1.2);
+    let basis = shown
+        .label_basis(half)
+        .map(|edge| edge.map(|component| component * scale));
+    crate::widget_abi::projected_text(ui, center, color, &label, basis);
 }
 
 struct CubePaint {

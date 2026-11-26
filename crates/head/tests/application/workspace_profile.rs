@@ -50,3 +50,27 @@ fn write_layout_without_asset_tools(directory: &Path) {
         .save(&bytes)
         .unwrap();
 }
+
+#[test]
+fn scenario_preferences_are_private_and_removed_after_close() {
+    std::thread::Builder::new()
+        .name("scenario-preference-isolation".into())
+        .stack_size(super::super::SCENARIO_STACK_BYTES)
+        .spawn(|| {
+            let mut first = ApplicationWorld::new();
+            let directory = first._preferences.path().to_path_buf();
+            let changed = oblikovati_model::application_options::SketchApplicationOptions {
+                grid_visible: false,
+                ..Default::default()
+            };
+            first.app().owner.change_sketch_options(changed).unwrap();
+            assert!(directory.join("options.yaml").exists());
+            drop(first);
+            assert!(!directory.exists());
+            let mut second = ApplicationWorld::new();
+            assert!(second.state().sketch_options.unwrap().grid_visible);
+        })
+        .unwrap()
+        .join()
+        .unwrap();
+}

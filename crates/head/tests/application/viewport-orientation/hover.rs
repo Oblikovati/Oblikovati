@@ -196,7 +196,7 @@ fn highlight_clears(world: &mut ApplicationWorld) {
     stationary(world);
 }
 
-fn settled_pixels(world: &mut ApplicationWorld) -> ViewportCapture {
+pub(super) fn settled_pixels(world: &mut ApplicationWorld) -> ViewportCapture {
     let until = Instant::now() + Duration::from_millis(120);
     while Instant::now() < until {
         world.pump(Vec::new());

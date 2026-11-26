@@ -44,7 +44,10 @@ fn no_diagonal(world: &mut ApplicationWorld) {
     }
 }
 
-fn image_pixel(image: &oblikovati_viewport::ViewportCapture, point: [f32; 2]) -> [u8; 4] {
+pub(super) fn image_pixel(
+    image: &oblikovati_viewport::ViewportCapture,
+    point: [f32; 2],
+) -> [u8; 4] {
     let [x, y] = diagnostics::pointer_pixels(point).map(|value| value as usize);
     let index = (y * image.extent[0] as usize + x) * 4;
     image.rgba[index..index + 4].try_into().unwrap()
@@ -57,7 +60,7 @@ fn block_and_browser(world: &mut ApplicationWorld) {
 }
 
 #[then("an axis triad appears at the lower-left of the viewport")]
-fn triad_lower_left(world: &mut ApplicationWorld) {
+pub(super) fn triad_lower_left(world: &mut ApplicationWorld) {
     let (position, size) =
         diagnostics::window_geometry("##viewport-axis-triad").expect("axis triad");
     let extent = world.extent();

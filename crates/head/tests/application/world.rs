@@ -18,6 +18,8 @@ pub(super) struct ApplicationWorld {
     pub window_frame_handle: Option<String>,
     pub observed_view_camera: Option<oblikovati_viewport::ViewportCamera>,
     pub orientation_hover: Option<super::viewport_orientation::hover::HoverObservation>,
+    #[cfg(target_os = "linux")]
+    pub orientation_hud: Vec<super::viewport_orientation::hud_contract::HudSample>,
     /// The picked face boundary before a Zoom Selected operation.
     pub observed_zoom_face_edges: Vec<[[f64; 3]; 2]>,
     pub ribbon_height: f32,
@@ -138,6 +140,8 @@ impl ApplicationWorld {
             sketch_baseline: None,
             observed_counts: Vec::new(),
             orientation_hover: None,
+            #[cfg(target_os = "linux")]
+            orientation_hud: Vec::new(),
             observed_document_windows: Vec::new(),
             observed_sketch: None,
             ellipse_fixture_points: None,
@@ -461,30 +465,6 @@ pub(super) struct ObservedSketch {
     pub geometry: oblikovati_model::sketch::Sketch2D,
     pub history: [Vec<String>; 2],
     pub witnesses: Vec<[i32; 2]>,
-}
-
-#[test]
-fn scenario_preferences_are_private_and_removed_after_close() {
-    std::thread::Builder::new()
-        .name("scenario-preference-isolation".into())
-        .stack_size(super::SCENARIO_STACK_BYTES)
-        .spawn(|| {
-            let mut first = ApplicationWorld::new();
-            let directory = first._preferences.path().to_path_buf();
-            let changed = oblikovati_model::application_options::SketchApplicationOptions {
-                grid_visible: false,
-                ..Default::default()
-            };
-            first.app().owner.change_sketch_options(changed).unwrap();
-            assert!(directory.join("options.yaml").exists());
-            drop(first);
-            assert!(!directory.exists());
-            let mut second = ApplicationWorld::new();
-            assert!(second.state().sketch_options.unwrap().grid_visible);
-        })
-        .unwrap()
-        .join()
-        .unwrap();
 }
 
 fn capture_folder(root: &std::path::Path, namespace: Option<&str>) -> std::path::PathBuf {
