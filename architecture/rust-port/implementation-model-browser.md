@@ -24,6 +24,10 @@ Native Model State table checks cover suppression and row insertion through
 Apply and Cancel. The test verifies the feature state and the rendered face.
 [Model Browser suppression and row checks](receipts/2026-11-26-model-browser-suppression-3896/README.md)
 
+Native checks on Wayland and X11 verify the inactive member rename, the
+duplicate warning and both responses, and cancellation of an empty name.
+[Model State member-name checks](receipts/2026-11-26-model-browser-member-names-3896/README.md)
+
 A double-click sends the document and sketch IDs to the existing owner edit
 operation. The same operation remains available through script and add-in owner
 wrappers. The owner checks document focus, sketch continuity, plane resolution,
