@@ -304,6 +304,18 @@ mod xvfb_wrapper {
     }
 
     #[test]
+    fn managed_xvfb_names_missing_window_manager_dependencies() {
+        let fake = XvfbRunFake::new();
+        let result = Command::new(wrapper())
+            .env("PATH", fake.path())
+            .args(["--window-manager", "gate"])
+            .output()
+            .unwrap();
+        assert_eq!(result.status.code(), Some(1));
+        assert!(String::from_utf8_lossy(&result.stderr).contains("requires Openbox and xprop"));
+    }
+
+    #[test]
     fn xvfb_wrapper_names_missing_command_and_missing_dependency() {
         let directory = tempfile::tempdir().unwrap();
         let no_command = Command::new(wrapper())

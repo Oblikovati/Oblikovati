@@ -73,7 +73,7 @@ jobs:
       - name: Build and test every discovered Cargo workspace
         run: |
           if [ "$RUNNER_OS" = Linux ]; then
-            ./tools/with-xvfb.sh cargo xtask native
+            ./tools/with-xvfb.sh --window-manager cargo xtask native
           else
             cargo xtask native
           fi

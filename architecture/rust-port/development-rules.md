@@ -40,6 +40,10 @@
 
 - Tests run with a single command: `cargo test`. `make gate` runs the full
   gate over all discovered workspaces; run it before the first push and before each PR and batch.
+- On headless Linux, `make gate-xvfb` starts Xvfb and Openbox. Install Xvfb,
+  xauth, Openbox, and xprop before running the gate. Native frame resize and
+  maximize scenarios require the window manager to handle the application's
+  window requests.
 - Every new function gets a test. Bug fixes get a regression test.
 - Mock external I/O (API, DB, filesystem) with named fake classes,
   not inline stubs.
