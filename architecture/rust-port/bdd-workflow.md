@@ -223,6 +223,9 @@ which delivers native Wayland pointer events to the application.
 
 Use that nested setup for the maximized-edge case. The test compares the
 global frame bounds before and after the left-edge drag and checks Restore.
+The custom Close case uses that setup to click Close and Cancel at their
+rendered positions in the compositor. The fixture keeps the working file
+and compares its bytes after Cancel.
 
 The same nested setup runs the perimeter-resize outline. Give the Weston
 output room for a 30-pixel drag on every edge. Run

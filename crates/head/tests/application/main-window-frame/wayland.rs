@@ -35,14 +35,17 @@ pub(super) fn minimize_and_switch_back(world: &mut ApplicationWorld) {
 }
 
 pub(in super::super) fn click_frame_control(world: &mut ApplicationWorld, index: usize) {
+    click_window_point(world, frame_control_center(index));
+}
+
+pub(in super::super) fn click_window_point(world: &mut ApplicationWorld, [px, py]: [i32; 2]) {
     use super::super::x11_input::window_targets::{
         fullscreen_left_button, move_fullscreen_pointer,
     };
 
     require_nested_input();
     let [x, y, _, _] = compositor_frame_bounds().unwrap();
-    let [control_x, control_y] = frame_control_center(index);
-    let target = [x + control_x, y + control_y];
+    let target = [x + px, y + py];
     move_fullscreen_pointer(target);
     world.pump(Vec::new());
     fullscreen_left_button(target, true);

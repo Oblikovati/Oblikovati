@@ -93,6 +93,11 @@ pub(super) fn request_application_close(world: &mut ApplicationWorld) {
 
 #[cfg(target_os = "linux")]
 fn close_from_wayland_frame(world: &mut ApplicationWorld, can_close: bool) {
+    if nested_wayland_frame_input()
+        || super::scenario_capture::is_main_window_frame(world.scenario_feature_path.as_deref())
+    {
+        return close_from_nested_wayland_frame(world, can_close);
+    }
     let close = super::main_window_frame_native::frame_control_center(2);
     let events = super::pointer_click_events(close, 1);
     if can_close {
@@ -102,6 +107,21 @@ fn close_from_wayland_frame(world: &mut ApplicationWorld, can_close: bool) {
         world.pump(events);
         world.pump(Vec::new());
     }
+}
+
+#[cfg(target_os = "linux")]
+fn close_from_nested_wayland_frame(world: &mut ApplicationWorld, can_close: bool) {
+    super::main_window_frame::wayland::click_frame_control(world, 2);
+    if can_close {
+        return finish_clean_application(world);
+    }
+    world.pump(Vec::new());
+    world.pump(Vec::new());
+}
+
+#[cfg(target_os = "linux")]
+fn nested_wayland_frame_input() -> bool {
+    std::env::var("OBK_BDD_WESTON_NESTED_X11").as_deref() == Ok("1")
 }
 
 pub(super) fn finish_clean_application(world: &mut ApplicationWorld) {
@@ -123,7 +143,13 @@ fn application_closed_without_prompt(world: &mut ApplicationWorld) {
 pub(super) fn cancel_application_close(world: &mut ApplicationWorld) {
     #[cfg(target_os = "linux")]
     if world.app().window.native.view.uses_wayland() {
-        world.click_text("Cancel");
+        if nested_wayland_frame_input() {
+            let point = super::rendered_label_center("Cancel");
+            super::main_window_frame::wayland::click_window_point(world, point);
+            world.pump(Vec::new());
+        } else {
+            world.click_text("Cancel");
+        }
     } else {
         let position = super::rendered_label_center("Cancel");
         super::x11_input::click(position);

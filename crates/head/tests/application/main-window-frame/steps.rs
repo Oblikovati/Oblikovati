@@ -38,6 +38,7 @@ fn edit_open_part(world: &mut ApplicationWorld) {
     world.bytes_before_save = Some(std::fs::read(&path).unwrap());
     world.saved_path = Some(path);
     world.add_finished_sketch();
+    world.observed_counts = vec![world.browser_sketch_count()];
     assert!(world.state().document_storage[&document].unsaved_edits);
 }
 
@@ -47,6 +48,7 @@ fn unsaved_part_remains_open(world: &mut ApplicationWorld) {
     assert_eq!(world.active_id(), document);
     assert!(world.document_is_open(document));
     assert!(world.state().document_storage[&document].unsaved_edits);
+    assert_eq!(world.browser_sketch_count(), world.observed_counts[0]);
     if let (Some(path), Some(original)) = (&world.saved_path, &world.bytes_before_save) {
         assert_eq!(&std::fs::read(path).unwrap(), original);
     }
