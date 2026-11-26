@@ -89,18 +89,24 @@ pub(crate) fn draw(
         });
     owners.quick_access.command_took_right_click |= right;
 }
-pub(crate) fn plane_main_cells(
+pub(crate) fn plane_neighbor_cell(
+    icons: &crate::icons::GuiRibbonIcons,
     state: &GuiCommandState,
     customization: &crate::application::ribbon_customization::RibbonCustomization,
-) -> usize {
+    index: usize,
+) -> ([f32; 2], [f32; 2]) {
     let id = command_id(state, Builtin::Plane);
     if customization.builtin_expanded(&id) {
-        return 0;
+        return icons.appearance.cell(index);
     }
     if customization.builtin_ungrouped(&id) {
-        return plane_group::COMMAND_COUNT;
+        return icons.appearance.cell(index + plane_group::COMMAND_COUNT);
     }
-    1
+    let (mut position, size) = icons.appearance.cell(index + 1);
+    if position[0] > 0. {
+        position[0] += plane_group::trigger_column_extra(icons);
+    }
+    (position, size)
 }
 fn unavailable_copy(ui: &Ui, icons: &crate::icons::GuiRibbonIcons) {
     let disabled = ui.begin_disabled(true);

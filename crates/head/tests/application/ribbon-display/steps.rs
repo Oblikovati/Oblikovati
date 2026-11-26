@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::{ApplicationWorld, diagnostics::window_geometry};
 use cucumber::{given, then, when};
+#[cfg(target_os = "linux")]
+mod command_geometry;
 mod compact_options;
 #[cfg(target_os = "linux")]
 mod context_control;

@@ -112,7 +112,7 @@ pub(super) fn sketch_create_controls(
         ui,
         "Project Geometry",
         crate::icons::IconGlyph::ProjectGeometry,
-        [150., 20.],
+        [150., icons.appearance.command_height()],
     );
     drop(disabled);
 }

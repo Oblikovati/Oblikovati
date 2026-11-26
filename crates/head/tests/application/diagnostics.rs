@@ -25,6 +25,24 @@ pub(super) fn tooltip_draw_list() -> Option<usize> {
     (0..8).find_map(|index| window_draw_list(&format!("##Tooltip_{index:02}")))
 }
 
+#[cfg(target_os = "linux")]
+pub(super) fn draw_list_window_bounds(index: usize) -> Option<[f32; 4]> {
+    // Both the active windows and the draw lists belong to the completed frame.
+    let context = unsafe { sys::igGetCurrentContext().as_ref() }?;
+    let windows =
+        unsafe { std::slice::from_raw_parts(context.Windows.Data, context.Windows.Size as usize) };
+    let window = windows
+        .iter()
+        .filter_map(|window| unsafe { window.as_ref() })
+        .find(|window| window.Active && rendered_draw_list_index(window.DrawList) == Some(index))?;
+    Some([
+        window.Pos.x,
+        window.Pos.y,
+        window.Pos.x + window.Size.x,
+        window.Pos.y + window.Size.y,
+    ])
+}
+
 /// Find the draw list of the active child at a point inside its bounds.
 pub(super) fn child_draw_list_at(parent: &str, point: [f32; 2]) -> Option<usize> {
     let (draw_list, _) = active_child_at(parent, point);

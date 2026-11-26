@@ -10,6 +10,13 @@ Resizing to a narrow window uses labeled compact groups with icons and
 dropdown markers. The [native sizing receipt](receipts/2026-11-26-ribbon-height-compaction-3856/README.md)
 covers both desktop backends.
 
+Work Plane and the Sketch tool families reserve room for the dropdown inside
+the command cell. Narrow icon appearances reserve a wider column for Work
+Plane so its adjacent commands keep their full icons. Single-command groups
+and Project Geometry use full-height buttons in Normal appearance. The View
+theme and colour-scheme selectors place their captions before their controls,
+matching the material and appearance selectors in Tools.
+
 Home keeps Get Started, Tools, and the display controls while it covers an
 open document. The ribbon suspends document commands and closes temporary
 panels at the workspace boundary. Returning to the document restores its

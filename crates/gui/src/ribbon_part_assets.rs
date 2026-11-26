@@ -24,7 +24,9 @@ pub(crate) fn draw(
             actions,
         );
         let position = match icons.appearance {
-            RibbonAppearance::Compact => [200., 0.],
+            RibbonAppearance::Compact => {
+                [label_column(ui, icons) / icons.layout_factor() + 178., 0.]
+            }
             RibbonAppearance::Normal | RibbonAppearance::Small => icons.appearance.cell(1).0,
             _ => [0., 30.],
         };
@@ -49,26 +51,33 @@ fn asset_row(
     actions: &mut Vec<GuiShellAction>,
 ) {
     let (label, selected, choices) = row_choices(browser, kind);
-    let choice = if icons.appearance == RibbonAppearance::Normal {
-        let factor = icons.layout_factor();
+    let _padding = (icons.appearance == RibbonAppearance::Normal).then(|| {
         let height = icons.cell(icons.appearance.cell(0).1)[1];
         let [padding_x, _] = ui.clone_style().frame_padding;
-        let _padding = ui.push_style_var(StyleVar::FramePadding([
+        ui.push_style_var(StyleVar::FramePadding([
             padding_x,
             ((height - ui.text_line_height()) * 0.5).max(0.),
-        ]));
-        ui.align_text_to_frame_padding();
-        ui.text(label);
-        let label_width = ui.calc_text_size("Appearance")[0] + 12. * factor;
-        ui.same_line_with_spacing(0., label_width - ui.calc_text_size(label)[0]);
-        let _id = ui.push_id(label);
-        asset_combo_at_width(ui, "##asset", selected, choices, Some(150. * factor), true)
-    } else {
-        asset_combo_at_width(ui, label, selected, choices, Some(150.), false)
-    };
+        ]))
+    });
+    ui.align_text_to_frame_padding();
+    ui.text(label);
+    ui.same_line_with_spacing(0., label_column(ui, icons) - ui.calc_text_size(label)[0]);
+    let _id = ui.push_id(label);
+    let choice = asset_combo_at_width(
+        ui,
+        "##asset",
+        selected,
+        choices,
+        Some(icons.cell([150., 0.])[0]),
+        true,
+    );
     if let Some(id) = choice {
         queue_asset(state, kind, &id, actions);
     }
+}
+
+fn label_column(ui: &Ui, icons: &crate::icons::GuiRibbonIcons) -> f32 {
+    ui.calc_text_size("Appearance")[0] + 12. * icons.layout_factor()
 }
 
 /// Show the active Part's current assignments in Document Settings.

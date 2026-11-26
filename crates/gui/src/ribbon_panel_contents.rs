@@ -244,8 +244,6 @@ pub(crate) fn draw_panel_content(
             let (position, _) = owners.icons.appearance.cell(0);
             owners.icons.cursor(ui, origin, position);
             crate::ribbon_panels::builtin::draw(ui, panel, state, owners, actions, false);
-            let plane_cells =
-                crate::ribbon_panels::builtin::plane_main_cells(state, owners.customization);
             for (index, (label, icon)) in [
                 ("Axis", IconGlyph::WorkAxis),
                 ("Point", IconGlyph::WorkPoint),
@@ -254,7 +252,12 @@ pub(crate) fn draw_panel_content(
             .into_iter()
             .enumerate()
             {
-                let (position, size) = owners.icons.appearance.cell(index + plane_cells);
+                let (position, size) = crate::ribbon_panels::builtin::plane_neighbor_cell(
+                    owners.icons,
+                    state,
+                    owners.customization,
+                    index,
+                );
                 owners.icons.cursor(ui, origin, position);
                 muted::muted_command(ui, label, NOT_PORTED, owners.icons, Some(icon), false, size);
             }

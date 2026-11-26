@@ -25,7 +25,7 @@ fn choose_midpoint_line(world: &mut ApplicationWorld) {
         .runs
         .iter()
         .find(|run| {
-            run.text == "v"
+            run.text == "▼"
                 && run.minimum[0] > caption.maximum[0]
                 && (run.center()[1] - caption.center()[1]).abs() < 4.
         })

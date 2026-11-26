@@ -34,14 +34,35 @@ pub(super) fn draw(
 ) {
     let origin = ui.cursor_pos();
     let (_, size) = icons.appearance.cell(0);
-    draw_offset_button(ui, state, icons, actions, "Plane", size);
     if ungrouped {
+        draw_offset_button(ui, state, icons, actions, "Plane", size);
         let (position, size) = variant_cell(icons, 1, expanded);
         icons.cursor(ui, origin, position);
         draw_offset_button(ui, state, icons, actions, "Offset from Plane", size);
         draw_individual_variants(ui, icons, origin, expanded);
     } else {
+        let host = [size[0] + trigger_column_extra(icons), size[1]];
+        draw_offset_button(
+            ui,
+            state,
+            icons,
+            actions,
+            "Plane",
+            crate::ribbon_split::primary_size(host),
+        );
+        if crate::ribbon_split::trigger(ui, icons, "##plane-variants", host[1]) {
+            ui.open_popup("##plane-variant-menu");
+        }
         draw_variants_popup(ui, state, icons, actions);
+    }
+}
+
+pub(super) fn trigger_column_extra(icons: &GuiRibbonIcons) -> f32 {
+    use crate::ribbon_command_layout::RibbonAppearance;
+    if icons.appearance == RibbonAppearance::Normal {
+        0.
+    } else {
+        crate::ribbon_split::TRIGGER_SPACE
     }
 }
 
@@ -68,10 +89,6 @@ fn draw_variants_popup(
     icons: &GuiRibbonIcons,
     actions: &mut Vec<GuiShellAction>,
 ) {
-    ui.same_line();
-    if ui.small_button("v##plane-variants") {
-        ui.open_popup("##plane-variant-menu");
-    }
     let Some(_popup) = ui.begin_popup("##plane-variant-menu") else {
         return;
     };

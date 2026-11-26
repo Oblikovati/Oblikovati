@@ -66,6 +66,7 @@ mod ribbon_key_tips;
 mod ribbon_panel_contents;
 mod ribbon_panels;
 mod ribbon_part_assets;
+mod ribbon_split;
 mod selection_filter;
 pub use selection_filter::{GuiSelectionFilter, GuiSelectionFilterEntry, GuiSelectionKind};
 mod sketch;

@@ -140,7 +140,7 @@ fn plane_menu_arrow(world: &ApplicationWorld) -> &diagnostics::RenderedRun {
         .frame
         .runs
         .iter()
-        .filter(|run| run.list == plane.list && run.text == "v")
+        .filter(|run| run.list == plane.list && run.text == "▼")
         .filter(|run| {
             run.minimum[0] > plane.maximum[0] && (run.center()[1] - plane.center()[1]).abs() < 18.
         })

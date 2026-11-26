@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use crate::{GuiCommandState, GuiShellAction, GuiSketchTool, widget_abi};
+use crate::{GuiCommandState, GuiShellAction, GuiSketchTool, ribbon_split};
 use imgui::Ui;
 
 pub(crate) fn sketch_tool_flyout_button(
@@ -17,7 +17,9 @@ pub(crate) fn sketch_tool_flyout_button(
         _ => None,
     };
     let size = match icons.appearance {
-        crate::ribbon_command_layout::RibbonAppearance::Normal if alternate.is_some() => [90., 20.],
+        crate::ribbon_command_layout::RibbonAppearance::Normal if alternate.is_some() => {
+            ribbon_split::primary_size([108., 20.])
+        }
         crate::ribbon_command_layout::RibbonAppearance::Normal => [108., 20.],
         _ => icons.appearance.cell(0).1,
     };
@@ -34,22 +36,21 @@ pub(crate) fn sketch_tool_flyout_button(
         ui.tooltip_text("Draw connected line segments. For arcs, choose Center Arc.");
     }
     if let Some(alternate) = alternate {
-        circular_tool_menu(ui, state, actions, primary, alternate, icons);
+        circular_tool_menu(ui, state, actions, [primary, alternate], icons, size[1]);
     }
 }
 fn circular_tool_menu(
     ui: &Ui,
     state: &GuiCommandState,
     actions: &mut Vec<GuiShellAction>,
-    primary: GuiSketchTool,
-    alternate: GuiSketchTool,
+    [primary, alternate]: [GuiSketchTool; 2],
     icons: &crate::icons::GuiRibbonIcons,
+    height: f32,
 ) {
     let identity = format!("##{:?}-choices", primary);
     let enabled = GuiShellAction::PlaceSketchTool(primary).dispatchable(state);
     let disabled = ui.begin_disabled(!enabled);
-    ui.same_line_with_spacing(0., 2. * icons.layout_factor());
-    if widget_abi::button(ui, &format!("v{identity}"), icons.cell([16., 20.])) && enabled {
+    if ribbon_split::trigger(ui, icons, &identity, height) && enabled {
         ui.open_popup(&identity);
     }
     drop(disabled);

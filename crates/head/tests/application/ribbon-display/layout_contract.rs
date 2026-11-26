@@ -6,8 +6,8 @@ use super::*;
 
 const BAND: &str = "##application-ribbon";
 const TABS: &str = "##ribbon-tab-region";
-const COMMANDS: &str = "##ribbon-panels";
-const TAB_GROUPS: [(&str, &[&str]); 6] = [
+pub(super) const COMMANDS: &str = "##ribbon-panels";
+pub(super) const TAB_GROUPS: [(&str, &[&str]); 6] = [
     (
         "3D Model",
         &[
@@ -66,14 +66,14 @@ pub(in super::super) struct RibbonSample {
 }
 
 #[given("`fixtures/cad/docking-visible-solid-current.opd` is open in a wide restored window")]
-fn wide_restored(world: &mut ApplicationWorld) {
+pub(super) fn wide_restored(world: &mut ApplicationWorld) {
     let path = super::super::scenario_root().join("fixtures/cad/docking-visible-solid-current.opd");
     world.open_fixture(&path);
     resize(world, 1920);
     assert!(!world.app().window.native.view.window_maximized().unwrap());
 }
 
-fn resize(world: &mut ApplicationWorld, width: u32) {
+pub(super) fn resize(world: &mut ApplicationWorld, width: u32) {
     let height = world.extent()[1];
     world
         .app()
@@ -97,14 +97,18 @@ fn inspect_tabs(world: &mut ApplicationWorld) {
     }
 }
 
-fn select_tab(world: &mut ApplicationWorld, tab: &str) {
+pub(super) fn select_tab(world: &mut ApplicationWorld, tab: &str) {
     let tabs = child_scroll(BAND, TABS).expect("expected the tab strip");
     let run = labeled_run(world, tabs.list, tab);
     world.click(diagnostics::pointer_pixels(run.center()));
     world.pump(Vec::new());
 }
 
-fn labeled_run<'a>(world: &'a ApplicationWorld, list: usize, name: &str) -> &'a RenderedRun {
+pub(super) fn labeled_run<'a>(
+    world: &'a ApplicationWorld,
+    list: usize,
+    name: &str,
+) -> &'a RenderedRun {
     let label = super::super::world::squeezed(name);
     world
         .frame

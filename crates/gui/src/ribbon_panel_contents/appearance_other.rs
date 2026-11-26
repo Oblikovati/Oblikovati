@@ -128,7 +128,20 @@ fn unavailable(
         RibbonPanel::ManageContentCenter => &[("Editor", Some(Glyph::InsertModel))],
         _ => return false,
     };
-    muted_icon_commands(ui, origin, icons, entries, false);
+    if let [(label, glyph)] = entries {
+        icons.cursor(ui, origin, [0., 0.]);
+        muted::muted_command(
+            ui,
+            label,
+            NOT_PORTED,
+            icons,
+            *glyph,
+            false,
+            icons.appearance.single_cell(),
+        );
+    } else {
+        muted_icon_commands(ui, origin, icons, entries, false);
+    }
     true
 }
 
