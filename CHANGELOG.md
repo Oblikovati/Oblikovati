@@ -319,8 +319,8 @@ Model tree reads reuse current part results and refresh them after edits. (#4079
 - Stored literal Extrude distances as built-in feature parameters so the model-state table could edit them per member. (#4119)
 - Selected the clicked face when a viewport right-click dismisses the ribbon panel selector, and showed its mini toolbar. (#3856)
 - Kept the unpinned Modify title strip available while its panel is hidden in the direct selector, and fixed closing the selector with its own button. (#3856)
-
 - Kept the active ribbon tab selected when opening the context menu on an inactive tab. (#3856)
+- Reported the supported version range when a document contains an unsupported work geometry recipe. (#4184)
 
 - Kept clicks on Home, Customize, Options, and the ribbon display menu working while the panel selector is open. Made the ribbon display control switch between full and tabs-only display in one click while the selector is open. (#3856)
 

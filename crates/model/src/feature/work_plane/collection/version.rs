@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::{WorkPlaneFeatureRecipe, WorkPlaneProgramRecipe, WorkPlaneProgramRecipeError};
 
+pub(super) const MAX_PROGRAM_VERSION: u32 = 34;
+
 pub(super) fn program_recipe_version(features: &[WorkPlaneFeatureRecipe]) -> u32 {
     let definitions = features
         .iter()
@@ -12,7 +14,7 @@ pub(super) fn program_recipe_version(features: &[WorkPlaneFeatureRecipe]) -> u32
 pub(super) fn validate_program_version(
     recipe: &WorkPlaneProgramRecipe,
 ) -> Result<(), WorkPlaneProgramRecipeError> {
-    if !matches!(recipe.version, 1..=34) {
+    if !matches!(recipe.version, 1..=MAX_PROGRAM_VERSION) {
         return Err(WorkPlaneProgramRecipeError::Version(recipe.version));
     }
     validate_definition_versions(recipe)?;
