@@ -51,6 +51,50 @@ fn expect_source_highlight(world: &mut ApplicationWorld, selected: &str, plain: 
     );
 }
 
+#[then("\"2D Sketches\" and \"3D Annotations\" are both highlighted in the available-command list")]
+fn adjacent_source_commands_highlighted(world: &mut ApplicationWorld) {
+    for label in ["2DSketches", "3DAnnotations"] {
+        expect_source_highlight(world, label, "2-DDrawing");
+    }
+}
+
+#[when("the user closes customization with \"Cancel\"")]
+fn click_published_cancel(world: &mut ApplicationWorld) {
+    click_in_customize(world, "Cancel");
+}
+
+#[then("the customization dialog closes without changing the target")]
+fn closed_with_same_target(world: &mut ApplicationWorld) {
+    customization_closed(world);
+    open_tools_customization(world);
+    transaction_steps::target_is_empty(world);
+    close_customization_button(world);
+}
+
+#[test]
+fn shift_selection_keeps_the_range_endpoint_visible_and_the_target_clean() {
+    let mut world = ApplicationWorld::new();
+    world.add_part();
+    open_tools_customization(&mut world);
+    click_in_customize(&mut world, "2DSketches");
+    row_selection::shift_down(&mut world);
+    adjacent_source_commands_highlighted(&mut world);
+    assert!(!world.window_text("Customize").contains("ZoomWindow"));
+    for _ in 0..48 {
+        row_selection::shift_down(&mut world);
+    }
+    world.pump(Vec::new());
+    assert!(
+        world.window_text("Customize").contains("ZoomWindow"),
+        "expected the final command to be visible after extending the selection"
+    );
+    assert!(!world.run_is_enabled("Apply"));
+    assert!(!world.run_is_enabled("Cancel"));
+    close_customization_button(&mut world);
+    closed_with_same_target(&mut world);
+    world.close();
+}
+
 #[test]
 fn remove_continues_at_the_next_staged_command_after_an_upward_selection() {
     let mut world = ApplicationWorld::new();

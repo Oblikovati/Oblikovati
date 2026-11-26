@@ -4,6 +4,7 @@ use super::*;
 
 #[given("the source category is All Commands")]
 #[given("the command category is \"All Commands\"")]
+#[given("All Commands is selected")]
 pub(super) fn all_commands(world: &mut ApplicationWorld) {
     world.run_in_window("Customize", "AllCommands");
 }

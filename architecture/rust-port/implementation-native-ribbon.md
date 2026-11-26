@@ -49,6 +49,9 @@ staged ribbon edit while viewing Keyboard customization.
 Page Up and Page Down in the available-command list first select the
 visible edge. Pressing the key again from that edge advances the page.
 [Native source paging checks](receipts/2026-11-26-ribbon-visible-page-3856/README.md)
+Shift+Arrow extends the selection from its original row and scrolls
+when the new endpoint falls beyond the visible commands.
+[Native range selection checks](receipts/2026-11-26-ribbon-source-shift-selection-3856/README.md)
 Reopening Customize clears the Keyboard search and restores both filters
 to All. The selected customization tab is retained.
 [Keyboard initial-state checks](receipts/2026-11-26-keyboard-customization-initial-3856/README.md)
