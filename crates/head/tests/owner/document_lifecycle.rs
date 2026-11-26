@@ -19,21 +19,21 @@ fn gui_sketch_xy_enters_and_finishes_the_owned_edit() {
     use oblikovati_gui::GuiAuthoringContext::*;
     let (mut owner, _) = owner();
     assert!(owner.edit_sketch_from_gui(true).is_err());
-    gui_commands::assert_authoring_context(&mut owner, NoDocument);
+    gui_commands::assert_authoring_context(&mut owner, NoDocument, false);
     owner.create_part_document().unwrap();
-    gui_commands::assert_authoring_context(&mut owner, Part);
+    gui_commands::assert_authoring_context(&mut owner, Part, false);
     assert!(owner.edit_sketch_from_gui(true).unwrap());
-    gui_commands::assert_authoring_context(&mut owner, Sketch);
+    gui_commands::assert_authoring_context(&mut owner, Sketch, true);
     let edit = owner.active_sketch_edit().unwrap();
     assert_eq!(edit.plane, oblikovati_model::sketch::SketchPlane::xy());
     assert!(owner.edit_sketch_from_gui(true).is_err());
     assert!(owner.edit_sketch_from_gui(false).unwrap());
     assert!(owner.active_sketch_edit().is_none());
-    gui_commands::assert_authoring_context(&mut owner, Part);
+    gui_commands::assert_authoring_context(&mut owner, Part, true);
     assert!(owner.edit_sketch_from_gui(false).is_err());
 }
 #[test]
-fn gui_rectangle_requires_an_edit_and_uses_owned_placement() {
+fn gui_rectangle_uses_owned_placement_for_an_existing_sketch() {
     let (mut owner, _) = owner();
     assert!(
         owner
@@ -41,7 +41,13 @@ fn gui_rectangle_requires_an_edit_and_uses_owned_placement() {
             .is_err()
     );
     owner.create_part_document().unwrap();
+    assert!(
+        owner
+            .place_sketch_tool_from_gui(oblikovati_gui::GuiSketchTool::Rectangle)
+            .is_err()
+    );
     owner.edit_sketch_from_gui(true).unwrap();
+    let edit = owner.active_sketch_edit().unwrap();
     assert!(
         owner
             .place_sketch_tool_from_gui(oblikovati_gui::GuiSketchTool::Rectangle)
@@ -53,7 +59,12 @@ fn gui_rectangle_requires_an_edit_and_uses_owned_placement() {
     assert!(
         owner
             .place_sketch_tool_from_gui(oblikovati_gui::GuiSketchTool::Rectangle)
-            .is_err()
+            .unwrap()
+    );
+    let placement = owner.placement_state().unwrap();
+    assert_eq!(
+        (placement.document, placement.sketch),
+        (edit.document, edit.sketch)
     );
 }
 #[test]

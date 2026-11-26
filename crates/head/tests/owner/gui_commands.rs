@@ -5,6 +5,7 @@ use oblikovati_gui::{GuiCommandState, GuiShellAction};
 pub(super) fn assert_authoring_context(
     owner: &mut TestOwner,
     expected: oblikovati_gui::GuiAuthoringContext,
+    can_place_rectangle: bool,
 ) {
     let state = owner.gui_command_state().unwrap();
     assert_eq!(state.authoring, expected);
@@ -14,7 +15,7 @@ pub(super) fn assert_authoring_context(
     );
     assert_eq!(
         GuiShellAction::PlaceSketchTool(oblikovati_gui::GuiSketchTool::Rectangle).enabled(&state),
-        expected == oblikovati_gui::GuiAuthoringContext::Sketch
+        can_place_rectangle,
     );
 }
 #[test]
@@ -42,11 +43,23 @@ fn verify_history_state_moves(owner: &mut TestOwner, edited: &GuiCommandState) {
     let undone = owner.gui_command_state().unwrap();
     assert!(undone.undo_label.is_none());
     assert_eq!(undone.redo_label, edited.undo_label);
+    assert!(undone.document_generation > edited.document_generation);
     Client::new(owner.document_host())
         .transactions()
         .redo()
         .unwrap();
-    assert_eq!(owner.gui_command_state().unwrap(), *edited);
+    let redone = owner.gui_command_state().unwrap();
+    assert!(redone.document_generation > undone.document_generation);
+    assert_replayed_state(edited, redone);
+}
+fn assert_replayed_state(before: &GuiCommandState, replayed: GuiCommandState) {
+    assert!(replayed.document_generation > before.document_generation);
+    let generation = replayed.document_generation.unwrap();
+    let mut expected = before.clone();
+    expected.document_generation = Some(generation);
+    std::sync::Arc::make_mut(expected.model_state_table.as_mut().unwrap()).generation = generation;
+    expected.fillet_selection.as_mut().unwrap().0 = generation;
+    assert_eq!(replayed, expected);
 }
 fn verify_transaction_metadata(owner: &mut TestOwner) {
     let before = owner.gui_command_state().unwrap();
@@ -65,7 +78,7 @@ fn verify_transaction_metadata(owner: &mut TestOwner) {
         .transactions()
         .abort()
         .unwrap();
-    assert_eq!(owner.gui_command_state().unwrap(), before);
+    assert_replayed_state(&before, owner.gui_command_state().unwrap());
 }
 
 fn verify_script_owner_command_state(mut owner: TestOwner) -> TestOwner {
