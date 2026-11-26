@@ -154,9 +154,7 @@ fn tapped_circles_display_a_frustum(world: &mut ApplicationWorld) {
 
 #[when("OK is clicked with the default settings")]
 fn accept_loft(world: &mut ApplicationWorld) {
-    let pixel = diagnostics::pointer_pixels(world.run_in_window("Loft", "OK").center());
-    world.click(pixel);
-    world.pump(Vec::new());
+    click_loft_control(world, "OK");
 }
 
 #[then("Loft1 appears in the browser and the part contains one solid body")]
@@ -183,4 +181,45 @@ fn loft_body_key(world: &mut ApplicationWorld) -> String {
     assert!(browser.sketches.iter().all(|sketch| !sketch.visible));
     world.expect_text("Loft1");
     browser.bodies[0].key.clone()
+}
+
+#[given(
+    "Loft is open with the two circular sections selected and the Transition tab has Automatic Mapping selected"
+)]
+fn transition_uses_automatic_mapping(world: &mut ApplicationWorld) {
+    pick_both_circles(world);
+    click_loft_control(world, "Transition");
+    assert!(loft_panel_has_text(world, "AutomaticMapping"));
+    assert!(!loft_panel_has_text(world, "Clicktoadd"));
+    assert!(world.run_is_enabled("OK"));
+}
+
+#[when("Automatic Mapping is cleared")]
+#[when("Automatic Mapping is selected again")]
+fn toggle_automatic_mapping(world: &mut ApplicationWorld) {
+    click_loft_control(world, "AutomaticMapping");
+}
+
+#[then("the Point Set list offers Click to add")]
+fn manual_mapping_offers_a_point_set(world: &mut ApplicationWorld) {
+    assert!(loft_panel_has_text(world, "PointSet"));
+    assert!(world.run_is_enabled("Click to add"));
+    assert_eq!(world.state().loft_sections.len(), 2);
+}
+
+#[then("that entry is no longer shown")]
+fn automatic_mapping_hides_point_sets(world: &mut ApplicationWorld) {
+    assert!(!loft_panel_has_text(world, "Clicktoadd"));
+    assert!(world.run_is_enabled("OK"));
+    assert_eq!(world.state().loft_preview, Some(Ok(())));
+}
+
+fn click_loft_control(world: &mut ApplicationWorld, label: &str) {
+    let pixel = diagnostics::pointer_pixels(world.run_in_window("Loft", label).center());
+    world.click(pixel);
+    world.pump(Vec::new());
+}
+
+fn loft_panel_has_text(world: &mut ApplicationWorld, text: &str) -> bool {
+    world::squeezed(&world.window_text("Loft")).contains(text)
 }

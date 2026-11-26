@@ -6,7 +6,7 @@ use crate::{
     dockable_lifecycle::{DockRegistry, DockableState},
     dockable_window::DockableWindow,
 };
-use imgui::Ui;
+use imgui::{TabItemFlags, Ui};
 use oblikovati_model::{document_sketch::DocumentSketchId, sketch::SketchEntityId};
 
 const TITLE: &str = "Loft";
@@ -61,6 +61,9 @@ pub(crate) struct LoftDialog {
     dock: DockableState,
     document: Option<(u64, u64)>,
     show_help: bool,
+    select_curves: bool,
+    manual_mapping: bool,
+    point_sets: usize,
 }
 
 impl DockableWindow for LoftDialog {}
@@ -80,6 +83,9 @@ impl LoftDialog {
         };
         self.document = Some((document, generation));
         self.show_help = false;
+        self.select_curves = true;
+        self.manual_mapping = false;
+        self.point_sets = 0;
         self.dock.set_open(true);
         actions.push(GuiShellAction::Loft(GuiLoftAction::Begin(document)));
     }
@@ -139,7 +145,7 @@ impl LoftDialog {
         if tip {
             ui.text_wrapped(EMPTY_PART);
         } else {
-            draw_sections(ui, &state.loft_sections);
+            self.tabs(ui, &state.loft_sections);
             if let Some(Err(cause)) = &state.loft_preview {
                 ui.text_wrapped(cause);
             }
@@ -151,7 +157,7 @@ impl LoftDialog {
         let commit = self
             .document
             .map(|(document, _)| GuiLoftAction::Commit(document))
-            .filter(|action| action.enabled(state));
+            .filter(|action| !self.manual_mapping && action.enabled(state));
         let accepted = crate::theme::property_accept(ui, tip || commit.is_some());
         if accepted && let Some(commit) = commit {
             actions.push(GuiShellAction::Loft(commit));
@@ -165,6 +171,39 @@ impl LoftDialog {
             self.show_help = !self.show_help;
         }
         (accepted && tip) || cancelled || ui.is_key_pressed_no_repeat(imgui::Key::Escape)
+    }
+    fn tabs(&mut self, ui: &Ui, sections: &[GuiLoftSection]) {
+        let Some(_tabs) = ui.tab_bar("##loft-pages") else {
+            return;
+        };
+        let flags = if std::mem::take(&mut self.select_curves) {
+            TabItemFlags::SET_SELECTED
+        } else {
+            TabItemFlags::empty()
+        };
+        if let Some(_curves) = ui.tab_item_with_flags("Curves", None, flags) {
+            draw_sections(ui, sections);
+        }
+        if let Some(_transition) = ui.tab_item("Transition") {
+            self.transition(ui);
+        }
+    }
+
+    fn transition(&mut self, ui: &Ui) {
+        let mut automatic = !self.manual_mapping;
+        if ui.checkbox("Automatic Mapping", &mut automatic) {
+            self.manual_mapping = !automatic;
+        }
+        if automatic {
+            return;
+        }
+        ui.text("Point Set");
+        for index in 1..=self.point_sets {
+            ui.text(format!("Set {index} *"));
+        }
+        if crate::widget_abi::button(ui, "Click to add", [0., 0.]) {
+            self.point_sets += 1;
+        }
     }
 }
 
