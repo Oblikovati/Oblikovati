@@ -210,6 +210,7 @@ fn populate_browser<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
                 feature.id(),
                 oblikovati_gui::GuiExtrudeEditSeed {
                     sketch: definition.sketch(),
+                    profile_count: definition.additional_outputs().len() + 1,
                     distance,
                     second_distance,
                     direction: definition.direction(),
@@ -391,6 +392,7 @@ fn extended_feature_name(
             SketchPrismExtent::ThroughAll { .. } => "Through All",
             SketchPrismExtent::ToFace { .. } => "To Face",
             SketchPrismExtent::FromTo { .. } => "From–To",
+            SketchPrismExtent::DistanceFromPlane { .. } => "Distance from Plane",
         };
         return Some(format!("{operation}, {label}"));
     }

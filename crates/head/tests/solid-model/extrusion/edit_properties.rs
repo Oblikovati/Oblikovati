@@ -16,13 +16,13 @@ fn open_part(world: &mut ApplicationWorld) {
 #[given(
     "a copy of `fixtures/cad/extrusion/extrusion-rect-20mm.opd` is open with Edit Feature active for Extrusion1"
 )]
-fn start_published_edit(world: &mut ApplicationWorld) {
+pub(super) fn start_published_edit(world: &mut ApplicationWorld) {
     open_part(world);
     open_extrusion_editor(world);
 }
 
 #[given("Edit Feature is open for the captured solid extrusion")]
-fn start_pinned_edit(world: &mut ApplicationWorld) {
+pub(super) fn start_pinned_edit(world: &mut ApplicationWorld) {
     open_copy(
         world,
         include_bytes!("../../../../../test-utilities/fixtures/extrusion/extrusion-rect-8mm.opd"),

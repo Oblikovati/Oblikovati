@@ -120,16 +120,12 @@ impl WorkspaceLayout {
     /// Consume a selected origin plane; example: `layout.take_selected_origin_plane()`.
     pub(crate) fn take_selected_origin_plane(&mut self) -> Option<crate::GuiOriginPlaneKind> {
         let row = self.view.selected_origin_row?;
-        let label = *crate::browser::ORIGIN_ROWS.get(row)?;
-        let plane = [
-            crate::GuiOriginPlaneKind::Xy,
-            crate::GuiOriginPlaneKind::Xz,
-            crate::GuiOriginPlaneKind::Yz,
-        ]
-        .into_iter()
-        .find(|plane| plane.label() == label)?;
+        let plane = browser_origin::origin_plane_at_row(row)?;
         self.view.selected_origin_row = None;
         Some(plane)
+    }
+    pub(crate) fn take_picked_plane_reference(&mut self) -> Option<String> {
+        self.view.picked_plane_reference.take()
     }
     /// Open the Model Browser's tree filter; example: `layout.request_browser_search()`.
     pub(crate) fn request_browser_search(&mut self) {
@@ -213,6 +209,7 @@ impl WorkspaceLayout {
     ) {
         self.pending_layout |= self.panels.visibility_changed_since_layout();
         self.view.arrow_consumed = false;
+        self.view.picked_plane_reference = None;
         self.view.feature_keyboard_focus = false;
         self.view.document_area = Some(presentation.0);
         self.view.icons = Some(presentation.1.clone());

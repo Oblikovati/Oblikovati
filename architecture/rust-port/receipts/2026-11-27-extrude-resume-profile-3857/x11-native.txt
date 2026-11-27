@@ -1,0 +1,3 @@
+running 1 test
+test native::gui_loop_tests::application_bdd::solid_extrusion::unconstrained_rectangle_resumes_waiting_extrusion_with_preview ... ok
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1792 filtered out; finished in 5.20s

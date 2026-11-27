@@ -6,6 +6,7 @@ use martensite_tkernel::standard::Failure;
 use martensite_tkmath::gp::{Direction3, Plane3, Point3, Vector3};
 use martensite_tkoffset::brep_offset_api::BRepOffsetAPIDraftAngle;
 
+#[derive(Clone, Copy)]
 pub(crate) struct PrismTaper {
     plane: SketchPlane,
     vector: Vector3,

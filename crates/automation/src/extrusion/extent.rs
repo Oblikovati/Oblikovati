@@ -18,9 +18,16 @@ pub(super) fn reference_extent(
             "extrude distance extent: expected no fromFace or toFace".into(),
         )),
         "through-all" => through_all(input).map(Some),
+        "distance-from-face" if input.from_face.trim().is_empty() => {
+            let from = plane_reference(snapshot, "toFace", &input.to_face)?;
+            Ok(Some(SketchPrismExtent::DistanceFromPlane { from }))
+        }
+        "distance-from-face" => Err(Error(
+            "extrude distance-from-face: expected the start reference in toFace alone".into(),
+        )),
         "to-face" | "from-to" => parse_plane_extent(snapshot, input).map(Some),
         _ => Err(Error(format!(
-            "extrude extent {:?}: expected distance, through-all, to-face, or from-to",
+            "extrude extent {:?}: expected distance, through-all, to-face, from-to, or distance-from-face",
             input.extent
         ))),
     }
@@ -97,6 +104,10 @@ fn parse_named_plane(
             SketchPlacement::WorkPlane(id) => Ok(WorkPlaneReference::Feature(id)),
             _ => Err(Error("expected an ordered work plane".into())),
         };
+    }
+    if value.starts_with("datum/v1/") {
+        return crate::datums::resolve_work_plane_reference(snapshot, value)
+            .map(WorkPlaneReference::Feature);
     }
     let bytes = crate::reference_bytes::hex_bytes(value)?;
     WorkPlaneFaceReference::new(bytes)

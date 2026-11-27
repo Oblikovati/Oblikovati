@@ -3,6 +3,12 @@
 use super::super::{capture_framebuffer, diagnostics, solid_visibility};
 use super::*;
 
+#[path = "operation_selector.rs"]
+mod selector;
+
+#[path = "boolean_prediction.rs"]
+mod prediction;
+
 const FIXTURE: &str = "fixtures/cad/extrusion/extrusion-base-circle.opd";
 const BASE_TOP: f32 = 0.8;
 const BOSS_TOP: f32 = 1.6;

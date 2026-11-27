@@ -6,7 +6,8 @@ use oblikovati_model::{
     feature::FeatureId,
     history::{DocumentEditHistory, EvaluationScope},
     identity::{
-        DocumentGuid, ExactReferenceBindings, SketchPrismReferenceRole, sketch_prism_reference_name,
+        DocumentGuid, ExactReferenceBindings, SketchPrismReferenceRole,
+        sketch_prism_output_reference_name,
     },
 };
 
@@ -150,19 +151,22 @@ pub use evaluate::retain_certified_named_sketch_prism;
 use evaluate::{CertifiedNamedPrismEvaluator, NamedPrismEvaluator};
 pub use face_topology::{PrismFaceTopology, PrismSurfaceKind};
 pub use solid::{CertifiedNamedSolidEvaluator, NamedSolid, named_solid_part_properties};
+#[derive(Clone, Copy)]
+struct PrismOutputName {
+    feature: FeatureId,
+    sketch: DocumentSketchId,
+    slot: u32,
+}
+
 fn attach_names(
     snapshot: PrismProbeSnapshot,
     document: DocumentGuid,
-    feature: FeatureId,
-    sketch: u64,
+    output: PrismOutputName,
     scope: EvaluationScope,
 ) -> Result<NamedPrismSnapshot, String> {
-    let mut entries = vec![(prism_key(document, feature, sketch, None)?, None)];
+    let mut entries = vec![(output.key(document, None)?, None)];
     for (role, _) in &snapshot.faces {
-        entries.push((
-            prism_key(document, feature, sketch, Some(*role))?,
-            Some(*role),
-        ));
+        entries.push((output.key(document, Some(*role))?, Some(*role)));
     }
     let bindings = ExactReferenceBindings::from_entries(document, scope, entries)?;
     Ok(NamedPrismSnapshot {
@@ -172,19 +176,16 @@ fn attach_names(
         certification: None,
     })
 }
-fn prism_key(
-    document: DocumentGuid,
-    feature: FeatureId,
-    sketch: u64,
-    role: Option<PrismFaceRole>,
-) -> Result<Vec<u8>, String> {
-    let role = match role {
-        None => SketchPrismReferenceRole::Body,
-        Some(PrismFaceRole::Start) => SketchPrismReferenceRole::StartCap,
-        Some(PrismFaceRole::End) => SketchPrismReferenceRole::EndCap,
-        Some(PrismFaceRole::ProfileEdge(edge)) => SketchPrismReferenceRole::Side(edge),
-    };
-    sketch_prism_reference_name(document, feature, DocumentSketchId(sketch), role)
+impl PrismOutputName {
+    fn key(self, document: DocumentGuid, role: Option<PrismFaceRole>) -> Result<Vec<u8>, String> {
+        let role = match role {
+            None => SketchPrismReferenceRole::Body,
+            Some(PrismFaceRole::Start) => SketchPrismReferenceRole::StartCap,
+            Some(PrismFaceRole::End) => SketchPrismReferenceRole::EndCap,
+            Some(PrismFaceRole::ProfileEdge(edge)) => SketchPrismReferenceRole::Side(edge),
+        };
+        sketch_prism_output_reference_name(document, self.feature, self.sketch, self.slot, role)
+    }
 }
 impl NamedPrismSnapshot {
     /// Read the kernel evidence if this body used certified replay; example: `named.certification()`.
@@ -293,13 +294,12 @@ impl NamedPrismSnapshot {
         &self,
         history: &DocumentEditHistory,
         document: DocumentGuid,
-        feature: FeatureId,
-        sketch: u64,
+        output: PrismOutputName,
     ) -> Result<(), String> {
-        let key = prism_key(document, feature, sketch, None)?;
+        let key = output.key(document, None)?;
         self.body_report(history, document, &key)?;
         for (role, expected) in &self.snapshot.faces {
-            let key = prism_key(document, feature, sketch, Some(*role))?;
+            let key = output.key(document, Some(*role))?;
             let bound = self.bindings.bind(history, document, &key, 1)?;
             if *bound != Some(*role) || !unique_face(&self.snapshot, *role)?.is_same(expected) {
                 return Err(format!(

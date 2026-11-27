@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Extrude a profile in a part document: tmp/obk-pr4184-ci-logs/pinned/features/solid-model/extrusion/extrusion.feature" package="testsuite/Feature: Extrude a profile in a part document: tmp/obk-pr4184-ci-logs/pinned/features/solid-model/extrusion/extrusion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-27T04:28:25.150505194Z" time="8.48290758"><testcase name="Scenario: extrusion-20 Dimension pick can change the active distance expression: tmp/obk-pr4184-ci-logs/pinned/features/solid-model/extrusion/extrusion.feature:223:3" time="8.48290758"><system-out><![CDATA[  Scenario: extrusion-20 Dimension pick can change the active distance expression
+   ✔> Given the MCAD Software is displaying a part in the solid modeling workspace
+   ✔> And the viewport pointer is idle
+   ✔  Given two disjoint closed loops and one rectangle selected for extrusion
+   ✔  When the user opens the Distance A editor menu and chooses Measure
+   ✔  Then the status area asks the user to select a dimension to reference the parameter
+   ✔  When the circle dimension annotation is picked
+   ✔  Then Distance A references d2 instead of adding another profile
+   ✔  And a later pick produces invalid d2d2 and disabled OK
+   ✔  When Cancel is clicked
+   ✔  Then no new extrusion is accepted
+]]></system-out></testcase></testsuite></testsuites>

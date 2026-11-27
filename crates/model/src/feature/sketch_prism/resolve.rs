@@ -14,6 +14,7 @@ pub struct ResolvedSketchPrism<'a> {
     pub sketch: ResolvedDocumentSketch<'a>,
     pub sweep_start: SketchPlane,
     pub selection: &'a SketchPrismSelection,
+    pub additional_outputs: &'a [SketchPrismOutput],
     pub displacement: [f64; 3],
     pub taper_radians: f64,
 }
@@ -27,12 +28,26 @@ impl SketchPrismDefinition {
         let sketch = snapshot
             .require_converged_resolved_sketch(self.sketch)
             .map_err(|cause| self.decline(SketchPrismCause::Placement(cause)))?;
-        self.resolve_current_sketch(
-            snapshot,
-            sketch,
-            &WorkGeometryEvaluation::default(),
-            extent::missing_target_bounds,
-        )
+        let datums = self.resolve_unbound_extent_datums(snapshot)?;
+        self.resolve_current_sketch(snapshot, sketch, &datums, extent::missing_target_bounds)
+    }
+    fn resolve_unbound_extent_datums(
+        &self,
+        snapshot: &DocumentSnapshot,
+    ) -> Result<WorkGeometryEvaluation, SketchPrismError> {
+        use crate::feature::work_plane::WorkPlaneReference;
+        if matches!(
+            self.extent,
+            Some(SketchPrismExtent::DistanceFromPlane {
+                from: WorkPlaneReference::Feature(_)
+            })
+        ) {
+            return snapshot
+                .effective_work_geometry()
+                .evaluate_work_geometry_unbound(&snapshot.parameters)
+                .map_err(|cause| self.decline(SketchPrismCause::Definition(cause.to_string())));
+        }
+        Ok(WorkGeometryEvaluation::default())
     }
     pub(crate) fn resolve_with_datums<'a>(
         &'a self,
@@ -54,15 +69,13 @@ impl SketchPrismDefinition {
         target_span: impl FnOnce(SketchPlane, ThroughAllDirection) -> Result<(f64, f64), String>,
     ) -> Result<ResolvedSketchPrism<'a>, SketchPrismError> {
         let mut displacement = self.resolve_displacement(snapshot)?;
-        let (offset, depth) = if let Some(extent) = &self.extent {
-            extent
-                .span(sketch.plane, resolver, target_span)
-                .map_err(|cause| self.decline(cause))?
-        } else {
-            self.validate_normal_source(displacement[2])
-                .map_err(|cause| self.decline(cause))?;
-            self.normal_span(snapshot, displacement[2])?
-        };
+        let (offset, depth) = self.resolve_span(
+            snapshot,
+            sketch.plane,
+            resolver,
+            target_span,
+            displacement[2],
+        )?;
         displacement[2] = depth;
         let sweep_start = self.sweep_start(sketch.plane, offset)?;
         let taper_radians = self
@@ -76,9 +89,34 @@ impl SketchPrismDefinition {
             sketch,
             sweep_start,
             selection: &self.selection,
+            additional_outputs: &self.additional_outputs,
             displacement,
             taper_radians,
         })
+    }
+    fn resolve_span(
+        &self,
+        snapshot: &DocumentSnapshot,
+        plane: SketchPlane,
+        resolver: &impl WorkPlaneResolver,
+        target: impl FnOnce(SketchPlane, ThroughAllDirection) -> Result<(f64, f64), String>,
+        depth: f64,
+    ) -> Result<(f64, f64), SketchPrismError> {
+        let start = match &self.extent {
+            Some(SketchPrismExtent::DistanceFromPlane { from }) => {
+                extent::plane_offset(plane, from, resolver).map_err(|cause| self.decline(cause))?
+            }
+            Some(extent) => {
+                return extent
+                    .span(plane, resolver, target)
+                    .map_err(|cause| self.decline(cause));
+            }
+            None => 0.,
+        };
+        self.validate_normal_source(depth)
+            .map_err(|cause| self.decline(cause))?;
+        let (offset, span) = self.normal_span(snapshot, depth)?;
+        Ok((start + offset, span))
     }
     fn normal_span(
         &self,

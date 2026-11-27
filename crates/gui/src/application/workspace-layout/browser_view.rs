@@ -44,6 +44,7 @@ pub(crate) struct BrowserView {
     pub selected_row: Option<(usize, usize)>,
     /// The origin row a click chose.
     pub selected_origin_row: Option<usize>,
+    pub(super) picked_plane_reference: Option<String>,
     /// The last origin row retains a focus outline after viewport selection clears.
     pub focused_origin_row: Option<usize>,
     pub arrow_consumed: bool,

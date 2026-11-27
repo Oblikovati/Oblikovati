@@ -3930,8 +3930,18 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
       "state": "inventoried",
-      "baseline_source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
-      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
+      "baseline_source_sha256": "ccb973b10334aa2f8f31a189392ad8049212caaa2938db03b034bc9f49008821",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json",
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a head/ui/extrude_dialog.go drawExtrudeDistanceRow uses the dimensioned parameter field. The pinned scenario specifies picking the annotation.",
+      "go_test_premise": "TestParameterInputDialogsRender in head/ui/parameter_input_render_test.go executes Distance A through native rendering. The pinned MCAD scenario provides the annotation-pick and cancel assertions.",
+      "api_revision": "c8200b2da97c9a7dde43afb25debc977ff23b2fd",
+      "kernel_revision": "d463526642b7bf950ba33c7ab4a4c9bc97caffaf",
+      "kernel_capabilities": "Certified planar profile discovery and a normal prism preview for the rectangular region.",
+      "platforms": "Native Linux Wayland on COSMIC and X11 under Xvfb and Openbox.",
+      "kernel_integration": "The annotation contributes its length parameter to Distance A. The existing expression validator supplies the resolved value to the prism preview.",
+      "rust_tests": "crates/head/tests/solid-model/extrusion/dimension_pick.rs through the named native scenario.",
+      "oracle": "The native tests read the rendered label and active draft, check the submitted rectangular preview bounds, and verify the document has no accepted feature after Cancel. See receipts/2026-11-27-extrude-dimension-pick-3870.",
+      "expected_result": "The first pick inserts d2 and previews a 3 mm extrusion of only the rectangle. A repeat pick produces invalid d2d2, disables OK, and Cancel leaves the source sketch."
     },
     {
       "id": "scenario:4253a44e35e179d2c329210f07f92249929d7c5473b377c1eea56d16ff080a96",
@@ -3946,8 +3956,18 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
       "state": "inventoried",
-      "baseline_source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
-      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
+      "baseline_source_sha256": "ccb973b10334aa2f8f31a189392ad8049212caaa2938db03b034bc9f49008821",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json",
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a head/ui/extrude_dialog.go draws the breadcrumb and geometry sections. The pinned scenario specifies the preset controls between them.",
+      "go_test_premise": "TestInWindowExtrudePanelVisualHold exercises the native Go Extrude panel. The pinned scenario supplies the checked Hide Presets, gear, and restoration assertions.",
+      "api_revision": "c8200b2da97c9a7dde43afb25debc977ff23b2fd",
+      "kernel_revision": "d463526642b7bf950ba33c7ab4a4c9bc97caffaf",
+      "kernel_capabilities": "Certified rectangular profile and numeric prism preview remain active while the desktop toggles a preset setting.",
+      "platforms": "Native Wayland and X11 with Xvfb and Openbox.",
+      "kernel_integration": "The preset visibility setting is desktop state and does not submit a document or geometry change.",
+      "rust_tests": "crates/head/tests/solid-model/extrusion/preset_visibility.rs through the pinned native scenario.",
+      "oracle": "The rendered checkbox, preset row controls, gear menu states and surviving Extrude panel are checked natively. See receipts/2026-11-27-extrude-preset-visibility-3870.",
+      "expected_result": "Turning off Hide Presets reveals No Preset, plus and gear. Dismissing the gear leaves the draft open. Restoring Hide Presets removes the row."
     },
     {
       "id": "scenario:3f146bf19a7bfd387229b530e0d198b511f4936e593c0bd5bab5cc8ba149a4ee",

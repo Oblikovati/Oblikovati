@@ -11,6 +11,7 @@ fn closing_the_document_clears_its_preview_from_the_scene() {
         document,
         sketch: crate::scene_fixture::SKETCH,
         profile: 0,
+        additional_profiles: Vec::new(),
         distance: "width".into(),
         second_distance: None,
         operation: None,

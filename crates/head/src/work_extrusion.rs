@@ -17,10 +17,20 @@ macro_rules! work_extrusion {
             ))
         }
 
+        /// Classify an extrusion profile on the active sketch.
+        /// Example: `work.pick_extrude_profile(selection, ray)?` before previewing the draft.
+        fn pick_extrude_profile(
+            &mut self,
+            _: oblikovati_gui::GuiExtrudeProfilePick,
+            _: [[f64; 3]; 2],
+        ) -> Result<bool, String> {
+            Ok(false)
+        }
+
         /// Commit an extrusion draft after its certified preview.
-        /// Example: `work.commit_extrusion_draft(&draft, None)?`.
+        /// Example: `work.commit_extrusion_draft(&draft, None, false)?`.
         fn commit_extrusion_draft(
-            &mut self, draft: &oblikovati_gui::GuiExtrudePreview, _body_name: Option<&str>,
+            &mut self, draft: &oblikovati_gui::GuiExtrudePreview, _body_name: Option<&str>, _keep_sketch: bool,
         ) -> Result<bool, String> {
             Err(format!("extrusion {:?}: expected a certified draft owner", draft.reference_extent))
         }

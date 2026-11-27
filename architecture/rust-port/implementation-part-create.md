@@ -34,6 +34,12 @@ and X11. It covers entry, direction changes and presentation, Cancel, zero
 distance validation, reference selector validation, and the Parameters
 table. See the [native run receipt](receipts/2026-11-26-extrude-entry-direction-3857/README.md).
 
+Extrude can be requested while an existing source sketch is being
+edited. Finish Sketch resumes the waiting command with that sketch
+and a 10 mm preview. Both native desktops also passed the empty-part
+entry regression.
+[Sketch completion receipt](receipts/2026-11-27-extrude-resume-profile-3857/README.md).
+
 The next pass covered `extrusion-06` on both desktops, including Undo, Redo
 and two measured 8 mm edges. The named-parameter preview check now uses the
 cyan preview palette and passes on both desktops. The wider native Extrude
@@ -97,6 +103,11 @@ solid and resolves the extent from the current target. The
 [native Through All receipt](receipts/2026-11-27-extrude-through-all-3870/README.md)
 checks both openings in the preview and accepted body.
 
+The control beside Distance A starts a Through All Cut and keeps the
+inactive numeric distance in parentheses. Undo restores the visible
+circle and intact top face.
+[Auxiliary Cut and full-run receipts](receipts/2026-11-27-extrude-auxiliary-cut-3870/README.md).
+
 Double-clicking a supported Extrude browser row opens its edit draft.
 The panel shows the saved sketch-plane start and the body name, and
 shows Match Shape checked and disabled on the saved closed profile.
@@ -113,16 +124,115 @@ cap. Dragging it updates the distance expression through the same
 validation and preview path as panel input. The
 [native manipulator receipt](receipts/2026-11-27-extrude-manipulator-3870/README.md)
 checks the dimension, field, and preview mesh after both kinds of input.
+The handle moves clear of Properties when their bounds overlap.
+[Pointer input receipt](receipts/2026-11-27-extrude-handle-input-3870/README.md).
 
 Extrude accepts length expressions that reference part parameters. The
 [native driven-distance receipt](receipts/2026-11-27-extrude-driven-distance-3870/README.md)
 checks that `Depth * 2` previews at 8 mm and rebuilds the same solid to
 10 mm after `Depth` changes to 5 mm in the Parameters panel.
 
+Measure in the Distance A menu can reference a visible sketch dimension.
+The [native dimension-pick scenario](receipts/2026-11-27-extrude-dimension-pick-3870/README.md)
+checks that clicking the 3 mm annotation inserts `d2` and keeps the
+rectangular profile selected. A repeat pick is validated as `d2d2` and
+Cancel leaves the source sketch intact.
+
 The [shared profile scenario](receipts/2026-11-27-extrude-reused-profile-3870/README.md)
 exercises selecting the visible sketch under Extrusion1 in the Model Browser.
 After the second extrusion, the browser shows two solids and one shared
 sketch. Both feature definitions reference that sketch.
+
+For a single solid, Extrude's Operation selector offers icons and a
+named dropdown. The [native selector scenario](receipts/2026-11-27-extrude-boolean-selector-3870/README.md)
+checks Join, Cut, Intersect, and New Solid and verifies that changing the
+presentation preserves the selected Join operation and its preview.
+
+Advanced Settings offers Predict Boolean Operation. Clearing the option
+keeps the current direction when choosing Cut or Intersect. The published
+case checks the unchanged top face in Default direction and the opening
+after manually selecting Flipped. [Native receipt](receipts/2026-11-27-extrude-boolean-prediction-3893/README.md).
+
+Extrude starts with its preset row hidden. Advanced Settings reveals
+the selector, add button, and gear. Named presets reuse numeric depth and
+direction within the desktop session.
+[Pinned visibility receipt](receipts/2026-11-27-extrude-preset-visibility-3870/README.md).
+
+The Extrude breadcrumb offers Show Preview and Hide Preview. The live
+input selections and distance remain in the panel while the viewport
+switches between the committed solid and the edit preview. The shared
+Preset Settings case also runs with the published rectangle.
+[Shared Properties receipt](receipts/2026-11-27-extrude-shared-properties-3893/README.md).
+
+Apply and Create New carries Extrude settings into a new draft and
+clears its geometry picks. The published case applies an 8 mm Flipped
+extrusion and cancels the following draft, leaving one solid.
+[Native receipt](receipts/2026-11-27-extrude-apply-next-3893/README.md).
+
+With Keep sketches visible on (+) checked, Apply and Create New commits
+the extrusion and leaves its source sketch visible in a single undo step.
+A viewport pick of the second closed region in the two-profile sketch
+previews it without altering the committed extrusion.
+[Sketch reuse receipt](receipts/2026-11-27-extrude-apply-reuse-3893/README.md).
+Extrude can pick and preview multiple regions as individually named New Solids.
+Clear removes all profile selections and waits for a new viewport pick.
+[Multi-profile native receipt](receipts/2026-11-27-extrude-multi-profile-ui-3870/README.md).
+
+Extrude Advanced Settings controls whether Enter commits the feature
+or keeps the Properties panel open with the updated preview. Both
+published examples exercise the active Distance A editor.
+[Enter preference receipt](receipts/2026-11-27-extrude-enter-3893/README.md).
+
+An accepted extrusion's Properties breadcrumb opens its source sketch
+for editing. The active underline moves from the feature to the sketch,
+and the extrusion preview clears when sketch editing begins.
+[Source breadcrumb receipt](receipts/2026-11-27-extrude-source-breadcrumb-3893/README.md).
+
+Tab and Shift+Tab move between the active asymmetric distance editors.
+Typing in the focused second field updates the preview, and both
+keyboard moves leave the draft open without adding a history entry.
+[Value focus receipt](receipts/2026-11-27-extrude-value-focus-3893/README.md).
+
+The published Extrude preset example verifies Save Current, reselecting
+the saved distance, and renaming the preset while preserving its
+stored settings. The outline's Revolve example remains open.
+[Preset update receipt](receipts/2026-11-27-extrude-preset-update-3893/README.md).
+
+Deleting an Extrude preset removes its name and leaves the other preset
+selectable with its own saved distance. The published example verifies
+the preview depth and absence of a document history entry.
+[Preset removal receipt](receipts/2026-11-27-extrude-preset-remove-3893/README.md).
+
+New Extrude commands read the built-in settings, the last accepted
+settings, or the selected named preset according to the default menu.
+The published examples distinguish 10 mm, 12 mm, and 8 mm after
+cancelling the intervening draft.
+[Preset defaults receipt](receipts/2026-11-27-extrude-preset-default-3893/README.md).
+
+Extrude refreshes the preview as soon as the final reference face is
+selected. A [native From/To control](receipts/2026-11-27-extrude-between-faces-3870/README.md)
+verifies caps on opposite faces of a block and an independent midplane
+sketch. The published 3 mm radius fixture still needs Martensite's
+translated-circle certification fix.
+
+Extrude accepts origin planes and authored work planes from the Model
+browser when a reference selector is active. The
+[native plane control](receipts/2026-11-27-extrude-work-plane-3893/README.md)
+checks the resulting cap and verifies that the saved recipe references
+the authored plane by identity. On fractional-scale Wayland, the dock
+layout keeps the Extrude panel clear of browser rows.
+
+An Extrude can start on a parallel reference plane with a numeric
+distance. The published fixture previews caps at 3 mm and 11 mm with
+8 mm of depth. Commit and reopen retain the start plane by identity.
+[Native receipt](receipts/2026-11-27-extrude-distance-from-plane-3893/README.md).
+
+Face extension is pending. The existing planar reference path resolves
+the supporting plane for From and To. Disabling extension needs a
+certified comparison of the projected profile against the trimmed
+reference face, including holes and curved trim edges. Point picks and
+tessellated face bounds alone cannot establish that coverage.
+[Plane resolution](../../crates/model/src/feature/sketch_prism/extent.rs).
 
 ## Sweep, Loft, and Revolve
 

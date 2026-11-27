@@ -28,11 +28,19 @@ pub struct SketchPrismSelection {
     pub outer: Vec<SketchDirectedCurve>,
     pub holes: Vec<Vec<SketchDirectedCurve>>,
 }
+/// One additional region and its permanent output slot within an Extrude.
+#[derive(Clone, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SketchPrismOutput {
+    pub slot: u32,
+    pub selection: SketchPrismSelection,
+}
 /// Validated authored input. Evaluated coordinates, solve reports and native shapes are not stored here.
 #[derive(Clone, Debug)]
 pub struct SketchPrismDefinition {
     sketch: DocumentSketchId,
     selection: SketchPrismSelection,
+    additional_outputs: Vec<SketchPrismOutput>,
     displacement: [DatumLength; 3],
     direction: SketchPrismDirection,
     second_depth: Option<DatumLength>,
@@ -60,6 +68,7 @@ impl SketchPrismDefinition {
         let definition = Self {
             sketch,
             selection,
+            additional_outputs: Vec::new(),
             displacement,
             direction: SketchPrismDirection::Positive,
             second_depth: None,
@@ -77,6 +86,37 @@ impl SketchPrismDefinition {
     /// Inspect source traversal without derived coordinates; example: `definition.selection().outer`.
     pub fn selection(&self) -> &SketchPrismSelection {
         &self.selection
+    }
+    /// Inspect each authored sibling by stable slot, e.g. `definition.additional_outputs()`.
+    pub fn additional_outputs(&self) -> &[SketchPrismOutput] {
+        &self.additional_outputs
+    }
+    /// Add independently named solids to the primary selection for a New Solid extrusion.
+    /// Example: `definition.with_additional_outputs(vec![SketchPrismOutput { slot: 1, selection }])?`.
+    pub fn with_additional_outputs(
+        mut self,
+        mut outputs: Vec<SketchPrismOutput>,
+    ) -> Result<Self, SketchPrismError> {
+        outputs.sort_unstable_by_key(|output| output.slot);
+        let mut last = 0;
+        for output in &outputs {
+            if output.slot <= last {
+                return Err(self.decline(SketchPrismCause::Definition(format!(
+                    "extrusion output slot {}: expected a distinct nonzero slot",
+                    output.slot
+                ))));
+            }
+            validation::validate_selection(&output.selection)
+                .map_err(|cause| self.decline(cause))?;
+            last = output.slot;
+        }
+        if !outputs.is_empty() && self.boolean_target.is_some() {
+            return Err(self.decline(SketchPrismCause::Definition(
+                "extrusion outputs: expected New Solid for multiple named bodies".into(),
+            )));
+        }
+        self.additional_outputs = outputs;
+        Ok(self)
     }
     /// Inspect local X, Y and normal scalar sources; example: `definition.displacement()[2]`.
     pub fn displacement(&self) -> [DatumLength; 3] {
@@ -134,6 +174,7 @@ impl SketchPrismDefinition {
     pub fn same_recipe(&self, other: &Self) -> bool {
         self.sketch == other.sketch
             && self.selection == other.selection
+            && self.additional_outputs == other.additional_outputs
             && self.direction == other.direction
             && self.extent == other.extent
             && self.boolean_target == other.boolean_target

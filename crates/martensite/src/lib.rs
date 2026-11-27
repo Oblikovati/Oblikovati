@@ -114,8 +114,8 @@ pub use prism::{
     drawing_base_view_solids, drawing_projection_bodies, drawing_projection_solids,
     named_part_properties, named_solid_part_properties, prepare_dependent_named_publication,
     prepare_full_named_publication, probe_planar_prism, retain_certified_named_sketch_prism,
-    retain_certified_profile_prism, retain_named_sketch_prism, retain_planar_prism,
-    retain_prism_on_plane, validate_full_named_snapshot,
+    retain_certified_profile_prism, retain_certified_profile_prisms, retain_named_sketch_prism,
+    retain_planar_prism, retain_prism_on_plane, validate_full_named_snapshot,
 };
 mod loft;
 pub use loft::check_loft_guide_closure;
@@ -137,8 +137,9 @@ pub use sketch_prism::{
     SketchRegionCurveUse, SketchRegionMeasure, certified_sketch_region_measures,
     certified_sketch_regions, certified_sketch_regions_with_datums,
     certified_sketch_regions_with_policy, conditional_profile_mapping, offset_sketch_profile,
-    pick_sketch_region, retain_certified_sketch_prism, retain_resolved_sketch_prism,
-    retain_selected_sketch_prism, retain_sketch_prism_definition, sketch_profile_extent,
+    pick_sketch_region, pick_sketch_region_index, retain_certified_sketch_prism,
+    retain_resolved_sketch_prism, retain_selected_sketch_prism, retain_sketch_prism_definition,
+    sketch_profile_extent,
 };
 pub use stored_prism::retain_stored_sketch_prism;
 

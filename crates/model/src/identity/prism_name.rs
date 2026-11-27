@@ -20,12 +20,27 @@ pub fn sketch_prism_reference_name(
     sketch: DocumentSketchId,
     role: SketchPrismReferenceRole,
 ) -> Result<Vec<u8>, String> {
-    let (kind, tag, sources) = match role {
+    sketch_prism_output_reference_name(document, feature, sketch, 0, role)
+}
+
+/// Encode a role for one output slot, with slot zero retaining the original format.
+/// Example: `sketch_prism_output_reference_name(doc, feature, sketch, 7, SketchPrismReferenceRole::Body)?`.
+pub fn sketch_prism_output_reference_name(
+    document: DocumentGuid,
+    feature: FeatureId,
+    sketch: DocumentSketchId,
+    slot: u32,
+    role: SketchPrismReferenceRole,
+) -> Result<Vec<u8>, String> {
+    let (kind, tag, mut sources) = match role {
         SketchPrismReferenceRole::Body => (4, "body", vec![sketch.0]),
         SketchPrismReferenceRole::StartCap => (1, "start", vec![sketch.0]),
         SketchPrismReferenceRole::EndCap => (1, "end", vec![sketch.0]),
         SketchPrismReferenceRole::Side(edge) => (1, "side", vec![sketch.0, edge]),
     };
+    if slot != 0 {
+        sources.push(u64::from(slot));
+    }
     SemanticReferenceName::new(document, feature.0, kind, "sketch-prism", tag, &sources)?.encode()
 }
 

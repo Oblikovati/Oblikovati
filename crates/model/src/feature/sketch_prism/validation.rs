@@ -9,8 +9,18 @@ pub(super) fn validate_sources(definition: &SketchPrismDefinition) -> Result<(),
         )));
     }
     validate_selection(&definition.selection)?;
+    let from_plane = matches!(
+        definition.extent,
+        Some(SketchPrismExtent::DistanceFromPlane { .. })
+    );
+    let plane_bounds_only = definition.extent.is_some() && !from_plane;
+    if from_plane && definition.displacement[..2] != [DatumLength::Constant(0.); 2] {
+        return Err(SketchPrismCause::Definition(
+            "prism start plane: expected a sweep normal to the profile".into(),
+        ));
+    }
     if let Some(source) = definition.taper {
-        if definition.extent.is_some()
+        if plane_bounds_only
             || !matches!(
                 definition.direction,
                 SketchPrismDirection::Positive | SketchPrismDirection::Negative
@@ -34,7 +44,7 @@ pub(super) fn validate_sources(definition: &SketchPrismDefinition) -> Result<(),
             DatumLength::Parameter(_) => {}
         }
     }
-    if definition.extent.is_some() {
+    if plane_bounds_only {
         return validate_plane_extent(definition);
     }
     for (axis, source) in definition.displacement.into_iter().enumerate() {

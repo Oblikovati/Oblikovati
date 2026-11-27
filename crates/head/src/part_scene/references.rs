@@ -34,11 +34,10 @@ impl DesktopPartScenes {
             .identity(document)
             .map_err(|error| error.to_string())?
             .internal_name;
-        let body = self
-            .current(session)?
-            .body(feature)
-            .ok_or_else(|| format!("selected feature {feature:?}: expected a current body"))?;
-        body.face_topology(session.history(), guid, face)?;
+        self.current(session)?
+            .inspect_body_reference(feature, face, |body| {
+                body.face_topology(session.history(), guid, face)
+            })?;
         Ok(face.to_vec())
     }
     pub(crate) fn sketch_support_face<
@@ -351,12 +350,14 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartTopolog
             .map_err(|cause| cause.to_string())?
             .internal_name;
         let feature = FeatureId(envelope.context);
-        let body = self.current(session)?.body_from_source(feature)?;
-        match kind {
-            TopologyEntityKind::Body => body
-                .topology_summary(session.history(), guid, key)
-                .map(|_| ()),
-            TopologyEntityKind::Face => body.face_area(session.history(), guid, key).map(|_| ()),
-        }
+        self.current(session)?
+            .inspect_body_reference(feature, key, |body| match kind {
+                TopologyEntityKind::Body => body
+                    .topology_summary(session.history(), guid, key)
+                    .map(|_| ()),
+                TopologyEntityKind::Face => {
+                    body.face_area(session.history(), guid, key).map(|_| ())
+                }
+            })
     }
 }

@@ -60,6 +60,8 @@ pub(crate) fn origin_row(
     let selected = view.selected_origin_row == Some(row);
     if ui.selectable_config(label).selected(selected).build() {
         choose_origin_row(state, view, row, actions);
+        view.picked_plane_reference =
+            origin_plane_at_row(row).map(|plane| plane.work_reference().to_owned());
     }
     if ui.is_item_hovered() && ui.is_mouse_clicked(MouseButton::Right) {
         choose_origin_row(state, view, row, actions);
@@ -78,6 +80,13 @@ pub(crate) fn origin_row(
         return;
     };
     origin_row_commands(ui, state, view, row, label, actions);
+}
+pub(super) fn origin_plane_at_row(row: usize) -> Option<crate::GuiOriginPlaneKind> {
+    use crate::GuiOriginPlaneKind::{Xy, Xz, Yz};
+    let label = *crate::browser::ORIGIN_ROWS.get(row)?;
+    [Xy, Xz, Yz]
+        .into_iter()
+        .find(|plane| plane.label() == label)
 }
 /// Only one kind of row reads as chosen at a time, so whatever else was chosen lets go.
 fn choose_origin_row(
@@ -102,8 +111,7 @@ fn origin_row_commands(
     label: &str,
     actions: &mut Vec<GuiShellAction>,
 ) {
-    use crate::GuiOriginPlaneKind::{Xy, Xz, Yz};
-    let plane = [Xy, Xz, Yz].into_iter().find(|kind| kind.label() == label);
+    let plane = origin_plane_at_row(row);
     if let Some(plane) = plane {
         if ui.menu_item("New Sketch") {
             actions.push(GuiShellAction::StartSketchOn(plane));
@@ -234,6 +242,7 @@ pub(crate) fn follow_view_click(
             document,
             pixel,
             toggle: ui.io().key_ctrl || ui.io().key_shift,
+            extrude_profile: None,
         });
     }
 }

@@ -7,25 +7,33 @@ use martensite_tkbo::profile_extrusion::{
 use oblikovati_model::{feature::sketch_prism::SketchDirectedCurve, sketch::SketchEntityId};
 
 fn square(size: f64) -> (SketchProfile, SketchPrismSelection) {
-    let positions = [[0., 0.], [size, 0.], [size, size], [0., size]];
+    square_at(size, [0., 0.], 0)
+}
+
+fn square_at(
+    size: f64,
+    [x, y]: [f64; 2],
+    identity_offset: u64,
+) -> (SketchProfile, SketchPrismSelection) {
+    let positions = [[x, y], [x + size, y], [x + size, y + size], [x, y + size]];
     let vertices = positions
         .into_iter()
         .enumerate()
         .map(|(i, point)| ProfileVertex {
-            id: ProfileVertexId(i as u64 + 1),
+            id: ProfileVertexId(identity_offset + i as u64 + 1),
             point,
         })
         .collect();
     let curves = (0..4)
         .map(|i| ProfileCurve::Line {
-            id: ProfileCurveId(i + 11),
-            start: ProfileVertexId(i + 1),
-            end: ProfileVertexId((i + 1) % 4 + 1),
+            id: ProfileCurveId(identity_offset + i + 11),
+            start: ProfileVertexId(identity_offset + i + 1),
+            end: ProfileVertexId(identity_offset + (i + 1) % 4 + 1),
         })
         .collect();
     let outer = (11..15)
         .map(|id| SketchDirectedCurve {
-            curve: SketchEntityId(id),
+            curve: SketchEntityId(identity_offset + id),
             reversed: false,
         })
         .collect();
@@ -383,4 +391,80 @@ fn outward_dot([a, b, c]: [[f64; 3]; 3], center: [f64; 3]) -> f64 {
     (0..3)
         .map(|i| n[i] * ((a[i] + b[i] + c[i]) / 3. - center[i]))
         .sum()
+}
+
+#[test]
+fn certified_batch_keeps_each_disjoint_profile_body_and_its_curve_roles() {
+    let (profile, selections) = disjoint_rectangular_regions();
+    let resolution = resolution(ToleranceCap::Refuse(1e-5));
+    let expected = [(13.5, 9., 4.5, 31), (6., 4., 3., 11)];
+    for _ in 0..2 {
+        let result =
+            retain_certified_profile_prisms(&profile, &selections, [0., 0., 1.5], resolution)
+                .unwrap();
+        assert_eq!(result.len(), 2);
+        for (body, (volume, cap_area, side_area, first_side)) in result.iter().zip(expected) {
+            let report = body.body.report();
+            assert!((report.properties.volume - volume).abs() < 1e-8);
+            assert_eq!(
+                (
+                    report.topology.faces,
+                    report.topology.edges,
+                    report.topology.vertices
+                ),
+                (6, 12, 8)
+            );
+            for cap in [PrismFaceRole::Start, PrismFaceRole::End] {
+                let face = report.faces.iter().find(|face| face.role == cap).unwrap();
+                assert!((face.area - cap_area).abs() < 1e-8);
+            }
+            for id in first_side..first_side + 4 {
+                let side = report
+                    .faces
+                    .iter()
+                    .find(|face| face.role == PrismFaceRole::ProfileEdge(id))
+                    .unwrap();
+                assert!((side.area - side_area).abs() < 1e-8);
+            }
+            assert!(report.faces.iter().all(|face| face.loops == 1));
+            let tolerance = body.achieved_tolerance;
+            assert!(
+                [tolerance.face, tolerance.edge, tolerance.vertex]
+                    .into_iter()
+                    .all(|value| value.is_finite() && value <= 1e-5)
+            );
+        }
+    }
+}
+
+#[test]
+fn certified_batch_refuses_empty_missing_and_repeated_boundaries() {
+    let (profile, [first, second]) = disjoint_rectangular_regions();
+    let settings = resolution(ToleranceCap::Refuse(1e-5));
+    let mut reordered = first.clone();
+    reordered.outer.rotate_left(1);
+    let mut missing = second;
+    missing.outer[0].curve = SketchEntityId(999);
+    for (selections, expected) in [
+        (vec![], "expected at least one selected region"),
+        (vec![first.clone(), missing], "expected one current region"),
+        (
+            vec![first, reordered],
+            "expected a distinct extrusion profile",
+        ),
+    ] {
+        let failure =
+            retain_certified_profile_prisms(&profile, &selections, [0., 0., 1.5], settings)
+                .err()
+                .unwrap();
+        assert!(failure.to_string().contains(expected), "{failure}");
+    }
+}
+
+fn disjoint_rectangular_regions() -> (SketchProfile, [SketchPrismSelection; 2]) {
+    let (mut profile, small) = square(2.);
+    let (large_profile, large) = square_at(3., [5., 0.], 20);
+    profile.vertices.extend(large_profile.vertices);
+    profile.curves.extend(large_profile.curves);
+    (profile, [large, small])
 }

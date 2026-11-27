@@ -7,6 +7,8 @@ pub struct SketchPrismRecipe {
     pub version: u32,
     pub sketch: DocumentSketchId,
     pub selection: SketchPrismSelection,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub additional_outputs: Vec<SketchPrismOutput>,
     pub displacement: [DatumLength; 3],
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub reversed_normal: bool,
@@ -35,9 +37,15 @@ impl SketchPrismDefinition {
         };
         let intersection_target = target_key(PrismBoolean::Intersect);
         SketchPrismRecipe {
-            version: prism_recipe_version(self.taper.is_some(), intersection_target.is_some()),
+            version: prism_recipe_version(
+                self.extent.as_ref(),
+                self.taper.is_some(),
+                intersection_target.is_some(),
+                !self.additional_outputs.is_empty(),
+            ),
             sketch: self.sketch,
             selection: self.selection.clone(),
+            additional_outputs: self.additional_outputs.clone(),
             displacement: self.displacement,
             reversed_normal: self.direction == SketchPrismDirection::Negative,
             centered_normal: self.direction == SketchPrismDirection::Symmetric,
@@ -51,8 +59,12 @@ impl SketchPrismDefinition {
     }
     /// Validate the saved version and sources before adoption; example: `SketchPrismDefinition::from_recipe(&recipe)?`.
     pub fn from_recipe(recipe: &SketchPrismRecipe) -> Result<Self, SketchPrismError> {
-        let expected =
-            prism_recipe_version(recipe.taper.is_some(), recipe.intersection_target.is_some());
+        let expected = prism_recipe_version(
+            recipe.extent.as_ref(),
+            recipe.taper.is_some(),
+            recipe.intersection_target.is_some(),
+            !recipe.additional_outputs.is_empty(),
+        );
         if recipe.version != expected {
             return Err(SketchPrismError {
                 sketch: recipe.sketch,
@@ -63,11 +75,16 @@ impl SketchPrismDefinition {
             });
         }
         let definition = match &recipe.extent {
+            Some(SketchPrismExtent::DistanceFromPlane { from }) => {
+                Self::from_distance_recipe(recipe)?.with_start_plane(from.clone())
+            }
             Some(extent) => Self::from_plane_recipe(recipe, extent),
             None => Self::from_distance_recipe(recipe),
         }?
         .with_taper(recipe.taper)?;
-        definition.with_saved_target(recipe)
+        definition
+            .with_additional_outputs(recipe.additional_outputs.clone())?
+            .with_saved_target(recipe)
     }
     fn with_saved_target(self, recipe: &SketchPrismRecipe) -> Result<Self, SketchPrismError> {
         match (
@@ -130,7 +147,18 @@ impl SketchPrismDefinition {
     }
 }
 
-fn prism_recipe_version(tapered: bool, intersects: bool) -> u32 {
+fn prism_recipe_version(
+    extent: Option<&SketchPrismExtent>,
+    tapered: bool,
+    intersects: bool,
+    has_additional_outputs: bool,
+) -> u32 {
+    if has_additional_outputs {
+        return 5;
+    }
+    if matches!(extent, Some(SketchPrismExtent::DistanceFromPlane { .. })) {
+        return 4;
+    }
     match (intersects, tapered) {
         (true, _) => 3,
         (false, true) => 2,

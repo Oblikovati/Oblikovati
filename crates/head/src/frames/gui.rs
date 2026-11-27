@@ -347,9 +347,8 @@ pub(super) fn dispatch_action(
             document,
             pixel,
             toggle,
-        } => {
-            return model_click::dispatch(window, owner, *document, *pixel, *toggle);
-        }
+            extrude_profile: profile,
+        } => return model_click::dispatch(window, owner, *document, (*pixel, *toggle, *profile)),
         GuiShellAction::ContextClickModel { document, pixel } => {
             let line = window.view_line(*pixel)?;
             let depth_window = model_click::depth_window(window)?;
@@ -396,7 +395,7 @@ pub(super) fn dispatch_action(
     {
         window.reject_extrusion_edit(request, cause);
     }
-    if let (Err(cause), GuiShellAction::CommitExtrudeDraft(draft, _)) = (&result, action) {
+    if let (Err(cause), GuiShellAction::CommitExtrudeDraft(draft, _, _)) = (&result, action) {
         let mut submitted = draft.clone();
         submitted.generation = None;
         window.reject_extrusion(&submitted, cause);
@@ -417,6 +416,7 @@ pub(super) fn dispatch_action(
                 document: *document,
                 sketch: *sketch,
                 profile: *profile,
+                additional_profiles: Vec::new(),
                 distance: distance.clone(),
                 direction: *direction,
                 second_distance: second_distance.clone(),
@@ -426,8 +426,10 @@ pub(super) fn dispatch_action(
             cause,
         );
     }
-    if matches!(action, GuiShellAction::PreviewFilletEdit(_))
-        && result.as_ref().is_ok_and(|changed| *changed)
+    if matches!(
+        action,
+        GuiShellAction::PreviewFilletEdit(_) | GuiShellAction::PreviewExtrude(Some(_))
+    ) && result.as_ref().is_ok_and(|changed| *changed)
     {
         window.show_command_notice(crate::DesktopCommandNotice::Ready)?;
     }

@@ -3,6 +3,42 @@ use super::acceptance::feature_count;
 use super::viewport_interaction::{click_text_native, replace_distance_native};
 use super::*;
 
+#[path = "between_faces.rs"]
+mod between_faces;
+
+#[path = "plane_reference.rs"]
+mod plane_reference;
+
+#[path = "distance_from_plane.rs"]
+mod distance_from_plane;
+
+#[path = "preset_visibility.rs"]
+mod preset_visibility;
+
+#[path = "preview_visibility.rs"]
+mod preview_visibility;
+
+#[path = "apply_next.rs"]
+mod apply_next;
+
+#[path = "apply_reuse_sketch.rs"]
+mod apply_reuse_sketch;
+
+#[path = "clear_profile.rs"]
+mod clear_profile;
+
+#[path = "multi_profile.rs"]
+mod multi_profile;
+
+#[path = "enter_preference.rs"]
+mod enter_preference;
+
+#[path = "source_breadcrumb.rs"]
+mod source_breadcrumb;
+
+#[path = "value_focus.rs"]
+mod value_focus;
+
 #[given("a sketch-plane start and numeric distance")]
 #[given("the numeric Distance A extrusion preview")]
 fn numeric_preview(world: &mut ApplicationWorld) {

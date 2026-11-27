@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Extrude a profile in a part document: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature" package="testsuite/Feature: Extrude a profile in a part document: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-27T05:04:06.308986782Z" time="9.897104656"><testcase name="Scenario: Switch the Boolean selector from icons to named options: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature:415:3" time="9.897104656"><system-out><![CDATA[  Scenario: Switch the Boolean selector from icons to named options
+   ✔> Given the MCAD Software is displaying a part in the solid modeling workspace
+   ✔> And the viewport pointer is idle
+   ✔  Given a fresh copy of `fixtures/cad/extrusion/extrusion-base-circle.opd` is open in a solid extrusion with its circular profile selected
+   ✔  When the user changes the Boolean selector style from Icons to Dropdown
+   ✔  And the user opens the Boolean dropdown
+   ✔  Then it offers Join, Cut, Intersect and New Solid
+   ✔  And switching the selector style has not changed the currently selected operation
+]]></system-out></testcase></testsuite></testsuites>

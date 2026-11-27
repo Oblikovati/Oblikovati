@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Desktop extrusion draft. The document changes only when the owner accepts Apply.
 use crate::dockable_window::DockableWindow;
+#[path = "extrude_breadcrumb.rs"]
+mod breadcrumb;
 use crate::{GuiCommandState, GuiExtrudeDirection, GuiShellAction};
 use imgui::Ui;
 use oblikovati_model::document_sketch::DocumentSketchId;
@@ -16,11 +18,16 @@ pub(crate) use output::single_body;
 mod panel;
 #[path = "extrude_pending.rs"]
 mod pending;
+#[path = "extrude_presets.rs"]
+mod presets;
+#[path = "extrude_profile_pick.rs"]
+mod profile_pick;
 #[path = "extrude_reference.rs"]
 mod reference;
+#[path = "extrude_selector.rs"]
+mod selector;
 #[path = "extrude_taper.rs"]
 mod taper;
-
 const DEFAULT_DISTANCE: &str = "10.00 mm";
 
 #[derive(Default)]
@@ -31,12 +38,21 @@ pub(crate) struct ExtrudeDialog {
     dock_state: crate::dockable_lifecycle::DockableState,
     sketch: Option<DocumentSketchId>,
     profile: i32,
+    additional_profiles: Vec<i64>,
+    profile_pick_sketch: Option<DocumentSketchId>,
+    profile_pick_request: u64,
+    source_edit: bool,
+    release_sketch_on_apply: bool,
+    enter_applies_value_only: bool,
     distance: String,
     distance_editor: distance_editor::DistanceEditor,
     second_distance: String,
     taper: Option<taper::TaperDraft>,
     direction: GuiExtrudeDirection,
-    direction_style: direction::SelectorStyle,
+    direction_style: selector::SelectorStyle,
+    operation_style: selector::SelectorStyle,
+    manual_boolean: bool,
+    presets: presets::ExtrudePresets,
     reference: reference::ReferenceDraft,
     operation: Option<oblikovati_model::feature::sketch_prism::PrismBoolean>,
     body_name: String,
@@ -77,6 +93,9 @@ impl ExtrudeDialog {
             self.taper = None;
             self.operation = None;
             self.preview_hidden = false;
+            self.profile_pick_sketch = None;
+            self.additional_profiles.clear();
+            self.source_edit = false;
             self.size = Default::default();
         }
         self.document = document;
@@ -95,8 +114,12 @@ impl ExtrudeDialog {
             return;
         };
         self.set_document(state.document);
+        self.source_edit = false;
+        self.presets.clear_selection();
         self.sketch = Some(seed.sketch);
+        self.profile_pick_sketch = None;
         self.profile = 0;
+        self.additional_profiles.clear();
         self.distance = seed.distance.clone();
         self.distance_editor = Default::default();
         self.second_distance = seed.second_distance.clone().unwrap_or_default();
@@ -115,34 +138,14 @@ impl ExtrudeDialog {
         self.pending.start(document);
     }
     fn synchronize(&mut self, state: &GuiCommandState) {
-        if self.requested {
-            self.requested = false;
-            self.submitted = None;
-            self.body_name.clear();
-            self.commit_error = None;
-            self.attempted = None;
-            self.set_document(state.document);
-            let browser = state
-                .browser
-                .as_ref()
-                .filter(|_| !self.start_without_sketch);
-            self.start_without_sketch = false;
-            self.sketch = browser.and_then(|browser| {
-                browser
-                    .selected_sketches
-                    .first()
-                    .copied()
-                    .or_else(|| browser.sketches.first().map(|row| row.id))
-            });
-            self.profile = 0;
-            self.distance = DEFAULT_DISTANCE.into();
-            self.distance_editor = Default::default();
-            self.second_distance = "5 mm".into();
-            self.direction = GuiExtrudeDirection::Positive;
-            self.reference = Default::default();
-            self.edit_feature = None;
+        if self.source_edit_active(state) {
+            return;
         }
-        if self.document != state.document
+        if self.requested {
+            self.open_requested_draft(state);
+        }
+        if self.source_edit
+            || self.document != state.document
             || !state.extrude_available
             || state.authoring != crate::GuiAuthoringContext::Part
         {
@@ -150,6 +153,21 @@ impl ExtrudeDialog {
             self.edit_feature = None;
         }
     }
+    fn initialize_fresh_draft(&mut self, state: &GuiCommandState) {
+        self.sketch = state.browser.as_ref().and_then(|browser| {
+            browser
+                .selected_sketches
+                .first()
+                .copied()
+                .or_else(|| browser.sketches.first().map(|row| row.id))
+        });
+        self.distance = DEFAULT_DISTANCE.into();
+        self.second_distance = "5 mm".into();
+        self.direction = GuiExtrudeDirection::Positive;
+        self.reference = Default::default();
+        self.seed_preset();
+    }
+
     pub(crate) fn sync_before_docking(&mut self, state: &GuiCommandState) {
         if !self.requested {
             self.synchronize(state);
@@ -163,23 +181,32 @@ impl ExtrudeDialog {
         actions: &mut Vec<GuiShellAction>,
         mut controls: ExtrudePanelControls<'_>,
     ) {
+        self.presets.observe_command_state(state);
         if let Some(sketch) = self.pending.observe(state, plane_active, actions) {
             self.set_document(state.document);
             self.sketch = Some(sketch);
             self.body_name.clear();
             self.profile = 0;
+            self.additional_profiles.clear();
             self.distance = DEFAULT_DISTANCE.into();
             self.second_distance = "5 mm".into();
             self.direction = GuiExtrudeDirection::Positive;
             self.reference = Default::default();
             self.attempted = None;
             self.edit_feature = None;
+            self.seed_preset();
         }
         if self.requested && self.previewed {
             actions.push(GuiShellAction::PreviewExtrude(None));
             self.previewed = false;
         }
         self.synchronize(state);
+        if self.source_edit {
+            controls.parameters.close_tolerance_inspection();
+            self.source_breadcrumb_panel(ui, state, controls.area, actions);
+            return;
+        }
+        self.observe_profile_pick(state);
         if self.document.is_none() && self.previewed {
             actions.push(GuiShellAction::PreviewExtrude(None));
             self.previewed = false;
@@ -188,8 +215,8 @@ impl ExtrudeDialog {
             controls.parameters.close_tolerance_inspection();
             return;
         };
-        if self.update_distance_handle(ui, state, controls.area) {
-            controls.parameters.close_tolerance_inspection();
+        if let Some(reference) = controls.browser_plane.take() {
+            self.reference.pick(reference);
         }
         self.size.fit(ui, controls.area);
         let _border = crate::theme::property_window_border(ui);
@@ -198,6 +225,9 @@ impl ExtrudeDialog {
             .scroll_bar(false)
             .scrollable(false)
             .build(|| {
+                if self.update_distance_handle(ui, state, controls.area) {
+                    controls.parameters.close_tolerance_inspection();
+                }
                 crate::theme::floating_property_shadow(ui);
                 let style = ui.clone_style();
                 let chrome = ui.cursor_pos()[1] + style.window_padding[1] + style.item_spacing[1];
@@ -222,14 +252,7 @@ impl ExtrudeDialog {
                 let shortcuts = !controls.popup_was_open
                     && !crate::widget_abi::any_popup_open(ui)
                     && ui.is_window_focused_with_flags(imgui::WindowFocusedFlags::CHILD_WINDOWS);
-                self.controls(
-                    ui,
-                    state,
-                    document,
-                    (edited, shortcuts),
-                    controls.icons,
-                    actions,
-                );
+                self.controls(ui, state, document, (edited, shortcuts), actions);
             });
         if !open {
             self.close(actions);
@@ -247,18 +270,23 @@ impl ExtrudeDialog {
         actions: &mut Vec<GuiShellAction>,
     ) -> bool {
         let expanded = imgui::TreeNodeFlags::DEFAULT_OPEN;
-        self.breadcrumb(ui, state);
-        let mut edited =
+        self.draw_advanced_settings(ui, controls.icons);
+        if self.breadcrumb(ui, state, actions) {
+            return true;
+        }
+        self.preview_control(ui, controls.icons, state.extrude_preview_active, actions);
+        let mut edited = self.draw_presets(ui, state, controls.icons);
+        edited |=
             ui.collapsing_header("Input Geometry", expanded) && self.geometry_controls(ui, state);
         if ui.collapsing_header("Behavior", expanded) {
-            edited |= self.draw_extent(ui, state, controls.icons, controls.parameters, actions);
+            edited |= self.draw_extent(ui, state, controls.icons, controls.parameters);
             if self.reference.numeric()
                 && let Some(taper) = &mut self.taper
             {
                 edited |= taper.draw(ui);
             }
         }
-        edited |= self.draw_output(ui, state);
+        edited |= self.draw_output(ui, state, controls.icons);
         if edited {
             self.commit_error = None;
             if self.previewed {
@@ -292,14 +320,6 @@ impl ExtrudeDialog {
             ui.text_colored([1.0, 0.25, 0.25, 1.0], format!("Extrusion failed: {error}"));
         }
     }
-    pub(super) fn awaits_reference_pick(&self) -> bool {
-        self.document.is_some() && self.reference.awaits_pick()
-    }
-    pub(super) fn pick_reference(&mut self, document: u64, face: String) {
-        if self.document == Some(document) {
-            self.reference.pick(face);
-        }
-    }
     fn refresh_preview(
         &mut self,
         state: &GuiCommandState,
@@ -331,19 +351,15 @@ impl ExtrudeDialog {
         document: u64,
         edited: bool,
     ) -> Option<crate::GuiExtrudePreview> {
-        if edited
-            || self.taper.as_ref().is_some_and(|taper| {
-                taper.is_empty() || (taper.change().is_some() && self.commit_error.is_some())
-            })
-        {
-            return None;
-        }
         if !self.reference.numeric() {
+            // A completed reference pick is ready in this frame. Numeric edits below
+            // wait for fresh validation, which schedules another frame.
             return Some(crate::GuiExtrudePreview {
                 generation: Some(state.document_generation?),
                 document,
                 sketch: self.sketch?,
                 profile: i64::from(self.profile),
+                additional_profiles: self.additional_profiles.clone(),
                 distance: String::new(),
                 second_distance: None,
                 direction: self.reference_direction(),
@@ -351,8 +367,18 @@ impl ExtrudeDialog {
                 reference_extent: Some(self.reference.request()?),
             });
         }
+        if edited
+            || self.taper.as_ref().is_some_and(|taper| {
+                taper.is_empty() || (taper.change().is_some() && self.commit_error.is_some())
+            })
+        {
+            return None;
+        }
         let validation = self.current_distance_validation(state, document)?;
-        if validation.error.is_some() {
+        let reference_extent = self.reference.request();
+        if validation.error.is_some()
+            || (self.reference.needs_start_plane() && reference_extent.is_none())
+        {
             return None;
         }
         Some(crate::GuiExtrudePreview {
@@ -360,37 +386,13 @@ impl ExtrudeDialog {
             document,
             sketch: self.sketch?,
             profile: i64::from(self.profile),
+            additional_profiles: self.additional_profiles.clone(),
             distance: self.distance.clone(),
             second_distance: self.active_second_distance().map(str::to_owned),
             direction: self.direction,
             operation: self.operation,
-            reference_extent: None,
+            reference_extent,
         })
-    }
-    fn sketch_choice(&mut self, ui: &Ui, state: &GuiCommandState) -> bool {
-        let Some(browser) = state.browser.as_ref() else {
-            return false;
-        };
-        let shown = browser
-            .sketches
-            .iter()
-            .find(|row| Some(row.id) == self.sketch)
-            .map_or("Choose a sketch", |row| row.name.as_str());
-        crate::theme::property_label(ui, "Sketch");
-        let Some(_list) = ui.begin_combo("##extrude-sketch", shown) else {
-            return false;
-        };
-        let previous = self.sketch;
-        for row in &browser.sketches {
-            if ui
-                .selectable_config(&row.name)
-                .selected(Some(row.id) == self.sketch)
-                .build()
-            {
-                self.sketch = Some(row.id);
-            }
-        }
-        self.sketch != previous
     }
     fn edit_request(
         &self,
@@ -404,30 +406,6 @@ impl ExtrudeDialog {
             second_distance: request.second_distance.clone(),
             taper: self.taper.as_ref().and_then(taper::TaperDraft::change),
         })
-    }
-    fn commit_request(
-        &mut self,
-        request: Option<&crate::GuiExtrudePreview>,
-        actions: &mut Vec<GuiShellAction>,
-    ) -> bool {
-        let Some(request) = request else {
-            return false;
-        };
-        if let Some(edit) = self.edit_request(request) {
-            self.submitted_edit = Some(edit.clone());
-            actions.push(GuiShellAction::EditExtrudeDistance(edit));
-        } else {
-            let mut submitted = request.clone();
-            submitted.generation = None;
-            self.submitted = Some(submitted);
-            actions.push(self.creation_action(request));
-        }
-        let taper = self.taper.take();
-        self.set_document(None);
-        self.taper = taper;
-        self.edit_feature = None;
-        self.previewed = false;
-        true
     }
     pub(crate) fn close(&mut self, actions: &mut Vec<GuiShellAction>) {
         if self.previewed {
@@ -453,6 +431,7 @@ impl ExtrudeDialog {
         }
         state.extrude_distance_validation.as_ref().filter(|result| {
             result.document == document
+                && state.document_generation == Some(result.generation)
                 && result.distance == self.distance
                 && result.second_distance.as_deref() == self.active_second_distance()
         })
@@ -464,7 +443,9 @@ impl ExtrudeDialog {
         if self.submitted.as_ref() != Some(request) {
             return;
         }
+        self.presets.reject_submission();
         self.requested = false;
+        self.start_without_sketch = false;
         self.set_document(Some(request.document));
         self.operation = request.operation;
         self.attempted = None;

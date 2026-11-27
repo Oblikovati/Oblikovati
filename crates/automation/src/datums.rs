@@ -22,6 +22,7 @@ mod rows;
 mod scalars;
 mod sketch_inputs;
 pub(crate) use input::axis_reference;
+pub(crate) use planes::resolve_work_plane_reference;
 pub use planes::{requires_part_replay, work_plane_reference};
 pub(crate) use sketch_inputs::sketch_plane_at_index;
 

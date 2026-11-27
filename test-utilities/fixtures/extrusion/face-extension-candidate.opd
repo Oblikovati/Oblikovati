@@ -1,0 +1,541 @@
+schemaVersion: 3
+documentType: 1
+displayName: ExistingSolidPart
+partModelStates:
+  members:
+  - id: 1
+    name: Primary
+  active: 1
+  scope: SingleMember
+model:
+  workPlanes:
+    recipe:
+      version: 16
+      features:
+      - id: 1
+        name: Extrusion1
+        definition:
+          version: 11
+          definition: !SketchPrism
+            version: 1
+            sketch: 1
+            selection:
+              outer:
+              - curve: 30
+                reversed: false
+              - curve: 31
+                reversed: false
+              - curve: 32
+                reversed: false
+              - curve: 33
+                reversed: false
+              holes: []
+            displacement:
+            - !Constant 0.0
+            - !Constant 0.0
+            - !Parameter 1
+        suppressed: false
+        condition: null
+        definition_reads:
+          keys:
+          - !Parameter 1
+          - !Parameter 8
+          - !Parameter 9
+          - !Sketch 1
+          unattributed: false
+      - id: 2
+        name: Work Plane1
+        definition:
+          version: 1
+          definition: !Fixed
+            frame:
+              origin:
+              - 0.0
+              - 0.0
+              - 1.0
+              x_axis:
+              - 1.0
+              - 0.0
+              - 0.0
+              y_axis:
+              - 0.0
+              - 1.0
+              - 0.0
+            options:
+              version: 1
+              unit_deviation: 1e-9
+              angular_deviation: 1e-9
+        suppressed: false
+        condition: null
+        definition_reads:
+          keys: []
+          unattributed: false
+      - id: 3
+        name: Work Plane2
+        definition:
+          version: 1
+          definition: !Fixed
+            frame:
+              origin:
+              - 0.0
+              - 0.0
+              - -1.2
+              x_axis:
+              - 1.0
+              - 0.0
+              - 0.0
+              y_axis:
+              - 0.0
+              - 1.0
+              - 0.0
+            options:
+              version: 1
+              unit_deviation: 1e-9
+              angular_deviation: 1e-9
+        suppressed: false
+        condition: null
+        definition_reads:
+          keys: []
+          unattributed: false
+      end_of_part: null
+    featureHighWater: 3
+  planarSketches:
+    recipe:
+      version: 5
+      sketches:
+      - id: 1
+        name: Sketch1
+        visible: false
+        plane:
+          origin:
+          - 0.0
+          - 0.0
+          - 0.0
+          x_axis:
+          - 1.0
+          - 0.0
+          - 0.0
+          y_axis:
+          - 0.0
+          - 1.0
+          - 0.0
+        plane_options:
+          version: 1
+          unit_deviation: 1e-9
+          angular_deviation: 1e-9
+        point_projections:
+        - anchor: 1
+          reference: Origin
+        geometry:
+          version: 12
+          points:
+          - id: 1
+            position:
+            - 0.0
+            - 0.0
+          - id: 26
+            position:
+            - 0.0
+            - 0.0
+          - id: 27
+            position:
+            - -4.0
+            - 3.0596798597345794e-12
+          - id: 28
+            position:
+            - -4.0
+            - -2.4999999999944857
+          - id: 29
+            position:
+            - -6.2539599584000136e-55
+            - -2.4999999999931237
+          lines:
+          - id: 30
+            endpoints:
+            - 26
+            - 27
+          - id: 31
+            endpoints:
+            - 27
+            - 28
+          - id: 32
+            endpoints:
+            - 28
+            - 29
+          - id: 33
+            endpoints:
+            - 29
+            - 26
+          circles: []
+          arcs: []
+          ellipses: []
+          splines: []
+          offset_splines: []
+          defining_points:
+          - 26
+          - 27
+          - 28
+          - 29
+          constraints:
+          - id: 19
+            relation: !line_horizontal
+              line: 30
+          - id: 20
+            relation: !line_horizontal
+              line: 32
+          - id: 21
+            relation: !line_vertical
+              line: 31
+          - id: 22
+            relation: !line_vertical
+              line: 33
+          - id: 23
+            relation: !distance
+              points:
+              - 26
+              - 27
+              measure: horizontal
+              parameter: 8
+          - id: 24
+            relation: !distance
+              points:
+              - 27
+              - 28
+              measure: vertical
+              parameter: 9
+          - id: 25
+            relation: !coincident
+              points:
+              - 26
+              - 1
+          entity_order:
+          - 1
+          - 30
+          - 31
+          - 32
+          - 33
+          construction_curves: []
+          centerlines: []
+          dimension_placements:
+          - constraint: 23
+            position:
+            - -2.2272727272727284
+            - 1.090909090909091
+          - constraint: 24
+            position:
+            - -1.5272727272727284
+            - 0.390909090909091
+          reference_dimensions: []
+          dimension_limits: []
+      - id: 2
+        name: Sketch2
+        plane_feature: 3
+        point_projections:
+        - anchor: 34
+          reference: Origin
+        geometry:
+          version: 12
+          points:
+          - id: 34
+            position:
+            - 0.0
+            - 0.0
+          - id: 35
+            position:
+            - 0.5
+            - -1.5
+          - id: 36
+            position:
+            - 1.0
+            - -1.5
+          - id: 37
+            position:
+            - 1.0
+            - -1.0
+          - id: 38
+            position:
+            - 0.5
+            - -1.0
+          lines:
+          - id: 39
+            endpoints:
+            - 35
+            - 36
+          - id: 40
+            endpoints:
+            - 36
+            - 37
+          - id: 41
+            endpoints:
+            - 37
+            - 38
+          - id: 42
+            endpoints:
+            - 38
+            - 35
+          circles: []
+          arcs: []
+          ellipses: []
+          splines: []
+          offset_splines: []
+          defining_points:
+          - 35
+          - 36
+          - 37
+          - 38
+          constraints: []
+          entity_order:
+          - 34
+          - 39
+          - 40
+          - 41
+          - 42
+          construction_curves: []
+          centerlines: []
+          dimension_placements: []
+          reference_dimensions: []
+          dimension_limits: []
+      - id: 3
+        name: Sketch3
+        plane_feature: 3
+        point_projections:
+        - anchor: 43
+          reference: Origin
+        geometry:
+          version: 12
+          points:
+          - id: 43
+            position:
+            - 0.0
+            - 0.0
+          - id: 44
+            position:
+            - 0.0
+            - -1.25
+          lines: []
+          circles:
+          - id: 45
+            center: 44
+            radius: 0.30000000000000004
+          arcs: []
+          ellipses: []
+          splines: []
+          offset_splines: []
+          defining_points:
+          - 44
+          constraints: []
+          entity_order:
+          - 43
+          - 45
+          construction_curves: []
+          centerlines: []
+          dimension_placements: []
+          reference_dimensions: []
+          dimension_limits: []
+    sketchHighWater: 3
+    entityHighWater: 45
+    constraintHighWater:
+      1: 25
+    dimensionNameOrdinals:
+      1: 8
+  properties: []
+  units:
+    angle: deg
+    angleFormat: decimal
+    anglePrecision: '2'
+    area: mm^2
+    length: mm
+    lengthFormat: decimal
+    lengthPrecision: '3'
+    mass: kg
+    time: s
+    volume: mm^3
+  parameters:
+  - name: size
+    kind: user
+    valueType: ''
+    expression: 20 mm
+    text: ''
+    bool: false
+    value: 0.0
+    unit: ''
+    comment: ''
+    key: false
+    export: false
+    precision: 0
+    hidden: false
+    displayFormat: decimal
+    renamed: false
+    disabledActions: []
+    expressionList: []
+    allowCustomValue: false
+    sortedValueList: false
+    customProperty:
+      propertyType: text
+      units: ''
+      precision: threeDecimalPlaces
+      showLeadingZeros: true
+      showTrailingZeros: false
+      showUnitsString: true
+    tolerance: null
+    modelValueType: ''
+  - name: d6
+    kind: model
+    expressionContext:
+      version: 1
+      category: length
+      bare_unit: mm
+    valueType: ''
+    expression: 40 mm
+    text: ''
+    bool: false
+    value: 0.0
+    unit: ''
+    comment: ''
+    key: false
+    export: false
+    precision: 0
+    hidden: false
+    displayFormat: decimal
+    renamed: false
+    disabledActions: []
+    expressionList: []
+    allowCustomValue: false
+    sortedValueList: false
+    customProperty:
+      propertyType: text
+      units: ''
+      precision: threeDecimalPlaces
+      showLeadingZeros: true
+      showTrailingZeros: false
+      showUnitsString: true
+    tolerance: null
+    modelValueType: ''
+  - name: d7
+    kind: model
+    expressionContext:
+      version: 1
+      category: length
+      bare_unit: mm
+    valueType: ''
+    expression: 25 mm
+    text: ''
+    bool: false
+    value: 0.0
+    unit: ''
+    comment: ''
+    key: false
+    export: false
+    precision: 0
+    hidden: false
+    displayFormat: decimal
+    renamed: false
+    disabledActions: []
+    expressionList: []
+    allowCustomValue: false
+    sortedValueList: false
+    customProperty:
+      propertyType: text
+      units: ''
+      precision: threeDecimalPlaces
+      showLeadingZeros: true
+      showTrailingZeros: false
+      showUnitsString: true
+    tolerance: null
+    modelValueType: ''
+  parameterGroups: []
+  parameterSettings:
+    linearStandardTolerance: ''
+    angularStandardTolerance: ''
+    useStandardTolerances: false
+    exportStandardTolerances: false
+    linearDimensionPrecision: 3
+    angularDimensionPrecision: 2
+    dimensionDisplayType: value
+    displayParameterAsExpression: false
+  derivedParameterTables: []
+  parameterIds:
+    d6: 8
+    d7: 9
+    size: 1
+  parameterHighWater: 9
+identity:
+  internalName: f3d0deee-ddc2-56d7-8ea1-2f3752498e95
+  revisionId: 6cde5eae-7734-5170-9b8b-ec4e7dafc33d
+  databaseRevisionId: 40ab89db-f7a5-5e14-bf69-55f5aa9497f1
+  saveCounter: 4
+  versionCreated: 0.1.0-dev
+  versionSaved: 0.1.0-dev
+  modelDigest: c141e83b0073280e5b721ec5e5a95012775a9a78ee83b9d8eadc25404a3d0c28
+partDesignViews:
+  views:
+  - id: 1
+    name: Primary
+    built_in: true
+    active: true
+    locked: false
+    published: true
+    autosave_camera: true
+    annotation_scale:
+      mode: auto
+      numerator: 0
+      denominator: 0
+    standard_orientation: 0
+    camera: null
+    hidden_body_keys: []
+  - id: 2
+    name: Isometric
+    built_in: true
+    active: false
+    locked: false
+    published: true
+    autosave_camera: true
+    annotation_scale:
+      mode: auto
+      numerator: 0
+      denominator: 0
+    standard_orientation: 10759
+    camera: null
+    hidden_body_keys: []
+  - id: 3
+    name: Front
+    built_in: true
+    active: false
+    locked: false
+    published: true
+    autosave_camera: true
+    annotation_scale:
+      mode: auto
+      numerator: 0
+      denominator: 0
+    standard_orientation: 10764
+    camera: null
+    hidden_body_keys: []
+  - id: 4
+    name: Top
+    built_in: true
+    active: false
+    locked: false
+    published: true
+    autosave_camera: true
+    annotation_scale:
+      mode: auto
+      numerator: 0
+      denominator: 0
+    standard_orientation: 10754
+    camera: null
+    hidden_body_keys: []
+  - id: 5
+    name: Right
+    built_in: true
+    active: false
+    locked: false
+    published: true
+    autosave_camera: true
+    annotation_scale:
+      mode: auto
+      numerator: 0
+      denominator: 0
+    standard_orientation: 10755
+    camera: null
+    hidden_body_keys: []

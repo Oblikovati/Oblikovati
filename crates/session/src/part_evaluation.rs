@@ -330,14 +330,9 @@ impl<Body, Failure> PartEvaluationSlot<Body, Failure> {
         B: PartFeatureEvaluator<Body = Body, Failure = Failure>,
     {
         let current = self.current(session).map_err(|error| error.to_string())?;
-        let body = current.body(reference.source()).ok_or_else(|| {
-            format!(
-                "face key {:?}, source {:?}: expected an available unconsumed body",
-                reference.key(),
-                reference.source()
-            )
-        })?;
-        backend.resolve_planar_face(body, reference.key())
+        current.inspect_body_reference(reference.source(), reference.key(), |body| {
+            backend.resolve_planar_face(body, reference.key())
+        })
     }
     /// Require a current result for this exact session; example: `slot.current(&session)?.body(feature_id)`.
     /// ```compile_fail

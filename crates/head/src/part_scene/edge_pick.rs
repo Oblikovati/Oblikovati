@@ -11,11 +11,15 @@ impl DesktopPartScenes {
         feature: oblikovati_model::feature::FeatureId,
         key: &[u8],
     ) -> Result<Vec<[[f64; 3]; 2]>, String> {
-        let body = self
-            .current(session)?
-            .body(feature)
-            .ok_or_else(|| format!("edge feature {feature:?}: expected a current body"))?;
-        body.edge_display_segments(session.history(), document, key, DISPLAY_MESH.chord_error)
+        self.current(session)?
+            .inspect_body_reference(feature, key, |body| {
+                body.edge_display_segments(
+                    session.history(),
+                    document,
+                    key,
+                    DISPLAY_MESH.chord_error,
+                )
+            })
     }
     /// Pick a named edge by exact analytic distance to the view ray.
     /// Example: `scenes.edge_on_line(files, document, ray, tolerance)?`.
@@ -57,10 +61,7 @@ impl DesktopPartScenes {
             .identity(document)
             .map_err(|cause| cause.to_string())?
             .internal_name;
-        for record in self.current(session)?.health() {
-            let Some(body) = self.current(session)?.body(record.feature) else {
-                continue;
-            };
+        for (feature, body) in self.current(session)?.ordered_body_outputs() {
             let key =
                 bodies::body_reference_text(body.body_reference_key(session.history(), guid)?);
             if !session.body_visible(&key) {
@@ -69,7 +70,7 @@ impl DesktopPartScenes {
             for hit in body.edge_hits_on_ray(session.history(), guid, line, tolerance)? {
                 if hit.distance <= tolerance {
                     candidates.push(
-                        pick_candidates::PickTarget::Edge(record.feature, hit.key),
+                        pick_candidates::PickTarget::Edge(feature, hit.key),
                         hit.reach,
                     )?;
                 }

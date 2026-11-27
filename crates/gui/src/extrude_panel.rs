@@ -5,8 +5,17 @@ use crate::icons::{GuiRibbonIcons, IconGlyph, IconSize};
 use imgui::{Key, StyleColor, Ui};
 
 const WIDTH: f32 = 280.;
+const CLEAR_WIDTH: f32 = 44.;
 pub(super) const FOOTER_HEIGHT: f32 = 44.;
 const DEFAULT_HEIGHT: f32 = 340.;
+
+pub(super) fn fit_properties(
+    ui: &Ui,
+    area: crate::application::document_creation::workspaces::WorkspaceArea,
+    height: f32,
+) {
+    crate::widget_abi::fit_viewport_properties(ui, "Extrude", area, [WIDTH, height]);
+}
 
 #[derive(Default)]
 pub(super) struct PropertiesSize {
@@ -20,7 +29,7 @@ impl PropertiesSize {
         area: crate::application::document_creation::workspaces::WorkspaceArea,
     ) {
         let height = self.content.unwrap_or(DEFAULT_HEIGHT);
-        crate::widget_abi::fit_viewport_properties(ui, "Extrude", area, [WIDTH, height]);
+        fit_properties(ui, area, height);
         self.pending = false;
     }
 
@@ -40,22 +49,61 @@ impl ExtrudeDialog {
         let _disabled = ui.begin_disabled(self.edit_feature.is_some());
         let changed_sketch = self.sketch_choice(ui, state);
         crate::theme::property_label(ui, "Profiles");
-        let label = if state.extrude_preview_active {
+        let profile_count = self
+            .edit_feature
+            .and_then(|feature| state.browser.as_ref()?.extrusion_edits.get(&feature))
+            .map_or(self.additional_profiles.len() + 1, |seed| {
+                seed.profile_count
+            });
+        let label = if self.sketch.is_none() {
+            "Select Profile".to_owned()
+        } else if profile_count > 1 {
+            format!("{profile_count} Profiles")
+        } else if state.extrude_preview_active || self.preview_hidden || self.edit_feature.is_some()
+        {
             "1 Profile".to_owned()
         } else {
             format!("Profile {}", self.profile.saturating_add(1))
         };
+        let clear = self.sketch.filter(|_| self.edit_feature.is_none());
+        let changed_profile = self.profile_combo(ui, &label, clear.is_some());
+        let cleared = clear.is_some_and(|sketch| {
+            ui.same_line();
+            if !crate::widget_abi::button(
+                ui,
+                "Clear##extrude-profile-clear",
+                [CLEAR_WIDTH, ui.frame_height()],
+            ) {
+                return false;
+            }
+            self.await_profile_pick(sketch);
+            true
+        });
+        changed_sketch || changed_profile || cleared
+    }
+
+    fn profile_combo(&mut self, ui: &Ui, label: &str, can_clear: bool) -> bool {
+        if can_clear {
+            let spacing = ui.clone_style().item_spacing[0];
+            ui.set_next_item_width((ui.content_region_avail()[0] - CLEAR_WIDTH - spacing).max(1.));
+        }
+        let _profile_disabled = ui.begin_disabled(self.sketch.is_none());
         let rounding = ui.push_style_var(imgui::StyleVar::FrameRounding(11.));
         let tint = ui.push_style_color(StyleColor::FrameBg, [0.05, 0.58, 0.53, 0.22]);
-        let choices = ui.begin_combo("##profile", &label);
+        let choices = ui.begin_combo("##profile", label);
         drop(tint);
         drop(rounding);
-        let changed_profile = choices.is_some_and(|_choices| {
+        choices.is_some_and(|_choices| {
             let _numeric = crate::ui_scale::numeric_font(ui);
             ui.text("Profile index");
-            ui.input_int("##profile-index", &mut self.profile).build()
-        });
-        changed_sketch || changed_profile
+            let changed = ui.input_int("##profile-index", &mut self.profile).build();
+            if changed {
+                self.additional_profiles
+                    .retain(|&index| index != i64::from(self.profile));
+                self.profile_pick_request = self.profile_pick_request.wrapping_add(1);
+            }
+            changed
+        })
     }
 
     pub(super) fn controls(
@@ -64,38 +112,36 @@ impl ExtrudeDialog {
         state: &GuiCommandState,
         document: u64,
         interaction: (bool, bool),
-        presentation: &GuiRibbonIcons,
         actions: &mut Vec<GuiShellAction>,
     ) {
         let (edited, shortcuts) = interaction;
         let preview = self.valid_preview_request(state, document, edited);
         let enabled = preview
             .as_ref()
-            .is_some_and(|request| self.creation_action(request).dispatchable(state));
+            .is_some_and(|request| self.creation_action(request, false).dispatchable(state));
         let request = preview.as_ref().filter(|_| enabled);
         ui.separator();
-        let commit = crate::theme::property_accept(ui, enabled)
-            || (shortcuts && ui.is_key_pressed_no_repeat(Key::Enter));
-        if commit && self.commit_request(request, actions) {
+        let enter = shortcuts
+            && !self.enter_applies_value_only
+            && (ui.is_key_pressed_no_repeat(Key::Enter)
+                || ui.is_key_pressed_no_repeat(Key::KeypadEnter));
+        let commit = crate::theme::property_accept(ui, enabled) || enter;
+        if commit && self.commit_request(request, false, actions) {
             return;
         }
 
         ui.same_line_with_spacing(0., 6.);
         self.cancel_control(ui, shortcuts, actions);
-        ui.same_line_with_spacing(0., 6.);
-        let disabled = ui.begin_disabled(!enabled);
-        self.preview_control(
-            ui,
-            request,
-            presentation,
-            state.extrude_preview_active,
-            actions,
-        );
-        drop(disabled);
-
         let right = ui.window_content_region_max()[0];
         ui.same_line_with_pos(right - 28.);
-        let disabled = ui.begin_disabled(!enabled || self.edit_feature.is_some());
+        let keep_sketch = !self.release_sketch_on_apply;
+        let apply_request = preview.as_ref().filter(|request| {
+            self.edit_feature.is_none()
+                && self
+                    .creation_action(request, keep_sketch)
+                    .dispatchable(state)
+        });
+        let disabled = ui.begin_disabled(apply_request.is_none());
         let _base = ui.push_style_color(StyleColor::Button, [0.13, 0.77, 0.37, 1.]);
         let _hovered = ui.push_style_color(StyleColor::ButtonHovered, [0.29, 0.87, 0.50, 1.]);
         let _ink = ui.push_style_color(StyleColor::Text, [0.05, 0.15, 0.08, 1.]);
@@ -104,57 +150,86 @@ impl ExtrudeDialog {
         if ui.is_item_hovered_with_flags(imgui::ItemHoveredFlags::ALLOW_WHEN_DISABLED) {
             ui.tooltip_text("Apply & Create New");
         }
-        if apply_more && self.commit_request(request, actions) {
+        if apply_more && self.commit_request(apply_request, keep_sketch, actions) {
             self.requested = true;
             self.start_without_sketch = true;
         }
     }
 
-    fn preview_control(
+    pub(super) fn preview_control(
         &mut self,
         ui: &Ui,
-        request: Option<&crate::GuiExtrudePreview>,
         icons: &GuiRibbonIcons,
         preview_active: bool,
         actions: &mut Vec<GuiShellAction>,
     ) {
+        let label = if self.preview_hidden {
+            "Show Preview"
+        } else {
+            "Hide Preview"
+        };
+        let icon = icons.logical[IconSize::Small.index()];
+        let width = ui.calc_text_size(label)[0] + icon[0] + 12.;
+        let right = ui.window_content_region_max()[0];
+        if ui.item_rect_max()[0] - ui.window_pos()[0] + width + ui.clone_style().item_spacing[0]
+            <= right
+        {
+            ui.same_line_with_pos(right - width);
+        }
+        let _disabled = ui.begin_disabled(!preview_active && !self.preview_hidden);
         let pressed = crate::widget_abi::icon_button(
             ui,
-            "Preview",
+            &format!("{label}##extrude-preview-visibility"),
             crate::widget_abi::IconButtonPresentation {
                 texture: icons.key(IconGlyph::SketchVisibility, IconSize::Small),
-                size: [74., 28.],
-                icon: [16.; 2],
+                size: [width, ui.frame_height()],
+                icon,
                 large: false,
                 show_caption: true,
             },
         );
-        if ui.is_item_hovered() {
-            let tooltip = if preview_active {
-                "Hide preview"
-            } else {
-                "Show preview"
-            };
-            ui.tooltip_text(tooltip);
-        }
-        if !pressed {
-            return;
-        }
-        if preview_active {
-            self.preview_hidden = true;
-            self.previewed = false;
-            actions.push(GuiShellAction::PreviewExtrude(None));
-        } else if let Some(request) = request {
-            self.preview_hidden = false;
-            let action = self.edit_request(request).map_or_else(
-                || GuiShellAction::PreviewExtrude(Some(request.clone())),
-                GuiShellAction::PreviewExtrudeEdit,
-            );
-            actions.push(action);
-            self.previewed = true;
+        if pressed {
+            self.toggle_preview(actions);
         }
     }
 
+    fn toggle_preview(&mut self, actions: &mut Vec<GuiShellAction>) {
+        self.preview_hidden = !self.preview_hidden;
+        if self.preview_hidden {
+            self.previewed = false;
+            actions.push(GuiShellAction::PreviewExtrude(None));
+        } else {
+            // Rebuild through the current request and validation path.
+            self.attempted = None;
+        }
+    }
+
+    pub(super) fn commit_request(
+        &mut self,
+        request: Option<&crate::GuiExtrudePreview>,
+        keep_sketch: bool,
+        actions: &mut Vec<GuiShellAction>,
+    ) -> bool {
+        let Some(request) = request else {
+            return false;
+        };
+        if let Some(edit) = self.edit_request(request) {
+            self.submitted_edit = Some(edit.clone());
+            actions.push(GuiShellAction::EditExtrudeDistance(edit));
+        } else {
+            self.presets.submit(request);
+            let mut submitted = request.clone();
+            submitted.generation = None;
+            self.submitted = Some(submitted);
+            actions.push(self.creation_action(request, keep_sketch));
+        }
+        let taper = self.taper.take();
+        self.set_document(None);
+        self.taper = taper;
+        self.edit_feature = None;
+        self.previewed = false;
+        true
+    }
     fn cancel_control(&mut self, ui: &Ui, shortcuts: bool, actions: &mut Vec<GuiShellAction>) {
         let _outline = ui.push_style_var(imgui::StyleVar::FrameBorderSize(1.));
         if crate::widget_abi::button(ui, "Cancel", [62., 28.])

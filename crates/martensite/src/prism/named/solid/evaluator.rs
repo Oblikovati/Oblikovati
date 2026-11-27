@@ -168,6 +168,26 @@ impl PartFeatureEvaluator for CertifiedNamedSolidEvaluator<'_> {
             .map_err(PartFeatureFailure::BodyReference)?;
         Ok(result)
     }
+    fn evaluate_prism_outputs(
+        &mut self,
+        feature: FeatureId,
+        input: ResolvedSketchPrism<'_>,
+    ) -> Result<Vec<NamedSolid>, PartFeatureFailure<EvaluationFailure>> {
+        let Some(prism) = &self.prism else {
+            return Err(PartFeatureFailure::Unsupported(
+                "extrusion outputs: expected an explicit model resolution policy".into(),
+            ));
+        };
+        prism
+            .evaluate_prism_outputs(feature, input)
+            .map(|bodies| {
+                bodies
+                    .into_iter()
+                    .map(|body| NamedSolid::Prism(Box::new(body)))
+                    .collect()
+            })
+            .map_err(PartFeatureFailure::Kernel)
+    }
     fn evaluate_prism(
         &mut self,
         feature: FeatureId,

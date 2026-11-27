@@ -373,17 +373,18 @@ fn native_extrude_applies_and_reopens_a_fresh_draft() {
     for label in ["8mm", "1Profile"] {
         world.run_in_window("Extrude", label);
     }
-    let preview = world.run_in_window("Extrude", "Preview").center();
+    let preview = world.run_in_window("Extrude", "HidePreview").center();
     world.click(diagnostics::pointer_pixels(preview));
     assert!(!world.state().extrude_preview_active);
-    let preview = world.run_in_window("Extrude", "Preview").center();
+    let preview = world.run_in_window("Extrude", "ShowPreview").center();
     world.click(diagnostics::pointer_pixels(preview));
     assert!(world.state().extrude_preview_active);
     world.save_capture("extrude-profile-and-actions");
     let plus = world.run_in_window("Extrude", "+").center();
     world.click(diagnostics::pointer_pixels(plus));
     assert_eq!(world.state().browser.unwrap().features.len(), 1);
-    world.run_in_window("Extrude", "10.00mm");
+    world.run_in_window("Extrude", "8mm");
+    world.run_in_window("Extrude", "Chooseasketch");
     assert!(!world.state().extrude_preview_active);
     let cancel = world.run_in_window("Extrude", "Cancel").center();
     world.click(diagnostics::pointer_pixels(cancel));

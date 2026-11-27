@@ -135,6 +135,7 @@ pub struct GuiCommandState {
     pub sweep_preview: Option<crate::GuiSweepPreviewState>,
     /// The exact extrusion draft accepted for preview at this document generation.
     pub extrude_draft_preview: Option<crate::GuiExtrudePreview>,
+    pub extrude_profile_pick: Option<(crate::GuiExtrudeProfilePick, i32)>,
     pub extrude_handle: Option<crate::GuiExtrudeHandle>,
     /// The owner-validated distance for the current document generation.
     pub extrude_distance_validation: Option<crate::GuiExtrudeDistanceValidation>,

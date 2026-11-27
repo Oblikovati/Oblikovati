@@ -15,16 +15,26 @@ pub struct GuiExtrudePreview {
     pub document: u64,
     pub sketch: oblikovati_model::document_sketch::DocumentSketchId,
     pub profile: i64,
+    pub additional_profiles: Vec<i64>,
     pub distance: String,
     pub second_distance: Option<String>,
     pub direction: crate::GuiExtrudeDirection,
     pub operation: Option<oblikovati_model::feature::sketch_prism::PrismBoolean>,
     pub reference_extent: Option<GuiExtrudeReferenceExtent>,
 }
+/// A viewport selection scoped to the current sketch and document generation.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct GuiExtrudeProfilePick {
+    pub request: u64,
+    pub document: u64,
+    pub generation: u64,
+    pub sketch: oblikovati_model::document_sketch::DocumentSketchId,
+}
 /// Bound a new extrusion by the target body's thickness or by selected face keys.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum GuiExtrudeReferenceExtent {
     ThroughAll,
+    DistanceFromPlane { from: String },
     ToFace { to: String },
     FromTo { from: String, to: String },
 }

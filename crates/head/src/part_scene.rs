@@ -310,10 +310,16 @@ impl DesktopPartScenes {
         only: Option<&[u8]>,
     ) -> Result<Vec<[[f64; 3]; 2]>, String> {
         let evaluation = self.current(session)?;
-        let Some(body) = evaluation.body(feature) else {
-            return Ok(Vec::new());
-        };
-        body.face_outlines(session.history(), document, only, DISPLAY_MESH)
+        if let Some(key) = only {
+            return evaluation.inspect_body_reference(feature, key, |body| {
+                body.face_outlines(session.history(), document, Some(key), DISPLAY_MESH)
+            });
+        }
+        let mut outline = Vec::new();
+        for body in evaluation.bodies_for_feature(feature) {
+            outline.extend(body.face_outlines(session.history(), document, None, DISPLAY_MESH)?);
+        }
+        Ok(outline)
     }
     /// The nearest face on a line of sight, over every solid of the part.
     /// Example: `scenes.face_on_line(files, document, window.view_line(pixel)?)?`.
@@ -357,17 +363,14 @@ impl DesktopPartScenes {
         let evaluated = self.current(session)?;
         let mut candidates =
             pick_candidates::PickCandidates::new(pick_candidates::PickCoverage::NearestFacePerBody);
-        for record in evaluated.health() {
-            let Some(body) = evaluated.body(record.feature) else {
-                continue;
-            };
+        for (feature, body) in evaluated.ordered_body_outputs() {
             let key =
                 bodies::body_reference_text(body.body_reference_key(session.history(), guid)?);
             if !session.body_visible(&key) {
                 continue;
             }
             let faces = body.face_hits_on_line(session.history(), guid, line)?;
-            candidates.push_body_face_hits(record.feature, key, faces, allowed)?;
+            candidates.push_body_face_hits(feature, key, faces, allowed)?;
         }
         Ok(candidates)
     }

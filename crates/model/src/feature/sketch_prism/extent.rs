@@ -19,6 +19,9 @@ pub enum SketchPrismExtent {
     ToFace {
         to: WorkPlaneReference,
     },
+    DistanceFromPlane {
+        from: WorkPlaneReference,
+    },
     FromTo {
         from: WorkPlaneReference,
         to: WorkPlaneReference,
@@ -42,6 +45,14 @@ pub(super) fn missing_target_bounds(
 }
 
 impl SketchPrismDefinition {
+    /// Start a numeric extrusion at an associative plane parallel to the profile.
+    /// Example: `definition.with_start_plane(WorkPlaneReference::Feature(id))?`.
+    pub fn with_start_plane(mut self, from: WorkPlaneReference) -> Result<Self, SketchPrismError> {
+        self.extent = Some(SketchPrismExtent::DistanceFromPlane { from });
+        validation::validate_sources(&self).map_err(|cause| self.decline(cause))?;
+        Ok(self)
+    }
+
     /// Author a prism bounded by associative geometry.
     /// Example: `SketchPrismDefinition::between_planes(sketch, selection, extent)?`.
     pub fn between_planes(
@@ -52,6 +63,7 @@ impl SketchPrismDefinition {
         let definition = Self {
             sketch,
             selection,
+            additional_outputs: Vec::new(),
             displacement: [DatumLength::Constant(0.); 3],
             direction: SketchPrismDirection::Positive,
             second_depth: None,
@@ -75,6 +87,7 @@ impl SketchPrismExtent {
     fn references(&self) -> [Option<&WorkPlaneReference>; 2] {
         match self {
             Self::ThroughAll { .. } => [None, None],
+            Self::DistanceFromPlane { from } => [Some(from), None],
             Self::ToFace { to } => [None, Some(to)],
             Self::FromTo { from, to } => [Some(from), Some(to)],
         }
@@ -106,7 +119,7 @@ impl SketchPrismExtent {
     }
 }
 
-fn plane_offset(
+pub(super) fn plane_offset(
     sketch: SketchPlane,
     reference: &WorkPlaneReference,
     resolver: &impl WorkPlaneResolver,

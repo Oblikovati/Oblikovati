@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Properties panel for creating and editing a modeled feature: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/feature-properties/feature-properties.feature" package="testsuite/Feature: Properties panel for creating and editing a modeled feature: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/feature-properties/feature-properties.feature" tests="6" errors="0" failures="3" hostname="localhost" timestamp="2026-11-27T06:11:54.642436125Z" time="55.700809591"><testcase name="Rule: Dockable Properties commands reuse the Properties shell: Scenario: Seed a new command from the selected default preference: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/feature-properties/feature-properties.feature:224:7" time="14.730163627"><system-out><![CDATA[  Scenario Outline: Seed a new command from the selected default preference
+   ✔  Given a fresh copy of `fixtures/cad/revolve/revolve-profile.opd` is open in a disposable application profile
+   ✔  And the rectangular sketch profile is selected for Extrude
+   ✔  And for Revolve the long Y=0 sketch edge is the selected axis
+   ✔  And the user saves a Extrude preset with Distance A set to 8 mm
+   ✔  And the user accepts Extrude with Distance A set to 12 mm
+   ✔  And the user reopens Extrude, reveals the preset row and selects the saved preset
+   ✔  When the user chooses No Preset as the new-command default
+   ✔  And the user cancels the uncommitted command draft
+   ✔  And the user opens Extrude for a new feature
+   ✔  Then the panel starts with the command's built-in settings
+]]></system-out></testcase><testcase name="Rule: Dockable Properties commands reuse the Properties shell: Scenario: Seed a new command from the selected default preference: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/feature-properties/feature-properties.feature:225:7" time="14.40938843"><system-out><![CDATA[  Scenario Outline: Seed a new command from the selected default preference
+   ✔  Given a fresh copy of `fixtures/cad/revolve/revolve-profile.opd` is open in a disposable application profile
+   ✔  And the rectangular sketch profile is selected for Extrude
+   ✔  And for Revolve the long Y=0 sketch edge is the selected axis
+   ✔  And the user saves a Extrude preset with Distance A set to 8 mm
+   ✔  And the user accepts Extrude with Distance A set to 12 mm
+   ✔  And the user reopens Extrude, reveals the preset row and selects the saved preset
+   ✔  When the user chooses Last Used as the new-command default
+   ✔  And the user cancels the uncommitted command draft
+   ✔  And the user opens Extrude for a new feature
+   ✔  Then the panel starts with the last-used command settings
+]]></system-out></testcase><testcase name="Rule: Dockable Properties commands reuse the Properties shell: Scenario: Seed a new command from the selected default preference: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/feature-properties/feature-properties.feature:226:7" time="14.813708676"><system-out><![CDATA[  Scenario Outline: Seed a new command from the selected default preference
+   ✔  Given a fresh copy of `fixtures/cad/revolve/revolve-profile.opd` is open in a disposable application profile
+   ✔  And the rectangular sketch profile is selected for Extrude
+   ✔  And for Revolve the long Y=0 sketch edge is the selected axis
+   ✔  And the user saves a Extrude preset with Distance A set to 8 mm
+   ✔  And the user accepts Extrude with Distance A set to 12 mm
+   ✔  And the user reopens Extrude, reveals the preset row and selects the saved preset
+   ✔  When the user chooses Use Current Preset as the new-command default
+   ✔  And the user cancels the uncommitted command draft
+   ✔  And the user opens Extrude for a new feature
+   ✔  Then the panel starts with the chosen named preset's settings
+]]></system-out></testcase><testcase name="Rule: Dockable Properties commands reuse the Properties shell: Scenario: Seed a new command from the selected default preference: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/feature-properties/feature-properties.feature:227:7" time="3.869664599"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario Outline: Seed a new command from the selected default preference
+   ✔  Given a fresh copy of `fixtures/cad/revolve/revolve-profile.opd` is open in a disposable application profile
+   ✘  And the rectangular sketch profile is selected for Revolve
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/feature-properties/feature-properties.feature:212:7
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Rule: Dockable Properties commands reuse the Properties shell: Scenario: Seed a new command from the selected default preference: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/feature-properties/feature-properties.feature:228:7" time="3.971857865"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario Outline: Seed a new command from the selected default preference
+   ✔  Given a fresh copy of `fixtures/cad/revolve/revolve-profile.opd` is open in a disposable application profile
+   ✘  And the rectangular sketch profile is selected for Revolve
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/feature-properties/feature-properties.feature:212:7
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Rule: Dockable Properties commands reuse the Properties shell: Scenario: Seed a new command from the selected default preference: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/feature-properties/feature-properties.feature:229:7" time="3.906026394"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario Outline: Seed a new command from the selected default preference
+   ✔  Given a fresh copy of `fixtures/cad/revolve/revolve-profile.opd` is open in a disposable application profile
+   ✘  And the rectangular sketch profile is selected for Revolve
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/feature-properties/feature-properties.feature:212:7
+      Step doesn't match any function
+]]></system-out></testcase></testsuite></testsuites>

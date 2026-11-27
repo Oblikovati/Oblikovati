@@ -24,13 +24,23 @@ fn drag_distance_a(world: &mut ApplicationWorld) {
                 world.state().extrude_handle
             )
         });
+    let (panel_origin, panel_size) = diagnostics::window_geometry("Extrude").unwrap();
+    assert!(
+        (0..2).any(|axis| origin[axis] + size[axis] <= panel_origin[axis]
+            || panel_origin[axis] + panel_size[axis] <= origin[axis]),
+        "distance handle {origin:?} × {size:?} must clear Properties {panel_origin:?} × {panel_size:?}",
+    );
     let handle =
         diagnostics::pointer_pixels([origin[0] + size[0] * 0.5, origin[1] + size[1] * 0.5]);
     let view = &world.app().window.native.view;
     let start = view.model_pixel([0., 0., 0.]).unwrap();
     let end = view.model_pixel([0., 0., 1.]).unwrap();
     let to = std::array::from_fn(|axis| handle[axis] + (end[axis] - start[axis]) / 2);
-    world.drag(handle, to);
+    if world.app().window.native.view.uses_wayland() {
+        world.drag(handle, to);
+    } else {
+        super::super::desktop_input::drag(world, handle, to);
+    }
     world.pump(Vec::new());
 }
 
@@ -40,7 +50,12 @@ fn distance_fields_follow_drag(world: &mut ApplicationWorld) {
     let draft = state
         .extrude_draft_preview
         .expect("certified dragged preview");
-    let length = draft.distance.parse::<f32>().unwrap();
+    let length = draft.distance.parse::<f32>().unwrap_or_else(|_| {
+        panic!(
+            "drag must update Distance A to a numeric value, got {:?}",
+            draft.distance
+        )
+    });
     assert!((length - 15.).abs() < 0.6, "dragged distance {length} mm");
     world.run_in_window("Extrude", &draft.distance);
     world.expect_text(&format!("A {} mm", draft.distance));

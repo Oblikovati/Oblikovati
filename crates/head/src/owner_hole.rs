@@ -34,17 +34,15 @@ impl<
             .identity(request.document)
             .map_err(|cause| cause.to_string())?
             .internal_name;
-        let body = self
-            .part_scenes
-            .current(session)?
-            .body(face.feature)
-            .ok_or_else(|| {
-                format!(
-                    "hole face feature {:?}: expected a current body",
-                    face.feature
-                )
-            })?;
-        let body_key = body.body_reference_key(session.history(), guid)?.to_vec();
+        let body_key = self.part_scenes.current(session)?.inspect_body_reference(
+            face.feature,
+            &face.key,
+            |body| {
+                body.face_topology(session.history(), guid, &face.key)?;
+                body.body_reference_key(session.history(), guid)
+                    .map(<[u8]>::to_vec)
+            },
+        )?;
         let input = Hole {
             face_ref: face_hex,
             diameter: request.diameter.clone(),

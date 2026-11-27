@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Properties panel for creating and editing a modeled feature: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/feature-properties/feature-properties.feature" package="testsuite/Feature: Properties panel for creating and editing a modeled feature: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/feature-properties/feature-properties.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-27T06:01:30.609584628Z" time="7.02827528"><testcase name="Rule: Dockable Properties commands reuse the Properties shell: Scenario: Move field focus without accepting the feature: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/feature-properties/feature-properties.feature:164:5" time="7.02827528"><system-out><![CDATA[  Scenario: Move field focus without accepting the feature
+   ✔  Given a feature Properties panel stays open while values are edited
+   ✔  And a value editor has keyboard focus
+   ✔  When the user presses Tab
+   ✔  Then focus advances to the next available field in reading order
+   ✔  When the user presses Shift+Tab
+   ✔  Then focus returns to the original field
+   ✔  And no feature has been committed
+]]></system-out></testcase></testsuite></testsuites>

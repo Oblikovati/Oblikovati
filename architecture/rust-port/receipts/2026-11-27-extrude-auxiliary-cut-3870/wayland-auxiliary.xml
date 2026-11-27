@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Extrude a profile in a part document: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature" package="testsuite/Feature: Extrude a profile in a part document: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-27T06:20:42.434417871Z" time="7.984878212"><testcase name="Scenario: extrusion-18 Auxiliary extent changes preview and accepts a cut: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature:187:3" time="7.984878212"><system-out><![CDATA[  Scenario: extrusion-18 Auxiliary extent changes preview and accepts a cut
+   ✔> Given the MCAD Software is displaying a part in the solid modeling workspace
+   ✔> And the viewport pointer is idle
+   ✔  Given a copy of `fixtures/cad/extrusion/extrusion-base-circle.opd` is open with its circular profile on the existing solid
+   ✔  When the first auxiliary extent icon beside Distance A is clicked
+   ✔  Then direction shows Flipped and Boolean shows Cut
+   ✔  And the displayed distance is parenthesized
+   ✔  When OK is clicked
+   ✔  Then the opening is retained
+   ✔  When Undo is invoked
+   ✔  Then the circular sketch and the uncut top face return
+]]></system-out></testcase></testsuite></testsuites>

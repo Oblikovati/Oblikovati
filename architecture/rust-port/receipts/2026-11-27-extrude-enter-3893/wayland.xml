@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Properties panel for creating and editing a modeled feature: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/feature-properties/feature-properties.feature" package="testsuite/Feature: Properties panel for creating and editing a modeled feature: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/feature-properties/feature-properties.feature" tests="2" errors="0" failures="0" hostname="localhost" timestamp="2026-11-27T05:50:53.371324931Z" time="13.588101989"><testcase name="Rule: Dockable Properties commands reuse the Properties shell: Scenario: Enter in a valid value field respects the command preference: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/feature-properties/feature-properties.feature:151:7" time="6.7461316"><system-out><![CDATA[  Scenario Outline: Enter in a valid value field respects the command preference
+   ✔  Given a feature Properties panel has valid geometry and Single ENTER to finish command is checked
+   ✔  And the user has entered a valid value in the active Properties field
+   ✔  When the user presses Enter
+   ✔  Then the feature is committed and Properties closes
+]]></system-out></testcase><testcase name="Rule: Dockable Properties commands reuse the Properties shell: Scenario: Enter in a valid value field respects the command preference: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/feature-properties/feature-properties.feature:152:7" time="6.841970389"><system-out><![CDATA[  Scenario Outline: Enter in a valid value field respects the command preference
+   ✔  Given a feature Properties panel has valid geometry and Single ENTER to finish command is unchecked
+   ✔  And the user has entered a valid value in the active Properties field
+   ✔  When the user presses Enter
+   ✔  Then the value is applied to the preview and Properties remains open
+]]></system-out></testcase></testsuite></testsuites>

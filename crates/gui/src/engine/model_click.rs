@@ -60,6 +60,7 @@ mod tests {
             document: 1,
             pixel: [7, 9],
             toggle: false,
+            extrude_profile: None,
         };
         assert!(!ribbon.cancel_unrouted_model_pick(&[click]));
         assert!(!ribbon.panels.has_pending_model_pick());

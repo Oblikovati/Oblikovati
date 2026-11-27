@@ -2,14 +2,13 @@
 //! Cache derived face meshes by document generation for selection presentation (#4048).
 use super::*;
 use oblikovati_model::{feature::FeatureId, history::DocumentEditHistory, identity::DocumentGuid};
-use std::collections::BTreeMap;
 
 pub(super) type FaceSelection = (u64, u64, Vec<(FeatureId, Vec<u8>)>, [u8; 3]);
-type NamedBodies = BTreeMap<FeatureId, Result<Vec<oblikovati_martensite::NamedFaceMesh>, String>>;
+type NamedFaces = Result<Vec<oblikovati_martensite::NamedFaceMesh>, String>;
 
 pub(super) struct FaceMeshCache {
     pub source: (u64, u64),
-    pub bodies: NamedBodies,
+    pub bodies: Vec<(FeatureId, NamedFaces)>,
 }
 
 impl FaceMeshCache {
@@ -23,15 +22,12 @@ impl FaceMeshCache {
         document: DocumentGuid,
     ) -> Self {
         let bodies = evaluation
-            .health()
-            .iter()
-            .filter_map(|record| {
-                evaluation.body(record.feature).map(|body| {
-                    (
-                        record.feature,
-                        body.named_face_meshes(history, document, DISPLAY_MESH),
-                    )
-                })
+            .ordered_body_outputs()
+            .map(|(feature, body)| {
+                (
+                    feature,
+                    body.named_face_meshes(history, document, DISPLAY_MESH),
+                )
             })
             .collect();
         Self { source, bodies }
@@ -49,21 +45,25 @@ pub(super) fn selected_face_scene(
 ) -> Result<HeadSceneUpdate, String> {
     let mut result = empty_named_scene(cache.source, evaluation.health())?;
     for (feature, key) in &selection.2 {
-        if !cache.bodies.contains_key(feature) {
+        if !has_selected_mesh(cache, *feature, key) {
             result.status.scene_errors.push(format!(
-                "selected face {key:?} feature {feature:?}: expected a current display body"
+                "selected face {key:?} feature {feature:?}: expected one named face mesh"
             ));
         }
     }
-    for record in evaluation.health() {
-        let Some(body) = evaluation.body(record.feature) else {
-            continue;
-        };
+    for ((feature, body), (cached_feature, meshes)) in
+        evaluation.ordered_body_outputs().zip(&cache.bodies)
+    {
+        if feature != *cached_feature {
+            return Err(format!(
+                "display feature {feature:?}: expected its current cached output"
+            ));
+        }
         let part = style(body).and_then(|color| match color {
-            Some(color) => build_body_scene(cache, selection, record.feature, color).map(Some),
+            Some(color) => build_body_scene(meshes, selection, feature, color).map(Some),
             None => Ok(None),
         });
-        append_named_body(&mut result, record.feature, part);
+        append_named_body(&mut result, feature, part);
     }
     Ok(result)
 }
@@ -104,18 +104,12 @@ fn append_named_body(
 }
 
 fn build_body_scene(
-    cache: &FaceMeshCache,
+    meshes: &NamedFaces,
     selection: &FaceSelection,
     feature: FeatureId,
     body_color: [f32; 4],
 ) -> Result<ViewportScene, String> {
-    let meshes = cache
-        .bodies
-        .get(&feature)
-        .ok_or_else(|| format!("display feature {feature:?}: expected cached named faces"))?
-        .as_ref()
-        .map_err(Clone::clone)?;
-    validate_selected_meshes(meshes, selection, feature)?;
+    let meshes = meshes.as_ref().map_err(Clone::clone)?;
     let selected = selection.3.map(|channel| f32::from(channel) / 255.);
     let selected = [selected[0], selected[1], selected[2], 1.];
     let triangles = meshes.iter().enumerate().flat_map(|(index, face)| {
@@ -135,19 +129,13 @@ fn build_body_scene(
     ViewportScene::from_indexed_triangles([0., 0., 1.], triangles)
 }
 
-fn validate_selected_meshes(
-    meshes: &[oblikovati_martensite::NamedFaceMesh],
-    selection: &FaceSelection,
-    feature: FeatureId,
-) -> Result<(), String> {
-    for (_, key) in selection.2.iter().filter(|(id, _)| *id == feature) {
-        if !meshes.iter().any(|face| face.key == *key) {
-            return Err(format!(
-                "display feature {feature:?} face {key:?}: expected one named face mesh"
-            ));
-        }
-    }
-    Ok(())
+fn has_selected_mesh(cache: &FaceMeshCache, feature: FeatureId, key: &[u8]) -> bool {
+    cache.bodies.iter().any(|(owner, meshes)| {
+        *owner == feature
+            && meshes
+                .as_ref()
+                .is_ok_and(|meshes| meshes.iter().any(|face| face.key == key))
+    })
 }
 
 impl DesktopPartScenes {
@@ -212,19 +200,21 @@ mod tests {
         };
         let cache = FaceMeshCache {
             source: (1, 2),
-            bodies: BTreeMap::from([(feature, Ok(vec![face(1), face(2)]))]),
+            bodies: vec![(feature, Ok(vec![face(1)])), (feature, Ok(vec![face(2)]))],
         };
         let selection = (1, 2, vec![(feature, vec![2])], [0, 200, 160]);
         let body_color = [0.5, 0.5, 0.5, 1.];
-        let scene = build_body_scene(&cache, &selection, feature, body_color).unwrap();
-        assert_eq!(scene.triangles[0].color, body_color);
-        assert_eq!(scene.triangles[1].color, [0., 200. / 255., 160. / 255., 1.]);
-        let unknown = (1, 2, vec![(feature, vec![3])], [0, 200, 160]);
-        assert!(
-            build_body_scene(&cache, &unknown, feature, body_color)
-                .unwrap_err()
-                .contains("expected one named face mesh")
+        let primary =
+            build_body_scene(&cache.bodies[0].1, &selection, feature, body_color).unwrap();
+        let sibling =
+            build_body_scene(&cache.bodies[1].1, &selection, feature, body_color).unwrap();
+        assert_eq!(primary.triangles[0].color, body_color);
+        assert_eq!(
+            sibling.triangles[0].color,
+            [0., 200. / 255., 160. / 255., 1.]
         );
+        assert!(has_selected_mesh(&cache, feature, &[2]));
+        assert!(!has_selected_mesh(&cache, feature, &[3]));
     }
     #[test]
     fn selection_changes_invalidate_once() {

@@ -50,25 +50,25 @@ impl NamedPrismEvaluator<'_> {
     ) -> Result<NamedPrismSnapshot, EvaluationFailure> {
         let sketch = input.sketch.sketch.id();
         let snapshot = crate::sketch_prism::evaluate_resolved_prism(input)?;
-        self.attach_verified(feature, sketch, snapshot)
+        self.attach_verified(
+            PrismOutputName {
+                feature,
+                sketch,
+                slot: 0,
+            },
+            snapshot,
+        )
     }
     fn attach_verified(
         &self,
-        feature: FeatureId,
-        sketch: oblikovati_model::document_sketch::DocumentSketchId,
+        output: PrismOutputName,
         snapshot: PrismProbeSnapshot,
     ) -> Result<NamedPrismSnapshot, EvaluationFailure> {
-        let named = attach_names(
-            snapshot,
-            self.document,
-            feature,
-            sketch.0,
-            self.scope.clone(),
-        )
-        .map_err(|message| naming_decline(sketch, message))?;
+        let named = attach_names(snapshot, self.document, output, self.scope.clone())
+            .map_err(|message| naming_decline(output.sketch, message))?;
         named
-            .verify_written_names(self.history, self.document, feature, sketch.0)
-            .map_err(|message| naming_decline(sketch, message))?;
+            .verify_written_names(self.history, self.document, output)
+            .map_err(|message| naming_decline(output.sketch, message))?;
         Ok(named)
     }
 }
@@ -115,20 +115,67 @@ impl CertifiedNamedPrismEvaluator<'_> {
         let sketch = input.sketch.sketch.id();
         let (result, resolution) =
             crate::sketch_prism::certified::evaluate_feature(input, self.resolution, feature)?;
+        self.name_certified(
+            PrismOutputName {
+                feature,
+                sketch,
+                slot: 0,
+            },
+            result,
+            resolution,
+        )
+    }
+
+    pub(super) fn evaluate_prism_outputs(
+        &self,
+        feature: FeatureId,
+        input: ResolvedSketchPrism<'_>,
+    ) -> Result<Vec<NamedPrismSnapshot>, EvaluationFailure> {
+        let sketch = input.sketch.sketch.id();
+        let slots =
+            std::iter::once(0).chain(input.additional_outputs.iter().map(|output| output.slot));
+        let (bodies, resolution) = crate::sketch_prism::certified::evaluate_feature_outputs(
+            input,
+            self.resolution,
+            feature,
+        )?;
+        slots
+            .zip(bodies)
+            .map(|(slot, body)| {
+                self.name_certified(
+                    PrismOutputName {
+                        feature,
+                        sketch,
+                        slot,
+                    },
+                    body,
+                    resolution,
+                )
+            })
+            .collect()
+    }
+
+    fn name_certified(
+        &self,
+        output: PrismOutputName,
+        result: crate::CertifiedPrismSnapshot,
+        resolution: PrismResolution,
+    ) -> Result<NamedPrismSnapshot, EvaluationFailure> {
         let mut named = self
             .names
-            .attach_verified(feature, sketch, result.body)
-            .map_err(|error| error.for_feature(feature))?;
+            .attach_verified(output, result.body)
+            .map_err(|error| error.for_feature(output.feature))?;
         named
             .bind_subentities(
                 self.names.history,
                 self.names.document,
-                feature,
-                sketch.0,
+                output,
                 &result.subentities,
                 result.subentity_shapes,
             )
-            .map_err(|message| naming_decline(sketch, message).for_feature(feature))?;
+            .map_err(|message| {
+                naming_decline(output.sketch, message).for_feature(output.feature)
+            })?;
         named.certification = Some(CertifiedPrismEvidence {
             resolution,
             achieved_tolerance: result.achieved_tolerance,

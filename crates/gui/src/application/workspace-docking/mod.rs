@@ -78,15 +78,24 @@ fn draw_inner_child(ui: &Ui, outer: WorkspaceArea, workspace: WorkspaceArea) -> 
 }
 
 fn contained_center(workspace: WorkspaceArea, bounds: [f32; 4]) -> Option<WorkspaceArea> {
+    if !bounds.iter().all(|value| value.is_finite()) {
+        return None;
+    }
+
+    // ImGui snaps dock bounds to whole layout units at fractional display scales.
     let [left, top, right, bottom] = bounds;
-    if !bounds.iter().all(|value| value.is_finite())
-        || left < workspace.left
-        || top < workspace.top
-        || right > workspace.right
-        || bottom > workspace.bottom
-        || left >= right
-        || top >= bottom
+    if left < workspace.left - 1.
+        || top < workspace.top - 1.
+        || right > workspace.right + 1.
+        || bottom > workspace.bottom + 1.
     {
+        return None;
+    }
+    let left = left.max(workspace.left);
+    let top = top.max(workspace.top);
+    let right = right.min(workspace.right);
+    let bottom = bottom.min(workspace.bottom);
+    if left >= right || top >= bottom {
         return None;
     }
     Some(WorkspaceArea {
@@ -124,7 +133,9 @@ mod tests {
                 .left,
             300.
         );
-        assert!(contained_center(area, [99., 50., 900., 700.]).is_none());
+        assert!(contained_center(area, [98.75, 50., 900., 700.]).is_none());
+        let rounded = contained_center(area, [300., 49.75, 900.5, 700.]).unwrap();
+        assert_eq!((rounded.top, rounded.right), (50., 900.));
         assert!(contained_center(area, [300., 50., 300., 700.]).is_none());
         assert!(contained_center(area, [f32::NAN, 50., 900., 700.]).is_none());
     }

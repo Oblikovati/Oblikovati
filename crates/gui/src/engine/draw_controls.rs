@@ -167,7 +167,14 @@ impl GuiFrameEngine {
         self.workspace
             .panels
             .record_status(request.status.as_deref());
-        self.workspace.view_clicks_taken = self.orientation.owns_view_clicks();
+        let over_extrude_measurement = self.extrude_dialog.measure_distance_at_pointer(
+            ui,
+            &request.commands,
+            &dimension_positions,
+            &mut self.parameter_editor,
+        );
+        self.workspace.view_clicks_taken =
+            self.orientation.owns_view_clicks() || over_extrude_measurement;
         self.workspace.browser_panel(
             ui,
             &request.commands,
@@ -176,6 +183,8 @@ impl GuiFrameEngine {
             selector_context_gesture,
             &mut selected,
         );
+        self.extrude_dialog
+            .route_profile_pick(&request.commands, &mut selected);
         if selected.contains(&GuiShellAction::OpenModelStateTable) {
             self.model_state_table.open(&request.commands);
         }
@@ -327,6 +336,7 @@ impl GuiFrameEngine {
                 icons,
                 parameters: &mut self.parameter_editor,
                 popup_was_open: self.popup_was_open,
+                browser_plane: self.workspace.take_picked_plane_reference(),
                 area,
             },
         );
@@ -467,20 +477,10 @@ impl GuiFrameEngine {
             || self.ribbon.tips.consumed
             || self.ribbon.customization.escape_consumed
             || self.ribbon.display.temporary_escape_consumed;
-        capture.pointer |= self.dimension_value_editor.over_label || over_fields;
+        capture.pointer |=
+            self.dimension_value_editor.over_label || over_fields || over_extrude_measurement;
         activity.pending_layout |=
-            dock_lifecycle_changed || cancelled_pick || self.extrude_dialog.needs_frame();
-        activity.pending_layout |= self.orientation.needs_frame();
-        activity.pending_layout |= self.ribbon.panels.pending_layout || self.ribbon.needs_frame();
-        activity.pending_layout |= self.ribbon.customization.needs_frame();
-        activity.pending_layout |= self.workspace.pending_layout
-            || self.home.active != home_was_active
-            || self.home.hover_changed;
-        activity.pending_layout |= self.document_files.needs_frame()
-            || self.document_tabs.needs_frame()
-            || self.workspaces.needs_frame()
-            || self.workspace.switcher.needs_frame()
-            || self.document_tabs.menu.properties.needs_frame();
+            dock_lifecycle_changed || cancelled_pick || self.workspace_needs_frame(home_was_active);
         Ok(GuiFrameOutput {
             window_action,
             window_controls,

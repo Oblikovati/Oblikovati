@@ -68,6 +68,7 @@ pub struct GuiModelBrowser {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct GuiExtrudeEditSeed {
     pub sketch: DocumentSketchId,
+    pub profile_count: usize,
     pub distance: String,
     pub second_distance: Option<String>,
     pub direction: crate::GuiExtrudeDirection,

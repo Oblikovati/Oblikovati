@@ -226,8 +226,10 @@ macro_rules! forward_owner_view_work {
             &mut self,
             draft: &oblikovati_gui::GuiExtrudePreview,
             body_name: Option<&str>,
+            keep_sketch: bool,
         ) -> Result<bool, String> {
-            self.$owner.commit_extrusion_draft(draft, body_name)
+            self.$owner
+                .commit_extrusion_draft(draft, body_name, keep_sketch)
         }
         fn extrusion_preview_from_gui(
             &mut self,
@@ -397,6 +399,13 @@ macro_rules! forward_owner_view_work {
         ) -> Result<bool, String> {
             self.$owner
                 .click_model_with_modifiers(document, line, window, toggle)
+        }
+        fn pick_extrude_profile(
+            &mut self,
+            selection: oblikovati_gui::GuiExtrudeProfilePick,
+            line: [[f64; 3]; 2],
+        ) -> Result<bool, String> {
+            self.$owner.pick_extrude_profile(selection, line)
         }
         fn context_click_model(
             &mut self,

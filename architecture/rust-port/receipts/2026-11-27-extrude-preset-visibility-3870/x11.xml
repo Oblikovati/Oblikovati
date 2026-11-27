@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Extrude a profile in a part document: tmp/obk-pr4184-ci-logs/pinned/features/solid-model/extrusion/extrusion.feature" package="testsuite/Feature: Extrude a profile in a part document: tmp/obk-pr4184-ci-logs/pinned/features/solid-model/extrusion/extrusion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-27T05:20:21.741716385Z" time="8.456950368"><testcase name="Scenario: extrusion-21 Hide Presets controls preset-row visibility: tmp/obk-pr4184-ci-logs/pinned/features/solid-model/extrusion/extrusion.feature:234:3" time="8.456950368"><system-out><![CDATA[  Scenario: extrusion-21 Hide Presets controls preset-row visibility
+   ✔> Given the MCAD Software is displaying a part in the solid modeling workspace
+   ✔> And the viewport pointer is idle
+   ✔  Given Extrusion with Hide Presets checked
+   ✔  When Hide Presets is unchecked from the panel menu
+   ✔  Then the No Preset row, plus and gear controls appear
+   ✔  When the preset gear menu is inspected and dismissed
+   ✔  And Hide Presets is restored
+   ✔  Then the preset row disappears
+]]></system-out></testcase></testsuite></testsuites>

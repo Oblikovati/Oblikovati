@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Extrude a profile in a part document: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature" package="testsuite/Feature: Extrude a profile in a part document: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-27T06:20:51.294735389Z" time="10.855712347"><testcase name="Scenario: Cut through the complete body with Through All: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature:377:3" time="10.855712347"><system-out><![CDATA[  Scenario: Cut through the complete body with Through All
+   ✔> Given the MCAD Software is displaying a part in the solid modeling workspace
+   ✔> And the viewport pointer is idle
+   ✔  Given a fresh copy of `fixtures/cad/extrusion/extrusion-base-circle.opd` is open in Extrude with the top circular profile selected
+   ✔  When the user selects Through All and Cut in the direction into the base
+   ✔  Then Join is unavailable with this extent
+   ✔  And the preview crosses the complete thickness
+   ✔  When the user clicks OK
+   ✔  Then the circular opening exits the opposite face and the part still has one solid body
+]]></system-out></testcase></testsuite></testsuites>

@@ -55,6 +55,11 @@ impl SketchPrismDefinition {
         operation: PrismBoolean,
         key: Vec<u8>,
     ) -> Result<Self, SketchPrismError> {
+        if !self.additional_outputs.is_empty() {
+            return Err(self.decline(SketchPrismCause::Definition(
+                "extrusion Boolean: expected one tool profile".into(),
+            )));
+        }
         let (_, source) = reference_identity(&key, 4, &format!("extrude {operation} target"))
             .map_err(|cause| self.decline(SketchPrismCause::Definition(cause)))?;
         if operation != PrismBoolean::Cut

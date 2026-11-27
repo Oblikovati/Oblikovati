@@ -9,7 +9,8 @@ use oblikovati_model::{
     feature::{
         FeatureId,
         sketch_prism::{
-            PrismBoolean, SketchPrismDefinition, SketchPrismDirection, SketchPrismSelection,
+            PrismBoolean, SketchPrismDefinition, SketchPrismDirection, SketchPrismExtent,
+            SketchPrismOutput, SketchPrismSelection,
         },
         work_geometry::{DatumLength, WorkGeometryEvaluation},
     },
@@ -32,7 +33,8 @@ pub(crate) use length::{extrusion_length, finite_length, positive_length};
 mod region_access;
 pub use region_access::ExtrudeRegionAccess;
 mod replay;
-use replay::{ExtrudeProjection, adopt_extrude_candidate, prepare_owned_prefix};
+pub use replay::commit_prepared_extrusion;
+use replay::create;
 
 pub(super) const DISTANCE_ROLE: &str = "distance";
 pub(super) const SECOND_DISTANCE_ROLE: &str = "distance-b";
@@ -61,7 +63,7 @@ pub(crate) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
         Error("extrude: expected an injected certified profile and validation service".into())
     })?;
     let prepared = prepare_owned_extrusion(files, document, backend, &input, replay)?;
-    create(files, document, backend, prepared)
+    create(files, document, backend, prepared, false)
 }
 
 /// Resolve an extrusion for preview or commit, including named targets and sketch datums.
@@ -71,6 +73,23 @@ pub fn prepare_owned_extrusion<O: TransactionObserver, W: WorkspaceObserver, F: 
     document: u64,
     backend: &dyn ExtrudeRegionAccess,
     input: &Extrude,
+    replay: Option<&mut dyn crate::PartUpdateAccess<O, W, F>>,
+) -> Result<PreparedExtrusion, Error> {
+    prepare_owned_extrusion_profiles(files, document, backend, input, &[], replay)
+}
+
+/// Resolve extra desktop picks in the same arrangement as the primary profile.
+/// Example: `prepare_owned_extrusion_profiles(files, document, backend, &request, &[1], Some(owner))?`.
+pub fn prepare_owned_extrusion_profiles<
+    O: TransactionObserver,
+    W: WorkspaceObserver,
+    F: DocumentFiles,
+>(
+    files: &mut FileWorkspace<O, W, F>,
+    document: u64,
+    backend: &dyn ExtrudeRegionAccess,
+    input: &Extrude,
+    additional: &[i64],
     mut replay: Option<&mut dyn crate::PartUpdateAccess<O, W, F>>,
 ) -> Result<PreparedExtrusion, Error> {
     let profile_datums = match replay.as_mut() {
@@ -88,7 +107,14 @@ pub fn prepare_owned_extrusion<O: TransactionObserver, W: WorkspaceObserver, F: 
         .map(|current| current.current(session))
         .transpose()
         .map_err(api_error)?;
-    prepare_extrusion_for_target(session.snapshot(), backend, input, target, datums)
+    prepare_extrusion_for_target(
+        session.snapshot(),
+        backend,
+        input,
+        additional,
+        target,
+        datums,
+    )
 }
 
 fn current_profile_datums<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
@@ -186,13 +212,14 @@ pub fn prepare_extrusion(
     backend: &dyn ExtrudeRegionAccess,
     input: &Extrude,
 ) -> Result<PreparedExtrusion, Error> {
-    prepare_extrusion_for_target(snapshot, backend, input, None, None)
+    prepare_extrusion_for_target(snapshot, backend, input, &[], None, None)
 }
 
 fn prepare_extrusion_for_target(
     snapshot: &DocumentSnapshot,
     backend: &dyn ExtrudeRegionAccess,
     input: &Extrude,
+    additional: &[i64],
     target: Option<(PrismBoolean, Vec<u8>)>,
     datums: Option<&WorkGeometryEvaluation>,
 ) -> Result<PreparedExtrusion, Error> {
@@ -202,7 +229,7 @@ fn prepare_extrusion_for_target(
             "extrude {operation}: expected a named target body"
         )));
     }
-    let mut prepared = prepare_prism(snapshot, backend, input, datums)?;
+    let mut prepared = prepare_prism(snapshot, backend, input, additional, datums)?;
     if let Some((operation, key)) = target {
         prepared.definition = prepared
             .definition
@@ -216,50 +243,83 @@ fn prepare_prism(
     snapshot: &DocumentSnapshot,
     backend: &dyn ExtrudeRegionAccess,
     input: &Extrude,
+    additional: &[i64],
     datums: Option<&WorkGeometryEvaluation>,
 ) -> Result<PreparedExtrusion, Error> {
     let extent = extent::reference_extent(snapshot, input)?;
     let sketch = sketch_index(snapshot, input.sketch_index)?;
-    let index = usize::try_from(input.profile_index).map_err(|_| {
-        Error(format!(
-            "profile index {}: expected a nonnegative index",
-            input.profile_index
-        ))
-    })?;
-    let resolve_profile = || {
-        match datums {
-            Some(datums) => backend.region_with_datums(snapshot, sketch, index, datums),
-            None => backend.region(snapshot, sketch, index),
-        }
-        .map_err(Error)
-    };
-    if let Some(extent) = extent {
-        if !input.taper.trim().is_empty() {
-            return Err(Error("Extrude Taper A requires a distance extent.".into()));
-        }
-        return Ok(PreparedExtrusion {
-            name: next_name(snapshot)?,
-            definition: SketchPrismDefinition::between_planes(sketch, resolve_profile()?, extent)
-                .map_err(api_error)?,
-            owned_distance: None,
-            owned_second_distance: None,
-        });
+    let indices = std::iter::once(input.profile_index)
+        .chain(additional.iter().copied())
+        .map(|index| {
+            usize::try_from(index).map_err(|_| {
+                Error(format!(
+                    "profile index {index}: expected a nonnegative index"
+                ))
+            })
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+    let selections = backend
+        .regions(snapshot, sketch, &indices, datums)
+        .map_err(Error)?;
+    if selections.len() != indices.len() {
+        return Err(Error(format!(
+            "extrude profiles: expected {} resolved regions, got {}",
+            indices.len(),
+            selections.len()
+        )));
     }
-    prepare_distance_prism(snapshot, input, sketch, resolve_profile)
+    let mut selections = selections.into_iter();
+    let primary = selections
+        .next()
+        .ok_or_else(|| Error("extrude: expected a primary region".into()))?;
+    let mut prepared = match extent {
+        Some(SketchPrismExtent::DistanceFromPlane { from }) => {
+            let mut prepared = prepare_distance_prism(snapshot, input, sketch, primary)?;
+            prepared.definition = prepared
+                .definition
+                .with_start_plane(from)
+                .map_err(api_error)?;
+            prepared
+        }
+        Some(extent) => {
+            if !input.taper.trim().is_empty() {
+                return Err(Error("Extrude Taper A requires a distance extent.".into()));
+            }
+            PreparedExtrusion {
+                name: next_name(snapshot)?,
+                definition: SketchPrismDefinition::between_planes(sketch, primary, extent)
+                    .map_err(api_error)?,
+                owned_distance: None,
+                owned_second_distance: None,
+            }
+        }
+        None => prepare_distance_prism(snapshot, input, sketch, primary)?,
+    };
+    if !additional.is_empty() {
+        let outputs = (1..)
+            .zip(selections)
+            .map(|(slot, selection)| SketchPrismOutput { slot, selection })
+            .collect();
+        prepared.definition = prepared
+            .definition
+            .with_additional_outputs(outputs)
+            .map_err(api_error)?;
+    }
+    Ok(prepared)
 }
 
 fn prepare_distance_prism(
     snapshot: &DocumentSnapshot,
     input: &Extrude,
     sketch: DocumentSketchId,
-    resolve_profile: impl FnOnce() -> Result<SketchPrismSelection, Error>,
+    selection: SketchPrismSelection,
 ) -> Result<PreparedExtrusion, Error> {
     let depth = distance(snapshot, &input.distance)?;
     let owned_distance =
         matches!(depth, DatumLength::Constant(_)).then(|| input.distance.trim().to_owned());
     let definition = SketchPrismDefinition::new(
         sketch,
-        resolve_profile()?,
+        selection,
         [DatumLength::Constant(0.), DatumLength::Constant(0.), depth],
     )
     .map_err(api_error)?;
@@ -289,40 +349,6 @@ fn prepare_distance_prism(
         owned_distance,
         owned_second_distance,
     })
-}
-
-fn create<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
-    files: &mut FileWorkspace<O, W, F>,
-    document: u64,
-    backend: &dyn ExtrudeRegionAccess,
-    prepared: PreparedExtrusion,
-) -> Result<Vec<u8>, Error> {
-    let guid = files
-        .workspace()
-        .identity(document)
-        .map_err(api_error)?
-        .internal_name;
-    let prefix = prepare_owned_prefix(files, document, backend)?;
-    let name = prepared.name.clone();
-    let projection = ExtrudeProjection {
-        backend,
-        guid,
-        name: &name,
-        prefix: prefix.as_ref(),
-    };
-    let ((response, captured), transition) = files
-        .commands(document)
-        .map_err(api_error)?
-        .run_private_candidate(
-            "Create extrusion",
-            |snapshot, ids| prepared.create(snapshot, ids),
-            |candidate, id, history| projection.project(candidate, id, history),
-        )
-        .map_err(api_error)?;
-    if let (Some((policy, _)), Some(captured)) = (prefix, captured) {
-        adopt_extrude_candidate(files, document, policy, captured, &transition)?;
-    }
-    Ok(response)
 }
 
 fn parse_request(request: wire::AddFeatureArgs) -> Result<Extrude, Error> {

@@ -4,6 +4,9 @@ use super::acceptance::{feature_count, feature_distance, open_extrusion_editor};
 use super::viewport_interaction::{click_text_native, replace_distance_native};
 use super::*;
 
+#[path = "dimension_pick.rs"]
+pub(super) mod dimension_pick;
+
 #[given("Edit Feature is open for an existing extrusion")]
 fn existing_extrusion_editor(world: &mut ApplicationWorld) {
     create_first_extrusion(world);
@@ -13,6 +16,7 @@ fn existing_extrusion_editor(world: &mut ApplicationWorld) {
 #[given(
     "a copy of `fixtures/cad/extrusion/extrusion-rect-8mm.opd` is open with Edit Feature active"
 )]
+#[given("Extrusion1 in `fixtures/cad/extrusion/extrusion-rect-8mm.opd` is open for editing")]
 fn published_extrusion_editor(world: &mut ApplicationWorld) {
     let source =
         super::super::scenario_root().join("fixtures/cad/extrusion/extrusion-rect-8mm.opd");
@@ -28,6 +32,7 @@ fn eight_millimetre_tolerance_target(world: &mut ApplicationWorld) {
 }
 
 #[when("Tolerance is opened from its dropdown")]
+#[when("the user opens Tolerance from the Distance A editor menu")]
 fn open_distance_tolerance(world: &mut ApplicationWorld) {
     open_distance_menu(world);
     click_popup(world, "Tolerance");
@@ -58,6 +63,7 @@ fn tolerance_controls_are_visible(world: &mut ApplicationWorld) {
 }
 
 #[when("the Type list is opened")]
+#[when("the user opens the Type choices")]
 fn open_tolerance_types(world: &mut ApplicationWorld) {
     let type_label = world.run_in_window("Tolerance", "Type").center();
     let preview = world
@@ -90,12 +96,28 @@ fn tolerance_types_are_listed(world: &mut ApplicationWorld) {
         "Limits/Fits-ShowSizeLimits",
         "Limits/Fits-ShowTolerance",
     ] {
-        popup_label(world, label);
+        assert_tolerance_type_available(world, label);
     }
     world.save_capture("distance-tolerance-types");
 }
 
+#[then(
+    regex = r"^(Default|Basic|Symmetric|Deviation|Limits-Stacked|Limits-Linear|MAX|MIN|Limits/Fits-(?:Stacked|Linear|Show Size Limits|Show Tolerance)) is available$"
+)]
+fn tolerance_type_is_available(world: &mut ApplicationWorld, label: String) {
+    assert_tolerance_type_available(world, &super::super::world::squeezed(&label));
+}
+
+fn assert_tolerance_type_available(world: &ApplicationWorld, label: &str) {
+    popup_label(world, label);
+    assert!(
+        world.run_is_enabled(label),
+        "tolerance type {label} is disabled"
+    );
+}
+
 #[when("the Type list is dismissed and Cancel is clicked")]
+#[when("the user cancels Tolerance")]
 fn cancel_tolerance(world: &mut ApplicationWorld) {
     let generation = world.state().document_generation;
     world.key(oblikovati_viewport::ViewportPhysicalKey::Escape, false);
@@ -121,6 +143,7 @@ fn cancel_tolerance(world: &mut ApplicationWorld) {
 }
 
 #[then("the extrusion panel remains at Distance A 8 mm")]
+#[then("Distance A still shows 8 mm")]
 fn original_distance_survives_tolerance_cancel(world: &mut ApplicationWorld) {
     assert!(diagnostics::window_geometry("Tolerance").is_none());
     world.run_in_window("Extrude", "DistanceA");

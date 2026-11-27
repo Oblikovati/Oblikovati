@@ -146,6 +146,16 @@ where
             .evaluate_sweep_boolean(feature, body.get(), input, operation)
             .map(PrefixBody::Created)
     }
+    fn evaluate_prism_outputs(
+        &mut self,
+        feature: FeatureId,
+        input: ResolvedSketchPrism<'_>,
+    ) -> Result<Vec<Self::Body>, PartFeatureFailure<Self::Failure>> {
+        self.0
+            .evaluate_prism_outputs(feature, input)
+            .map(|bodies| bodies.into_iter().map(PrefixBody::Created).collect())
+    }
+
     fn evaluate_prism(
         &mut self,
         feature: FeatureId,
@@ -205,7 +215,7 @@ impl<Body, Failure: Clone> PartFeatureEvaluation<Body, Failure> {
         let bodies = self
             .bodies
             .iter()
-            .map(|(id, body)| capture(*id, body).map(|body| (*id, body)))
+            .map(|(id, body)| capture(id.feature, body).map(|body| (*id, body)))
             .collect::<Result<_, _>>()?;
         Ok(PartFeatureEvaluation {
             datums: self.datums.clone(),
@@ -228,7 +238,7 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
         let bodies = self
             .bodies
             .into_iter()
-            .map(|(id, body)| map(id, body).map(|body| (id, body)))
+            .map(|(id, body)| map(id.feature, body).map(|body| (id, body)))
             .collect::<Result<_, _>>()?;
         Ok(PartFeatureEvaluation {
             datums: self.datums,

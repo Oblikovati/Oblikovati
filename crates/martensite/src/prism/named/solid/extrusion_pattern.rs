@@ -42,6 +42,7 @@ impl CertifiedNamedSolidEvaluator<'_> {
                             sketch: ResolvedDocumentSketch { ..seed.sketch },
                             sweep_start: seed.sweep_start,
                             selection: seed.selection,
+                            additional_outputs: seed.additional_outputs,
                             displacement: seed.displacement,
                             taper_radians: seed.taper_radians,
                         },

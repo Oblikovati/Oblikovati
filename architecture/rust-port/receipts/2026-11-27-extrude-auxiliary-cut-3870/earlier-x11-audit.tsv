@@ -1,0 +1,75 @@
+case	scenario	result	diagnostic
+1	Scenario: extrusion-01 Empty part entry requests a sketch plane	passed	-
+2	Scenario: extrusion-02 Finish profile returns to waiting extrusion	failed	Step doesn't match any function
+3	Scenario: extrusion-03 Select Flipped direction	passed	-
+4	Scenario: extrusion-03a Select Symmetric direction	passed	-
+5	Scenario: extrusion-03b Select Asymmetric direction	passed	-
+6	Scenario: extrusion-03c Choose named directions with the dropdown selector	passed	-
+7	Scenario: extrusion-04 Cancel preserves the source sketch	passed	-
+8	Scenario: extrusion-05 Zero distance validation and recovery	passed	-
+9	Scenario: extrusion-06 Accepted creation supports Undo and Redo	passed	-
+10	Scenario: extrusion-07 Edit Feature accepts positive taper	passed	-
+11	Scenario: extrusion-08 Taper history retains accepted value	passed	-
+12	Scenario: extrusion-09 Cancel reversed taper edit	passed	-
+13	Scenario: extrusion-10 Reference selectors require input	passed	-
+14	Scenario: extrusion-11 Termination selection displays a To reference	passed	-
+15	Scenario: extrusion-12 Distance tolerance dialog can be inspected and cancelled	passed	-
+16	Scenario: extrusion-12a Inspect the Distance A editor menu	passed	-
+17	Scenario: extrusion-12b Select Feature Dimension prompts for a feature	passed	-
+18	Scenario: extrusion-12c Parameters opens the part parameter table	passed	-
+19	Scenario: extrusion-13 Join adds a boss to one body	passed	-
+20	Scenario: extrusion-14 New Solid creates a named second body	passed	-
+21	Scenario: extrusion-15 Cut selects inward direction and supports history	passed	-
+22	Scenario: extrusion-16 Intersect retains the circular common region	passed	-
+23	Scenario: extrusion-17 Measure identifies intersection diameter	passed	-
+24	Scenario: extrusion-18 Auxiliary extent changes preview and accepts a cut	failed	Step doesn't match any function
+25	Scenario: extrusion-19 Surface output retains separate surface entry	failed	Step doesn't match any function
+26	Scenario: extrusion-20 Dimension pick can change the active distance expression	passed	-
+27	Scenario: extrusion-22 Change and flip an asymmetric preview	failed	Step doesn't match any function
+28	Scenario: extrusion-23 Cancel a failed edit in the dependent part	failed	Step doesn't match any function
+29	Scenario: extrusion-24 Match Shape is disabled for the captured feature	passed	-
+30	Scenario: extrusion-live-01 Reopen Extrusion1 and cancel its edit	passed	-
+31	Scenario: Preview a measured extrusion extent in each direction	passed	-
+32	Scenario: Preview a measured extrusion extent in each direction	passed	-
+33	Scenario: Preview a measured extrusion extent in each direction	passed	-
+34	Scenario: Preview a measured extrusion extent in each direction	passed	-
+35	Scenario: Pick and clear disjoint solid profiles independently	failed	Step doesn't match any function
+36	Scenario: Extrude a planar face	failed	Step doesn't match any function
+37	Scenario: Reuse a visible consumed sketch profile	passed	-
+38	Scenario: Start a fixed-distance extrusion from a different plane	passed	-
+39	Scenario: Extrude between two faces independent of the source sketch plane	failed	"Step panicked. Captured output: expected a numeric preview: Some(AuthoringFailed { cause: ""BuildPlanarRegions declined at Certification (Incomplete): IncompleteCertification { reason: \""Joins: PairUnavailable { sources: [RegionSourceId(2), RegionSourceId(4)] }\"" }"" })"
+40	Scenario: Terminate a part extrusion at a selected reference	failed	Step doesn't match any function
+41	Scenario: Terminate a part extrusion at a selected reference	failed	Step doesn't match any function
+42	Scenario: Terminate a part extrusion at a selected reference	failed	Step doesn't match any function
+43	Scenario: Terminate a part extrusion at a selected reference	failed	Step doesn't match any function
+44	Scenario: Extend a reference face that does not cover the projected profile	failed	Step doesn't match any function
+45	Scenario: Switch between two curved termination solutions	failed	Step doesn't match any function
+46	Scenario: Hide Alternate Solution when a planar face replaces a curved termination	failed	Step doesn't match any function
+47	Scenario: Extend a selected planar To face across the profile	failed	Step doesn't match any function
+48	Scenario: Cut through the complete body with Through All	passed	-
+49	Scenario: Stop at the next eligible face of a selected terminator	failed	Step doesn't match any function
+50	Scenario: Restrict a Boolean extrusion to an explicitly selected body	failed	Step doesn't match any function
+51	Scenario: Turn off automatic Boolean prediction	passed	-
+52	Scenario: Switch the Boolean selector from icons to named options	passed	-
+53	Scenario: Limit the Properties options for an extrusion primitive	failed	Step doesn't match any function
+54	Scenario: Limit the Properties options for an extrusion primitive	failed	Step doesn't match any function
+55	Scenario: Limit Properties to supported operations for an assembly extrusion	failed	Step doesn't match any function
+56	Scenario: Keep the Distance A input synchronized with its viewport manipulator	failed	Step panicked. Captured output: called `Result::unwrap()` on an `Err` value: ParseFloatError { kind: Invalid }
+57	Scenario: Retain independently set taper values on an asymmetric solid	failed	Step doesn't match any function
+58	Scenario: Use a named length parameter in the distance expression	passed	-
+59	Scenario: Create a surface from an open curve	failed	Step doesn't match any function
+60	Scenario: Compare both Match Shape choices for an open solid profile	failed	Step doesn't match any function
+61	Scenario: Add a mating reference with a cylindrical extrusion	failed	Step doesn't match any function
+62	Scenario: Inspect each supported Distance A tolerance type	passed	-
+63	Scenario: Inspect each supported Distance A tolerance type	passed	-
+64	Scenario: Inspect each supported Distance A tolerance type	passed	-
+65	Scenario: Inspect each supported Distance A tolerance type	passed	-
+66	Scenario: Inspect each supported Distance A tolerance type	passed	-
+67	Scenario: Inspect each supported Distance A tolerance type	passed	-
+68	Scenario: Inspect each supported Distance A tolerance type	passed	-
+69	Scenario: Inspect each supported Distance A tolerance type	passed	-
+70	Scenario: Inspect each supported Distance A tolerance type	passed	-
+71	Scenario: Inspect each supported Distance A tolerance type	passed	-
+72	Scenario: Inspect each supported Distance A tolerance type	passed	-
+73	Scenario: Inspect each supported Distance A tolerance type	passed	-
+74	Scenario: Pick more than one closed profile directly for Extrude	failed	Step doesn't match any function

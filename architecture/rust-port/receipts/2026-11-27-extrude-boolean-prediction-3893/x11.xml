@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Extrude a profile in a part document: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature" package="testsuite/Feature: Extrude a profile in a part document: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-27T05:03:41.051406736Z" time="13.099295026"><testcase name="Scenario: Turn off automatic Boolean prediction: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature:407:3" time="13.099295026"><system-out><![CDATA[  Scenario: Turn off automatic Boolean prediction
+   ✔> Given the MCAD Software is displaying a part in the solid modeling workspace
+   ✔> And the viewport pointer is idle
+   ✔  Given `fixtures/cad/extrusion/extrusion-base-circle.opd` is open in Extrude with the circular profile selected
+   ✔  And Advanced Settings offers Predict Boolean Operation
+   ✔  When the user disables Predict Boolean Operation
+   ✔  And the user specifies the Boolean operation and direction explicitly
+   ✔  Then the preview uses the specified operation and direction
+]]></system-out></testcase></testsuite></testsuites>
