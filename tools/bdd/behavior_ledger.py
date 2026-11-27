@@ -307,6 +307,18 @@ def missing_baseline_fields(row: Mapping[str, object]) -> list[str]:
     ]
 
 
+BASELINE_REQUIRED_STATES = frozenset({"implemented", "verified"})
+
+
+def incomplete_baseline_backlog(rows: list[object]) -> int:
+    """Count non-implemented scenarios still awaiting R0 baseline evidence."""
+    return sum(
+        require_object(row, "scenario").get("state") not in BASELINE_REQUIRED_STATES
+        and bool(missing_baseline_fields(require_object(row, "scenario")))
+        for row in rows
+    )
+
+
 def require_classified(ledger: Mapping[str, object]) -> None:
     """Fail on missing, stale, or orphaned classifications; for example, require_classified(ledger)."""
     rows = require_list(ledger.get("scenarios"), "ledger scenarios")
@@ -320,7 +332,9 @@ def require_classified(ledger: Mapping[str, object]) -> None:
             f"ledger classifications: expected all current; {missing} missing, {stale} stale, {len(orphans)} orphaned"
         )
     incomplete = sum(
-        bool(missing_baseline_fields(require_object(row, "scenario"))) for row in rows
+        require_object(row, "scenario").get("state") in BASELINE_REQUIRED_STATES
+        and bool(missing_baseline_fields(require_object(row, "scenario")))
+        for row in rows
     )
     if incomplete:
         raise ValueError(
