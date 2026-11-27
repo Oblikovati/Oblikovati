@@ -63,7 +63,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON(needs.matrix.outputs.platforms) }}
-    runs-on: ${{ matrix.runner }}
+    # Ubuntu 26.04 provides ARM64 validation layers with VK_EXT_layer_settings.
+    # The separate package matrix still builds against the Ubuntu 24.04 ABI.
+    runs-on: ${{ matrix.target == 'aarch64-unknown-linux-gnu' && 'ubuntu-26.04-arm' || matrix.runner }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -74,6 +76,12 @@ jobs:
         id: native-workspaces
         run: |
           if [ "$RUNNER_OS" = Linux ]; then
+            if [ "$RUNNER_ARCH" = ARM64 ]; then
+              export VK_LAYER_PATH=/usr/share/vulkan/explicit_layer.d
+              export VK_DRIVER_FILES=/usr/share/vulkan/icd.d/lvp_icd.json
+              export OBLIKOVATI_VULKAN_VALIDATION=1
+              dpkg-query -W vulkan-validationlayers mesa-vulkan-drivers
+            fi
             ./tools/with-xvfb.sh --window-manager cargo xtask native
           elif [ "$RUNNER_OS" = Windows ] && [ "$RUNNER_ARCH" = ARM64 ]; then
             cargo xtask native 2>&1 | tee "$(cygpath -u "$RUNNER_TEMP")/oblikovati-native.log"
