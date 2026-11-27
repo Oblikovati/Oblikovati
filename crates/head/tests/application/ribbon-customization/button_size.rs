@@ -8,11 +8,21 @@ mod shell_shortcut;
 
 const RIBBON: &str = "##application-ribbon";
 
+#[given("a part is active in the MCAD Software with the full 3D Model ribbon in Normal appearance")]
+fn add_part_with_normal_ribbon(world: &mut ApplicationWorld) {
+    world.add_part();
+    assert_normal_model_ribbon(world);
+}
+
 #[given(
     "`fixtures/cad/blank-metric-part.opd` is open with the full 3D Model ribbon in Normal appearance"
 )]
 fn open_part_with_normal_ribbon(world: &mut ApplicationWorld) {
     super::super::ribbon_panel_expansion::open_blank_metric_part(world);
+    assert_normal_model_ribbon(world);
+}
+
+fn assert_normal_model_ribbon(world: &mut ApplicationWorld) {
     world.expect_text("Modify");
     shell_standard(world);
 }
