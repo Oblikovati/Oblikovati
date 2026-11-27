@@ -21,8 +21,8 @@ fn assert_edit_breadcrumb(world: &mut ApplicationWorld) {
 
 #[when("the user chooses the source sketch in the breadcrumb")]
 fn choose_breadcrumb_sketch(world: &mut ApplicationWorld) {
-    let row = breadcrumb_row(world);
-    let point = diagnostics::pointer_pixels([row.maximum[0] - 8., row.center()[1]]);
+    let (_, sketch) = breadcrumb_segments(world);
+    let point = diagnostics::pointer_pixels([sketch.maximum[0] - 8., sketch.center()[1]]);
     click_at(world, point);
     world.pump(Vec::new());
 }
@@ -43,21 +43,55 @@ fn source_receives_active_accent(world: &mut ApplicationWorld) {
     assert_eq!(breadcrumb_underlines(world), [false, true]);
 }
 
-fn breadcrumb_row(world: &mut ApplicationWorld) -> &diagnostics::RenderedRun {
-    let source = &world.state().browser.unwrap().sketches[0].name;
-    world.run_in_window("Extrude", &format!("Extrusion1›{source}"))
+fn breadcrumb_segments(
+    world: &mut ApplicationWorld,
+) -> (diagnostics::RenderedRun, diagnostics::RenderedRun) {
+    let source = world.state().browser.unwrap().sketches[0].name.clone();
+    let (position, size) = diagnostics::window_geometry("Extrude").expect("expected Extrude");
+    let inside = |run: &diagnostics::RenderedRun| {
+        let center = run.center();
+        (0..2).all(|axis| {
+            center[axis] >= position[axis] && center[axis] <= position[axis] + size[axis]
+        })
+    };
+    let combined = format!("Extrusion1›{source}");
+    if let Some(row) = world
+        .frame
+        .runs
+        .iter()
+        .find(|run| run.text == combined && inside(run))
+    {
+        return (row.clone(), row.clone());
+    }
+    let feature = world.run_in_window("Extrude", "Extrusion1›").clone();
+    let sketch = world
+        .frame
+        .runs
+        .iter()
+        .find(|run| {
+            inside(run)
+                && run.text == source
+                && run.minimum[0] >= feature.minimum[0]
+                && (run.center()[1] - feature.center()[1]).abs() < 12.
+        })
+        .unwrap_or_else(|| panic!("expected breadcrumb sketch {source:?} beside Extrusion1›"))
+        .clone();
+    (feature, sketch)
 }
 
 fn breadcrumb_underlines(world: &mut ApplicationWorld) -> [bool; 2] {
-    let row = breadcrumb_row(world).clone();
+    let (feature, sketch) = breadcrumb_segments(world);
     let capture = capture_framebuffer(&mut world.app().window.native);
     let [width, height] = capture.extent.map(|pixels| pixels as usize);
     let accent =
         unsafe { imgui::sys::igGetColorU32_Col(imgui::sys::ImGuiCol_NavHighlight as i32, 1.) }
             .to_le_bytes();
-    [row.minimum[0] + 8., row.maximum[0] - 8.].map(|segment| {
-        let [x, top] =
-            diagnostics::pointer_pixels([segment, row.maximum[1]]).map(|pixel| pixel as usize);
+    [
+        [feature.minimum[0] + 8., feature.maximum[1]],
+        [sketch.maximum[0] - 8., sketch.maximum[1]],
+    ]
+    .map(|anchor| {
+        let [x, top] = diagnostics::pointer_pixels(anchor).map(|pixel| pixel as usize);
         (top..(top + 8).min(height)).any(|y| {
             let at = (y * width + x) * 4;
             capture.rgba.get(at..at + 3) == Some(&accent[..3])

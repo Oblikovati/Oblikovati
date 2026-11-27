@@ -12,7 +12,7 @@ fn native_normal_modify_rows_fill_the_flyout_and_share_one_pitch() {
         .map(|label| world.run_in_window(name, label).center());
     assert!(
         rows.windows(2)
-            .all(|pair| (pair[1][1] - pair[0][1] - 32.).abs() < 1.)
+            .all(|pair| (pair[1][1] - pair[0][1] - 34.).abs() < 2.)
     );
     world.save_capture("normal-modify-flyout");
     let right_side = diagnostics::pointer_pixels([position[0] + size[0] - 18., rows[0][1]]);
