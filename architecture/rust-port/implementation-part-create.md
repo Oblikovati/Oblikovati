@@ -108,6 +108,12 @@ checks signed preview bounds, parallel caps, and acceptance readiness
 for Default, Flipped, Symmetric, and Asymmetric Extrude on both Linux
 backends.
 
+A numerical New Solid preview exposes a Distance A handle at its end
+cap. Dragging it updates the distance expression through the same
+validation and preview path as panel input. The
+[native manipulator receipt](receipts/2026-11-27-extrude-manipulator-3870/README.md)
+checks the dimension, field, and preview mesh after both kinds of input.
+
 ## Sweep, Loft, and Revolve
 
 The [release probes](../../crates/martensite/tests/release_probe/create.rs)

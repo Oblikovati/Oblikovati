@@ -10,12 +10,44 @@ pub(super) fn project_cues(window: &dyn HeadWindow, commands: &mut GuiCommandSta
         .zip(commands.model_pick_cue.as_ref())
         .is_some_and(|(toolbar, cue)| toolbar.position == cue.position);
     project_cue(window, &mut commands.face_toolbar_anchor);
+    project_extrude_handle(window, commands);
     if shared {
         commands
             .model_pick_cue
             .clone_from(&commands.face_toolbar_anchor);
     } else {
         project_cue(window, &mut commands.model_pick_cue);
+    }
+}
+
+fn project_extrude_handle(window: &dyn HeadWindow, commands: &mut GuiCommandState) {
+    let Some(handle) = commands.extrude_handle.as_mut() else {
+        return;
+    };
+    let [start, end] = handle.axis;
+    let projected = window
+        .model_pixel(start)
+        .ok()
+        .zip(window.model_pixel(end).ok());
+    handle.pixels = projected.map(|(start, end)| [start, end]);
+    if let Ok(camera) = window.view_camera()
+        && camera.perspective
+    {
+        let forward: [f64; 3] = std::array::from_fn(|i| camera.target[i] - camera.eye[i]);
+        let depth = |point: [f64; 3]| {
+            forward
+                .into_iter()
+                .enumerate()
+                .map(|(i, along)| along * (point[i] - camera.eye[i]))
+                .sum::<f64>()
+        };
+        let start_depth = depth(start);
+        let end_depth = depth(end);
+        if start_depth > 0. && end_depth > 0. {
+            handle.depth_ratio = end_depth / start_depth;
+        } else {
+            handle.pixels = None;
+        }
     }
 }
 

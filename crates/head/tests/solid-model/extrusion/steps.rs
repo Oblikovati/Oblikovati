@@ -13,6 +13,8 @@ mod direction_selector;
 #[cfg(target_os = "linux")]
 mod distance_editor;
 #[cfg(target_os = "linux")]
+mod distance_handle;
+#[cfg(target_os = "linux")]
 mod edit_properties;
 #[cfg(target_os = "linux")]
 mod reference_extent;

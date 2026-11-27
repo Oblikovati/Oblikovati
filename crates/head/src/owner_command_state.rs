@@ -257,6 +257,14 @@ impl<
                     draft.document == document && draft.generation == Some(session.generation())
                 })
                 .cloned(),
+            extrude_handle: self
+                .extrusion_handle_axis
+                .filter(|_| {
+                    self.extrusion_draft_preview.as_ref().is_some_and(|draft| {
+                        draft.document == document && draft.generation == Some(session.generation())
+                    })
+                })
+                .map(oblikovati_gui::GuiExtrudeHandle::new),
             sketch_tool_keyboard: self
                 .placement_state()
                 .is_some_and(|tool| self.placement_context_valid(tool)),

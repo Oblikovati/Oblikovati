@@ -41,6 +41,7 @@ pub(crate) struct ExtrudeDialog {
     operation: Option<oblikovati_model::feature::sketch_prism::PrismBoolean>,
     body_name: String,
     previewed: bool,
+    handle: crate::extrude_handle::DistanceHandle,
     preview_hidden: bool,
     size: panel::PropertiesSize,
     attempted: Option<crate::GuiExtrudePreview>,
@@ -72,6 +73,7 @@ impl ExtrudeDialog {
     fn set_document(&mut self, document: Option<u64>) {
         if document.is_none() || self.document != document {
             self.distance_editor = Default::default();
+            self.handle = Default::default();
             self.taper = None;
             self.operation = None;
             self.preview_hidden = false;
@@ -186,6 +188,9 @@ impl ExtrudeDialog {
             controls.parameters.close_tolerance_inspection();
             return;
         };
+        if self.update_distance_handle(ui, state, controls.area) {
+            controls.parameters.close_tolerance_inspection();
+        }
         self.size.fit(ui, controls.area);
         let _border = crate::theme::property_window_border(ui);
         let mut open = true;

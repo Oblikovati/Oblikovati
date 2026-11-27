@@ -24,6 +24,24 @@ impl ExtrudeDialog {
         self.reference.through_all().then_some(PrismBoolean::Cut)
     }
 
+    pub(super) fn update_distance_handle(
+        &mut self,
+        ui: &Ui,
+        state: &GuiCommandState,
+        area: crate::application::document_creation::workspaces::WorkspaceArea,
+    ) -> bool {
+        if !self.reference.numeric() || self.edit_feature.is_some() || self.preview_hidden {
+            self.handle = Default::default();
+            return false;
+        }
+        let Some(distance) = self.handle.draw(ui, state, area) else {
+            return false;
+        };
+        self.distance = distance;
+        self.commit_error = None;
+        true
+    }
+
     pub(super) fn draw_output(&mut self, ui: &Ui, state: &GuiCommandState) -> bool {
         if let Some(feature) = self.edit_feature {
             self.draw_edit_output(ui, state, feature);

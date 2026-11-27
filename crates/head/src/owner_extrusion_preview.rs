@@ -157,6 +157,17 @@ impl<
             return Ok(true);
         }
         let presentation = self.preview_extrusion_from_gui(document, &request)?;
+        let handle_axis = if preview.reference_extent.is_none() {
+            let snapshot = self
+                .files
+                .workspace()
+                .session(document)
+                .map_err(|cause| cause.to_string())?
+                .snapshot();
+            handle_axis(&presentation, snapshot, preview)
+        } else {
+            None
+        };
         let scene = oblikovati_viewport::ViewportScene::from_prism(
             &presentation,
             [0., 0., 1.],
@@ -169,12 +180,14 @@ impl<
             .map_err(|cause| cause.to_string())?
             .generation();
         self.extrusion_preview = Some((document, generation, scene, PreviewKind::Additive));
+        self.extrusion_handle_axis = handle_axis;
         self.extrusion_draft_preview = Some(preview.clone());
         self.part_scenes.invalidate_presentation();
         Ok(true)
     }
     pub(super) fn clear_extrusion_preview(&mut self) -> bool {
         self.extrusion_draft_preview = None;
+        self.extrusion_handle_axis = None;
         let sweep_changed = self.sweep_preview.take().is_some();
         if self.extrusion_preview.take().is_none() {
             return sweep_changed;
@@ -409,6 +422,10 @@ impl<
             .map_err(|cause| cause.to_string())
     }
 }
+#[path = "owner_extrusion_handle.rs"]
+mod handle;
+use handle::handle_axis;
+
 fn extrusion_preview_presentation(
     body: &oblikovati_martensite::NamedSolid,
     id: oblikovati_model::feature::FeatureId,
