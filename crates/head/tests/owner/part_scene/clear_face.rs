@@ -360,7 +360,7 @@ fn clear_selected_named_face_rejects_forged_and_stale_selection() {
 }
 
 fn save_and_reopen(owner: &mut TestOwner, document: u64) -> u64 {
-    let path = "/memory/cleared-face.opd";
+    let path = document_fixture_path!("/memory/cleared-face.opd");
     Client::new(owner.document_host())
         .documents()
         .save_as(&SaveDocumentAsArgs {

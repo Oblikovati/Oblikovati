@@ -267,7 +267,7 @@ fn typed_radius_edit_validates_before_commit_and_survives_history() {
         .documents()
         .save_as(&SaveDocumentAsArgs {
             document,
-            new_full_document_name: "/memory/fillet-edit.opd".into(),
+            new_full_document_name: document_fixture_path!("/memory/fillet-edit.opd").into(),
         })
         .unwrap();
     Client::new(owner.document_host())
@@ -280,7 +280,7 @@ fn typed_radius_edit_validates_before_commit_and_survives_history() {
     Client::new(owner.document_host())
         .documents()
         .open(&OpenDocumentArgs {
-            full_document_name: "/memory/fillet-edit.opd".into(),
+            full_document_name: document_fixture_path!("/memory/fillet-edit.opd").into(),
             ..Default::default()
         })
         .unwrap();

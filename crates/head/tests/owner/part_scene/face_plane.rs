@@ -60,7 +60,7 @@ fn face_offset_command_binds_a_current_face_and_reports_its_geometry() {
     assert!((plane_height(&mut owner, result.index) - 2.5).abs() < 1e-9);
     owner.files.commands(document).unwrap().redo().unwrap();
     assert!((plane_height(&mut owner, result.index) - 3.5).abs() < 1e-9);
-    let path = "/memory/face-plane.opd";
+    let path = document_fixture_path!("/memory/face-plane.opd");
     Client::new(owner.document_host())
         .documents()
         .save_as(&SaveDocumentAsArgs {

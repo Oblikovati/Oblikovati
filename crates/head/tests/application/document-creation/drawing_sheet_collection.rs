@@ -222,7 +222,7 @@ fn assert_round_trip(client: &Client<impl Caller>, drawing: u64) {
             .contains("at least one sheet")
     );
     let expected = sheets(client);
-    let path = "/memory/edited-sheets.odd";
+    let path = document_fixture_path!("/memory/edited-sheets.odd");
     client
         .documents()
         .save_as(&SaveDocumentAsArgs {

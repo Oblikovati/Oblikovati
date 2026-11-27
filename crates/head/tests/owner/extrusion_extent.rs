@@ -196,7 +196,7 @@ fn assert_extent_body(owner: &mut TestOwner, index: i64, volume_mm3: f64, centro
 
 fn reopen_extent_document(owner: &mut TestOwner, document: u64) {
     let client = Client::new(owner.document_host());
-    let path = "/memory/extrusion-reference-extent.opd";
+    let path = document_fixture_path!("/memory/extrusion-reference-extent.opd");
     client
         .documents()
         .save_as(&SaveDocumentAsArgs {

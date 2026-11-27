@@ -10,8 +10,16 @@ fn selected_save_path_keeps_its_document_when_focus_changes() {
         DesktopCommandNotice::SavePathRequired { document: first }
     );
     let second = create(&mut owner, &awake);
-    choose_path(&mut owner, first, "/memory/first.opd");
-    assert_saved_choice(&mut owner, first, "/memory/first.opd");
+    choose_path(
+        &mut owner,
+        first,
+        document_fixture_path!("/memory/first.opd"),
+    );
+    assert_saved_choice(
+        &mut owner,
+        first,
+        document_fixture_path!("/memory/first.opd"),
+    );
     let workspace = owner.documents().workspace();
     assert_eq!(workspace.active_document(), Some(second));
     assert!(!workspace.needs_save(first).unwrap());
@@ -35,7 +43,11 @@ fn cancellation_and_closed_request_leave_files_and_other_documents_intact() {
     verify_cancelled_path(&mut owner, first);
     let second = create(&mut owner, &awake);
     close_requested_document(&mut owner, first);
-    choose_path(&mut owner, first, "/memory/closed.opd");
+    choose_path(
+        &mut owner,
+        first,
+        document_fixture_path!("/memory/closed.opd"),
+    );
     assert_failed_choice(&mut owner, first);
     assert!(owner.documents().files().saved.borrow().is_empty());
     assert_eq!(
@@ -51,13 +63,25 @@ fn failed_choice_can_retry_without_binding_a_path_or_losing_history() {
     dirty_property(&mut owner, document);
     let before = owner.gui_command_state().unwrap();
     owner.documents().files().fail_stage.set(true);
-    choose_path(&mut owner, document, "/memory/retry.opd");
+    choose_path(
+        &mut owner,
+        document,
+        document_fixture_path!("/memory/retry.opd"),
+    );
     assert_failed_choice(&mut owner, document);
     assert!(owner.documents().path(document).is_err());
     assert_eq!(owner.gui_command_state().unwrap(), before);
     owner.documents().files().fail_stage.set(false);
-    choose_path(&mut owner, document, "/memory/retry.opd");
-    assert_saved_choice(&mut owner, document, "/memory/retry.opd");
+    choose_path(
+        &mut owner,
+        document,
+        document_fixture_path!("/memory/retry.opd"),
+    );
+    assert_saved_choice(
+        &mut owner,
+        document,
+        document_fixture_path!("/memory/retry.opd"),
+    );
     let mut saved = before;
     // #3800: successful save clears the tab's dirty flag without changing history or focus.
     saved.documents[0].dirty = false;
@@ -72,11 +96,11 @@ fn failed_choice_can_retry_without_binding_a_path_or_losing_history() {
     saved.document_storage.insert(
         document,
         oblikovati_gui::GuiDocumentStorage {
-            path: Some("/memory/retry.opd".into()),
+            path: Some(document_fixture_path!("/memory/retry.opd").into()),
             unsaved_edits: false,
         },
     );
-    saved.browser.as_mut().unwrap().path = Some("/memory/retry.opd".into());
+    saved.browser.as_mut().unwrap().path = Some(document_fixture_path!("/memory/retry.opd").into());
     let after = owner.gui_command_state().unwrap();
     // The new file also joins the recent list, which the rest of this comparison does not cover.
     saved.recent_documents = after.recent_documents.clone();
@@ -129,7 +153,11 @@ fn selected_path_refuses_open_edits_without_ending_or_saving_them() {
         })
         .unwrap();
     let before = owner.gui_command_state().unwrap();
-    choose_path(&mut owner, document, "/memory/pending.opd");
+    choose_path(
+        &mut owner,
+        document,
+        document_fixture_path!("/memory/pending.opd"),
+    );
     assert!(assert_failed_choice(&mut owner, document).contains("transaction"));
     assert_eq!(owner.gui_command_state().unwrap(), before);
     assert!(owner.documents().files().saved.borrow().is_empty());
@@ -156,19 +184,27 @@ fn script_owner_forwards_choices_and_idle_owner_refuses_them() {
         crate::DesktopScripts::new(owner, engine, oblikovati_script::ScriptLimits::gui());
     assert!(
         desktop
-            .complete_save_path(document, Some(Path::new("/memory/script-choice.opd")))
+            .complete_save_path(
+                document,
+                Some(Path::new(document_fixture_path!(
+                    "/memory/script-choice.opd"
+                )))
+            )
             .unwrap()
     );
     assert_saved_choice(
         desktop.document_owner_mut(),
         document,
-        "/memory/script-choice.opd",
+        document_fixture_path!("/memory/script-choice.opd"),
     );
     let mut idle = crate::work_idle::IdleHeadWork;
     assert!(!idle.complete_save_path(document, None).unwrap());
     assert!(
-        idle.complete_save_path(document, Some(Path::new("/memory/idle.opd")))
-            .unwrap_err()
-            .contains("expected a document-save owner")
+        idle.complete_save_path(
+            document,
+            Some(Path::new(document_fixture_path!("/memory/idle.opd")))
+        )
+        .unwrap_err()
+        .contains("expected a document-save owner")
     );
 }

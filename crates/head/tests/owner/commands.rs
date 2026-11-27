@@ -18,7 +18,7 @@ fn bind_saved_document(owner: &mut TestOwner, document: u64) {
         .documents()
         .save_as(&SaveDocumentAsArgs {
             document,
-            new_full_document_name: "/memory/save.opd".into(),
+            new_full_document_name: document_fixture_path!("/memory/save.opd").into(),
         })
         .unwrap();
 }
@@ -66,11 +66,15 @@ fn save_writes_the_active_dirty_document_and_clears_the_close_blocker() {
         notice,
         DesktopCommandNotice::Saved {
             document,
-            path: "/memory/save.opd".into()
+            path: document_fixture_path!("/memory/save.opd").into()
         }
     );
     assert!(owner.close_allowed().unwrap());
-    assert!(notice.message().contains("/memory/save.opd"));
+    assert!(
+        notice
+            .message()
+            .contains(document_fixture_path!("/memory/save.opd"))
+    );
 }
 #[test]
 fn failed_save_retains_the_committed_file_and_dirty_document_for_retry() {

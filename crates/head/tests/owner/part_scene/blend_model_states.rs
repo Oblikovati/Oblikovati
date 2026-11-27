@@ -25,7 +25,7 @@ fn edited_prism() -> (TestOwner, u64) {
 }
 
 fn save_and_reopen(owner: &mut TestOwner, document: u64) -> u64 {
-    let path = "/memory/blend-model-states.opd";
+    let path = document_fixture_path!("/memory/blend-model-states.opd");
     save_part(owner, document, path);
     Client::new(owner.document_host())
         .documents()

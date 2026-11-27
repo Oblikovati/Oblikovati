@@ -300,7 +300,7 @@ fn save_reopen_cube(owner: &mut TestOwner, document: u64) {
         .documents()
         .save_as(&SaveDocumentAsArgs {
             document,
-            new_full_document_name: "/memory/cube.opd".into(),
+            new_full_document_name: document_fixture_path!("/memory/cube.opd").into(),
         })
         .unwrap();
     Client::new(owner.document_host())
@@ -313,7 +313,7 @@ fn save_reopen_cube(owner: &mut TestOwner, document: u64) {
     Client::new(owner.document_host())
         .documents()
         .open(&OpenDocumentArgs {
-            full_document_name: "/memory/cube.opd".into(),
+            full_document_name: document_fixture_path!("/memory/cube.opd").into(),
             ..Default::default()
         })
         .unwrap();

@@ -56,7 +56,7 @@ fn desktop_resolution_supports_preview_commit_and_parameter_replay() {
     owner.take_scene().unwrap().unwrap();
     assert_cube(&owner, document, 2.);
     let keys = cube_keys(&owner, document);
-    let path = "/memory/default-policy-cube.opd";
+    let path = document_fixture_path!("/memory/default-policy-cube.opd");
     Client::new(owner.document_host())
         .documents()
         .save_as(&SaveDocumentAsArgs {

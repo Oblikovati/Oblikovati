@@ -75,7 +75,7 @@ fn cutoff_reuses_checkpoints_and_preserves_names_across_restore_and_history() {
 }
 
 pub(super) fn save_close_reopen(owner: &mut TestOwner, document: u64) {
-    let path = "/memory/checkpoint-replay.opd";
+    let path = document_fixture_path!("/memory/checkpoint-replay.opd");
     Client::new(owner.document_host())
         .documents()
         .save_as(&SaveDocumentAsArgs {

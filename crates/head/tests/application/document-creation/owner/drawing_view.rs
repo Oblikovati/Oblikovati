@@ -199,7 +199,7 @@ fn gui_document_units_use_public_history_and_reject_stale_document() {
         original
     );
     owner.files.commands(document).unwrap().redo().unwrap();
-    let path = "/memory/units.opd";
+    let path = document_fixture_path!("/memory/units.opd");
     Client::new(owner.document_host())
         .documents()
         .save_as(&SaveDocumentAsArgs {

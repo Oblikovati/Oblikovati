@@ -316,7 +316,7 @@ fn typed_chamfer_distance_edit_validates_and_replays() {
         .documents()
         .save_as(&SaveDocumentAsArgs {
             document,
-            new_full_document_name: "/memory/chamfer-edit.opd".into(),
+            new_full_document_name: document_fixture_path!("/memory/chamfer-edit.opd").into(),
         })
         .unwrap();
     Client::new(owner.document_host())
@@ -329,7 +329,7 @@ fn typed_chamfer_distance_edit_validates_and_replays() {
     Client::new(owner.document_host())
         .documents()
         .open(&OpenDocumentArgs {
-            full_document_name: "/memory/chamfer-edit.opd".into(),
+            full_document_name: document_fixture_path!("/memory/chamfer-edit.opd").into(),
             ..Default::default()
         })
         .unwrap();

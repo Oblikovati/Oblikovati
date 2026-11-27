@@ -79,7 +79,7 @@ fn set_active_border(client: &Client<impl Caller>) {
 }
 
 fn reopen(client: &Client<impl Caller>, drawing: u64) -> u64 {
-    let path = "/memory/zoned-drawing.odd";
+    let path = document_fixture_path!("/memory/zoned-drawing.odd");
     client
         .documents()
         .save_as(&SaveDocumentAsArgs {

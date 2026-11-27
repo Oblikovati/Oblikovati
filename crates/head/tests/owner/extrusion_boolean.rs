@@ -77,7 +77,7 @@ pub(super) fn check_boolean_body(owner: &mut TestOwner, document: u64, volume: f
 }
 
 pub(super) fn reopen_boolean_part(owner: &mut TestOwner, document: u64) -> u64 {
-    let path = "/memory/certified-cut.opd";
+    let path = document_fixture_path!("/memory/certified-cut.opd");
     let client = Client::new(owner.document_host());
     client
         .documents()

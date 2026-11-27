@@ -81,7 +81,7 @@ fn drawing_view_label_edits_preserve_omissions_and_round_trip() {
     assert_eq!(listed(), custom);
     client.transactions().redo().unwrap();
     assert_eq!(listed(), hidden);
-    let path = "/memory/view-label.odd";
+    let path = document_fixture_path!("/memory/view-label.odd");
     client
         .documents()
         .save_as(&SaveDocumentAsArgs {
