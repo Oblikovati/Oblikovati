@@ -129,6 +129,16 @@ fn run_native_recipe_tool(kind: SketchPlacementTool) {
         .undo()
         .unwrap();
     crate::frames::run_frames(&mut window, HeadOptions { frames: Some(1) }, &mut owner).unwrap();
+    assert!(owner.active_sketch_edit().is_some());
+    assert_eq!(
+        window.native.sketch_scene_status().unwrap().sketches,
+        committed
+    );
+    Client::new(owner.document_host())
+        .transactions()
+        .undo()
+        .unwrap();
+    crate::frames::run_frames(&mut window, HeadOptions { frames: Some(1) }, &mut owner).unwrap();
     assert!(
         before.same_recipe(
             &owner
@@ -149,6 +159,12 @@ fn run_native_recipe_tool(kind: SketchPlacementTool) {
         window.native.sketch_scene_status().unwrap().sketches,
         committed
     );
+    Client::new(owner.document_host())
+        .transactions()
+        .redo()
+        .unwrap();
+    crate::frames::run_frames(&mut window, HeadOptions { frames: Some(1) }, &mut owner).unwrap();
+    assert!(owner.active_sketch_edit().is_none());
     capture_native_scene(&mut window.native);
     super::placement_recipe_tests::verify_reopened_placement(
         &mut owner,
