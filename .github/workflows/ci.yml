@@ -72,30 +72,26 @@ jobs:
           ref: ${{ inputs.revision || github.sha }}
           persist-credentials: false
       - uses: ./.github/actions/setup
-      - name: Prepare the Windows x64 Vulkan test driver
-        if: matrix.target == 'x86_64-pc-windows-msvc'
-        shell: pwsh
-        run: ./tools/bootstrap/windows_vulkan_test.ps1 -Directory (Join-Path $env:ProgramFiles 'Oblikovati CI Vulkan')
-      - name: Install the Windows ARM64 Vulkan test runtime
-        if: matrix.target == 'aarch64-pc-windows-msvc'
-        id: arm64-vulkan
+      - name: Install the Windows Vulkan test runtime
+        if: runner.os == 'Windows'
+        id: windows-vulkan
         uses: msys2/setup-msys2@3c51bf698df1e37b2261f53cb67797b97761185c # v2.34.0
         with:
-          msystem: CLANGARM64
+          # SwiftShader traps at vkCreatePipelineLayout when rendering the native document test.
+          msystem: ${{ runner.arch == 'ARM64' && 'CLANGARM64' || 'CLANG64' }}
           update: true
-          install: >-
-            mingw-w64-clang-aarch64-mesa
-            mingw-w64-clang-aarch64-vulkan-loader
-            mingw-w64-clang-aarch64-vulkan-validation-layers
-      - name: Register Windows ARM64 Lavapipe and validation
-        if: matrix.target == 'aarch64-pc-windows-msvc'
+          pacboy: mesa:p vulkan-loader:p vulkan-validation-layers:p
+      - name: Register Windows Lavapipe and validation
+        if: runner.os == 'Windows'
         shell: pwsh
         env:
-          MSYS2_LOCATION: ${{ steps.arm64-vulkan.outputs.msys2-location }}
+          MSYS2_LOCATION: ${{ steps.windows-vulkan.outputs.msys2-location }}
         run: |
-          $runtime = Join-Path $env:MSYS2_LOCATION 'clangarm64'
+          $system = if ($env:RUNNER_ARCH -eq 'ARM64') { 'clangarm64' } else { 'clang64' }
+          $architecture = if ($env:RUNNER_ARCH -eq 'ARM64') { 'aarch64' } else { 'x86_64' }
+          $runtime = Join-Path $env:MSYS2_LOCATION $system
           $binary = Join-Path $runtime 'bin'
-          $driver = Join-Path $runtime 'share/vulkan/icd.d/lvp_icd.aarch64.json'
+          $driver = Join-Path $runtime "share/vulkan/icd.d/lvp_icd.$architecture.json"
           $validation = Join-Path $binary 'VkLayer_khronos_validation.json'
           ./tools/bootstrap/windows_vulkan_registry.ps1 -DriverManifest $driver -ValidationManifest $validation
           Add-Content -LiteralPath $env:GITHUB_PATH -Value $binary -Encoding utf8
