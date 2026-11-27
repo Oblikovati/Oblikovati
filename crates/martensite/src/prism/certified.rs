@@ -2,10 +2,11 @@
 //! Released region and extrusion operations, retaining measured tolerance and source lineage.
 use super::*;
 use martensite_tkbo::profile_extrusion::{
-    ExtrudeOptions, HistoryRole, HistorySource, OperationResult, Resolution, ResultEntity,
-    SketchProfile, ToleranceCap, build_planar_regions, extrude,
+    ExtrudeOptions, HistoryRole, HistorySource, OperationResult, PlanarRegion, PlanarRegionSet,
+    Resolution, ResultEntity, SketchProfile, ToleranceCap, build_planar_regions, extrude,
 };
 use oblikovati_model::feature::sketch_prism::SketchPrismSelection;
+use std::collections::BTreeSet;
 
 /// A validated solid and its measured maximum vertex, edge and face tolerances.
 pub struct CertifiedPrismSnapshot {
@@ -36,6 +37,45 @@ pub fn retain_certified_profile_prism(
     retain_certified_tapered_prism(profile, selection, vector, resolution, None)
 }
 
+/// Extrude distinct selected regions of one planar sketch using a shared arrangement.
+/// Returns one certified body per supplied boundary, in selection order. Boundary
+/// lineage resolves each region and the entire batch must succeed before anything
+/// is returned. Example: `retain_certified_profile_prisms(&profile, &selections, vector, resolution)?`.
+pub fn retain_certified_profile_prisms(
+    profile: &SketchProfile,
+    selections: &[SketchPrismSelection],
+    vector: [f64; 3],
+    resolution: Resolution,
+) -> Result<Vec<CertifiedPrismSnapshot>, EvaluationFailure> {
+    if selections.is_empty() {
+        return Err(Phase::Input.refused(
+            Kind::InvalidInput,
+            Entity::Body,
+            "extrusion profiles: expected at least one selected region".into(),
+        ));
+    }
+    let arrangement = CertifiedPrismRegions::new(profile, resolution)?;
+    let mut seen = BTreeSet::new();
+    let selected = selections
+        .iter()
+        .map(|selection| {
+            let region = arrangement.resolve(selection)?;
+            if !seen.insert(region.id()) {
+                return Err(Phase::Profile.refused(
+                    Kind::InvalidReference,
+                    Entity::Body,
+                    format!("region boundary {selection:?}: expected a distinct extrusion profile"),
+                ));
+            }
+            Ok(region)
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+    selected
+        .into_iter()
+        .map(|region| arrangement.retain(region, vector, None))
+        .collect()
+}
+
 pub(crate) fn retain_certified_tapered_prism(
     profile: &SketchProfile,
     selection: &SketchPrismSelection,
@@ -43,30 +83,71 @@ pub(crate) fn retain_certified_tapered_prism(
     resolution: Resolution,
     taper: Option<PrismTaper>,
 ) -> Result<CertifiedPrismSnapshot, EvaluationFailure> {
-    let ToleranceCap::Refuse(maximum) = resolution.cap else {
-        return Err(Phase::Input.refused(
-            Kind::InvalidInput,
-            Entity::Body,
-            format!(
-                "extrusion tolerance cap {:?}: expected an explicit refusal limit",
-                resolution.cap
-            ),
-        ));
-    };
-    let regions = build_planar_regions(profile, resolution)
-        .map_err(|cause| Phase::Profile.operation(Entity::Body, cause))?;
-    let region = crate::resolve_region_by_boundary(&regions, selection).map_err(|cause| {
-        Phase::Profile.refused(Kind::InvalidReference, Entity::Body, cause.to_string())
-    })?;
-    let result = extrude(region, vector, &ExtrudeOptions { resolution })
+    let arrangement = CertifiedPrismRegions::new(profile, resolution)?;
+    arrangement.retain(arrangement.resolve(selection)?, vector, taper)
+}
+
+struct CertifiedPrismRegions<'a> {
+    profile: &'a SketchProfile,
+    regions: PlanarRegionSet,
+    resolution: Resolution,
+    maximum: f64,
+}
+
+impl<'a> CertifiedPrismRegions<'a> {
+    fn new(profile: &'a SketchProfile, resolution: Resolution) -> Result<Self, EvaluationFailure> {
+        let ToleranceCap::Refuse(maximum) = resolution.cap else {
+            return Err(Phase::Input.refused(
+                Kind::InvalidInput,
+                Entity::Body,
+                format!(
+                    "extrusion tolerance cap {:?}: expected an explicit refusal limit",
+                    resolution.cap
+                ),
+            ));
+        };
+        let regions = build_planar_regions(profile, resolution)
+            .map_err(|cause| Phase::Profile.operation(Entity::Body, cause))?;
+        Ok(Self {
+            profile,
+            regions,
+            resolution,
+            maximum,
+        })
+    }
+
+    fn resolve(
+        &self,
+        selection: &SketchPrismSelection,
+    ) -> Result<&PlanarRegion, EvaluationFailure> {
+        crate::resolve_region_by_boundary(&self.regions, selection).map_err(|cause| {
+            Phase::Profile.refused(Kind::InvalidReference, Entity::Body, cause.to_string())
+        })
+    }
+
+    fn retain(
+        &self,
+        region: &PlanarRegion,
+        vector: [f64; 3],
+        taper: Option<PrismTaper>,
+    ) -> Result<CertifiedPrismSnapshot, EvaluationFailure> {
+        let result = extrude(
+            region,
+            vector,
+            &ExtrudeOptions {
+                resolution: self.resolution,
+            },
+        )
         .map_err(|cause| Phase::Prism.operation(Entity::Body, cause))?;
-    let mut retained = retain_result(&result, taper, maximum)?;
-    retained.vertex_sources = profile
-        .vertices
-        .iter()
-        .map(|vertex| (vertex.id.0, vec![vertex.id.0]))
-        .collect();
-    Ok(retained)
+        let mut retained = retain_result(&result, taper, self.maximum)?;
+        retained.vertex_sources = self
+            .profile
+            .vertices
+            .iter()
+            .map(|vertex| (vertex.id.0, vec![vertex.id.0]))
+            .collect();
+        Ok(retained)
+    }
 }
 
 fn retain_result(

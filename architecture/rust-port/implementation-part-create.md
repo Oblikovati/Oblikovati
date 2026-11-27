@@ -176,6 +176,7 @@ previews it without altering the committed extrusion.
 [Sketch reuse receipt](receipts/2026-11-27-extrude-apply-reuse-3893/README.md).
 The Profiles row also clears the current region and waits for a fresh viewport pick.
 [Clear profile receipt](receipts/2026-11-27-extrude-clear-profile-3870/README.md).
+[Certified multi-profile adapter receipt](receipts/2026-11-27-extrude-profile-batch-3870/README.md).
 
 Extrude Advanced Settings controls whether Enter commits the feature
 or keeps the Properties panel open with the updated preview. Both

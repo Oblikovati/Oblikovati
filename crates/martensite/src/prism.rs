@@ -8,6 +8,7 @@ pub(crate) use certified::retain_certified_tapered_prism;
 pub(crate) mod input;
 pub use certified::{
     CertifiedPrismSnapshot, PrismAchievedTolerance, retain_certified_profile_prism,
+    retain_certified_profile_prisms,
 };
 mod named;
 pub use named::{
