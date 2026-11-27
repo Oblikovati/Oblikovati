@@ -37,8 +37,9 @@ if (-not (Test-Path -LiteralPath $debugger -PathType Leaf)) {
 
 $commands = Join-Path $env:RUNNER_TEMP 'oblikovati-gui-debug.txt'
 @(
-    'bu ucrtbase!_wassert "kv 40; q"'
-    'sxe -c "kv 40; q" c0000409'
+    # The native fast-fail arrives at the debugger as a second-chance exception.
+    'bu ucrtbase!abort "kv 40; q"'
+    'sxe -c2 "kv 40; q" c0000409'
     'g'
 ) | Set-Content -LiteralPath $commands -Encoding ascii
 $symbols = Split-Path -Parent $executable
