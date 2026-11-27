@@ -46,28 +46,26 @@ impl FeatureRowFixture {
         }
         let ui = self.context.frame();
         let mut actions = Vec::new();
-        ui.window("Feature row probe")
-            .position([8., 8.], Condition::Always)
-            .size([400., 180.], Condition::Always)
-            .build(|| {
-                let state = GuiCommandState {
-                    document: Some(12),
-                    ..Default::default()
-                };
-                let _token = feature_row(
-                    ui,
-                    &state,
-                    &self.browser,
-                    &self.feature,
-                    None,
-                    &mut self.view,
-                    &mut actions,
-                );
-                let lo = ui.item_rect_min();
-                let hi = ui.item_rect_max();
-                self.button = [(lo[0] + hi[0]) / 2., (lo[1] + hi[1]) / 2.];
-                self.popup_open = ui.begin_popup("##feature-model-states").is_some();
-            });
+        crate::widget_abi::window_geometry(ui, [8., 8.], [400., 180.], Condition::Always);
+        ui.window("Feature row probe").build(|| {
+            let state = GuiCommandState {
+                document: Some(12),
+                ..Default::default()
+            };
+            let _token = feature_row(
+                ui,
+                &state,
+                &self.browser,
+                &self.feature,
+                None,
+                &mut self.view,
+                &mut actions,
+            );
+            let lo = ui.item_rect_min();
+            let hi = ui.item_rect_max();
+            self.button = [(lo[0] + hi[0]) / 2., (lo[1] + hi[1]) / 2.];
+            self.popup_open = ui.begin_popup("##feature-model-states").is_some();
+        });
         self.context.render();
         actions
     }
