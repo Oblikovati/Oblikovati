@@ -168,8 +168,7 @@ fn secondary_click_focuses_staged_commands_for_keyboard_selection() {
 #[test]
 fn source_page_keys_select_the_edges_of_the_visible_command_page() {
     let mut world = ApplicationWorld::new();
-    let path = super::super::scenario_root().join("fixtures/cad/workspace-layout-native.opd");
-    world.open_fixture(&path);
+    world.add_part();
     empty_tools_customization(&mut world);
     capture_plain_source_rows(&mut world);
     let rows: Vec<_> = source_rows(&world)
