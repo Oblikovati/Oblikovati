@@ -7,7 +7,7 @@ use scene_tests::{capture_native_scene, open_native_part, publish_native_scene, 
 #[test]
 fn native_owned_imgui_packet_composes_with_the_document_after_context_destruction() {
     let directory = tempfile::tempdir().unwrap();
-    let mut window = NativeHeadWindow::open().unwrap();
+    let mut window = NativeHeadWindow::open_with_extent([1440, 760]).unwrap();
     let mut owner = native_owner(window.wake.clone()).unwrap();
     open_native_part(&mut owner, &directory.path().join("gui-part.opd"));
     let baseline = publish_native_scene(&mut owner, &mut window);
@@ -91,7 +91,7 @@ fn verify_panel_and_document(
         .map(|(index, _)| [index % width, index / width])
         .collect();
     assert!(changed.len() > 1000, "expected a visible Dear ImGui panel");
-    assert_shell_chrome_regions(&changed);
+    assert_shell_chrome_regions(&changed, baseline.extent[1] as usize);
     assert!(
         changed.iter().all(|[x, y]| {
             let [x, y] = [*x as f32 + 0.5, *y as f32 + 0.5];
@@ -116,7 +116,7 @@ fn shell_vertex_bounds(packet: &GuiFrame) -> [f32; 4] {
     bounds
 }
 
-fn assert_shell_chrome_regions(changed: &[[usize; 2]]) {
+fn assert_shell_chrome_regions(changed: &[[usize; 2]], drawable_height: usize) {
     assert!(
         changed.iter().any(|[_, y]| *y < 145),
         "expected the fixed menu and ribbon bands"
@@ -126,8 +126,10 @@ fn assert_shell_chrome_regions(changed: &[[usize; 2]]) {
         "expected the fixed model-browser panel"
     );
     assert!(
-        changed.iter().any(|[_, y]| *y >= 872),
-        "expected the fixed status bar"
+        changed
+            .iter()
+            .any(|[_, y]| *y >= drawable_height.saturating_sub(28)),
+        "expected the fixed status bar at drawable height {drawable_height}"
     );
 }
 fn verify_gui_retirement(window: &mut NativeHeadWindow, commands: GuiCommandState) {

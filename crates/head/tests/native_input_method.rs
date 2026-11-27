@@ -36,32 +36,34 @@ fn verify_missing_provider_window() {
     window.gui_frame(None, &Default::default()).unwrap();
     window.present().unwrap();
     assert!(window.view.capture().is_ok());
-    let notice = window.gui.as_ref().unwrap().notice.as_deref().unwrap();
-    assert!(notice.contains("Text input unavailable:"));
     let offending_value = std::env::var("OBLIKOVATI_TEXT_PROVIDER_PROBE").unwrap();
-    assert!(notice.contains(&offending_value));
-    verify_provider_issue_survives_command_feedback(&mut window, &offending_value);
+    let expected = (!cfg!(target_os = "windows")).then_some(offending_value.as_str());
+    verify_text_provider_state(&window, expected);
+    show_command_feedback(&mut window);
+    verify_text_provider_state(&window, expected);
     window.finish().unwrap();
 }
-fn verify_provider_issue_survives_command_feedback(
-    window: &mut NativeHeadWindow,
-    offending_value: &str,
-) {
+
+fn verify_text_provider_state(window: &NativeHeadWindow, expected: Option<&str>) {
+    let issue = window.view.text_input_issue().unwrap();
+    let notice = window.gui.as_ref().unwrap().notice.as_deref().unwrap_or("");
+    if let Some(offending_value) = expected {
+        assert!(issue.unwrap().contains(offending_value));
+        assert!(notice.contains("Text input unavailable:"));
+        assert!(notice.contains(offending_value));
+    } else {
+        assert_eq!(issue, None);
+        assert!(!notice.contains("Text input unavailable:"));
+    }
+}
+
+fn show_command_feedback(window: &mut NativeHeadWindow) {
     let command = crate::DesktopCommandNotice::NoActiveDocument;
     let message = command.message();
     window.show_command_notice(command).unwrap();
     window.gui_frame(None, &Default::default()).unwrap();
     let notice = window.gui.as_ref().unwrap().notice.as_deref().unwrap();
     assert!(notice.contains(&message));
-    assert!(notice.contains(offending_value));
-    assert!(
-        window
-            .view
-            .text_input_issue()
-            .unwrap()
-            .unwrap()
-            .contains(offending_value)
-    );
 }
 
 fn require_native_probe_success(receipt: Output, variable: &str, value: &str) {
