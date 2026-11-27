@@ -405,7 +405,7 @@ fn docked_tool_retains_its_node_when_documents_change() {
 
 #[test]
 fn docked_parameters_stays_open_when_switching_parts() {
-    let mut world = ApplicationWorld::new();
+    let mut world = ApplicationWorld::with_asset_tools_closed();
     super::browser_feature::open_visible_extruded_part(&mut world);
     let first = world.active_id();
     let initial = viewport(&mut world);

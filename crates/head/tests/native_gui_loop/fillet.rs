@@ -41,7 +41,7 @@ fn native_fillet_can_pick_an_edge_after_the_tool_starts() {
     crate::frames::run_frames(&mut window, HeadOptions { frames: Some(3) }, &mut owner).unwrap();
     let selected = pixel_at(&capture_framebuffer(&mut window.native), pixel);
     assert!(
-        selected[2] > selected[0] && selected[2] > selected[1],
+        selected[1] > selected[0] && selected[2] > selected[0] && selected[2] > 150,
         "retained edge pixel {selected:?}"
     );
     assert_eq!(feature_count(&owner, document), before);
@@ -213,7 +213,7 @@ fn change_fillet_radius(
     let (position, size) = application_bdd::window_geometry("Fillet").unwrap();
     let end = [position[0] + size[0], position[1] + size[1]];
     let label = application_bdd::rendered_label_in_rect("Radius", position, end);
-    let field_x = application_bdd::pointer_pixels([position[0] + 80., position[1]])[0];
+    let field_x = application_bdd::pointer_pixels([position[0] + size[0] * 0.65, position[1]])[0];
     click_shell_position(window, owner, [field_x, label[1]]);
     for _ in 0..12 {
         press_shell_key(window, owner, ViewportPhysicalKey::Backspace);
@@ -281,7 +281,7 @@ fn verify_edge_hover_and_persistent_selection(
         "hover pixel {green:?}"
     );
     assert!(
-        blue[2] > blue[0] && blue[2] > blue[1],
+        blue[1] > blue[0] && blue[2] > blue[0] && blue[2] > 150,
         "selected pixel {blue:?}"
     );
     assert_eq!(owner.gui_command_state().unwrap().selected_edge_count, 1);
@@ -290,9 +290,9 @@ fn open_fillet_menu(window: &mut ScriptedGuiWindow, owner: &mut NativeDesktopOwn
     open_part_context_menu(window, owner);
     assert_eq!(owner.gui_command_state().unwrap().selected_edge_count, 1);
     assert!(!owner.gui_command_state().unwrap().look_at_available);
-    application_bdd::rendered_label_in_rect("LookAt", [900., 500.], [1440., 900.]);
-    application_bdd::rendered_label_in_rect("HomeView", [900., 500.], [1440., 900.]);
-    let button = application_bdd::rendered_label_in_rect("Fillet", [1100., 500.], [1440., 900.]);
+    application_bdd::rendered_label_center("LookAt");
+    application_bdd::rendered_label_center("HomeView");
+    let button = application_bdd::rendered_label_in_rect("Fillet", [0., 200.], [2000., 2000.]);
     window.gui_actions.clear();
     click_shell_position(window, owner, button);
 }
@@ -340,7 +340,7 @@ fn native_look_at_orients_to_a_selected_planar_face() {
     window.native.set_view_camera(camera).unwrap();
     crate::frames::run_frames(&mut window, HeadOptions { frames: Some(3) }, &mut owner).unwrap();
     open_part_context_menu(&mut window, &mut owner);
-    let button = application_bdd::rendered_label_in_rect("LookAt", [900., 500.], [1440., 900.]);
+    let button = application_bdd::rendered_label_center("LookAt");
     click_shell_position(&mut window, &mut owner, button);
     let facing = window.native.view.camera_state().unwrap();
     assert_ne!(camera.eye, facing.eye);

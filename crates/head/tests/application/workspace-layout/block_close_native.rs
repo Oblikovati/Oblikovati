@@ -76,7 +76,7 @@ fn create_block_completed_ok_selects_next_tab_and_reopens() {
     let mut world = ApplicationWorld::new();
     world.start_empty_sketch();
     world.click_text("Rectangle");
-    for point in [[450, 350], [650, 550]] {
+    for point in [[550, 350], [700, 550]] {
         super::super::x11_input::click(point);
         world.pump(Vec::new());
     }

@@ -31,7 +31,7 @@ fn dock_bottom(world: &mut ApplicationWorld, target: [i32; 2], capture: &str) {
 
 #[test]
 fn outer_bottom_panel_has_a_full_width_document_row() {
-    let mut world = ApplicationWorld::new();
+    let mut world = ApplicationWorld::with_asset_tools_closed();
     super::browser_feature::open_visible_extruded_part(&mut world);
     let before = viewport(&mut world);
     let status = window_geometry("##status-bar").unwrap().0;
@@ -53,7 +53,7 @@ fn outer_bottom_panel_has_a_full_width_document_row() {
 
 #[test]
 fn inner_bottom_panel_preserves_browser_and_document_row() {
-    let mut world = ApplicationWorld::new();
+    let mut world = ApplicationWorld::with_asset_tools_closed();
     super::browser_feature::open_visible_extruded_part(&mut world);
     let area = viewport(&mut world);
     let target = [((area[0] + area[2]) / 2) as i32, area[3] as i32 - 15];
@@ -88,7 +88,7 @@ fn assert_rows_touch(panel: [f32; 2], panel_size: [f32; 2], tabs: [f32; 2]) {
 #[test]
 fn scaled_outer_top_target_keeps_its_dock_behavior() {
     use crate::HeadWork;
-    let mut world = ApplicationWorld::new();
+    let mut world = ApplicationWorld::with_asset_tools_closed();
     super::browser_feature::open_visible_extruded_part(&mut world);
     open_toolbar_tool(&mut world, "Material Browser");
     let scale = oblikovati_model::ui_scale::UiScaleOptions::new(1.5, 1.).unwrap();

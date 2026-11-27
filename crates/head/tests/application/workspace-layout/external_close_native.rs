@@ -7,7 +7,7 @@ use super::*;
 
 #[test]
 fn measure_done_selects_the_other_tab_in_the_first_frame() {
-    let mut world = ApplicationWorld::new();
+    let mut world = ApplicationWorld::with_asset_tools_closed();
     super::browser_feature::open_visible_extruded_part(&mut world);
     let area = viewport(&mut world);
     open_toolbar_tool(&mut world, "Material Browser");
@@ -356,7 +356,7 @@ fn escape_before_dock_frame(world: &mut ApplicationWorld) {
 fn native_browser_search_hint_filters_and_restores_the_tree() {
     let mut world = ApplicationWorld::new();
     super::browser_feature::open_visible_extruded_part(&mut world);
-    super::dockspace_restart::native_click_label(&mut world, "Search");
+    super::dock_search::click_model_search(&mut world);
     world.expect_text("Type Keyword");
     world.expect_text("Origin");
     super::dockspace_restart::native_click_label(&mut world, "Type Keyword");
@@ -365,10 +365,10 @@ fn native_browser_search_hint_filters_and_restores_the_tree() {
         world.pump(Vec::new());
     }
     world.expect_text("No matching entries");
-    super::dockspace_restart::native_click_label(&mut world, "x");
+    click_model_search_clear(&mut world);
     world.expect_text("Type Keyword");
     world.expect_text("Origin");
-    super::dockspace_restart::native_click_label(&mut world, "x");
+    click_model_search_clear(&mut world);
     world.expect_no_text("Type Keyword");
     world.expect_text("Origin");
     world.close();
@@ -393,12 +393,16 @@ fn native_browser_search_expands_a_matching_parent_and_restores_tree() {
     for label in ["XY Plane", "X Axis", "Center Point"] {
         world.expect_text(label);
     }
+    let brightness = |label: &str| {
+        let run = world.run(label);
+        run.color.iter().map(|c| u32::from(*c)).sum::<u32>() * u32::from(run.alpha)
+    };
     assert!(
-        world.run("X Axis").alpha < world.run("Origin").alpha,
+        brightness("X Axis") < brightness("Origin"),
         "unmatched children must use dimmed text"
     );
-    super::dockspace_restart::native_click_label(&mut world, "x");
-    super::dockspace_restart::native_click_label(&mut world, "x");
+    click_model_search_clear(&mut world);
+    click_model_search_clear(&mut world);
     world.expect_text("X Axis");
     world.close();
 }
@@ -409,18 +413,30 @@ fn native_browser_search_origin_axis_keeps_selection_after_clear() {
     super::browser_feature::open_visible_extruded_part(&mut world);
     native_search_query(&mut world, "axis");
     super::dockspace_restart::native_click_label(&mut world, "X Axis");
-    super::browser_feature::expect_outline(&mut world, true);
-    super::dockspace_restart::native_click_label(&mut world, "x");
+    assert!(
+        super::browser_feature::colored_pixels(&mut world, [64, 153, 255]) > 0,
+        "expected highlighted X Axis pixels"
+    );
+    click_model_search_clear(&mut world);
     world.expect_text("XY Plane");
-    super::browser_feature::expect_outline(&mut world, true);
+    assert!(
+        super::browser_feature::colored_pixels(&mut world, [64, 153, 255]) > 0,
+        "expected highlighted X Axis pixels after clear"
+    );
     world.close();
 }
 
 fn native_search_query(world: &mut ApplicationWorld, query: &str) {
-    super::dockspace_restart::native_click_label(world, "Search");
+    super::dock_search::click_model_search(world);
     super::dockspace_restart::native_click_label(world, "Type Keyword");
     for character in query.chars() {
         super::super::x11_input::press_path_character(character);
         world.pump(Vec::new());
     }
+}
+
+fn click_model_search_clear(world: &mut ApplicationWorld) {
+    let clear = world.run_in_window("Model", "×").center();
+    super::super::x11_input::click(super::super::diagnostics::pointer_pixels(clear));
+    world.pump(Vec::new());
 }

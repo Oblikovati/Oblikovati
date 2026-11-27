@@ -149,23 +149,19 @@ fn native_new_part_button_creates_and_selects_an_unsaved_document() {
     assert!(owner.placement_active());
     let edit = owner.active_sketch_edit().unwrap();
     {
+        let saved = window.native.view.camera_state().unwrap();
+        let mut zoomed = saved;
+        zoomed.scale *= 0.05;
+        window.native.view.set_camera(zoomed).unwrap();
         let position = window
             .native
             .view
             .sketch_pixel(edit.plane, [0., 0.])
             .unwrap();
-        window.scripted = [true, false]
-            .map(|pressed| {
-                ViewportEvent::Input(ViewportInput::Button {
-                    button: ViewportButton::Left,
-                    pressed,
-                    position,
-                    modifiers: Default::default(),
-                })
-            })
-            .into();
+        window.scripted = pointer_click_events(position, 1);
         crate::frames::run_frames(&mut window, HeadOptions { frames: Some(3) }, &mut owner)
             .unwrap();
+        window.native.view.set_camera(saved).unwrap();
     }
     window.scripted = vec![ViewportEvent::Input(ViewportInput::Motion {
         position: [1000, 600],
@@ -396,7 +392,8 @@ fn native_model_wheel_after_gui_click_and_gui_wheel_reaches_camera() {
 #[test]
 fn native_gui_resize_after_attachment_requests_and_completes_a_fresh_frame() {
     let mut window = NativeHeadWindow::open().unwrap();
-    window.gui_frame(None, &GuiCommandState::default()).unwrap();
+    let state = GuiCommandState::default();
+    while window.gui_frame(None, &state).unwrap().deferred {}
     capture_framebuffer(&mut window);
     for extent in [[800, 600], [1440, 900]] {
         verify_gui_resize_recovery(&mut window, extent);
@@ -433,7 +430,13 @@ fn current_resized_gui_capture(
     window: &mut NativeHeadWindow,
 ) -> Option<oblikovati_viewport::ViewportCapture> {
     window.events(64).unwrap();
-    window.gui_frame(None, &GuiCommandState::default()).unwrap();
+    if window
+        .gui_frame(None, &GuiCommandState::default())
+        .unwrap()
+        .deferred
+    {
+        return None;
+    }
     let prepared = window.drawable_extent().unwrap();
     if window.present().unwrap() == HeadPresentation::SurfaceChanged {
         assert!(window.view.capture().is_err());

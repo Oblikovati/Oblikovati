@@ -62,7 +62,7 @@ fn model_browser_uses_a_dock_node_and_floats_from_its_header() {
 
 #[test]
 fn tool_and_model_browser_can_join_one_dock_region() {
-    let mut world = ApplicationWorld::new();
+    let mut world = ApplicationWorld::with_asset_tools_closed();
     super::browser_feature::open_visible_extruded_part(&mut world);
     super::dockspace_native::open_toolbar_tool(&mut world, "Material Browser");
     let (source, source_size) = window_geometry("Material Browser").unwrap();
@@ -88,10 +88,9 @@ fn tool_and_model_browser_can_join_one_dock_region() {
         (minimum[0] + maximum[0]) * 0.5,
         (minimum[1] + maximum[1]) * 0.5,
     ];
-    world.click(super::super::diagnostics::pointer_pixels(tab));
+    let from = super::super::diagnostics::pointer_pixels(tab);
+    world.click(from);
     world.pump(Vec::new());
-    let (position, _) = window_geometry("Model").unwrap();
-    let from = [(position[0] + 50.) as i32, (position[1] + 37.) as i32];
     native_drag(&mut world, from, [800, 400]);
     assert_eq!(super::super::diagnostics::window_dock_id("Model"), Some(0));
     assert_ne!(
@@ -152,18 +151,26 @@ fn hidden_model_browser_stays_hidden_after_restart() {
 #[test]
 fn model_browser_can_dock_above_and_below_the_viewport() {
     for edge in ["top", "bottom"] {
-        let mut world = ApplicationWorld::new();
+        let mut world = ApplicationWorld::with_asset_tools_closed();
         super::browser_feature::open_visible_extruded_part(&mut world);
         let before = viewport(&mut world);
         let (position, _) = window_geometry("Model").unwrap();
         let from = [(position[0] + 40.) as i32, (position[1] + 9.) as i32];
         let y = if edge == "top" {
-            before[1] + 15
+            before[1] + 14
         } else {
             window_geometry("##status-bar").unwrap().0[1] as u32 - 15
         };
         let to = [(world.extent()[0] / 2) as i32, y as i32];
-        native_drag(&mut world, from, to);
+        if edge == "top" {
+            let mid = [to[0], (before[1] + 140) as i32];
+            super::dockspace_native::press_drag(&mut world, from);
+            super::dockspace_native::move_drag(&mut world, from, mid);
+            super::dockspace_native::move_drag(&mut world, mid, to);
+            super::dockspace_native::release_drag(&mut world, to);
+        } else {
+            native_drag(&mut world, from, to);
+        }
         let after = viewport(&mut world);
         world.save_capture(&format!("model-browser-{edge}-result"));
         assert_ne!(
@@ -193,11 +200,14 @@ fn model_browser_can_dock_above_and_below_the_viewport() {
 
 #[test]
 fn dragging_the_inner_model_tab_floats_the_browser() {
-    let mut world = ApplicationWorld::new();
+    let mut world = ApplicationWorld::with_asset_tools_closed();
     super::browser_feature::open_visible_extruded_part(&mut world);
     let initial = viewport(&mut world);
-    let (position, _) = window_geometry("Model").unwrap();
-    let start = [(position[0] + 50.) as i32, (position[1] + 37.) as i32];
+    let (minimum, maximum) = super::super::diagnostics::window_dock_tab_bounds("Model").unwrap();
+    let start = super::super::diagnostics::pointer_pixels([
+        (minimum[0] + maximum[0]) * 0.5,
+        (minimum[1] + maximum[1]) * 0.5,
+    ]);
     native_drag(&mut world, start, [800, 400]);
     assert_eq!(super::super::diagnostics::window_dock_id("Model"), Some(0));
     let (floating, _) = window_geometry("Model").unwrap();
@@ -207,7 +217,7 @@ fn dragging_the_inner_model_tab_floats_the_browser() {
     );
     let area = viewport(&mut world);
     assert!(area[0] < initial[0]);
-    let start = [(floating[0] + 50.) as i32, (floating[1] + 37.) as i32];
+    let start = [(floating[0] + 50.) as i32, (floating[1] + 10.) as i32];
     let end = [15, ((area[1] + area[3]) / 2) as i32];
     super::super::x11_input::move_pointer(start);
     world.pump(Vec::new());

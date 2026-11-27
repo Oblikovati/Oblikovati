@@ -64,7 +64,7 @@ fn moving_a_constrained_segment_follows_the_cursor_and_drags_the_join() {
         crate::HeadWindow::sketch_pixel(&world.app().window, SketchPlane::xy(), midpoint).unwrap();
     let base =
         crate::HeadWindow::sketch_pixel(&world.app().window, SketchPlane::xy(), points[0]).unwrap();
-    world.click_text("Move");
+    click_move(&mut world);
     world.sketch_click(pixel);
     world.sketch_click(base);
     let target = [base[0] + 120, base[1] + 80];
@@ -233,7 +233,7 @@ fn move_freed_segment_with_canvas_points_and_replay_history() {
     world.right_click(pixel);
     world.click_text("Delete Coincident Constraint");
     let deleted = world.edited_geometry();
-    world.click_text("Move");
+    click_move(&mut world);
     world.expect_status("Move: Select geometry");
     world.sketch_click(pixel);
     world.expect_status("Move: Select base point");
@@ -284,7 +284,7 @@ fn cancelling_a_move_discards_its_solved_preview_and_preserves_history() {
     let base =
         crate::HeadWindow::sketch_pixel(&world.app().window, SketchPlane::xy(), ends[0]).unwrap();
     let history = world.state().undo_label;
-    world.click_text("Move");
+    click_move(&mut world);
     world.sketch_click(middle);
     world.sketch_click(base);
     world.hover([base[0] + 120, base[1] + 80]);
@@ -296,4 +296,11 @@ fn cancelling_a_move_discards_its_solved_preview_and_preserves_history() {
     world.right_click([1000, 600]);
     world.expect_text("Repeat Move");
     world.close();
+}
+
+fn click_move(world: &mut ApplicationWorld) {
+    if !world.shows("Move") {
+        world.click_text("Modify");
+    }
+    world.click_text("Move");
 }

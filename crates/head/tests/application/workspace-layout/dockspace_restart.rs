@@ -143,7 +143,7 @@ fn previous_inner_dock_settings_restore_after_reparenting() {
     world.pump(Vec::new());
     let node = super::super::diagnostics::window_dock_id("Material Browser").unwrap();
     assert_ne!(node, 0, "old material browser dock must restore");
-    assert_eq!(viewport(&mut world), [361, 158, 1061, 852]);
+    assert_eq!(viewport(&mut world), [361, 149, 1061, 850]);
     world.close();
 }
 

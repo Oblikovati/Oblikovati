@@ -15,15 +15,17 @@ fn viewport_click_uses_priority_for_a_body_and_its_face() {
     let pixel = window.native.view.model_pixel([2., 1.5, 2.]).unwrap();
     window.scripted = pointer_click_events(pixel, 1);
     crate::frames::run_frames(&mut window, HeadOptions { frames: Some(3) }, &mut owner).unwrap();
+    assert!(owner.gui_command_state().unwrap().model_face_chosen);
+    owner
+        .set_selection_enabled_from_gui(oblikovati_gui::GuiSelectionKind::Face, false)
+        .unwrap();
+    window.scripted = pointer_click_events(pixel, 1);
+    crate::frames::run_frames(&mut window, HeadOptions { frames: Some(3) }, &mut owner).unwrap();
     let state = owner.gui_command_state().unwrap();
     assert!(state.browser.unwrap().selected_body.is_some());
-    let filter = owner.gui_command_state().unwrap().selection_filter.unwrap();
-    let face = filter
-        .entries
-        .iter()
-        .position(|entry| entry.kind == oblikovati_gui::GuiSelectionKind::Face)
+    owner
+        .set_selection_enabled_from_gui(oblikovati_gui::GuiSelectionKind::Face, true)
         .unwrap();
-    owner.move_selection_kind_from_gui(face, 0).unwrap();
     window.scripted = pointer_click_events(pixel, 1);
     crate::frames::run_frames(&mut window, HeadOptions { frames: Some(3) }, &mut owner).unwrap();
     assert!(owner.gui_command_state().unwrap().model_face_chosen);

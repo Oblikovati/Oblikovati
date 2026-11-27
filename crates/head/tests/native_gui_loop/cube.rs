@@ -76,6 +76,7 @@ fn preview_from_ribbon(
     owner: &mut NativeDesktopOwner,
     document: u64,
 ) {
+    let before = capture_framebuffer(&mut window.native);
     window.gui_actions.clear();
     click_shell_position(
         window,
@@ -89,9 +90,21 @@ fn preview_from_ribbon(
         "expected Extrude ribbon action"
     );
     window.gui_actions.clear();
-    let label = application_bdd::rendered_label_center("Distance A");
-    let distance = [label[0] - 100, label[1]];
+    let (position, size) = application_bdd::window_geometry("Extrude").unwrap();
+    let distance = application_bdd::rendered_label_in_rect(
+        "10.00mm",
+        position,
+        [position[0] + size[0], position[1] + size[1]],
+    );
     click_shell_position(window, owner, distance);
+    press_shell_key(window, owner, oblikovati_viewport::ViewportPhysicalKey::End);
+    for _ in "10.00 mm".chars() {
+        press_shell_key(
+            window,
+            owner,
+            oblikovati_viewport::ViewportPhysicalKey::Backspace,
+        );
+    }
     type_native_text(window, owner, "size");
     let validated = owner
         .gui_command_state()
@@ -102,12 +115,6 @@ fn preview_from_ribbon(
     assert!(
         validated.error.is_none(),
         "size must resolve as a positive length"
-    );
-    let before = capture_framebuffer(&mut window.native);
-    click_shell_position(
-        window,
-        owner,
-        application_bdd::rendered_label_center("Preview"),
     );
     let after = capture_framebuffer(&mut window.native);
     assert!(

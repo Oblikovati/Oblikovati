@@ -80,10 +80,10 @@ fn native_feature_drafts_are_exclusive_and_extrude_actions_survive_a_short_panel
     assert!(diagnostics::window_pixel_bounds("Chamfer").is_some());
     world.click_text("Extrude");
     assert!(diagnostics::window_pixel_bounds("Chamfer").is_none());
-    resize_properties_window(&mut world, [1100, 390]);
+    resize_properties_window(&mut world, [1100, 480]);
     let [_, top, _, bottom] = diagnostics::window_pixel_bounds("Extrude").unwrap();
     assert!(
-        bottom - top < 170.,
+        bottom - top < 270.,
         "shortened Extrude bounds {top}..{bottom}"
     );
     world.run_in_window("Extrude", "OK");
@@ -94,6 +94,9 @@ fn native_feature_drafts_are_exclusive_and_extrude_actions_survive_a_short_panel
 
     world.click_text("Extrude");
     assert!(diagnostics::window_pixel_bounds("Extrude").is_some());
+    if !world.shows("Chamfer") {
+        world.click_text("Modify");
+    }
     world.click_text("Chamfer");
     assert!(diagnostics::window_pixel_bounds("Extrude").is_none());
     assert!(diagnostics::window_pixel_bounds("Chamfer").is_some());

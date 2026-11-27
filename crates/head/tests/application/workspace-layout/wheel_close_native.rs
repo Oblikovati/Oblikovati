@@ -91,7 +91,7 @@ fn close_and_reopen(world: &mut ApplicationWorld, node: u32, close: &str) {
 
 #[test]
 fn wheel_options_content_close_selects_next_tab_and_reopens() {
-    let mut world = ApplicationWorld::new();
+    let mut world = ApplicationWorld::with_asset_tools_closed();
     super::browser_feature::open_visible_extruded_part(&mut world);
     let node = dock_options(&mut world);
     for close in ["Cancel", "OK", "Escape"] {

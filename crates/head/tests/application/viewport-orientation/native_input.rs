@@ -294,7 +294,14 @@ fn native_origin_plane_fill_matches_studio_opacity_on_the_viewport() {
     let mut camera = viewport_pan::camera(&mut world);
     camera.scale *= 0.15;
     crate::HeadWindow::set_view_camera(&mut world.app().window, camera).unwrap();
-    let probe = [600, 300];
+    world.pump(Vec::new());
+    world.click_text("Start 2D Sketch");
+    world.pump(Vec::new());
+    let label = diagnostics::plane_choice_center(&world.frame, "XY Plane")
+        .expect("expected XY Plane label inside the cropped origin plane");
+    let probe = diagnostics::pointer_pixels([label[0], label[1] - 30.]).map(|edge| edge as usize);
+    world.escape();
+    world.pump(Vec::new());
     for (theme, channel, amber, opacity) in [("Dark", 0, 245., 0.14), ("Light", 2, 6., 0.12)] {
         world.app().owner.select_theme_from_gui(theme).unwrap();
         world.pump(Vec::new());
