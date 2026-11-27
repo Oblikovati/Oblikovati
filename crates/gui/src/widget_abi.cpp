@@ -34,18 +34,20 @@ void draw_ribbon_icon(const char* label, std::uint32_t texture, ImVec2 icon, boo
     const ImVec2 lo = ImGui::GetItemRectMin(), hi = ImGui::GetItemRectMax();
     const char* end = ImGui::FindRenderedTextEnd(label);
     const ImVec2 text = ImGui::CalcTextSize(label, end);
-    const ImVec2 at(!show_caption || large ? (lo.x + hi.x - icon.x) * 0.5f : lo.x + 2.0f,
-                    !show_caption ? (lo.y + hi.y - icon.y) * 0.5f :
-                    large ? lo.y + 2.0f : (lo.y + hi.y - icon.y) * 0.5f);
-    const ImVec2 caption(large ? (lo.x + hi.x - text.x) * 0.5f : at.x + icon.x + 3.0f,
-                         large ? hi.y - text.y - 2.0f : (lo.y + hi.y - text.y) * 0.5f);
+    const ImVec2 at(ImFloor(!show_caption || large ? (lo.x + hi.x - icon.x) * 0.5f : lo.x + 6.0f),
+                    ImFloor(!show_caption ? (lo.y + hi.y - icon.y) * 0.5f :
+                            large ? lo.y + 4.0f : (lo.y + hi.y - icon.y) * 0.5f));
+    const ImVec2 caption(ImFloor(large ? (lo.x + hi.x - text.x) * 0.5f : at.x + icon.x + 6.0f),
+                         ImFloor(large ? hi.y - text.y - 3.0f : (lo.y + hi.y - text.y) * 0.5f));
     ImDrawList* draw = ImGui::GetWindowDrawList();
-    draw->PushClipRect(lo, hi, true);
     const auto& context = *ImGui::GetCurrentContext();
+    if (ImGui::IsItemHovered() || ImGui::IsItemActive())
+        draw->AddRect(lo, hi, ImGui::GetColorU32(ImGuiCol_Border), context.Style.FrameRounding, 0, 1.0f);
+    draw->PushClipRect(lo, hi, true);
     const float disabled_alpha = context.Style.DisabledAlpha;
-    // BeginDisabled has already dimmed text and frames. Set the glyph's final opacity separately.
+    const float target_alpha = context.Style.Colors[ImGuiCol_WindowBg].x > 0.5f ? 0.36f : 0.45f;
     const float glyph_alpha = (context.CurrentItemFlags & ImGuiItemFlags_Disabled) && disabled_alpha > 0.0f
-        ? 0.45f / disabled_alpha : 1.0f;
+        ? target_alpha / disabled_alpha : 1.0f;
     draw->AddImage(reinterpret_cast<ImTextureID>(static_cast<std::uintptr_t>(texture)), at,
                    ImVec2(at.x + icon.x, at.y + icon.y), ImVec2(0,0), ImVec2(1,1),
                    ImGui::GetColorU32(ImVec4(1,1,1,glyph_alpha)));
@@ -317,27 +319,13 @@ void oblikovati_gui_fit_viewport_properties(const unsigned char* title, float le
     ImGui::SetNextWindowSize(size, ImGuiCond_Always);
 }
 
-void oblikovati_gui_window_position(float x, float y, float pivot_x, float pivot_y, int condition) {
-    ImGui::SetNextWindowPos(ImVec2(x, y), condition, ImVec2(pivot_x, pivot_y));
-}
-void oblikovati_gui_window_size(float width, float height, int condition) {
-    ImGui::SetNextWindowSize(ImVec2(width, height), condition);
-}
-void oblikovati_gui_push_style_vector(ImGuiStyleVar index, float x, float y) {
-    ImGui::PushStyleVar(index, ImVec2(x, y));
-}
-void oblikovati_gui_push_style_color(ImGuiCol index, float r, float g, float b, float a) {
-    ImGui::PushStyleColor(index, ImVec4(r, g, b, a));
-}
-void oblikovati_gui_filled_circle(float x, float y, float radius, ImU32 color) {
-    ImGui::GetWindowDrawList()->AddCircleFilled(ImVec2(x, y), radius, color);
-}
-void oblikovati_gui_line(float x1, float y1, float x2, float y2, ImU32 color) {
-    ImGui::GetWindowDrawList()->AddLine(ImVec2(x1, y1), ImVec2(x2, y2), color);
-}
-void oblikovati_gui_cursor_position(float x, float y) {
-    ImGui::SetCursorPos(ImVec2(x, y));
-}
+void oblikovati_gui_window_position(float x, float y, float pivot_x, float pivot_y, int condition) { ImGui::SetNextWindowPos(ImVec2(x, y), condition, ImVec2(pivot_x, pivot_y)); }
+void oblikovati_gui_window_size(float width, float height, int condition) { ImGui::SetNextWindowSize(ImVec2(width, height), condition); }
+void oblikovati_gui_push_style_vector(ImGuiStyleVar index, float x, float y) { ImGui::PushStyleVar(index, ImVec2(x, y)); }
+void oblikovati_gui_push_style_color(ImGuiCol index, float r, float g, float b, float a) { ImGui::PushStyleColor(index, ImVec4(r, g, b, a)); }
+void oblikovati_gui_filled_circle(float x, float y, float radius, ImU32 color) { ImGui::GetWindowDrawList()->AddCircleFilled(ImVec2(x, y), radius, color); }
+void oblikovati_gui_line(float x1, float y1, float x2, float y2, ImU32 color) { ImGui::GetWindowDrawList()->AddLine(ImVec2(x1, y1), ImVec2(x2, y2), color); }
+void oblikovati_gui_cursor_position(float x, float y) { ImGui::SetCursorPos(ImVec2(x, y)); }
 bool oblikovati_gui_button(const unsigned char* label, float width, float height, bool selected) {
     if (selected) ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
     const bool clicked = ImGui::Button(reinterpret_cast<const char*>(label), ImVec2(width, height));

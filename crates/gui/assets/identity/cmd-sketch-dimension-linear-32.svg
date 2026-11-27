@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-labelledby="t d">
+  <title id="t">Linear Dimension</title>
+  <desc id="d">Two vertical extension lines bridged by a Teal linear dimension arrow.</desc>
+  <g id="layer-body">
+    <path class="s-icon-line-general" d="M6,7 V25 M26,7 V25" stroke="#D2D7E2" stroke-width="1.5" stroke-linecap="round"/>
+  </g>
+  <g id="layer-accent">
+    <path class="s-accent-selection-bright" d="M15,16 L7,16 M9.39,14.54 L7,16 L9.39,17.46" fill="none" stroke="#2DD4BF" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    <path class="s-accent-selection-bright" d="M17,16 L25,16 M22.61,17.46 L25,16 L22.61,14.54" fill="none" stroke="#2DD4BF" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

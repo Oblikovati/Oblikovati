@@ -130,6 +130,23 @@ pub(super) fn source(glyph: IconGlyph, light: bool) -> Option<&'static str> {
         IconGlyph::Arc => include_str!("../../assets/identity/cmd-sketch-arc-three-point-32.svg"),
         IconGlyph::SketchFillet => include_str!("../../assets/identity/cmd-sketch-fillet-32.svg"),
         IconGlyph::SketchText => include_str!("../../assets/identity/cmd-sketch-text-32.svg"),
+        IconGlyph::Coil => include_str!("../../assets/identity/cmd-model-coil-32.svg"),
+        IconGlyph::Emboss => include_str!("../../assets/identity/cmd-model-emboss-32.svg"),
+        IconGlyph::Measure => {
+            include_str!("../../assets/identity/cmd-sketch-measure-entity-picking-32.svg")
+        }
+        IconGlyph::MaterialBrowser => {
+            include_str!("../../assets/identity/cmd-app-material-browser-32.svg")
+        }
+        IconGlyph::AppearanceBrowser => {
+            include_str!("../../assets/identity/cmd-app-appearance-browser-32.svg")
+        }
+        IconGlyph::Dimension => {
+            include_str!("../../assets/identity/cmd-sketch-dimension-linear-32.svg")
+        }
+        IconGlyph::Select => {
+            include_str!("../../assets/identity/cmd-app-viewport-entity-selection-32.svg")
+        }
         _ => return None,
     })
 }

@@ -63,6 +63,9 @@ impl RibbonPanelLayout {
         panel: RibbonPanel,
         factor: f32,
     ) -> Option<f32> {
+        if let Some(width) = self.widths.get(&(tab, panel)).copied() {
+            return Some(width);
+        }
         use crate::ribbon_command_layout::RibbonAppearance;
         if tab == RibbonTab::Sketch
             && self.measured_appearance == Some(RibbonAppearance::Normal)
@@ -70,7 +73,7 @@ impl RibbonPanelLayout {
         {
             return Some(width * factor);
         }
-        self.widths.get(&(tab, panel)).copied()
+        None
     }
 }
 
@@ -141,8 +144,8 @@ pub(super) fn temporary_content_height(
 // These authored grids have known bounds before their controls first enter the draw list.
 fn sketch_normal_width(panel: RibbonPanel) -> Option<f32> {
     Some(match panel {
-        RibbonPanel::Create => 622.,
-        RibbonPanel::Constrain => 456.,
+        RibbonPanel::Create => 380.,
+        RibbonPanel::Constrain => 320.,
         RibbonPanel::Format | RibbonPanel::Layout => 224.,
         RibbonPanel::Modify
         | RibbonPanel::Insert

@@ -177,13 +177,18 @@ fn model_ribbon_submits_icons_for_work_features_and_patterns() {
         frame.resources.source(axis).unwrap().pixels(),
         light_frame.resources.source(axis).unwrap().pixels()
     );
-    for rendered in [&frame, &light_frame] {
+    for (rendered, expected_alpha) in [(&frame, 115_u8), (&light_frame, 92_u8)] {
         let batch = rendered
             .batches
             .iter()
             .find(|batch| batch.texture == axis)
             .unwrap();
-        assert!(batch.vertices.iter().all(|vertex| vertex.srgb[3] == 115));
+        assert!(
+            batch
+                .vertices
+                .iter()
+                .all(|vertex| vertex.srgb[3] == expected_alpha)
+        );
     }
 }
 

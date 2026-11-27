@@ -193,10 +193,13 @@ fn role_colors(palette: &oblikovati_model::theme::ThemePalette) -> [[f32; 4]; 4]
         TOKEN_ICON_SECONDARY,
         TOKEN_ICON_PRIMARY,
     ];
-    tokens.map(|token| {
+    let mut colors = tokens.map(|token| {
         let color = &palette[&token];
         [color.r, color.g, color.b, color.a]
-    })
+    });
+    // Keep legacy icon backgrounds transparent so commands sit cleanly on transparent-at-rest chrome.
+    colors[0][3] = 0.;
+    colors
 }
 
 #[cfg(test)]
