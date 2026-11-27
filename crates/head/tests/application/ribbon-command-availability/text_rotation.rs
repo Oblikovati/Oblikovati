@@ -28,7 +28,9 @@ fn native_text_quarter_turn_rotates_right_view_preview_and_commits() {
 
 fn open_right_view_text(world: &mut ApplicationWorld) -> [i32; 2] {
     world.start_sketch_on("YZ Plane");
-    world.run("RIGHT");
+    let camera = super::super::super::viewport_pan::camera(world);
+    let axes = crate::view_orientation::view_axes(&camera);
+    assert_eq!(axes.toward, [1., 0., 0.]);
     activate_text(world);
     let [left, top, right, bottom] = world.viewport_bounds();
     let anchor =
@@ -81,6 +83,7 @@ fn commit_rotated_text(world: &mut ApplicationWorld) {
 }
 
 fn preview_glyph_extent(world: &mut ApplicationWorld, anchor: [i32; 2]) -> [usize; 2] {
+    let rgb = viewport_ink(world, &oblikovati_api::types::TOKEN_SKETCH_PREVIEW);
     let image = super::super::super::capture_framebuffer(&mut world.app().window.native);
     let mut minimum = [usize::MAX; 2];
     let mut maximum = [0; 2];
@@ -101,7 +104,7 @@ fn preview_glyph_extent(world: &mut ApplicationWorld, anchor: [i32; 2]) -> [usiz
             .skip(anchor_x.saturating_sub(85))
             .take(255)
         {
-            if pixel[..3].iter().all(|&channel| channel > 145) {
+            if pixel[..3] == rgb {
                 minimum = [minimum[0].min(x), minimum[1].min(y)];
                 maximum = [maximum[0].max(x), maximum[1].max(y)];
             }
