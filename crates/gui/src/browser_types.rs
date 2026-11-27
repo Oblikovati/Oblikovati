@@ -39,6 +39,8 @@ pub struct GuiModelBrowser {
     pub coil_edits: std::collections::BTreeMap<FeatureId, crate::GuiCoilEditSeed>,
     /// Authored options for editable Emboss features.
     pub emboss_edits: std::collections::BTreeMap<FeatureId, crate::GuiEmbossEditSeed>,
+    /// Authored options for editable Derived Part features.
+    pub derive_edits: std::collections::BTreeMap<FeatureId, crate::GuiDeriveEditSeed>,
     /// Editable extrusion distance sources, indexed by their current feature identities.
     pub extrusion_edits: std::collections::BTreeMap<FeatureId, GuiExtrudeEditSeed>,
     /// Authored radius expressions for editable Fillet features.

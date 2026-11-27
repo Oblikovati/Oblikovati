@@ -20,6 +20,9 @@ pub(super) fn feature_edit_action(
     if browser.emboss_edits.contains_key(&feature.id) {
         return GuiShellAction::Emboss(crate::GuiEmbossAction::OpenEdit(feature.id));
     }
+    if browser.derive_edits.contains_key(&feature.id) {
+        return GuiShellAction::Derive(crate::GuiDeriveAction::OpenEdit(feature.id));
+    }
     if browser.chamfer_edits.contains_key(&feature.id) {
         return GuiShellAction::OpenChamferEdit(feature.id);
     }
@@ -27,6 +30,27 @@ pub(super) fn feature_edit_action(
         return GuiShellAction::OpenFilletEdit(feature.id);
     }
     GuiShellAction::OpenExtrudeEdit(feature.id)
+}
+
+pub(super) fn feature_double_click_action(
+    browser: &GuiModelBrowser,
+    feature: &GuiBrowserFeature,
+) -> GuiShellAction {
+    if browser.derive_edits.contains_key(&feature.id) {
+        return GuiShellAction::Derive(crate::GuiDeriveAction::OpenSource(feature.id));
+    }
+    feature_edit_action(browser, feature)
+}
+
+pub(super) fn feature_edit_label(
+    browser: &GuiModelBrowser,
+    feature: &GuiBrowserFeature,
+) -> &'static str {
+    if browser.derive_edits.contains_key(&feature.id) {
+        "Edit Derived Part"
+    } else {
+        "Edit Feature"
+    }
 }
 
 pub(super) fn loft_edit_action(feature: &GuiBrowserFeature) -> Option<GuiShellAction> {

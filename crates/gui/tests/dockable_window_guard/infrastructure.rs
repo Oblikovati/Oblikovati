@@ -182,6 +182,7 @@ pub(super) const INFRASTRUCTURE: &[(&str, &str)] = &[
     ("loft_edit_warning.rs", "modal:TITLE"),
     ("loft_section_dimensions.rs", "modal:TITLE"),
     // Emboss diagnostic, failed edit, and range warning prompts keep their draft in dockable Emboss.
+    ("derive_dialog/picker.rs", "modal:PICKER_TITLE"),
     ("emboss_dialog/modals.rs", "modal:SKETCH_DOCTOR_TITLE"),
     ("emboss_dialog/modals.rs", "modal:EDIT_FAILED_TITLE"),
     ("emboss_dialog/modals.rs", "modal:RANGE_WARNING_TITLE"),

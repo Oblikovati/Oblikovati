@@ -1,0 +1,59 @@
+
+running 1 test
+test native::gui_loop_tests::application_bdd::application_scenarios_use_the_native_window ... Feature: Derive
+  Scenario: derive-01 Choose a source component
+   ✔  Given a disposable copy of the native fixture "fixtures/cad/blank-metric-part.opd" is open as the destination
+   ✔  And "fixtures/cad/body-properties-start.opd" is available as the source component
+   ✔  When the user clicks Derive
+   ✔  Then the MCAD Software opens a component file picker.
+   ✔  When the user selects and opens the native source component
+   ✔  Then the Derived Part dialog opens with an object tree and preview.
+  Scenario: derive-02 Inspect derived objects and options
+   ✔  Given a disposable copy of the native fixture "fixtures/cad/blank-metric-part.opd" is open as the destination
+   ✔  And "fixtures/cad/body-properties-start.opd" is available as the source component
+   ✔  And the Derived Part dialog is open for the native source component
+   ✔  When the user opens Objects
+   ✔  Then the object tree includes Solid Bodies, Sketches, Work Geometry and Parameters
+   ✔  And derive-style choices are available
+   ✔  When the user opens Options
+   ✔  Then link controls, a scale factor and Mirror part are visible
+  Scenario: derive-03 Inspect representation
+   ✔  Given a disposable copy of the native fixture "fixtures/cad/blank-metric-part.opd" is open as the destination
+   ✔  And "fixtures/cad/body-properties-start.opd" is available as the source component
+   ✔  And the native source component is open in Derived Part
+   ✔  When the user selects Representation
+   ✔  Then Model State and Design View show [Primary].
+  Scenario: derive-04 Mirror the source
+   ✔  Given a disposable copy of the native fixture "fixtures/cad/blank-metric-part.opd" is open as the destination
+   ✔  And "fixtures/cad/body-properties-start.opd" is available as the source component
+   ✔  And the native source component is open in Derived Part with the Options tab selected
+   ✔  When the user enables Mirror part
+   ✔  Then the mirror-plane selector becomes available with XY, YZ and XZ planes.
+   ✔  When the user chooses YZ Plane
+   ✔  Then YZ Plane is selected.
+  Scenario: derive-05 Create the derived part
+   ✔  Given a disposable copy of the native fixture "fixtures/cad/body-properties-start.opd" is open as the destination
+   ✔  And the unchanged native fixture "fixtures/cad/body-properties-start.opd" is available as the separate source
+   ✔  And the user selects the source in Derive, chooses separate-solid output and enables mirroring across the YZ plane
+   ✔  When the user clicks OK
+   ✔  Then the dialog closes, the native source component appears in the browser, and the solid-body count is two.
+  Scenario: derive-06 Reopen and preview a scale change
+   ✔  Given a disposable copy of the native fixture "fixtures/cad/body-properties-start.opd" is open as the destination
+   ✔  And the user derives the unchanged native fixture "fixtures/cad/body-properties-start.opd" into it as a separate solid mirrored across the YZ plane
+   ✔  And the destination contains the derived source component
+   ✔  When the user double-clicks its browser entry
+   ✔  Then the MCAD Software opens the native source document.
+   ✔  When the user returns to the destination and chooses Edit Derived Part from the entry context menu
+   ✔  Then the Derived Part dialog opens.
+   ✔  When the user opens Options and changes the scale factor from 1 to 2
+   ✔  Then the preview becomes larger.
+   ✔  When the user clicks Cancel
+   ✔  Then the dialog closes.
+[Summary]
+1 feature
+6 scenarios (6 passed)
+42 steps (42 passed)
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1794 filtered out; finished in 49.16s
+

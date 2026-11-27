@@ -253,6 +253,8 @@ impl<
             revolve_preview: self.gui_revolve_preview(document, session.generation()),
             coil_preview: self.gui_coil_preview(document, session.generation()),
             emboss_preview: self.gui_emboss_preview(document, session.generation()),
+            derive_preview: self.gui_derive_preview(document, session.generation()),
+            derive_source: self.gui_derive_source(document),
             selected_model_face: self
                 .chosen_model_face(document)
                 .map(|face| face.key.clone()),

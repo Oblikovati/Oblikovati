@@ -350,6 +350,7 @@ pub enum GuiShellAction {
     Loft(crate::GuiLoftAction),
     Coil(crate::GuiCoilAction),
     Emboss(crate::GuiEmbossAction),
+    Derive(crate::GuiDeriveAction),
     OpenFillet,
     OpenMoveBody,
     PreviewMoveBody(Option<GuiMoveBodyRequest>),

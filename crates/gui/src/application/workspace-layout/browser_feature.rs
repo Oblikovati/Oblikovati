@@ -141,9 +141,9 @@ fn choose_on_press(
         view.picked_plane_reference = Some(format!("datum/v1/{}", feature.id.0));
     }
     if clicked && ui.is_mouse_double_clicked(MouseButton::Left) {
-        let edit = feature_edit_action(browser, feature);
-        if edit.enabled(state) {
-            actions.push(edit);
+        let double_click = edit::feature_double_click_action(browser, feature);
+        if double_click.enabled(state) {
+            actions.push(double_click);
         }
     }
 }
@@ -161,7 +161,7 @@ fn feature_menu(
     edit_sketch_row(ui, state, browser, feature, actions);
     let edit = feature_edit_action(browser, feature);
     if ui
-        .menu_item_config("Edit Feature")
+        .menu_item_config(edit::feature_edit_label(browser, feature))
         .enabled(edit.enabled(state))
         .build()
     {

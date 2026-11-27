@@ -140,6 +140,7 @@ pub(super) fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
         | GuiShellAction::Revolve(_)
         | GuiShellAction::Coil(_)
         | GuiShellAction::Emboss(_)
+        | GuiShellAction::Derive(_)
         | GuiShellAction::Sweep(_)
         | GuiShellAction::Loft(_)
         | GuiShellAction::OpenMoveBody

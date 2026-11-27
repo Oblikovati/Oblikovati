@@ -3,6 +3,8 @@
 use super::*;
 #[path = "owner_coil.rs"]
 pub(super) mod owner_coil;
+#[path = "owner_derive.rs"]
+pub(super) mod owner_derive;
 #[path = "owner_emboss.rs"]
 pub(super) mod owner_emboss;
 #[path = "owner_hole.rs"]

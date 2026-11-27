@@ -235,6 +235,7 @@ pub(crate) fn action_glyph(action: &GuiShellAction) -> Option<IconGlyph> {
         GuiShellAction::Loft(crate::GuiLoftAction::Open) => IconGlyph::Loft,
         GuiShellAction::Coil(crate::GuiCoilAction::Open) => IconGlyph::Coil,
         GuiShellAction::Emboss(crate::GuiEmbossAction::Open) => IconGlyph::Emboss,
+        GuiShellAction::Derive(crate::GuiDeriveAction::Open) => IconGlyph::Derive,
         _ => return None,
     })
 }

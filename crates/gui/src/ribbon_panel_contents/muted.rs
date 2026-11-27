@@ -6,22 +6,29 @@ use imgui::Ui;
 pub(super) fn manage_insert_commands(
     ui: &Ui,
     origin: [f32; 2],
+    state: &crate::GuiCommandState,
     icons: &crate::icons::GuiRibbonIcons,
+    actions: &mut Vec<crate::GuiShellAction>,
 ) {
     use crate::icons::IconGlyph;
-    muted_icon_commands(
+    let size = muted_command_position(ui, origin, icons, 0);
+    icons.command_button(
         ui,
-        origin,
-        icons,
-        &[
-            ("Derive", Some(IconGlyph::Derive)),
-            ("Feature", Some(IconGlyph::Feature)),
-            ("Insert iFeature", Some(IconGlyph::InsertIFeature)),
-            ("Insert Object", Some(IconGlyph::InsertModel)),
-            ("Import", Some(IconGlyph::Import)),
-        ],
-        false,
+        "Derive",
+        crate::GuiShellAction::Derive(crate::GuiDeriveAction::Open),
+        state,
+        size,
+        actions,
     );
+    for (slot, (label, glyph)) in [
+        (1, ("Feature", Some(IconGlyph::Feature))),
+        (2, ("Insert iFeature", Some(IconGlyph::InsertIFeature))),
+        (3, ("Insert Object", Some(IconGlyph::InsertModel))),
+        (4, ("Import", Some(IconGlyph::Import))),
+    ] {
+        let size = muted_command_position(ui, origin, icons, slot);
+        muted_command(ui, label, NOT_PORTED, icons, glyph, false, size);
+    }
 }
 pub(super) fn part_modify_controls(
     ui: &Ui,

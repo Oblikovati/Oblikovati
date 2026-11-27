@@ -287,6 +287,7 @@ impl GuiFrameEngine {
                 &mut self.revolve_dialog,
                 &mut self.coil_dialog,
                 &mut self.emboss_dialog,
+                &mut self.derive_dialog,
             ),
             &mut self.extrude_dialog,
         );
@@ -328,6 +329,7 @@ impl GuiFrameEngine {
             &mut self.loft_dialog,
             &mut self.coil_dialog,
             &mut self.emboss_dialog,
+            &mut self.derive_dialog,
             browser_axis,
         );
         let modify_dialogs = (
@@ -474,6 +476,7 @@ impl GuiFrameEngine {
         activity.pending_layout |= dock_lifecycle_changed
             || cancelled_pick
             || revolve_needs_plane
+            || self.derive_dialog.is_opening()
             || self.workspace_needs_frame(home_was_active);
         Ok(GuiFrameOutput {
             window_action,

@@ -169,6 +169,11 @@ mod emboss_dialog;
 pub use emboss_dialog::{
     GuiEmbossAction, GuiEmbossEditSeed, GuiEmbossPreview, GuiEmbossPreviewState, GuiEmbossRequest,
 };
+mod derive_dialog;
+pub use derive_dialog::{
+    GuiDeriveAction, GuiDeriveEditSeed, GuiDerivePreview, GuiDerivePreviewState, GuiDeriveRequest,
+    GuiDeriveSourceSummary,
+};
 mod revolve_dialog;
 pub use revolve_dialog::{
     GuiRevolveAction, GuiRevolveEditSeed, GuiRevolveExtent, GuiRevolvePreview,
