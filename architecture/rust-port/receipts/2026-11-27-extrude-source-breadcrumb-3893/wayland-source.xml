@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Properties panel for creating and editing a modeled feature: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/feature-properties/feature-properties.feature" package="testsuite/Feature: Properties panel for creating and editing a modeled feature: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/feature-properties/feature-properties.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-27T05:58:30.662487866Z" time="5.779655892"><testcase name="Rule: Dockable Properties commands reuse the Properties shell: Scenario: Enter the source sketch from the edit breadcrumb: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/feature-properties/feature-properties.feature:156:5" time="5.779655892"><system-out><![CDATA[  Scenario: Enter the source sketch from the edit breadcrumb
+   ✔  Given a feature Properties panel shows the accepted feature and its source sketch
+   ✔  When the user chooses the source sketch in the breadcrumb
+   ✔  Then the source sketch becomes the active edit context
+   ✔  And the breadcrumb distinguishes the current sketch from its parent feature
+]]></system-out></testcase></testsuite></testsuites>

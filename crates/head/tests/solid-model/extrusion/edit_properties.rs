@@ -22,7 +22,7 @@ pub(super) fn start_published_edit(world: &mut ApplicationWorld) {
 }
 
 #[given("Edit Feature is open for the captured solid extrusion")]
-fn start_pinned_edit(world: &mut ApplicationWorld) {
+pub(super) fn start_pinned_edit(world: &mut ApplicationWorld) {
     open_copy(
         world,
         include_bytes!("../../../../../test-utilities/fixtures/extrusion/extrusion-rect-8mm.opd"),

@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Desktop extrusion draft. The document changes only when the owner accepts Apply.
 use crate::dockable_window::DockableWindow;
+#[path = "extrude_breadcrumb.rs"]
+mod breadcrumb;
 use crate::{GuiCommandState, GuiExtrudeDirection, GuiShellAction};
 use imgui::Ui;
 use oblikovati_model::document_sketch::DocumentSketchId;
@@ -37,6 +39,7 @@ pub(crate) struct ExtrudeDialog {
     sketch: Option<DocumentSketchId>,
     profile: i32,
     profile_pick_sketch: Option<DocumentSketchId>,
+    source_edit: bool,
     release_sketch_on_apply: bool,
     enter_applies_value_only: bool,
     distance: String,
@@ -89,6 +92,7 @@ impl ExtrudeDialog {
             self.operation = None;
             self.preview_hidden = false;
             self.profile_pick_sketch = None;
+            self.source_edit = false;
             self.size = Default::default();
         }
         self.document = document;
@@ -107,6 +111,7 @@ impl ExtrudeDialog {
             return;
         };
         self.set_document(state.document);
+        self.source_edit = false;
         self.presets.clear_selection();
         self.sketch = Some(seed.sketch);
         self.profile_pick_sketch = None;
@@ -129,10 +134,14 @@ impl ExtrudeDialog {
         self.pending.start(document);
     }
     fn synchronize(&mut self, state: &GuiCommandState) {
+        if self.source_edit_active(state) {
+            return;
+        }
         if self.requested {
             self.open_requested_draft(state);
         }
-        if self.document != state.document
+        if self.source_edit
+            || self.document != state.document
             || !state.extrude_available
             || state.authoring != crate::GuiAuthoringContext::Part
         {
@@ -187,6 +196,11 @@ impl ExtrudeDialog {
             self.previewed = false;
         }
         self.synchronize(state);
+        if self.source_edit {
+            controls.parameters.close_tolerance_inspection();
+            self.source_breadcrumb_panel(ui, state, controls.area, actions);
+            return;
+        }
         self.observe_profile_pick(state);
         if self.document.is_none() && self.previewed {
             actions.push(GuiShellAction::PreviewExtrude(None));
@@ -252,7 +266,9 @@ impl ExtrudeDialog {
     ) -> bool {
         let expanded = imgui::TreeNodeFlags::DEFAULT_OPEN;
         self.draw_advanced_settings(ui, controls.icons);
-        self.breadcrumb(ui, state);
+        if self.breadcrumb(ui, state, actions) {
+            return true;
+        }
         self.preview_control(ui, controls.icons, state.extrude_preview_active, actions);
         let mut edited = self.draw_presets(ui, state, controls.icons);
         edited |=

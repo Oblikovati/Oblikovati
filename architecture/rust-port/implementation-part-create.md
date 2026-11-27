@@ -167,6 +167,11 @@ or keeps the Properties panel open with the updated preview. Both
 published examples exercise the active Distance A editor.
 [Enter preference receipt](receipts/2026-11-27-extrude-enter-3893/README.md).
 
+An accepted extrusion's Properties breadcrumb opens its source sketch
+for editing. The active underline moves from the feature to the sketch,
+and the extrusion preview clears when sketch editing begins.
+[Source breadcrumb receipt](receipts/2026-11-27-extrude-source-breadcrumb-3893/README.md).
+
 Extrude refreshes the preview as soon as the final reference face is
 selected. A [native From/To control](receipts/2026-11-27-extrude-between-faces-3870/README.md)
 verifies caps on opposite faces of a block and an independent midplane

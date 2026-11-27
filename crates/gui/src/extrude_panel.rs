@@ -8,6 +8,14 @@ const WIDTH: f32 = 280.;
 pub(super) const FOOTER_HEIGHT: f32 = 44.;
 const DEFAULT_HEIGHT: f32 = 340.;
 
+pub(super) fn fit_properties(
+    ui: &Ui,
+    area: crate::application::document_creation::workspaces::WorkspaceArea,
+    height: f32,
+) {
+    crate::widget_abi::fit_viewport_properties(ui, "Extrude", area, [WIDTH, height]);
+}
+
 #[derive(Default)]
 pub(super) struct PropertiesSize {
     content: Option<f32>,
@@ -20,7 +28,7 @@ impl PropertiesSize {
         area: crate::application::document_creation::workspaces::WorkspaceArea,
     ) {
         let height = self.content.unwrap_or(DEFAULT_HEIGHT);
-        crate::widget_abi::fit_viewport_properties(ui, "Extrude", area, [WIDTH, height]);
+        fit_properties(ui, area, height);
         self.pending = false;
     }
 

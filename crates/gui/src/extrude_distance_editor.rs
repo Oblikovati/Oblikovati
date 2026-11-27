@@ -304,25 +304,6 @@ impl super::ExtrudeDialog {
         true
     }
 
-    pub(super) fn breadcrumb(&self, ui: &Ui, state: &GuiCommandState) {
-        let Some(browser) = &state.browser else {
-            return;
-        };
-        let feature = browser
-            .features
-            .iter()
-            .find(|row| Some(row.id) == self.edit_feature)
-            .map_or("New Extrusion", |row| row.name.as_str());
-        ui.align_text_to_frame_padding();
-        if let Some(sketch) = browser
-            .sketches
-            .iter()
-            .find(|row| Some(row.id) == self.sketch)
-        {
-            ui.text(format!("{feature} › {}", sketch.name));
-        }
-    }
-
     fn distance_error_ink(&self, state: &GuiCommandState) -> Option<[f32; 4]> {
         let validation = self.current_distance_validation(state, state.document?)?;
         validation.error.as_ref()?;

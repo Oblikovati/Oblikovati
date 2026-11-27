@@ -27,6 +27,9 @@ mod apply_reuse_sketch;
 #[path = "enter_preference.rs"]
 mod enter_preference;
 
+#[path = "source_breadcrumb.rs"]
+mod source_breadcrumb;
+
 #[given("a sketch-plane start and numeric distance")]
 #[given("the numeric Distance A extrusion preview")]
 fn numeric_preview(world: &mut ApplicationWorld) {
