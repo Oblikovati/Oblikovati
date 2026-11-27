@@ -441,6 +441,9 @@ impl QuickAccessToolbar {
 pub(crate) const EXTRUDE: &str = "Extrude";
 /// A part with no sketch has no profile to extrude, so Extrude asks for a plane to sketch on.
 pub(crate) fn extrude_can_start(state: &GuiCommandState) -> bool {
+    if state.authoring == crate::GuiAuthoringContext::Sketch {
+        return GuiShellAction::OpenExtrude.dispatchable(state);
+    }
     if state.authoring != crate::GuiAuthoringContext::Part || state.transaction_open {
         return false;
     }

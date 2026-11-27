@@ -105,6 +105,10 @@ pub(super) fn open_drafts(
         GuiShellAction::Loft(crate::GuiLoftAction::OpenEdit(feature)) => {
             loft.open(state, Some(feature), actions)
         }
+        GuiShellAction::OpenExtrude if state.authoring == crate::GuiAuthoringContext::Sketch => {
+            extrude.close(actions);
+            extrude.wait_for_sketch(state.document);
+        }
         GuiShellAction::OpenExtrude => extrude.requested = true,
         GuiShellAction::OpenExtrudeEdit(feature) => extrude.open_edit(state, feature),
         GuiShellAction::OpenFillet => blend.open(state),

@@ -375,13 +375,7 @@ impl GuiShellAction {
             | Self::CreateFillet(request)
             | Self::PreviewChamfer(Some(request))
             | Self::CreateChamfer(request) => blend_enabled::request(state, request),
-            Self::OpenExtrude => {
-                state.extrude_available
-                    && state.authoring == GuiAuthoringContext::Part
-                    && !state.transaction_open
-                    && state.document.is_some()
-                    && state.browser.is_some()
-            }
+            Self::OpenExtrude => extrude_enabled::open(state),
             Self::Extrude {
                 document,
                 sketch,

@@ -2,6 +2,16 @@
 use super::*;
 use oblikovati_model::document_sketch::DocumentSketchId;
 
+pub(super) fn open(state: &GuiCommandState) -> bool {
+    let available_context = state.authoring == GuiAuthoringContext::Part
+        || (state.authoring == GuiAuthoringContext::Sketch && state.active_sketch.is_some());
+    available_context
+        && state.extrude_available
+        && !state.transaction_open
+        && state.document.is_some()
+        && state.browser.is_some()
+}
+
 fn context(state: &GuiCommandState, document: u64, sketch: DocumentSketchId, profile: i64) -> bool {
     state.extrude_available
         && state.document == Some(document)

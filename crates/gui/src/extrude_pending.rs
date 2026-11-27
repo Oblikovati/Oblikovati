@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//! Retain an extrusion request only through the sketch it asked to create.
+//! Retain an extrusion request through its active source sketch.
 use crate::{GuiAuthoringContext, GuiCommandState, GuiShellAction};
 use oblikovati_model::document_sketch::DocumentSketchId;
 

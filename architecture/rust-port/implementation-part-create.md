@@ -34,6 +34,12 @@ and X11. It covers entry, direction changes and presentation, Cancel, zero
 distance validation, reference selector validation, and the Parameters
 table. See the [native run receipt](receipts/2026-11-26-extrude-entry-direction-3857/README.md).
 
+Extrude can be requested while an existing source sketch is being
+edited. Finish Sketch resumes the waiting command with that sketch
+and a 10 mm preview. Both native desktops also passed the empty-part
+entry regression.
+[Sketch completion receipt](receipts/2026-11-27-extrude-resume-profile-3857/README.md).
+
 The next pass covered `extrusion-06` on both desktops, including Undo, Redo
 and two measured 8 mm edges. The named-parameter preview check now uses the
 cyan preview palette and passes on both desktops. The wider native Extrude

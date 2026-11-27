@@ -23,6 +23,8 @@ mod edit_properties;
 #[cfg(target_os = "linux")]
 mod reference_extent;
 #[cfg(target_os = "linux")]
+mod resume_existing_profile;
+#[cfg(target_os = "linux")]
 mod taper;
 #[cfg(target_os = "linux")]
 mod viewport_chamfer;
