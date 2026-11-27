@@ -51,7 +51,7 @@ impl CertifiedNamedSolidEvaluator<'_> {
 }
 
 impl CertifiedNamedSolidEvaluator<'_> {
-    pub(super) fn verify_result_lineage(
+    pub(crate) fn verify_result_lineage(
         &self,
         before: &NamedSolid,
         after: &NamedSolid,

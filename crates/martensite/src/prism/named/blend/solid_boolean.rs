@@ -9,14 +9,14 @@ use martensite_tkgeombase::gprop::GProps;
 use martensite_tktopalgo::brep_gprop::BRepGProp;
 use oblikovati_model::feature::sketch_prism::PrismBoolean;
 
-pub(in crate::prism::named) struct BooleanTool {
+pub(crate) struct BooleanTool {
     pub shape: Shape,
     pub sources: Vec<(Vec<u8>, Shape)>,
     pub resolution: Option<PrismResolution>,
 }
 
 #[derive(Debug)]
-pub(in crate::prism::named) enum BooleanFailure {
+pub(crate) enum BooleanFailure {
     Refused(String),
     UnchangedCut { faces: usize, message: String },
 }

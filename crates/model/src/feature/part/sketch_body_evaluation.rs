@@ -12,7 +12,8 @@ use crate::{
         AuthoredFeature, FeatureId, derived_part::DerivedPartDefinition,
         sketch_coil::SketchCoilDefinition, sketch_emboss::SketchEmbossDefinition,
         sketch_loft::SketchLoftDefinition, sketch_prism::SketchPrismDefinition,
-        sketch_revolve::SketchRevolveDefinition, sketch_sweep::SketchSweepDefinition,
+        sketch_revolve::SketchRevolveDefinition, sketch_rib::SketchRibDefinition,
+        sketch_sweep::SketchSweepDefinition,
     },
     history::DocumentSnapshot,
 };
@@ -43,6 +44,7 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
             PartFeatureDefinition::SketchEmboss(definition) => {
                 [Some(definition.sketch()), None, None]
             }
+            PartFeatureDefinition::SketchRib(definition) => [Some(definition.sketch()), None, None],
             PartFeatureDefinition::SketchLoft(definition) => {
                 let recipe = definition.recipe();
                 let [first, last] = recipe.sections;
@@ -228,6 +230,23 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
         let slot = resolve_body_slot(&self.bodies, &self.body_lineage, backend, source, key)
             .map_err(PartFeatureFailure::BodyReference)?;
         let result = backend.evaluate_emboss(feature, &self.bodies[&slot], input)?;
+        self.accept_body_replacement(backend, feature, slot, key, result)
+    }
+
+    pub(super) fn evaluate_rib<B: PartFeatureEvaluator<Body = Body, Failure = Failure>>(
+        &mut self,
+        snapshot: &DocumentSnapshot,
+        backend: &mut B,
+        feature: FeatureId,
+        definition: &SketchRibDefinition,
+    ) -> Result<(), PartFeatureFailure<Failure>> {
+        let input = definition
+            .resolve_for_replay(snapshot, &self.datums)
+            .map_err(PartFeatureFailure::RibInput)?;
+        let (key, source) = definition.target_body();
+        let slot = resolve_body_slot(&self.bodies, &self.body_lineage, backend, source, key)
+            .map_err(PartFeatureFailure::BodyReference)?;
+        let result = backend.evaluate_rib(feature, &self.bodies[&slot], input)?;
         self.accept_body_replacement(backend, feature, slot, key, result)
     }
 

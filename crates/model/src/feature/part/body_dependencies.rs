@@ -78,6 +78,7 @@ fn track_replacement(
             }
         },
         PartFeatureDefinition::SketchEmboss(emboss) => emboss.target_body().1,
+        PartFeatureDefinition::SketchRib(rib) => rib.target_body().1,
         PartFeatureDefinition::SketchSweep(sweep) => match sweep.boolean_target() {
             Some((_, _, source)) => source,
             None => {

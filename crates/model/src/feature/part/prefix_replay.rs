@@ -185,6 +185,16 @@ where
             .evaluate_emboss(feature, body.get(), input)
             .map(PrefixBody::Created)
     }
+    fn evaluate_rib(
+        &mut self,
+        feature: FeatureId,
+        body: &Self::Body,
+        input: crate::feature::sketch_rib::ResolvedSketchRib<'_>,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        self.0
+            .evaluate_rib(feature, body.get(), input)
+            .map(PrefixBody::Created)
+    }
     fn evaluate_sweep(
         &mut self,
         feature: FeatureId,

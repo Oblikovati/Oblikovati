@@ -10,7 +10,7 @@ use oblikovati_model::identity::SemanticReferenceName;
 mod surface;
 
 impl BlendNamedTopology {
-    pub(in crate::prism::named) fn sweep_boolean_tool(
+    pub(crate) fn sweep_boolean_tool(
         &self,
         history: &DocumentEditHistory,
         document: DocumentGuid,

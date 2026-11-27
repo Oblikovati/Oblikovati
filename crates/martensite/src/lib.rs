@@ -124,6 +124,7 @@ pub mod coil;
 mod derive;
 mod emboss;
 mod revolve;
+mod rib;
 pub mod sweep;
 pub use revolve::{
     RevolveFaceRole, RevolveProbeDefinition, RevolveProbeReport, probe_planar_revolve,

@@ -10,6 +10,7 @@ mod coil_create;
 mod derived_part_create;
 mod emboss_create;
 mod evaluation;
+mod rib_create;
 pub use evaluation::{
     EvaluationScope, EvaluationTransition, HistoryEvaluationSnapshot, PartCandidateGuard,
 };

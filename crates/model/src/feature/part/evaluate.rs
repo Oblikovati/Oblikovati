@@ -45,6 +45,7 @@ pub enum PartFeatureFailure<Failure> {
     RevolveInput(Box<crate::feature::sketch_revolve::SketchRevolveError>),
     CoilInput(String),
     EmbossInput(String),
+    RibInput(String),
     DerivedPartInput(String),
     LoftInput(String),
     Kernel(Failure),
@@ -363,6 +364,7 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
                 | PartFeatureDefinition::SketchRevolve(_)
                 | PartFeatureDefinition::SketchCoil(_)
                 | PartFeatureDefinition::SketchEmboss(_)
+                | PartFeatureDefinition::SketchRib(_)
                 | PartFeatureDefinition::DerivedPart(_)
                 | PartFeatureDefinition::DeleteBody(_)
                 | PartFeatureDefinition::Fillet(_)
@@ -393,6 +395,9 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
             }
             PartFeatureDefinition::SketchEmboss(definition) => {
                 self.evaluate_emboss(snapshot, backend, id, definition)
+            }
+            PartFeatureDefinition::SketchRib(definition) => {
+                self.evaluate_rib(snapshot, backend, id, definition)
             }
             PartFeatureDefinition::DerivedPart(definition) => {
                 self.evaluate_derived_part(backend, id, definition)

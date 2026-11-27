@@ -113,3 +113,7 @@ path = "tests/emboss.rs"
 [[test]]
 name = "derive"
 path = "tests/derive.rs"
+
+[[test]]
+name = "rib"
+path = "tests/rib.rs"

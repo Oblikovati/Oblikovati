@@ -178,6 +178,17 @@ pub trait PartFeatureEvaluator {
             "emboss: expected an available emboss evaluator".into(),
         ))
     }
+    /// Apply a solved Rib (open profile web/rib) to a target body.
+    fn evaluate_rib(
+        &mut self,
+        _feature: FeatureId,
+        _body: &Self::Body,
+        _input: crate::feature::sketch_rib::ResolvedSketchRib<'_>,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        Err(PartFeatureFailure::Unsupported(
+            "rib: expected an available rib evaluator".into(),
+        ))
+    }
     /// Construct a named solid from a solved profile and path. Example: `backend.evaluate_sweep(feature, input)?`.
     fn evaluate_sweep(
         &mut self,
