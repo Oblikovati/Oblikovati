@@ -167,6 +167,16 @@ pub trait PartFeatureEvaluator {
             "derive: expected an available derived-part evaluator".into(),
         ))
     }
+    /// Construct a named imported body from an external STL or STEP file.
+    fn evaluate_imported_model(
+        &mut self,
+        _feature: FeatureId,
+        _input: crate::feature::imported_model::ResolvedImportedModel,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        Err(PartFeatureFailure::Unsupported(
+            "import: expected an available imported-model evaluator".into(),
+        ))
+    }
     /// Apply a solved Emboss (raise, engrave, or level-to-plane) to a target body.
     fn evaluate_emboss(
         &mut self,

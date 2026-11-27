@@ -64,6 +64,7 @@ pub enum PartFeatureDefinition {
     SketchRib(Box<super::sketch_rib::SketchRibDefinition>),
     SketchDecal(Box<super::sketch_decal::SketchDecalDefinition>),
     DerivedPart(Box<super::derived_part::DerivedPartDefinition>),
+    ImportedModel(Box<super::imported_model::ImportedModelDefinition>),
     SketchLoft(Box<super::sketch_loft::SketchLoftDefinition>),
     SketchRevolve(Box<super::sketch_revolve::SketchRevolveDefinition>),
     SketchSweep(Box<super::sketch_sweep::SketchSweepDefinition>),
@@ -93,6 +94,7 @@ impl PartFeatureDefinition {
             Self::SketchRib(_) => "rib",
             Self::SketchDecal(_) => "decal",
             Self::DerivedPart(_) => "derived",
+            Self::ImportedModel(_) => "imported",
             Self::SketchSweep(_) => "sweep",
             Self::SketchLoft(_) => "loft",
             Self::SketchRevolve(_) => "revolve",
@@ -109,6 +111,32 @@ impl PartFeatureDefinition {
             Self::Point(_) | Self::PointAtReference(_) => "work-point",
             _ => "work-plane",
         }
+    }
+
+    /// True when this feature must carry plain plane metadata instead of datum-plane flags.
+    pub fn requires_plain_plane_metadata(&self) -> bool {
+        matches!(
+            self,
+            Self::SketchPrism(_)
+                | Self::SketchSweep(_)
+                | Self::SketchLoft(_)
+                | Self::SketchRevolve(_)
+                | Self::SketchCoil(_)
+                | Self::SketchEmboss(_)
+                | Self::SketchRib(_)
+                | Self::SketchDecal(_)
+                | Self::DerivedPart(_)
+                | Self::ImportedModel(_)
+                | Self::DeleteBody(_)
+                | Self::Fillet(_)
+                | Self::Chamfer(_)
+                | Self::Hole(_)
+                | Self::Shell(_)
+                | Self::MoveBody(_)
+                | Self::Mirror(_)
+                | Self::CircularPattern(_)
+                | Self::RectangularPattern(_)
+        )
     }
 }
 impl super::AuthoredFeature<PartFeatureDefinition> {

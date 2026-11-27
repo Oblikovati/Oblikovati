@@ -29,6 +29,9 @@ martensite-tkv3d = { git = "https://github.com/Oblikovati/Martensite", rev = "db
 martensite-tkbo = { git = "https://github.com/Oblikovati/Martensite", rev = "db01546bb032659682715c6120e628b95fe5773d", version = "=0.9.1" }
 martensite-tkfillet = { git = "https://github.com/Oblikovati/Martensite", rev = "db01546bb032659682715c6120e628b95fe5773d", version = "=0.9.1" }
 martensite-tkoffset = { git = "https://github.com/Oblikovati/Martensite", rev = "db01546bb032659682715c6120e628b95fe5773d", version = "=0.11.1" }
+martensite-tkdestep = { git = "https://github.com/Oblikovati/Martensite", rev = "db01546bb032659682715c6120e628b95fe5773d", version = "=0.13.1" }
+martensite-tkdestl = { git = "https://github.com/Oblikovati/Martensite", rev = "db01546bb032659682715c6120e628b95fe5773d", version = "=0.12.1" }
+martensite-tkxsbase = { git = "https://github.com/Oblikovati/Martensite", rev = "db01546bb032659682715c6120e628b95fe5773d", version = "=0.10.0" }
 
 [lints]
 workspace = true
@@ -121,3 +124,7 @@ path = "tests/rib.rs"
 [[test]]
 name = "decal"
 path = "tests/decal.rs"
+
+[[test]]
+name = "import"
+path = "tests/import.rs"

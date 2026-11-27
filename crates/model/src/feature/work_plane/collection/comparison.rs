@@ -23,6 +23,7 @@ impl WorkPlaneDefinition {
             (SketchRib(first), SketchRib(second)) => first.same_recipe(second),
             (SketchDecal(first), SketchDecal(second)) => first.same_recipe(second),
             (DerivedPart(first), DerivedPart(second)) => first.same_recipe(second),
+            (ImportedModel(first), ImportedModel(second)) => first.same_recipe(second),
             (SketchSweep(first), SketchSweep(second)) => first.same_recipe(second),
             (SketchPrism(first), SketchPrism(second)) => first.same_recipe(second),
             (AtAngleAboutAxis(first), AtAngleAboutAxis(second)) => {

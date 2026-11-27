@@ -48,6 +48,7 @@ pub enum PartFeatureFailure<Failure> {
     RibInput(String),
     DecalInput(String),
     DerivedPartInput(String),
+    ImportedModelInput(String),
     LoftInput(String),
     Kernel(Failure),
     BodyReference(String),
@@ -357,27 +358,7 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
                 expected: "existing part feature",
             }))
         })?;
-        if matches!(
-            feature.definition(),
-            PartFeatureDefinition::SketchPrism(_)
-                | PartFeatureDefinition::SketchSweep(_)
-                | PartFeatureDefinition::SketchLoft(_)
-                | PartFeatureDefinition::SketchRevolve(_)
-                | PartFeatureDefinition::SketchCoil(_)
-                | PartFeatureDefinition::SketchEmboss(_)
-                | PartFeatureDefinition::SketchRib(_)
-                | PartFeatureDefinition::SketchDecal(_)
-                | PartFeatureDefinition::DerivedPart(_)
-                | PartFeatureDefinition::DeleteBody(_)
-                | PartFeatureDefinition::Fillet(_)
-                | PartFeatureDefinition::Chamfer(_)
-                | PartFeatureDefinition::Hole(_)
-                | PartFeatureDefinition::Shell(_)
-                | PartFeatureDefinition::MoveBody(_)
-                | PartFeatureDefinition::Mirror(_)
-                | PartFeatureDefinition::CircularPattern(_)
-                | PartFeatureDefinition::RectangularPattern(_)
-        ) {
+        if feature.definition().requires_plain_plane_metadata() {
             feature
                 .validate_plane_metadata()
                 .map_err(|cause| PartFeatureFailure::Metadata(Box::new(cause)))?;
@@ -406,6 +387,9 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
             }
             PartFeatureDefinition::DerivedPart(definition) => {
                 self.evaluate_derived_part(backend, id, definition)
+            }
+            PartFeatureDefinition::ImportedModel(definition) => {
+                self.evaluate_imported_model(backend, id, definition)
             }
             PartFeatureDefinition::SketchSweep(definition) => {
                 self.evaluate_sweep(snapshot, backend, id, definition)

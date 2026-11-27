@@ -257,6 +257,13 @@ impl PartFeatureEvaluator for CertifiedNamedSolidEvaluator<'_> {
     ) -> Result<NamedSolid, PartFeatureFailure<EvaluationFailure>> {
         self.evaluate_named_derived_part(feature, input)
     }
+    fn evaluate_imported_model(
+        &mut self,
+        feature: FeatureId,
+        input: oblikovati_model::feature::imported_model::ResolvedImportedModel,
+    ) -> Result<NamedSolid, PartFeatureFailure<EvaluationFailure>> {
+        self.evaluate_named_imported_model(feature, input)
+    }
     fn evaluate_emboss(
         &mut self,
         feature: FeatureId,

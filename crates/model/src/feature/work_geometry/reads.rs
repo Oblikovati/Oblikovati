@@ -23,6 +23,7 @@ impl WorkGeometryDefinition {
             Self::SketchRib(definition) => return definition.source_reads(),
             Self::SketchDecal(definition) => return definition.source_reads(),
             Self::DerivedPart(definition) => return definition.source_reads(),
+            Self::ImportedModel(definition) => return definition.source_reads(),
             Self::SketchSweep(definition) => return definition.source_reads(),
             Self::SketchPrism(definition) => {
                 definition.source_reads().keys().iter().copied().collect()

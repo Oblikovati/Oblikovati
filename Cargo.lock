@@ -1606,6 +1606,82 @@ dependencies = [
 ]
 
 [[package]]
+name = "martensite-tkcaf"
+version = "0.9.0"
+source = "git+https://github.com/Oblikovati/Martensite?rev=db01546bb032659682715c6120e628b95fe5773d#db01546bb032659682715c6120e628b95fe5773d"
+dependencies = [
+ "martensite-cmath",
+ "martensite-tkbo",
+ "martensite-tkbrep",
+ "martensite-tkcdf",
+ "martensite-tkernel",
+ "martensite-tkg2d",
+ "martensite-tkg3d",
+ "martensite-tkgeombase",
+ "martensite-tklcaf",
+ "martensite-tkmath",
+ "martensite-tktopalgo",
+]
+
+[[package]]
+name = "martensite-tkcdf"
+version = "0.4.0"
+source = "git+https://github.com/Oblikovati/Martensite?rev=db01546bb032659682715c6120e628b95fe5773d#db01546bb032659682715c6120e628b95fe5773d"
+dependencies = [
+ "martensite-tkernel",
+]
+
+[[package]]
+name = "martensite-tkde"
+version = "0.10.0"
+source = "git+https://github.com/Oblikovati/Martensite?rev=db01546bb032659682715c6120e628b95fe5773d#db01546bb032659682715c6120e628b95fe5773d"
+dependencies = [
+ "martensite-tkbrep",
+ "martensite-tkernel",
+ "martensite-tkg3d",
+ "martensite-tklcaf",
+]
+
+[[package]]
+name = "martensite-tkdestep"
+version = "0.13.1"
+source = "git+https://github.com/Oblikovati/Martensite?rev=db01546bb032659682715c6120e628b95fe5773d#db01546bb032659682715c6120e628b95fe5773d"
+dependencies = [
+ "martensite-cmath",
+ "martensite-tkbrep",
+ "martensite-tkcaf",
+ "martensite-tkcdf",
+ "martensite-tkde",
+ "martensite-tkernel",
+ "martensite-tkg2d",
+ "martensite-tkg3d",
+ "martensite-tkgeombase",
+ "martensite-tklcaf",
+ "martensite-tkmath",
+ "martensite-tkshhealing",
+ "martensite-tktopalgo",
+ "martensite-tkvcaf",
+ "martensite-tkxcaf",
+ "martensite-tkxsbase",
+]
+
+[[package]]
+name = "martensite-tkdestl"
+version = "0.12.1"
+source = "git+https://github.com/Oblikovati/Martensite?rev=db01546bb032659682715c6120e628b95fe5773d#db01546bb032659682715c6120e628b95fe5773d"
+dependencies = [
+ "martensite-cmath",
+ "martensite-tkbrep",
+ "martensite-tkde",
+ "martensite-tkernel",
+ "martensite-tkg3d",
+ "martensite-tklcaf",
+ "martensite-tkmath",
+ "martensite-tktopalgo",
+ "martensite-tkxcaf",
+]
+
+[[package]]
 name = "martensite-tkernel"
 version = "0.5.1"
 source = "git+https://github.com/Oblikovati/Martensite?rev=db01546bb032659682715c6120e628b95fe5773d#db01546bb032659682715c6120e628b95fe5773d"
@@ -1706,6 +1782,15 @@ dependencies = [
  "martensite-tkgeombase",
  "martensite-tkmath",
  "martensite-tktopalgo",
+]
+
+[[package]]
+name = "martensite-tklcaf"
+version = "0.4.1"
+source = "git+https://github.com/Oblikovati/Martensite?rev=db01546bb032659682715c6120e628b95fe5773d#db01546bb032659682715c6120e628b95fe5773d"
+dependencies = [
+ "martensite-tkcdf",
+ "martensite-tkernel",
 ]
 
 [[package]]
@@ -1837,6 +1922,59 @@ dependencies = [
  "martensite-tkmath",
  "martensite-tkmesh",
  "martensite-tkservice",
+ "martensite-tktopalgo",
+]
+
+[[package]]
+name = "martensite-tkvcaf"
+version = "0.10.0"
+source = "git+https://github.com/Oblikovati/Martensite?rev=db01546bb032659682715c6120e628b95fe5773d#db01546bb032659682715c6120e628b95fe5773d"
+dependencies = [
+ "martensite-tkbrep",
+ "martensite-tkcaf",
+ "martensite-tkcdf",
+ "martensite-tkernel",
+ "martensite-tkg3d",
+ "martensite-tkgeombase",
+ "martensite-tklcaf",
+ "martensite-tkmath",
+ "martensite-tkservice",
+ "martensite-tktopalgo",
+ "martensite-tkv3d",
+]
+
+[[package]]
+name = "martensite-tkxcaf"
+version = "0.10.0"
+source = "git+https://github.com/Oblikovati/Martensite?rev=db01546bb032659682715c6120e628b95fe5773d#db01546bb032659682715c6120e628b95fe5773d"
+dependencies = [
+ "martensite-tkbrep",
+ "martensite-tkcaf",
+ "martensite-tkcdf",
+ "martensite-tkernel",
+ "martensite-tkg2d",
+ "martensite-tkg3d",
+ "martensite-tkgeombase",
+ "martensite-tklcaf",
+ "martensite-tkmath",
+ "martensite-tkservice",
+ "martensite-tktopalgo",
+ "martensite-tkv3d",
+ "martensite-tkvcaf",
+]
+
+[[package]]
+name = "martensite-tkxsbase"
+version = "0.10.0"
+source = "git+https://github.com/Oblikovati/Martensite?rev=db01546bb032659682715c6120e628b95fe5773d#db01546bb032659682715c6120e628b95fe5773d"
+dependencies = [
+ "martensite-tkbrep",
+ "martensite-tkernel",
+ "martensite-tkg2d",
+ "martensite-tkg3d",
+ "martensite-tkgeombase",
+ "martensite-tkmath",
+ "martensite-tkshhealing",
  "martensite-tktopalgo",
 ]
 
@@ -2194,6 +2332,8 @@ version = "0.1.0"
 dependencies = [
  "martensite-tkbo",
  "martensite-tkbrep",
+ "martensite-tkdestep",
+ "martensite-tkdestl",
  "martensite-tkernel",
  "martensite-tkfillet",
  "martensite-tkg2d",
@@ -2208,6 +2348,7 @@ dependencies = [
  "martensite-tkservice",
  "martensite-tktopalgo",
  "martensite-tkv3d",
+ "martensite-tkxsbase",
  "oblikovati-api",
  "oblikovati-model",
  "oblikovati-persistence",

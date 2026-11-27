@@ -32,6 +32,7 @@ pub enum WorkPlaneDefinitionRecipe {
     SketchRib(crate::feature::sketch_rib::SketchRibRecipe),
     SketchDecal(crate::feature::sketch_decal::SketchDecalRecipe),
     DerivedPart(crate::feature::derived_part::DerivedPartRecipe),
+    ImportedModel(crate::feature::imported_model::ImportedModelRecipe),
     SketchSweep(crate::feature::sketch_sweep::SketchSweepRecipe),
     AtAngleAboutAxis(crate::feature::work_geometry::WorkPlaneLineAngle),
     ThroughTwoAxes([crate::feature::work_axis::WorkAxisReference; 2]),
@@ -84,6 +85,7 @@ impl WorkPlaneDefinition {
             Self::SketchRib(definition) => Source::SketchRib(definition.recipe()),
             Self::SketchDecal(definition) => Source::SketchDecal(definition.recipe()),
             Self::DerivedPart(definition) => Source::DerivedPart(definition.recipe()),
+            Self::ImportedModel(definition) => Source::ImportedModel(definition.recipe()),
             Self::SketchSweep(definition) => Source::SketchSweep(definition.recipe().clone()),
             Self::SketchPrism(definition) => Source::SketchPrism(definition.recipe()),
             Self::AtAngleAboutAxis(source) => Source::AtAngleAboutAxis(source.clone()),
@@ -180,6 +182,11 @@ fn restore_definition(
                 .map(|definition| WorkPlaneDefinition::DerivedPart(Box::new(definition)))
                 .map_err(WorkPlaneError::BodyReference)
         }
+        ImportedModel(recipe) => {
+            crate::feature::imported_model::ImportedModelDefinition::from_recipe(&recipe)
+                .map(|definition| WorkPlaneDefinition::ImportedModel(Box::new(definition)))
+                .map_err(WorkPlaneError::BodyReference)
+        }
         SketchSweep(recipe) => {
             crate::feature::sketch_sweep::SketchSweepDefinition::from_recipe(recipe)
                 .map(|definition| WorkPlaneDefinition::SketchSweep(Box::new(definition)))
@@ -258,6 +265,7 @@ impl WorkPlaneDefinitionRecipe {
             Self::DerivedPart(_) => 41,
             Self::SketchRib(_) => 42,
             Self::SketchDecal(_) => 43,
+            Self::ImportedModel(_) => 44,
             Self::SketchSweep(recipe) => match recipe.version {
                 7 => 29,
                 6 => 28,
@@ -314,6 +322,7 @@ impl WorkPlaneDefinitionRecipe {
             Self::DerivedPart(_) => 47,
             Self::SketchRib(_) => 48,
             Self::SketchDecal(_) => 49,
+            Self::ImportedModel(_) => 50,
             Self::SketchSweep(recipe) => match recipe.version {
                 7 => 34,
                 6 => 33,

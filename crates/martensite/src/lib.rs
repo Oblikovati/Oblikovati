@@ -124,6 +124,7 @@ pub mod coil;
 mod decal;
 mod derive;
 mod emboss;
+pub mod import;
 mod revolve;
 mod rib;
 pub mod sweep;

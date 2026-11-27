@@ -10,10 +10,11 @@ use super::{
 use crate::{
     feature::{
         AuthoredFeature, FeatureId, derived_part::DerivedPartDefinition,
-        sketch_coil::SketchCoilDefinition, sketch_decal::SketchDecalDefinition,
-        sketch_emboss::SketchEmbossDefinition, sketch_loft::SketchLoftDefinition,
-        sketch_prism::SketchPrismDefinition, sketch_revolve::SketchRevolveDefinition,
-        sketch_rib::SketchRibDefinition, sketch_sweep::SketchSweepDefinition,
+        imported_model::ImportedModelDefinition, sketch_coil::SketchCoilDefinition,
+        sketch_decal::SketchDecalDefinition, sketch_emboss::SketchEmbossDefinition,
+        sketch_loft::SketchLoftDefinition, sketch_prism::SketchPrismDefinition,
+        sketch_revolve::SketchRevolveDefinition, sketch_rib::SketchRibDefinition,
+        sketch_sweep::SketchSweepDefinition,
     },
     history::DocumentSnapshot,
 };
@@ -212,6 +213,23 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
             return Ok(());
         }
         let body = backend.evaluate_derived_part(feature, input)?;
+        self.body_lineage
+            .register(feature)
+            .map_err(PartFeatureFailure::BodyReference)?;
+        self.bodies.insert(feature.into(), body);
+        Ok(())
+    }
+
+    pub(super) fn evaluate_imported_model<
+        B: PartFeatureEvaluator<Body = Body, Failure = Failure>,
+    >(
+        &mut self,
+        backend: &mut B,
+        feature: FeatureId,
+        definition: &ImportedModelDefinition,
+    ) -> Result<(), PartFeatureFailure<Failure>> {
+        let input = definition.resolve();
+        let body = backend.evaluate_imported_model(feature, input)?;
         self.body_lineage
             .register(feature)
             .map_err(PartFeatureFailure::BodyReference)?;

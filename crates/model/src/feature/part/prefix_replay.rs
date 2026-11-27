@@ -175,6 +175,15 @@ where
             .evaluate_derived_part(feature, input)
             .map(PrefixBody::Created)
     }
+    fn evaluate_imported_model(
+        &mut self,
+        feature: FeatureId,
+        input: crate::feature::imported_model::ResolvedImportedModel,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        self.0
+            .evaluate_imported_model(feature, input)
+            .map(PrefixBody::Created)
+    }
     fn evaluate_emboss(
         &mut self,
         feature: FeatureId,
