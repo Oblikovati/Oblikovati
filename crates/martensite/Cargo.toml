@@ -128,3 +128,7 @@ path = "tests/decal.rs"
 [[test]]
 name = "import"
 path = "tests/import.rs"
+
+[[test]]
+name = "unwrap"
+path = "tests/unwrap.rs"

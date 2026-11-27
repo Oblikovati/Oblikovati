@@ -14,7 +14,7 @@ use crate::{
         sketch_decal::SketchDecalDefinition, sketch_emboss::SketchEmbossDefinition,
         sketch_loft::SketchLoftDefinition, sketch_prism::SketchPrismDefinition,
         sketch_revolve::SketchRevolveDefinition, sketch_rib::SketchRibDefinition,
-        sketch_sweep::SketchSweepDefinition,
+        sketch_sweep::SketchSweepDefinition, unwrap::UnwrapDefinition,
     },
     history::DocumentSnapshot,
 };
@@ -234,6 +234,34 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
             .register(feature)
             .map_err(PartFeatureFailure::BodyReference)?;
         self.bodies.insert(feature.into(), body);
+        Ok(())
+    }
+
+    pub(super) fn evaluate_unwrap<B: PartFeatureEvaluator<Body = Body, Failure = Failure>>(
+        &mut self,
+        backend: &mut B,
+        feature: FeatureId,
+        definition: &UnwrapDefinition,
+    ) -> Result<(), PartFeatureFailure<Failure>> {
+        let (target_key, target_feature) = definition.target_body();
+        let slot = resolve_body_slot(
+            &self.bodies,
+            &self.body_lineage,
+            backend,
+            target_feature,
+            target_key,
+        )
+        .map_err(PartFeatureFailure::BodyReference)?;
+        let target = self.bodies.get(&slot).ok_or_else(|| {
+            PartFeatureFailure::BodyReference(format!(
+                "unwrap target {target_feature:?}: expected an active body"
+            ))
+        })?;
+        let surface = backend.evaluate_unwrap(feature, target, definition.resolve())?;
+        self.body_lineage
+            .register(feature)
+            .map_err(PartFeatureFailure::BodyReference)?;
+        self.bodies.insert(feature.into(), surface);
         Ok(())
     }
 

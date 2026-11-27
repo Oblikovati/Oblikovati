@@ -49,6 +49,7 @@ pub enum PartFeatureFailure<Failure> {
     DecalInput(String),
     DerivedPartInput(String),
     ImportedModelInput(String),
+    UnwrapInput(String),
     LoftInput(String),
     Kernel(Failure),
     BodyReference(String),
@@ -390,6 +391,9 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
             }
             PartFeatureDefinition::ImportedModel(definition) => {
                 self.evaluate_imported_model(backend, id, definition)
+            }
+            PartFeatureDefinition::Unwrap(definition) => {
+                self.evaluate_unwrap(backend, id, definition)
             }
             PartFeatureDefinition::SketchSweep(definition) => {
                 self.evaluate_sweep(snapshot, backend, id, definition)

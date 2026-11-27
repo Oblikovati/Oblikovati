@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Append an Imported Model feature to a Part candidate snapshot.
+#[path = "unwrap_create.rs"]
+mod unwrap_create;
 use super::*;
 use crate::feature::{
     AuthoredFeature, FeatureId,

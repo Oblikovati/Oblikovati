@@ -177,6 +177,17 @@ pub trait PartFeatureEvaluator {
             "import: expected an available imported-model evaluator".into(),
         ))
     }
+    /// Unfold one or more selected solid faces into a planar surface body.
+    fn evaluate_unwrap(
+        &mut self,
+        _feature: FeatureId,
+        _body: &Self::Body,
+        _input: crate::feature::unwrap::ResolvedUnwrap<'_>,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        Err(PartFeatureFailure::Unsupported(
+            "unwrap: expected an available unwrap evaluator".into(),
+        ))
+    }
     /// Apply a solved Emboss (raise, engrave, or level-to-plane) to a target body.
     fn evaluate_emboss(
         &mut self,

@@ -128,6 +128,7 @@ pub mod import;
 mod revolve;
 mod rib;
 pub mod sweep;
+mod unwrap;
 pub use revolve::{
     RevolveFaceRole, RevolveProbeDefinition, RevolveProbeReport, probe_planar_revolve,
     probe_revolve_on_plane,

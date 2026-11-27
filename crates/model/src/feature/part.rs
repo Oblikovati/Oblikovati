@@ -65,6 +65,7 @@ pub enum PartFeatureDefinition {
     SketchDecal(Box<super::sketch_decal::SketchDecalDefinition>),
     DerivedPart(Box<super::derived_part::DerivedPartDefinition>),
     ImportedModel(Box<super::imported_model::ImportedModelDefinition>),
+    Unwrap(Box<super::unwrap::UnwrapDefinition>),
     SketchLoft(Box<super::sketch_loft::SketchLoftDefinition>),
     SketchRevolve(Box<super::sketch_revolve::SketchRevolveDefinition>),
     SketchSweep(Box<super::sketch_sweep::SketchSweepDefinition>),
@@ -95,6 +96,7 @@ impl PartFeatureDefinition {
             Self::SketchDecal(_) => "decal",
             Self::DerivedPart(_) => "derived",
             Self::ImportedModel(_) => "imported",
+            Self::Unwrap(_) => "unwrap",
             Self::SketchSweep(_) => "sweep",
             Self::SketchLoft(_) => "loft",
             Self::SketchRevolve(_) => "revolve",
@@ -127,6 +129,7 @@ impl PartFeatureDefinition {
                 | Self::SketchDecal(_)
                 | Self::DerivedPart(_)
                 | Self::ImportedModel(_)
+                | Self::Unwrap(_)
                 | Self::DeleteBody(_)
                 | Self::Fillet(_)
                 | Self::Chamfer(_)

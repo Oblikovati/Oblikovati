@@ -31,6 +31,7 @@ pub mod sketch_revolve;
 pub mod sketch_rib;
 pub mod sketch_sweep;
 mod suppression;
+pub mod unwrap;
 mod validation;
 pub mod work_axis;
 pub mod work_geometry;

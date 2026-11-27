@@ -184,6 +184,16 @@ where
             .evaluate_imported_model(feature, input)
             .map(PrefixBody::Created)
     }
+    fn evaluate_unwrap(
+        &mut self,
+        feature: FeatureId,
+        body: &Self::Body,
+        input: crate::feature::unwrap::ResolvedUnwrap<'_>,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        self.0
+            .evaluate_unwrap(feature, body.get(), input)
+            .map(PrefixBody::Created)
+    }
     fn evaluate_emboss(
         &mut self,
         feature: FeatureId,
