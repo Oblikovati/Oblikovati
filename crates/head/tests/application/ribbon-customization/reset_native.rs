@@ -13,6 +13,7 @@ fn reset_ribbon_cancels_or_persists_defaults() {
     click_in_customize(&mut world, "Close");
     world.expect_text("User Commands");
     open_ribbon_reset(&mut world);
+    world.save_capture("reset-ribbon-confirmation");
     world.click_text("No");
     world.expect_text("User Commands");
     open_ribbon_reset(&mut world);
@@ -33,7 +34,6 @@ fn open_ribbon_reset(world: &mut ApplicationWorld) {
     world.click_text("Ribbon Appearance");
     world.click_text("Reset Ribbon");
     assert_reset_centered();
-    world.save_capture("reset-ribbon-confirmation");
 }
 
 fn assert_reset_centered() {
@@ -62,7 +62,8 @@ fn failed_ribbon_reset_keeps_applied_commands() {
     open_ribbon_reset(&mut world);
     world.click_text("Yes");
     assert!(diagnostics::window_geometry("Reset Ribbon").is_some());
-    world.expect_text("complete atomic file replacement");
+    let error = super::super::super::world::squeezed(&world.window_text("Reset Ribbon"));
+    assert!(error.contains("completeatomicfilereplacement"), "{error}");
     world.click_text("No");
     world.expect_text("User Commands");
     world.close();
