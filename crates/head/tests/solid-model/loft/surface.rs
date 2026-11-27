@@ -78,3 +78,72 @@ fn loft_surface_key(world: &mut ApplicationWorld) -> String {
     world.expect_text("Surface Bodies (1)");
     surface.key.clone()
 }
+
+#[given(
+    "the user creates LoftSrf1 with surface output by selecting both circular sketches as sections"
+)]
+fn create_loft_surface_for_edit(world: &mut ApplicationWorld) {
+    open_loft_for_surface(world);
+    pick_surface_sections(world);
+    assert_eq!(world.state().loft_preview, Some(Ok(())));
+    accept_loft(world);
+    loft_surface_key(world);
+}
+
+#[given("LoftSrf1 is open on Transition with Automatic Mapping enabled")]
+fn open_surface_transition(world: &mut ApplicationWorld) {
+    let row = diagnostics::pointer_pixels(world.run("LoftSrf1").center());
+    world.pump(crate::native::gui_loop_tests::pointer_click_events(row, 2));
+    world.pump(Vec::new());
+    assert_eq!(world.state().loft_preview, Some(Ok(())));
+    click_loft_control(world, "Transition");
+    assert!(world.checked_run(world.run_in_window("Loft", "AutomaticMapping")));
+}
+
+#[then("sets 1 and map-point rows for Sketch1 and Sketch2 are displayed")]
+fn default_mapping_shows_both_point_rows(world: &mut ApplicationWorld) {
+    assert!(!world.checked_run(world.run_in_window("Loft", "AutomaticMapping")));
+    assert!(loft_panel_has_text(
+        world,
+        "Set1Sketch1MapPointSketch2MapPoint"
+    ));
+}
+
+#[when("Click to add is selected")]
+fn add_an_incomplete_point_set(world: &mut ApplicationWorld) {
+    click_loft_control(world, "Clicktoadd");
+}
+
+#[then("sets 2 appears with starred map-point rows and OK is disabled")]
+fn new_point_rows_are_incomplete(world: &mut ApplicationWorld) {
+    assert!(loft_panel_has_text(
+        world,
+        "Set2Sketch1MapPoint*Sketch2MapPoint*"
+    ));
+    assert!(!world.run_is_enabled("OK"));
+    assert_eq!(world.state().loft_preview, Some(Ok(())));
+}
+
+#[when("the incomplete edit is cancelled")]
+fn cancel_incomplete_mapping(world: &mut ApplicationWorld) {
+    let before = world.state().document_generation;
+    let key = loft_surface_key(world);
+    click_loft_control(world, "Cancel");
+    assert_eq!(world.state().document_generation, before);
+    assert_eq!(loft_surface_key(world), key);
+}
+
+#[then("the existing surface Loft remains visible")]
+fn surface_loft_stays_visible(world: &mut ApplicationWorld) {
+    assert!(diagnostics::window_geometry("Loft").is_none());
+    assert!(world.state().browser.unwrap().surface_bodies[0].visible);
+    assert!(!world.app().window.scene_triangles.is_empty());
+    assert!(
+        world
+            .app()
+            .window
+            .scene_triangles
+            .iter()
+            .all(|triangle| { triangle.color != crate::part_scene::NEW_SOLID_PREVIEW })
+    );
+}

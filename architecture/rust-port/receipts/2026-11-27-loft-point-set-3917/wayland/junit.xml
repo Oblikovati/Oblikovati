@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Loft: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/loft/loft.feature" package="testsuite/Feature: Loft: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/loft/loft.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-27T00:06:16.562479609Z" time="9.600530897"><testcase name="Scenario: loft-10 Add an incomplete manual point set: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/loft/loft.feature:97:3" time="9.600530897"><system-out><![CDATA[  Scenario: loft-10 Add an incomplete manual point set
+   ✔  Given a disposable copy of the native fixture "fixtures/cad/loft/parallel-circles.opd" is open
+   ✔  And the user creates LoftSrf1 with surface output by selecting both circular sketches as sections
+   ✔  And LoftSrf1 is open on Transition with Automatic Mapping enabled
+   ✔  When Automatic Mapping is cleared
+   ✔  Then sets 1 and map-point rows for Sketch1 and Sketch2 are displayed
+   ✔  When Click to add is selected
+   ✔  Then sets 2 appears with starred map-point rows and OK is disabled
+   ✔  When the incomplete edit is cancelled
+   ✔  Then the existing surface Loft remains visible
+]]></system-out></testcase></testsuite></testsuites>

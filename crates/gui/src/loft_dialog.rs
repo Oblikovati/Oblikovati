@@ -109,7 +109,7 @@ pub(crate) struct LoftDialog {
     merge_tangent_faces: bool,
     select_curves: bool,
     manual_mapping: bool,
-    point_sets: usize,
+    supplemental_point_sets: usize,
 }
 
 impl DockableWindow for LoftDialog {}
@@ -147,7 +147,7 @@ impl LoftDialog {
         self.merge_tangent_faces = false;
         self.select_curves = true;
         self.manual_mapping = false;
-        self.point_sets = 0;
+        self.supplemental_point_sets = 0;
         self.dock.set_open(true);
         actions.push(GuiShellAction::Loft(GuiLoftAction::Begin {
             document,
@@ -268,7 +268,7 @@ impl LoftDialog {
             ui.checkbox("Merge Tangent Faces", &mut self.merge_tangent_faces);
         }
         if let Some(_transition) = ui.tab_item("Transition") {
-            self.transition(ui);
+            self.transition(ui, sections);
         }
     }
 
@@ -328,7 +328,7 @@ impl LoftDialog {
         }
     }
 
-    fn transition(&mut self, ui: &Ui) {
+    fn transition(&mut self, ui: &Ui, sections: &[GuiLoftSection]) {
         let mut automatic = !self.manual_mapping;
         if ui.checkbox("Automatic Mapping", &mut automatic) {
             self.manual_mapping = !automatic;
@@ -337,11 +337,25 @@ impl LoftDialog {
             return;
         }
         ui.text("Point Set");
-        for index in 1..=self.point_sets {
-            ui.text(format!("Set {index} *"));
+        let _disabled = ui.begin_disabled(sections.len() < 2);
+        if sections.len() >= 2 {
+            let height = if self.supplemental_point_sets == 0 {
+                76.
+            } else {
+                156.
+            };
+            ui.child_window("##loft-mapping-point-sets")
+                .size([0., height])
+                .border(true)
+                .build(|| {
+                    draw_point_set(ui, sections, 1, "");
+                    for index in 0..self.supplemental_point_sets {
+                        draw_point_set(ui, sections, index + 2, " *");
+                    }
+                });
         }
         if crate::widget_abi::button(ui, "Click to add", [0., 0.]) {
-            self.point_sets += 1;
+            self.supplemental_point_sets += 1;
         }
     }
 }
@@ -360,4 +374,13 @@ fn draw_sections(ui: &Ui, sections: &[GuiLoftSection]) {
             GuiLoftElement::Profile(_) => ui.text(&section.name),
         }
     }
+}
+
+fn draw_point_set(ui: &Ui, sections: &[GuiLoftSection], number: usize, incomplete: &str) {
+    ui.text(format!("Set {number}"));
+    ui.indent_by(12.);
+    for section in sections {
+        ui.text(format!("{} Map Point{incomplete}", section.name));
+    }
+    ui.unindent_by(12.);
 }
