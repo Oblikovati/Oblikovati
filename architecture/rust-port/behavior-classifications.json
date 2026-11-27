@@ -8513,8 +8513,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/chrome_ribbon.go; ../Oblikovati/head/ui/ribbon_collapse.go; ../Oblikovati/head/ui/qat.go; ../Oblikovati/head/ui/keymap_window.go",
-      "mapping_reason": "Desktop ribbon, shortcut, or marking-menu customization and settings."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a head/ui/marking_menu_window.go and head/ui/marking_menu_window_test.go.",
+      "mapping_reason": "Desktop ribbon, shortcut, or marking-menu customization and settings.",
+      "go_test_premise": "TestInWindowMarkingMenuEditorDraws verifies that the editor renders its slot table, search, and footer across frames. The pinned native scenario specifies the exact 2D Sketch defaults.",
+      "api_revision": "c8200b2da97c9a7dde43afb25debc977ff23b2fd",
+      "kernel_revision": "d463526642b7bf950ba33c7ab4a4c9bc97caffaf",
+      "kernel_capabilities": "Vulkan presentation of the active Part sketch.",
+      "platforms": "Linux Wayland under Weston and X11 under Openbox and Xvfb, both with Vulkan Lavapipe.",
+      "kernel_integration": "The desktop opens customization over the real Part and resumes its active sketch when the dialog closes.",
+      "rust_tests": "crates/head/tests/application/ribbon-customization/marking_environment.rs; crates/head/tests/application/ribbon-customization/tab_retention.rs.",
+      "oracle": "The native scenario inspects the on-screen editor and confirms the original active sketch after Close. See receipts/2026-11-27-pinned-model-state-marking-4184/{x11,wayland}-marking-initial.json.",
+      "expected_result": "The 2D Sketch default environment, slots, empty search, icon and text style, and full overflow menu are shown. Apply is unavailable and Close retains the sketch.",
+      "baseline_source_sha256": "c338bc2ca7723cbc58a28c13b97869e61ad0697ed3290c67843149e1e608a73e"
     },
     {
       "id": "scenario:c2d31b832be521b2613c8cb66133d9fc858d00c1a953dd83c75435736b8a524f",
@@ -18520,8 +18530,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/browser_view.go; ../Oblikovati/head/ui/dockable_panel.go",
-      "mapping_reason": "Model browser UI behavior; model-state and geometry prerequisites belong to their domain milestones."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a app/representation_ui_test.go and app/browser_activate_test.go.",
+      "mapping_reason": "Model browser UI behavior; model-state and geometry prerequisites belong to their domain milestones.",
+      "go_test_premise": "TestModelStateCaptureAndActivate checks that the assembly browser creates a state row and restores the stored representation. TestModelStateHandleActivate checks restoration through the browser handle. The pinned native scenario specifies the Part parameter behavior.",
+      "api_revision": "c8200b2da97c9a7dde43afb25debc977ff23b2fd",
+      "kernel_revision": "d463526642b7bf950ba33c7ab4a4c9bc97caffaf",
+      "kernel_capabilities": "Part Extrude authoring with an angular scalar and Vulkan presentation.",
+      "platforms": "Linux Wayland under Weston and X11 under Openbox and Xvfb, both with Vulkan Lavapipe.",
+      "kernel_integration": "The Part fixture supplies the feature-owned taper scalar. The desktop applies the Copy State table change through the document host and reads its active value after reopening.",
+      "rust_tests": "crates/head/tests/application/model-browser/model_state_taper_parameter.rs; crates/head/tests/application/model-browser/model_state_parameter_fixture.rs.",
+      "oracle": "The native scenario inspects rendered table cells and the parameter tree after accepting and reopening the table. See receipts/2026-11-27-pinned-model-state-marking-4184/{x11,wayland}-state-taper.json.",
+      "expected_result": "The chosen length and angle columns persist. Only Copy State shows a 5 degree angle and its active parameter tree matches.",
+      "baseline_source_sha256": "603382ec4009d73a74e960c5981d255c4ca9ac5489b94fcf57193c7b09458b2e"
     },
     {
       "id": "scenario:8250c4497bec6ab3df93ae481c1c70fa43cf3163aa1f537d9104edd8bfe10b55",
@@ -18537,8 +18557,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/browser_view.go; ../Oblikovati/head/ui/dockable_panel.go",
-      "mapping_reason": "Model browser UI behavior; model-state and geometry prerequisites belong to their domain milestones."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a app/representation_ui_test.go and app/browser_activate_test.go.",
+      "mapping_reason": "Model browser UI behavior; model-state and geometry prerequisites belong to their domain milestones.",
+      "go_test_premise": "TestModelStateCaptureAndActivate checks that the assembly browser creates a state row and restores the stored representation. TestModelStateHandleActivate checks restoration through the browser handle. The pinned native scenario specifies the Part parameter behavior.",
+      "api_revision": "c8200b2da97c9a7dde43afb25debc977ff23b2fd",
+      "kernel_revision": "d463526642b7bf950ba33c7ab4a4c9bc97caffaf",
+      "kernel_capabilities": "Part Extrude fixture regeneration and Vulkan framebuffer readback of the active-state highlight.",
+      "platforms": "Linux Wayland under Weston and X11 under Openbox and Xvfb, both with Vulkan Lavapipe.",
+      "kernel_integration": "The desktop activates a different member through the real model browser and renders the resulting table and resolved parameter values.",
+      "rust_tests": "crates/head/tests/application/model-browser/model_state_tree_values.rs; application_scenarios_use_the_native_window; active_row_highlight_follows_model_state_switch.",
+      "oracle": "The native scenario checks the active-row background pixel, the rendered parameter tree, and the inactive member cells. See receipts/2026-11-27-pinned-model-state-marking-4184/{x11,wayland}-state-active.json.",
+      "expected_result": "Primary is pale green with length 1 in and angle 0 degrees. Copy State retains its length expression and 5 degree angle.",
+      "baseline_source_sha256": "603382ec4009d73a74e960c5981d255c4ca9ac5489b94fcf57193c7b09458b2e"
     },
     {
       "id": "scenario:78bd808ed2e58fc5837a4bd1af357b1489613029f56bb5e60466cc14c776e67a",
