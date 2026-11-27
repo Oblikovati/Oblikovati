@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Render applied commands through the same actions as the built-in ribbon.
-use super::{Command, RibbonCustomization};
+use super::{Command, RibbonCustomization, state::Entry};
 use crate::application::viewport_orientation::ZoomAction;
 use crate::icons::{GuiRibbonIcons, IconGlyph};
 use crate::{GuiCommandState, GuiShellAction};
@@ -15,6 +15,31 @@ impl RibbonCustomization {
                 .applied(tab)
                 .iter()
                 .any(|entry| entry.command != Command::Separator)
+    }
+
+    /// Measure active commands using the same cells that the normal ribbon draws.
+    pub(crate) fn main_panel_width(
+        &self,
+        ui: &Ui,
+        tab: crate::ribbon::RibbonTab,
+        icons: &GuiRibbonIcons,
+    ) -> f32 {
+        let spacing = ui.clone_style().item_spacing[0];
+        self.draft
+            .applied(tab)
+            .iter()
+            .filter(|entry| !entry.expanded)
+            .enumerate()
+            .map(|(index, entry)| {
+                let gap = if index == 0 { 0. } else { spacing };
+                let width = if entry.command == Command::Separator {
+                    8.
+                } else {
+                    icons.normal_button_width(ui, command_label(entry, true), normal_size(entry))
+                };
+                gap + width
+            })
+            .sum()
     }
 
     pub(crate) fn draw_panel(
@@ -42,16 +67,11 @@ impl RibbonCustomization {
                 icons.cursor(ui, origin, icons.appearance.cell(count).0);
             }
             let _id = ui.push_id(format!("custom-command-{index}"));
-            let label = if entry.text || !normal {
-                entry.command.label()
+            let label = command_label(entry, normal);
+            let size = if normal {
+                normal_size(entry)
             } else {
-                "##icon-only"
-            };
-            let size = match (normal, entry.large, entry.text) {
-                (false, _, _) => icons.appearance.cell(count).1,
-                (true, true, _) => [90., 58.],
-                (true, false, true) => [90., 26.],
-                (true, false, false) => [26., 26.],
+                icons.appearance.cell(count).1
             };
             match entry.command {
                 Command::Sketches => sketch_visibility(ui, label, size, state, icons, actions),
@@ -160,6 +180,22 @@ impl RibbonCustomization {
             }
         }
         right
+    }
+}
+
+fn command_label(entry: &Entry, normal: bool) -> &str {
+    if entry.text || !normal {
+        entry.command.label()
+    } else {
+        "##icon-only"
+    }
+}
+
+fn normal_size(entry: &Entry) -> [f32; 2] {
+    match (entry.large, entry.text) {
+        (true, _) => [90., 58.],
+        (false, true) => [90., 26.],
+        (false, false) => [26., 26.],
     }
 }
 fn zoom_button(

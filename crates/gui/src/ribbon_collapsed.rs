@@ -2,6 +2,25 @@
 //! Keep compact groups identifiable by their caption and emblem.
 use super::*;
 
+pub(super) fn user_commands_fit(
+    context: &PanelDrawContext<'_>,
+    tab: RibbonTab,
+    panel: RibbonPanel,
+    reserved_width: f32,
+) -> bool {
+    let icons = context.owners.icons;
+    if panel != RibbonPanel::UserCommands
+        || icons.appearance != crate::ribbon_command_layout::RibbonAppearance::Normal
+    {
+        return false;
+    }
+    let width = context
+        .owners
+        .customization
+        .main_panel_width(context.ui, tab, icons);
+    width > 0. && width <= reserved_width
+}
+
 pub(super) fn row_widths(
     context: &PanelDrawContext<'_>,
     tab: RibbonTab,

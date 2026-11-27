@@ -138,11 +138,10 @@ impl GuiRibbonIcons {
         };
         let large = style == IconSize::Large;
         let icon = self.logical[style.index()];
-        let mut cell = self.cell(size);
         let show_caption = self.appearance == RibbonAppearance::Normal;
+        let mut cell = self.cell(size);
         if show_caption {
-            let caption = ui.calc_text_size_with_opts(label, true, -1.)[0];
-            cell[0] = cell[0].max(caption + if large { 4. } else { icon[0] + 7. });
+            cell[0] = cell[0].max(self.caption_width(ui, label, style));
         }
         crate::widget_abi::IconButtonPresentation {
             texture: self.key(glyph, style),
@@ -151,6 +150,20 @@ impl GuiRibbonIcons {
             large,
             show_caption,
         }
+    }
+
+    pub(crate) fn normal_button_width(&self, ui: &Ui, label: &str, size: [f32; 2]) -> f32 {
+        self.cell(size)[0].max(self.caption_width(ui, label, IconSize::for_height(size[1])))
+    }
+
+    fn caption_width(&self, ui: &Ui, label: &str, style: IconSize) -> f32 {
+        let caption = ui.calc_text_size_with_opts(label, true, -1.)[0];
+        let inset = if style == IconSize::Large {
+            4.
+        } else {
+            self.logical[style.index()][0] + 7.
+        };
+        caption + inset
     }
     pub(crate) fn command_button(
         &self,
