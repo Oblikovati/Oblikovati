@@ -8726,8 +8726,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/chrome_ribbon.go; ../Oblikovati/head/ui/ribbon_collapse.go; ../Oblikovati/head/ui/qat.go; ../Oblikovati/head/ui/keymap_window.go",
-      "mapping_reason": "Desktop ribbon, shortcut, or marking-menu customization and settings."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a head/ui/icon_cache.go and head/ui/ribbon_collapse_test.go.",
+      "mapping_reason": "Desktop ribbon, shortcut, or marking-menu customization and settings.",
+      "go_test_premise": "The Go icon cache defines standard and large ribbon icon sizes. TestPanelsThatFitCollapsesFromTheRight checks allocation of available ribbon width. The pinned desktop scenario supplies the Shell-specific size and appearance behavior.",
+      "api_revision": "c8200b2da97c9a7dde43afb25debc977ff23b2fd",
+      "kernel_revision": "d463526642b7bf950ba33c7ab4a4c9bc97caffaf",
+      "kernel_capabilities": "Vulkan presentation of the Part and ribbon. Changing command appearance does not require feature generation.",
+      "platforms": "Linux Wayland under Weston and X11 under Openbox and Xvfb, both with Vulkan Lavapipe.",
+      "kernel_integration": "A native Part remains active while the GUI redraws the ribbon command size and appearance.",
+      "rust_tests": "crates/head/tests/application/ribbon-customization/button_size.rs; shell_button_size_keeps_its_saved_value_through_appearance_and_failed_save.",
+      "oracle": "The native scenario selects Standard and Large and reads the rendered icon, label and neighboring Chamfer position. See receipts/2026-11-27-pinned-shell-ribbon-4184/{x11,wayland}-changed.json.",
+      "expected_result": "Large moves Shell’s caption under its icon and reflows Chamfer. Returning to Standard restores the small icon and its side caption.",
+      "baseline_source_sha256": "c338bc2ca7723cbc58a28c13b97869e61ad0697ed3290c67843149e1e608a73e"
     },
     {
       "id": "scenario:c72b37bbb1f4253442536dc7f42cfa9c11ec49778ce314d5686f95bdb0378ed2",
@@ -10614,8 +10624,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/chrome_ribbon.go; ../Oblikovati/head/ui/ribbon_collapse.go; ../Oblikovati/head/ui/qat.go; ../Oblikovati/head/ui/keymap_window.go",
-      "mapping_reason": "Desktop ribbon, shortcut, or marking-menu customization and settings."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a head/ui/icon_cache.go and head/ui/ribbon_collapse_test.go.",
+      "mapping_reason": "Desktop ribbon, shortcut, or marking-menu customization and settings.",
+      "go_test_premise": "The Go icon cache defines standard and large ribbon icon sizes. TestPanelsThatFitCollapsesFromTheRight checks allocation of available ribbon width. The pinned desktop scenario supplies the Shell-specific size and appearance behavior.",
+      "api_revision": "c8200b2da97c9a7dde43afb25debc977ff23b2fd",
+      "kernel_revision": "d463526642b7bf950ba33c7ab4a4c9bc97caffaf",
+      "kernel_capabilities": "Vulkan presentation of the Part and ribbon. Changing command appearance does not require feature generation.",
+      "platforms": "Linux Wayland under Weston and X11 under Openbox and Xvfb, both with Vulkan Lavapipe.",
+      "kernel_integration": "A native Part remains active while the GUI redraws the ribbon command size and appearance.",
+      "rust_tests": "crates/head/tests/application/ribbon-customization/button_size.rs; shell_button_size_keeps_its_saved_value_through_appearance_and_failed_save.",
+      "oracle": "The native scenario checks the same Shell icon with no label, the retained size setting, and the restored Standard presentation. See receipts/2026-11-27-pinned-shell-ribbon-4184/{x11,wayland}-retained.json.",
+      "expected_result": "Text Off hides command labels and keeps the Modify caption and large Shell icon. Restoring Standard and Normal recovers the original Shell layout.",
+      "baseline_source_sha256": "c338bc2ca7723cbc58a28c13b97869e61ad0697ed3290c67843149e1e608a73e"
     },
     {
       "id": "scenario:e68e17af7672f0a653e485119ef6d9d808291c3b0703bd0bf16238d0bcd35987",
