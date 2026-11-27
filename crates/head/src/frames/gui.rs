@@ -416,6 +416,7 @@ pub(super) fn dispatch_action(
                 document: *document,
                 sketch: *sketch,
                 profile: *profile,
+                additional_profiles: Vec::new(),
                 distance: distance.clone(),
                 direction: *direction,
                 second_distance: second_distance.clone(),

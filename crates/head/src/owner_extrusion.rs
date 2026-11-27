@@ -233,6 +233,26 @@ impl<
             return Err("extrusion draft: expected its current certified preview".into());
         }
         let request = self.extrusion_draft_request(draft)?;
+        if !draft.additional_profiles.is_empty() {
+            if body_name.is_some() {
+                return Err("Body Name applies to a single new solid".into());
+            }
+            let prepared = self.prepare_grouped_extrusion(draft, &request)?;
+            let backend = self
+                .extrusion_access
+                .as_ref()
+                .ok_or("expected certified Extrude access")?;
+            oblikovati_automation::commit_prepared_extrusion(
+                &mut self.files,
+                draft.document,
+                backend,
+                prepared,
+                keep_sketch,
+            )
+            .map_err(|cause| cause.to_string())?;
+            self.clear_extrusion_preview();
+            return Ok(true);
+        }
         self.clear_extrusion_preview();
         let client = oblikovati_api::client::Client::new(self.document_host());
         let result = if body_name.is_some() || keep_sketch {
@@ -243,6 +263,37 @@ impl<
         result.map_err(|cause| cause.to_string())?;
         Ok(true)
     }
+    pub(super) fn prepare_grouped_extrusion(
+        &mut self,
+        draft: &oblikovati_gui::GuiExtrudePreview,
+        request: &oblikovati_api::wire::featureargs::Extrude,
+    ) -> Result<oblikovati_automation::PreparedExtrusion, String> {
+        let session = self
+            .files
+            .workspace()
+            .session(draft.document)
+            .map_err(|cause| cause.to_string())?;
+        if draft.generation != Some(session.generation())
+            || session.in_transaction()
+            || draft.operation.is_some()
+        {
+            return Err("Extrude: expected a current New Solid draft".into());
+        }
+        let backend = self
+            .extrusion_access
+            .as_ref()
+            .ok_or("expected certified Extrude access")?;
+        oblikovati_automation::prepare_owned_extrusion_profiles(
+            &mut self.files,
+            draft.document,
+            backend,
+            request,
+            &draft.additional_profiles,
+            Some(&mut self.part_scenes),
+        )
+        .map_err(|cause| cause.to_string())
+    }
+
     fn extrusion_sketch_index(
         &self,
         document: u64,

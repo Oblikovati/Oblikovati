@@ -38,6 +38,7 @@ pub(crate) struct ExtrudeDialog {
     dock_state: crate::dockable_lifecycle::DockableState,
     sketch: Option<DocumentSketchId>,
     profile: i32,
+    additional_profiles: Vec<i64>,
     profile_pick_sketch: Option<DocumentSketchId>,
     profile_pick_request: u64,
     source_edit: bool,
@@ -93,6 +94,7 @@ impl ExtrudeDialog {
             self.operation = None;
             self.preview_hidden = false;
             self.profile_pick_sketch = None;
+            self.additional_profiles.clear();
             self.source_edit = false;
             self.size = Default::default();
         }
@@ -117,6 +119,7 @@ impl ExtrudeDialog {
         self.sketch = Some(seed.sketch);
         self.profile_pick_sketch = None;
         self.profile = 0;
+        self.additional_profiles.clear();
         self.distance = seed.distance.clone();
         self.distance_editor = Default::default();
         self.second_distance = seed.second_distance.clone().unwrap_or_default();
@@ -184,6 +187,7 @@ impl ExtrudeDialog {
             self.sketch = Some(sketch);
             self.body_name.clear();
             self.profile = 0;
+            self.additional_profiles.clear();
             self.distance = DEFAULT_DISTANCE.into();
             self.second_distance = "5 mm".into();
             self.direction = GuiExtrudeDirection::Positive;
@@ -355,6 +359,7 @@ impl ExtrudeDialog {
                 document,
                 sketch: self.sketch?,
                 profile: i64::from(self.profile),
+                additional_profiles: self.additional_profiles.clone(),
                 distance: String::new(),
                 second_distance: None,
                 direction: self.reference_direction(),
@@ -381,37 +386,13 @@ impl ExtrudeDialog {
             document,
             sketch: self.sketch?,
             profile: i64::from(self.profile),
+            additional_profiles: self.additional_profiles.clone(),
             distance: self.distance.clone(),
             second_distance: self.active_second_distance().map(str::to_owned),
             direction: self.direction,
             operation: self.operation,
             reference_extent,
         })
-    }
-    fn sketch_choice(&mut self, ui: &Ui, state: &GuiCommandState) -> bool {
-        let Some(browser) = state.browser.as_ref() else {
-            return false;
-        };
-        let shown = browser
-            .sketches
-            .iter()
-            .find(|row| Some(row.id) == self.sketch)
-            .map_or("Choose a sketch", |row| row.name.as_str());
-        crate::theme::property_label(ui, "Sketch");
-        let Some(_list) = ui.begin_combo("##extrude-sketch", shown) else {
-            return false;
-        };
-        let previous = self.sketch;
-        for row in &browser.sketches {
-            if ui
-                .selectable_config(&row.name)
-                .selected(Some(row.id) == self.sketch)
-                .build()
-            {
-                self.sketch = Some(row.id);
-            }
-        }
-        self.sketch != previous
     }
     fn edit_request(
         &self,

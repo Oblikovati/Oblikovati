@@ -44,6 +44,17 @@ pub(super) fn reference(state: &GuiCommandState, request: &GuiExtrudePreview) ->
 }
 
 pub(super) fn preview(state: &GuiCommandState, request: &GuiExtrudePreview) -> bool {
+    if !request.additional_profiles.is_empty()
+        && (request.generation.is_none()
+            || request.generation != state.document_generation
+            || request.operation.is_some()
+            || request
+                .additional_profiles
+                .iter()
+                .any(|&index| index < 0 || index == request.profile))
+    {
+        return false;
+    }
     let through_all = matches!(
         request.reference_extent,
         Some(GuiExtrudeReferenceExtent::ThroughAll)
@@ -86,6 +97,9 @@ pub(super) fn commit_draft(
     preview(state, draft)
         && state.extrude_draft_preview.as_ref() == Some(draft)
         && name.is_none_or(|name| {
-            draft.operation.is_none() && !name.is_empty() && !name.contains('\0')
+            draft.operation.is_none()
+                && draft.additional_profiles.is_empty()
+                && !name.is_empty()
+                && !name.contains('\0')
         })
 }

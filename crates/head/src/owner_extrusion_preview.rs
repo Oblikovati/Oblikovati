@@ -138,6 +138,9 @@ impl<
         self.clear_extrusion_preview();
         let document = preview.document;
         let request = self.extrusion_draft_request(preview)?;
+        if !preview.additional_profiles.is_empty() {
+            return self.set_grouped_extrusion_preview(preview, &request);
+        }
         if preview.operation.is_some() {
             let backend = self.extrusion_access.as_ref().ok_or_else(|| {
                 "extrusion preview: expected a certified geometry service".to_string()
@@ -425,6 +428,8 @@ impl<
             .map_err(|cause| cause.to_string())
     }
 }
+#[path = "owner_extrusion_group_preview.rs"]
+mod group_preview;
 #[path = "owner_extrusion_handle.rs"]
 mod handle;
 use handle::handle_axis;

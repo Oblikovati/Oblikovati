@@ -27,6 +27,9 @@ mod apply_reuse_sketch;
 #[path = "clear_profile.rs"]
 mod clear_profile;
 
+#[path = "multi_profile.rs"]
+mod multi_profile;
+
 #[path = "enter_preference.rs"]
 mod enter_preference;
 

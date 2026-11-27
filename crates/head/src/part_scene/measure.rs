@@ -82,10 +82,9 @@ impl DesktopPartScenes {
             .map_err(|cause| cause.to_string())?
             .internal_name;
         let evaluated = self.current(session)?;
-        let body = evaluated
-            .body(feature)
-            .ok_or_else(|| format!("feature {feature:?}: expected a current solid"))?;
-        measure(body, session.history(), guid, key)
+        evaluated.inspect_body_reference(feature, key, |body| {
+            measure(body, session.history(), guid, key)
+        })
     }
 }
 fn face_area(area: f64) -> Result<f64, String> {

@@ -115,7 +115,7 @@ impl ExtrudeDialog {
             return false;
         };
         let previous = self.operation;
-        let boolean_available = single_body(state);
+        let boolean_available = self.additional_profiles.is_empty() && single_body(state);
         let through_all = self.reference.through_all();
         if through_all {
             self.operation = Some(PrismBoolean::Cut);
@@ -126,7 +126,7 @@ impl ExtrudeDialog {
             return self.operation != previous;
         }
         self.draw_operation(ui, icons, boolean_available, through_all);
-        if self.operation.is_none() {
+        if self.operation.is_none() && self.additional_profiles.is_empty() {
             crate::theme::property_label(ui, "Body Name");
             ui.input_text("##extrude-body-name", &mut self.body_name)
                 .hint(format!("Solid{}", browser.bodies.len() + 1))
@@ -208,15 +208,17 @@ impl ExtrudeDialog {
     ) -> GuiShellAction {
         let body_name = self.body_name.trim();
         let named_new_solid = request.operation.is_none()
+            && request.additional_profiles.is_empty()
             && request.reference_extent.is_none()
             && !body_name.is_empty();
         if keep_sketch
+            || !request.additional_profiles.is_empty()
             || request.reference_extent.is_some()
             || request.operation.is_some()
             || named_new_solid
         {
             return GuiShellAction::CommitExtrudeDraft(
-                request.clone(),
+                Box::new(request.clone()),
                 named_new_solid.then(|| body_name.to_owned()),
                 keep_sketch,
             );

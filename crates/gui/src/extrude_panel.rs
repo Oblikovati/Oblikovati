@@ -49,8 +49,16 @@ impl ExtrudeDialog {
         let _disabled = ui.begin_disabled(self.edit_feature.is_some());
         let changed_sketch = self.sketch_choice(ui, state);
         crate::theme::property_label(ui, "Profiles");
+        let profile_count = self
+            .edit_feature
+            .and_then(|feature| state.browser.as_ref()?.extrusion_edits.get(&feature))
+            .map_or(self.additional_profiles.len() + 1, |seed| {
+                seed.profile_count
+            });
         let label = if self.sketch.is_none() {
             "Select Profile".to_owned()
+        } else if profile_count > 1 {
+            format!("{profile_count} Profiles")
         } else if state.extrude_preview_active || self.preview_hidden || self.edit_feature.is_some()
         {
             "1 Profile".to_owned()
@@ -88,7 +96,13 @@ impl ExtrudeDialog {
         choices.is_some_and(|_choices| {
             let _numeric = crate::ui_scale::numeric_font(ui);
             ui.text("Profile index");
-            ui.input_int("##profile-index", &mut self.profile).build()
+            let changed = ui.input_int("##profile-index", &mut self.profile).build();
+            if changed {
+                self.additional_profiles
+                    .retain(|&index| index != i64::from(self.profile));
+                self.profile_pick_request = self.profile_pick_request.wrapping_add(1);
+            }
+            changed
         })
     }
 

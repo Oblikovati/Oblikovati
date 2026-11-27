@@ -83,6 +83,7 @@ fn edit_seed_keeps_its_source_and_new_extrusion_clears_edit_mode() {
         feature,
         crate::GuiExtrudeEditSeed {
             sketch: DocumentSketchId(4),
+            profile_count: 1,
             distance: "size".into(),
             second_distance: None,
             direction: GuiExtrudeDirection::Symmetric,

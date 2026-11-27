@@ -66,11 +66,13 @@ pub(super) fn dispatch(
     document: u64,
     (pixel, toggle, profile): ([i32; 2], bool, Option<GuiExtrudeProfilePick>),
 ) -> Result<bool, String> {
-    if let Some(profile) = profile {
+    if let Some(profile) = profile
+        && owner.pick_extrude_profile(profile, window.view_line(pixel)?)?
+    {
         if window.has_pending_ribbon_model_pick() {
             window.resolve_ribbon_model_pick(false);
         }
-        return owner.pick_extrude_profile(profile, window.view_line(pixel)?);
+        return Ok(true);
     }
     let result = select(window, owner, document, pixel, toggle);
     if !toggle && matches!(result, Ok(true)) {

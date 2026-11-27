@@ -15,6 +15,7 @@ pub struct GuiExtrudePreview {
     pub document: u64,
     pub sketch: oblikovati_model::document_sketch::DocumentSketchId,
     pub profile: i64,
+    pub additional_profiles: Vec<i64>,
     pub distance: String,
     pub second_distance: Option<String>,
     pub direction: crate::GuiExtrudeDirection,

@@ -56,35 +56,23 @@ impl DesktopPartScenes {
             .map_err(|cause| cause.to_string())?
             .internal_name;
         let evaluated = self.current(session)?;
-        let key_of = |body: &NamedSolid| {
-            body.body_reference_key(session.history(), guid)
-                .map(body_reference_text)
-        };
-        let ordered = evaluated
-            .ordered_bodies()
-            .map(|body| Ok((key_of(body)?, body.is_surface())))
-            .collect::<Result<Vec<_>, String>>()?;
+        let mut counts = [0; 2];
         let mut rows = Vec::new();
-        for record in evaluated.health() {
-            let Some(body) = evaluated.body(record.feature) else {
-                continue;
-            };
-            let key = key_of(body)?;
+        for (feature, body) in evaluated.ordered_body_outputs() {
+            let encoded = body.body_reference_key(session.history(), guid)?;
+            let key = body_reference_text(encoded);
             let surface = body.is_surface();
-            let index = ordered
-                .iter()
-                .filter(|(_, is_surface)| *is_surface == surface)
-                .position(|(known, _)| *known == key)
-                .unwrap_or_default();
+            let count = &mut counts[usize::from(surface)];
+            let index = *count;
+            *count += 1;
             let (name, _) = files
                 .body_display_metadata(document, &key)
                 .map_err(|cause| cause.to_string())?;
-            let encoded = body.body_reference_key(session.history(), guid)?;
             let faces = body
                 .topology_summary(session.history(), guid, encoded)?
                 .faces;
             rows.push(BodyRow {
-                feature: record.feature,
+                feature,
                 faces,
                 name: name.map_or_else(
                     || format!("{}{}", if surface { "Srf" } else { "Solid" }, index + 1),

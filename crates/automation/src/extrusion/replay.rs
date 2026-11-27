@@ -2,6 +2,63 @@
 //! Reuse document-owned results while validating an Extrude transaction.
 use super::*;
 
+/// Accept a prepared desktop draft using the same private replay and publication as the API.
+/// Example: `commit_prepared_extrusion(files, document, backend, prepared, false)?`.
+pub fn commit_prepared_extrusion<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+    files: &mut FileWorkspace<O, W, F>,
+    document: u64,
+    backend: &dyn ExtrudeRegionAccess,
+    prepared: PreparedExtrusion,
+    keep_sketch: bool,
+) -> Result<(), Error> {
+    create(files, document, backend, prepared, keep_sketch).map(|_| ())
+}
+
+pub(super) fn create<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+    files: &mut FileWorkspace<O, W, F>,
+    document: u64,
+    backend: &dyn ExtrudeRegionAccess,
+    prepared: PreparedExtrusion,
+    keep_sketch: bool,
+) -> Result<Vec<u8>, Error> {
+    let guid = files
+        .workspace()
+        .identity(document)
+        .map_err(api_error)?
+        .internal_name;
+    let prefix = prepare_owned_prefix(files, document, backend)?;
+    let name = prepared.name.clone();
+    let projection = ExtrudeProjection {
+        backend,
+        guid,
+        name: &name,
+        prefix: prefix.as_ref(),
+    };
+    let ((response, captured), transition) = files
+        .commands(document)
+        .map_err(api_error)?
+        .run_private_candidate(
+            "Create extrusion",
+            |snapshot, ids| {
+                let sketch = prepared.definition.sketch();
+                let feature = prepared.create(snapshot, ids)?;
+                if keep_sketch {
+                    snapshot
+                        .sketches
+                        .set_visible(sketch, true)
+                        .map_err(api_error)?;
+                }
+                Ok(feature)
+            },
+            |candidate, id, history| projection.project(candidate, id, history),
+        )
+        .map_err(api_error)?;
+    if let (Some((policy, _)), Some(captured)) = (prefix, captured) {
+        adopt_extrude_candidate(files, document, policy, captured, &transition)?;
+    }
+    Ok(response)
+}
+
 pub(super) struct ExtrudeProjection<'a> {
     pub(super) backend: &'a dyn ExtrudeRegionAccess,
     pub(super) guid: DocumentGuid,

@@ -21,6 +21,23 @@ pub trait ExtrudeRegionAccess {
     ) -> Result<SketchPrismSelection, String> {
         self.region(snapshot, sketch, index)
     }
+    /// Resolve profile indices in request order. Native backends can share the arrangement.
+    /// Example: `backend.regions(snapshot, sketch, &[0, 1], None)?`.
+    fn regions(
+        &self,
+        snapshot: &DocumentSnapshot,
+        sketch: DocumentSketchId,
+        indices: &[usize],
+        datums: Option<&WorkGeometryEvaluation>,
+    ) -> Result<Vec<SketchPrismSelection>, String> {
+        indices
+            .iter()
+            .map(|&index| match datums {
+                Some(datums) => self.region_with_datums(snapshot, sketch, index, datums),
+                None => self.region(snapshot, sketch, index),
+            })
+            .collect()
+    }
     /// Validate the solved candidate and return the current body count; example: `backend.validate(candidate, feature)?`.
     fn validate(
         &self,

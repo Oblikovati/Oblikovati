@@ -128,12 +128,21 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
     }
     /// Borrow successful bodies in replay order; example: `evaluation.ordered_bodies().collect::<Vec<_>>()`.
     pub fn ordered_bodies(&self) -> impl Iterator<Item = &Body> {
-        self.health
-            .iter()
-            .flat_map(|record| {
-                self.bodies
-                    .range(super::body_lineage::BodySlot::feature_range(record.feature))
-            })
+        self.ordered_body_outputs().map(|(_, body)| body)
+    }
+    /// Enumerate each live body with its producer, in Part replay and output order.
+    /// Example: `evaluation.ordered_body_outputs().collect::<Vec<_>>()`.
+    pub fn ordered_body_outputs(&self) -> impl Iterator<Item = (FeatureId, &Body)> {
+        self.health.iter().flat_map(|record| {
+            self.bodies_for_feature(record.feature)
+                .map(|body| (record.feature, body))
+        })
+    }
+    /// Enumerate the current outputs produced by one feature.
+    /// Example: `evaluation.bodies_for_feature(feature).count()`.
+    pub fn bodies_for_feature(&self, feature: FeatureId) -> impl Iterator<Item = &Body> {
+        self.bodies
+            .range(super::body_lineage::BodySlot::feature_range(feature))
             .map(|(_, body)| body)
     }
     /// Inspect complete ordered health; example: `evaluation.health()` includes failures and their blocked readers.

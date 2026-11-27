@@ -403,7 +403,7 @@ pub enum GuiShellAction {
     /// Show or clear a transient extrusion preview.
     PreviewExtrude(Option<GuiExtrudePreview>),
     /// Accept a certified extrusion draft and its optional new body name.
-    CommitExtrudeDraft(GuiExtrudePreview, Option<String>, bool),
+    CommitExtrudeDraft(Box<GuiExtrudePreview>, Option<String>, bool),
     /// Ask the document owner to validate the current extrusion expression.
     ValidateExtrudeDistance {
         document: u64,

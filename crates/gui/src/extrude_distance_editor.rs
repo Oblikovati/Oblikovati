@@ -333,7 +333,9 @@ impl super::ExtrudeDialog {
     ) -> bool {
         let mut edited = false;
         let was_through_all = self.reference.through_all();
-        let through_all_available = self.edit_feature.is_none() && super::single_body(state);
+        let through_all_available = self.edit_feature.is_none()
+            && self.additional_profiles.is_empty()
+            && super::single_body(state);
         if self.reference.numeric() {
             let error = self.distance_error_ink(state);
             let unit = state

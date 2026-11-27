@@ -72,12 +72,12 @@ impl DesktopPartScenes {
             .internal_name;
         let evaluated = self.current(session)?;
         let hidden = evaluated
-            .body(feature)
+            .bodies_for_feature(feature)
             .map(|body| body.body_reference_key(session.history(), guid))
-            .transpose()?;
+            .collect::<Result<std::collections::BTreeSet<_>, _>>()?;
         let update = render_part_scene(evaluated, (document, session.generation()), |body| {
             let reference = body.body_reference_key(session.history(), guid)?;
-            if hidden.as_ref() == Some(&reference) {
+            if hidden.contains(reference) {
                 return Ok(None);
             }
             let key = bodies::body_reference_text(reference);
@@ -139,10 +139,12 @@ impl DesktopPartScenes {
         let evaluated = preview.evaluation;
         let used_checkpoint = preview.used_checkpoint;
         let edited = evaluated
-            .body(feature)
-            .ok_or_else(|| preview_failure(&evaluated, feature))?;
-        let edited_key =
-            bodies::body_reference_text(edited.body_reference_key(session.history(), guid)?);
+            .bodies_for_feature(feature)
+            .map(|body| body.body_reference_key(session.history(), guid))
+            .collect::<Result<std::collections::BTreeSet<_>, _>>()?;
+        if edited.is_empty() {
+            return Err(preview_failure(&evaluated, feature));
+        }
         #[cfg(test)]
         if used_checkpoint {
             self.checkpoint_previews
@@ -168,7 +170,7 @@ impl DesktopPartScenes {
             candidate,
             &evaluated,
             guid,
-            (&edited_key, preview_color),
+            (&edited, preview_color),
             document,
         )
         .map_err(Into::into)
@@ -203,15 +205,16 @@ fn render_preview<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles
     candidate: &DocumentSnapshot,
     evaluated: &PreviewEvaluation,
     guid: DocumentGuid,
-    (edited_key, preview_color): (&str, [f32; 4]),
+    (edited, preview_color): (&std::collections::BTreeSet<&[u8]>, [f32; 4]),
     document: u64,
 ) -> Result<ViewportScene, String> {
     let update = render_part_scene(evaluated, (document, session.generation()), |body| {
-        let key = bodies::body_reference_text(body.body_reference_key(session.history(), guid)?);
+        let reference = body.body_reference_key(session.history(), guid)?;
+        let key = bodies::body_reference_text(reference);
         if !session.body_visible(&key) {
             return Ok(None);
         }
-        if key == edited_key {
+        if edited.contains(reference) {
             return Ok(Some(preview_color));
         }
         Ok(Some(body_color(files, candidate, &key)?))

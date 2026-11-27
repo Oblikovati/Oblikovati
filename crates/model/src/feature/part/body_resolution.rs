@@ -56,6 +56,20 @@ pub(super) fn resolve_body_frame_origin<B: PartFeatureEvaluator>(
     .map_err(WorkGeometryError::BodyReference)
 }
 
+impl<Body, Failure> super::PartFeatureEvaluation<Body, Failure> {
+    /// Inspect an exact named reference in the current outputs of a producer.
+    /// Example: `evaluation.inspect_body_reference(feature, key, |body| verify(body, key))?`.
+    pub fn inspect_body_reference<Value>(
+        &self,
+        feature: FeatureId,
+        key: &[u8],
+        inspect: impl Fn(&Body) -> Result<Value, String>,
+    ) -> Result<Value, String> {
+        resolve_reference(&self.bodies, &self.body_lineage, feature, key, inspect)
+            .map(|(_, value)| value)
+    }
+}
+
 fn resolve_reference<Body, Value>(
     bodies: &BTreeMap<BodySlot, Body>,
     lineage: &BodyLineageIndex,

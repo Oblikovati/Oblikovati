@@ -110,6 +110,7 @@ fn extrusion_preview_button_and_escape_send_transient_actions() {
             document: 7,
             sketch: DocumentSketchId(4),
             profile: 0,
+            additional_profiles: Vec::new(),
             distance: "size".into(),
             second_distance: None,
             operation: None,

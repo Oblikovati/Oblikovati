@@ -174,9 +174,9 @@ the extrusion and leaves its source sketch visible in a single undo step.
 A viewport pick of the second closed region in the two-profile sketch
 previews it without altering the committed extrusion.
 [Sketch reuse receipt](receipts/2026-11-27-extrude-apply-reuse-3893/README.md).
-The Profiles row also clears the current region and waits for a fresh viewport pick.
-[Clear profile receipt](receipts/2026-11-27-extrude-clear-profile-3870/README.md).
-[Certified multi-profile Part recipe and replay receipt](receipts/2026-11-27-extrude-grouped-replay-3870/README.md).
+Extrude can pick and preview multiple regions as individually named New Solids.
+Clear removes all profile selections and waits for a new viewport pick.
+[Multi-profile native receipt](receipts/2026-11-27-extrude-multi-profile-ui-3870/README.md).
 
 Extrude Advanced Settings controls whether Enter commits the feature
 or keeps the Properties panel open with the updated preview. Both

@@ -37,6 +37,23 @@ impl ExtrudeRegionAccess for CertifiedExtrudeAccess {
             .map_err(|cause| cause.to_string())?;
         selection(&regions, index)
     }
+    fn regions(
+        &self,
+        snapshot: &DocumentSnapshot,
+        sketch: DocumentSketchId,
+        indices: &[usize],
+        datums: Option<&WorkGeometryEvaluation>,
+    ) -> Result<Vec<SketchPrismSelection>, String> {
+        let regions = match datums {
+            Some(datums) => certified_sketch_regions_with_datums(snapshot, sketch, self.0, datums),
+            None => certified_sketch_regions_with_policy(snapshot, sketch, self.0),
+        }
+        .map_err(|cause| cause.to_string())?;
+        indices
+            .iter()
+            .map(|&index| selection(&regions, index))
+            .collect()
+    }
     fn validate(
         &self,
         candidate: &DocumentSnapshot,
