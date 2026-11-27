@@ -46,6 +46,15 @@ fn active_tab_is_shortened(world: &mut ApplicationWorld) {
         "{label:?}"
     );
     assert!(!end.is_empty() && full_name.ends_with(end), "{label:?}");
+    assert!(
+        tab_has_active_underline(world, &label.text),
+        "expected the active document underline"
+    );
+}
+
+/// Read the actual accent under a visible tab, for example `tab_has_active_underline(world, "Home")`.
+pub(super) fn tab_has_active_underline(world: &mut ApplicationWorld, name: &str) -> bool {
+    let label = world.expect_tab(name);
     let (position, size) = window_geometry(TAB_STRIP).unwrap();
     let [x, y] = diagnostics::pointer_pixels([label.center()[0], position[1] + size[1] - 2.])
         .map(|value| value as usize);
@@ -53,7 +62,7 @@ fn active_tab_is_shortened(world: &mut ApplicationWorld) {
     let accent =
         unsafe { imgui::sys::igGetColorU32_Col(imgui::sys::ImGuiCol_NavHighlight as i32, 1.) }
             .to_le_bytes();
-    assert_eq!(underline[..3], accent[..3], "active document underline");
+    underline[..3] == accent[..3]
 }
 
 #[then("tab overflow navigation controls remain reachable alongside the Documents button")]
