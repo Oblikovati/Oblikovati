@@ -16,5 +16,11 @@ unsafe_code = "forbid"
 [workspace.lints.clippy]
 all = "warn"
 
+[profile.dev]
+debug = "line-tables-only"
+
+[profile.dev.package."*"]
+debug = 0
+
 [profile.release]
 debug = "line-tables-only"
