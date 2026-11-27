@@ -3,14 +3,23 @@ use super::*;
 use oblikovati_model::{
     document_sketch::SketchPlacement, history::DocumentSketchCreation, sketch::SketchPlane,
 };
-use oblikovati_viewport::ViewportNavigation;
+use oblikovati_viewport::{ViewportCamera, ViewportNavigation};
 #[test]
 fn native_sketch_edit_faces_plane_and_restores_view_after_finish_and_resize() {
     let directory = tempfile::tempdir().unwrap();
     let mut window = NativeHeadWindow::open().unwrap();
     let mut owner = native_owner(window.wake.clone()).unwrap();
     let document = open_native_part(&mut owner, &directory.path().join("edit.opd"));
-    publish_native_scene(&mut owner, &mut window);
+    crate::frames::run_frames(&mut window, HeadOptions { frames: Some(1) }, &mut owner).unwrap();
+    window
+        .view
+        .set_camera(ViewportCamera {
+            eye: [0., -20., 0.],
+            target: [0.; 3],
+            up: [0., 0., 1.],
+            ..window.view.camera_state().unwrap()
+        })
+        .unwrap();
     let original = window.view.camera_state().unwrap();
     let plane =
         SketchPlane::new([2., 0., 0.], [1., 0., 0.], [0., 0., 1.], Default::default()).unwrap();
@@ -31,7 +40,8 @@ fn native_sketch_edit_faces_plane_and_restores_view_after_finish_and_resize() {
     assert_eq!(facing.target, [2., 0., 0.]);
     assert_eq!(facing.up, [0., 0., 1.]);
     assert_eq!(facing.scale, original.scale);
-    verify_native_edit_navigation(&mut window, owner.sketch_edit().unwrap());
+    let edit = owner.sketch_edit().unwrap();
+    verify_native_edit_navigation(&mut window, &mut owner, edit);
     owner.start_slot_placement(document, sketch, 0.5).unwrap();
     owner.finish_sketch_edit().unwrap();
     crate::frames::run_frames(&mut window, HeadOptions { frames: Some(1) }, &mut owner).unwrap();
@@ -40,7 +50,11 @@ fn native_sketch_edit_faces_plane_and_restores_view_after_finish_and_resize() {
     owner.finish().unwrap();
     window.finish().unwrap();
 }
-fn verify_native_edit_navigation(window: &mut NativeHeadWindow, edit: crate::HeadSketchEdit) {
+fn verify_native_edit_navigation(
+    window: &mut NativeHeadWindow,
+    owner: &mut NativeDesktopOwner,
+    edit: crate::HeadSketchEdit,
+) {
     let point = window
         .sketch_point([700, 400], edit.plane)
         .unwrap()
@@ -55,9 +69,8 @@ fn verify_native_edit_navigation(window: &mut NativeHeadWindow, edit: crate::Hea
     assert!(!window.set_sketch_edit(Some(edit)).unwrap());
     assert_eq!(window.view.camera_state().unwrap(), navigated);
     window.view.resize([900, 600]).unwrap();
-    window.view.poll_events(64).unwrap();
-    window.gui_frame(None, &Default::default()).unwrap();
-    capture_native_scene(window);
+    crate::frames::run_frames(window, HeadOptions { frames: Some(1) }, owner).unwrap();
+    assert_eq!(capture_native_scene(window).extent, [900, 600]);
 }
 #[test]
 fn native_sketch_camera_update_and_failed_entry_preserve_return_view() {

@@ -75,8 +75,12 @@ fn run_slot_input(drag: bool) -> oblikovati_model::document_sketch::DocumentSket
         native,
         scripted: VecDeque::new(),
     };
-    let preview = drive_slot_preview(&mut owner, &mut window, document, drag);
-    let after = drive_slot_commit(&mut owner, &mut window, document, drag, &preview);
+    crate::frames::run_frames(&mut window, HeadOptions { frames: Some(1) }, &mut owner).unwrap();
+    let plane = owner.sketch_edit().unwrap().plane;
+    let pixels =
+        [[2., -1.], [2., 1.5]].map(|point| window.native.sketch_pixel(plane, point).unwrap());
+    let preview = drive_slot_preview(&mut owner, &mut window, document, drag, pixels);
+    let after = drive_slot_commit(&mut owner, &mut window, document, drag, pixels[1], &preview);
     drive_slot_undo(&mut owner, &mut window, &original);
     owner.finish().unwrap();
     window.finish().unwrap();
@@ -87,6 +91,7 @@ fn drive_slot_preview(
     window: &mut PlacementEventWindow,
     document: u64,
     drag: bool,
+    [start, end]: [[i32; 2]; 2],
 ) -> SketchPlacementRecipe {
     let before = owner
         .documents()
@@ -96,11 +101,11 @@ fn drive_slot_preview(
         .snapshot()
         .sketches
         .clone();
-    let mut first = vec![button([650, 430], true)];
+    let mut first = vec![button(start, true)];
     if !drag {
-        first.push(button([650, 430], false));
+        first.push(button(start, false));
     }
-    window.scripted = VecDeque::from([first, vec![motion([820, 500])]]);
+    window.scripted = VecDeque::from([first, vec![motion(end)]]);
     crate::frames::run_frames(window, HeadOptions { frames: Some(2) }, owner).unwrap();
     let preview = owner.placement_preview().unwrap().clone();
     verify_outline_pixels(owner, window);
@@ -131,12 +136,10 @@ fn drive_slot_commit(
     window: &mut PlacementEventWindow,
     document: u64,
     drag: bool,
+    end: [i32; 2],
     preview: &SketchPlacementRecipe,
 ) -> oblikovati_model::document_sketch::DocumentSketches {
-    window.scripted = VecDeque::from([
-        vec![button([820, 500], !drag)],
-        vec![button([820, 500], false)],
-    ]);
+    window.scripted = VecDeque::from([vec![button(end, !drag)], vec![button(end, false)]]);
     crate::frames::run_frames(window, HeadOptions { frames: Some(2) }, owner).unwrap();
     let sketches = owner
         .documents()
@@ -166,7 +169,7 @@ fn verify_slot_scene_has_no_body(window: &mut NativeHeadWindow) {
     empty.triangles.clear();
     window.view.submit(&empty).unwrap();
     let without_body = capture_native_scene(window);
-    assert_eq!(actual.rgba, without_body.rgba);
+    assert_same_native_pixels(&actual, &without_body);
     window.view.submit(&scene).unwrap();
 }
 fn drive_slot_undo(
@@ -287,7 +290,13 @@ fn native_escape_clears_outline_without_editing_document() {
         native,
         scripted: VecDeque::new(),
     };
-    drive_slot_preview(&mut owner, &mut window, document, false);
+    drive_slot_preview(
+        &mut owner,
+        &mut window,
+        document,
+        false,
+        [[650, 430], [820, 500]],
+    );
     window.scripted = VecDeque::from([vec![key(ViewportKey::Cancel, true)]]);
     crate::frames::run_frames(&mut window, HeadOptions { frames: Some(1) }, &mut owner).unwrap();
     assert!(owner.sketch_preview().is_none());

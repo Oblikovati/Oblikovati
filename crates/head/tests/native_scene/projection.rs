@@ -22,9 +22,9 @@ fn commit_pointer_slot(owner: &mut NativeDesktopOwner, window: &NativeHeadWindow
         .snapshot()
         .resolve_sketch_plane(fixture::SKETCH)
         .unwrap();
-    let centers =
-        [[650, 430], [820, 500]].map(|pixel| window.sketch_point(pixel, plane).unwrap().unwrap());
-    verify_pointer_roundtrip(window, plane, centers);
+    let pixels = [[2., -1.], [2., 1.5]].map(|point| window.sketch_pixel(plane, point).unwrap());
+    let centers = pixels.map(|pixel| window.sketch_point(pixel, plane).unwrap().unwrap());
+    verify_pointer_roundtrip(window, plane, pixels, centers);
     let recipe = SketchPlacementRecipe::straight_slot(centers, 0.5).unwrap();
     let report = owner
         .commit_sketch_placement(document, fixture::SKETCH, &recipe, &[])
@@ -52,8 +52,13 @@ fn verify_slot_geometry(
         }
     }
 }
-fn verify_pointer_roundtrip(window: &NativeHeadWindow, plane: SketchPlane, centers: [[f64; 2]; 2]) {
-    for (point, pixel) in centers.into_iter().zip([[650, 430], [820, 500]]) {
+fn verify_pointer_roundtrip(
+    window: &NativeHeadWindow,
+    plane: SketchPlane,
+    pixels: [[i32; 2]; 2],
+    centers: [[f64; 2]; 2],
+) {
+    for (point, pixel) in centers.into_iter().zip(pixels) {
         let restored = window.sketch_pixel(plane, point).unwrap();
         for (a, b) in restored.into_iter().zip(pixel) {
             assert!((a - b).abs() <= 1);
