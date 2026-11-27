@@ -341,8 +341,8 @@ impl ExtrudeDialog {
                 profile: i64::from(self.profile),
                 distance: String::new(),
                 second_distance: None,
-                direction: GuiExtrudeDirection::Positive,
-                operation: None,
+                direction: self.reference_direction(),
+                operation: self.reference_operation(),
                 reference_extent: Some(self.reference.request()?),
             });
         }

@@ -41,13 +41,19 @@ impl SelectorStyle {
         direction: &mut GuiExtrudeDirection,
         read_only: bool,
         icons: &GuiRibbonIcons,
+        asymmetric: bool,
     ) -> bool {
         self.draw_style_menu(ui);
         let _disabled = ui.begin_disabled(read_only);
         let previous = *direction;
+        let choices = if asymmetric {
+            &DIRECTIONS[..]
+        } else {
+            &DIRECTIONS[..3]
+        };
         let selected = match self {
-            Self::Icons => draw_icons(ui, previous, icons),
-            Self::Dropdown => draw_dropdown(ui, previous),
+            Self::Icons => draw_icons(ui, previous, icons, choices),
+            Self::Dropdown => draw_dropdown(ui, previous, choices),
         };
         *direction = selected.unwrap_or(previous);
         *direction != previous
@@ -74,16 +80,16 @@ fn draw_icons(
     ui: &Ui,
     direction: GuiExtrudeDirection,
     icons: &GuiRibbonIcons,
+    choices: &[(GuiExtrudeDirection, &str, IconGlyph)],
 ) -> Option<GuiExtrudeDirection> {
     let mut selected = None;
     let width = ui.content_region_avail()[0];
     let spacing = 4.;
-    let cell =
-        ((width - spacing * (DIRECTIONS.len() - 1) as f32) / DIRECTIONS.len() as f32).max(1.);
-    let show_caption = DIRECTIONS
+    let cell = ((width - spacing * (choices.len() - 1) as f32) / DIRECTIONS.len() as f32).max(1.);
+    let show_caption = choices
         .iter()
         .all(|(_, label, _)| ui.calc_text_size(label)[0] + 2. <= cell);
-    for (index, (choice, label, glyph)) in DIRECTIONS.into_iter().enumerate() {
+    for (index, (choice, label, glyph)) in choices.iter().copied().enumerate() {
         if index > 0 {
             ui.same_line_with_spacing(0., spacing);
         }
@@ -115,12 +121,14 @@ fn draw_direction_icon(ui: &Ui, label: &str, selected: bool, icon: IconButtonPre
     widget_abi::icon_button(ui, label, icon)
 }
 
-fn draw_dropdown(ui: &Ui, direction: GuiExtrudeDirection) -> Option<GuiExtrudeDirection> {
-    let (_, label, _) = DIRECTIONS
-        .iter()
-        .find(|(choice, _, _)| *choice == direction)?;
+fn draw_dropdown(
+    ui: &Ui,
+    direction: GuiExtrudeDirection,
+    choices: &[(GuiExtrudeDirection, &str, IconGlyph)],
+) -> Option<GuiExtrudeDirection> {
+    let (_, label, _) = choices.iter().find(|(choice, _, _)| *choice == direction)?;
     let _combo = ui.begin_combo("##extrude-direction", label)?;
-    DIRECTIONS.iter().find_map(|&(choice, label, _)| {
+    choices.iter().find_map(|&(choice, label, _)| {
         ui.selectable_config(label)
             .selected(choice == direction)
             .build()

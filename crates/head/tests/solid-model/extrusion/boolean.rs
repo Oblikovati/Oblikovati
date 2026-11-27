@@ -478,3 +478,6 @@ fn cylindrical_face_dimensions(world: &mut ApplicationWorld) {
         "expected both cylindrical face dimensions, found {text:?}"
     );
 }
+
+#[path = "through_all.rs"]
+mod through_all;

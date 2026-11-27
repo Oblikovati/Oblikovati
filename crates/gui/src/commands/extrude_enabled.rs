@@ -34,8 +34,17 @@ pub(super) fn reference(state: &GuiCommandState, request: &GuiExtrudePreview) ->
 }
 
 pub(super) fn preview(state: &GuiCommandState, request: &GuiExtrudePreview) -> bool {
+    let through_all = matches!(
+        request.reference_extent,
+        Some(GuiExtrudeReferenceExtent::ThroughAll)
+    );
+    if through_all
+        && request.operation != Some(oblikovati_model::feature::sketch_prism::PrismBoolean::Cut)
+    {
+        return false;
+    }
     if request.operation.is_some()
-        && (request.reference_extent.is_some()
+        && ((request.reference_extent.is_some() && !through_all)
             || request.generation.is_none()
             || request.generation != state.document_generation
             || !crate::extrude_dialog::single_body(state))

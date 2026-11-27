@@ -6,6 +6,7 @@ use imgui::{StyleColor, Ui};
 enum ExtentMode {
     #[default]
     Distance,
+    ThroughAll,
     ToFace,
     FromTo,
 }
@@ -30,14 +31,20 @@ impl ReferenceDraft {
         self.mode == ExtentMode::Distance
     }
 
+    pub(super) fn through_all(&self) -> bool {
+        self.mode == ExtentMode::ThroughAll
+    }
+
     pub(super) fn request(&self) -> Option<GuiExtrudeReferenceExtent> {
-        let to = self.to.clone()?;
         match self.mode {
             ExtentMode::Distance => None,
-            ExtentMode::ToFace => Some(GuiExtrudeReferenceExtent::ToFace { to }),
+            ExtentMode::ThroughAll => Some(GuiExtrudeReferenceExtent::ThroughAll),
+            ExtentMode::ToFace => Some(GuiExtrudeReferenceExtent::ToFace {
+                to: self.to.clone()?,
+            }),
             ExtentMode::FromTo => Some(GuiExtrudeReferenceExtent::FromTo {
                 from: self.from.clone()?,
-                to,
+                to: self.to.clone()?,
             }),
         }
     }
@@ -58,32 +65,49 @@ impl ReferenceDraft {
         *target = Some(face);
     }
 
-    pub(super) fn draw(&mut self, ui: &Ui) -> bool {
+    pub(super) fn draw(&mut self, ui: &Ui, through_all_available: bool) -> bool {
         let before = self.mode;
-        self.draw_extent_modes(ui);
+        self.draw_extent_modes(ui, through_all_available);
         if self.mode == ExtentMode::FromTo {
             self.draw_target(ui, Slot::From);
         }
-        if !self.numeric() {
+        if matches!(self.mode, ExtentMode::ToFace | ExtentMode::FromTo) {
             self.draw_target(ui, Slot::To);
         }
         std::mem::take(&mut self.changed_by_pick) || self.mode != before
     }
 
-    fn draw_extent_modes(&mut self, ui: &Ui) {
+    fn draw_extent_modes(&mut self, ui: &Ui, through_all_available: bool) {
         crate::theme::property_label(ui, "From");
         let from = usize::from(self.mode == ExtentMode::FromTo);
-        match extent_combo(ui, "##extrude-start", from, ["Sketch Plane", "From / To"]) {
+        match extent_combo(
+            ui,
+            "##extrude-start",
+            from,
+            ["Sketch Plane", "From / To"],
+            [true; 2],
+        ) {
             Some(0) => self.set_mode(ExtentMode::Distance),
             Some(1) => self.set_mode(ExtentMode::FromTo),
             _ => {}
         }
 
         crate::theme::property_label(ui, "Termination");
-        let to = usize::from(!self.numeric());
-        match extent_combo(ui, "##extrude-termination", to, ["Distance", "To Face"]) {
+        let to = match self.mode {
+            ExtentMode::Distance => 0,
+            ExtentMode::ThroughAll => 2,
+            _ => 1,
+        };
+        match extent_combo(
+            ui,
+            "##extrude-termination",
+            to,
+            ["Distance", "To Face", "Through All"],
+            [true, true, through_all_available],
+        ) {
             Some(0) => self.set_mode(ExtentMode::Distance),
             Some(1) => self.set_mode(ExtentMode::ToFace),
+            Some(2) => self.set_mode(ExtentMode::ThroughAll),
             _ => {}
         }
     }
@@ -114,11 +138,18 @@ impl ReferenceDraft {
 }
 
 // Selecting the already active row only dismisses the popup.
-fn extent_combo(ui: &Ui, id: &str, selected: usize, labels: [&str; 2]) -> Option<usize> {
+fn extent_combo<const N: usize>(
+    ui: &Ui,
+    id: &str,
+    selected: usize,
+    labels: [&str; N],
+    enabled: [bool; N],
+) -> Option<usize> {
     let _combo = ui.begin_combo(id, labels[selected])?;
     labels.into_iter().enumerate().find_map(|(index, label)| {
         (ui.selectable_config(label)
             .selected(index == selected)
+            .disabled(!enabled[index])
             .build()
             && index != selected)
             .then_some(index)

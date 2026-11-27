@@ -92,6 +92,11 @@ and reports the diameter and radius alongside its face area. The
 records the accepted Intersect's 7.069 mm² cap area, 3.000 mm diameter,
 and 1.500 mm radius in scenario 17.
 
+The desktop Through All termination enables Cut against one existing
+solid and resolves the extent from the current target. The
+[native Through All receipt](receipts/2026-11-27-extrude-through-all-3870/README.md)
+checks both openings in the preview and accepted body.
+
 ## Sweep, Loft, and Revolve
 
 The [release probes](../../crates/martensite/tests/release_probe/create.rs)

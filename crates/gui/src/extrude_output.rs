@@ -12,8 +12,22 @@ pub(crate) fn single_body(state: &GuiCommandState) -> bool {
 }
 
 impl ExtrudeDialog {
+    pub(super) fn reference_direction(&self) -> GuiExtrudeDirection {
+        if self.reference.through_all() {
+            self.direction
+        } else {
+            GuiExtrudeDirection::Positive
+        }
+    }
+
+    pub(super) fn reference_operation(&self) -> Option<PrismBoolean> {
+        self.reference.through_all().then_some(PrismBoolean::Cut)
+    }
+
     pub(super) fn draw_output(&mut self, ui: &Ui, state: &GuiCommandState) -> bool {
-        if self.edit_feature.is_some() || !self.reference.numeric() {
+        if self.edit_feature.is_some()
+            || !(self.reference.numeric() || self.reference.through_all())
+        {
             return self.operation.take().is_some();
         }
         let Some(browser) = &state.browser else {
@@ -21,7 +35,10 @@ impl ExtrudeDialog {
         };
         let previous = self.operation;
         let boolean_available = single_body(state);
-        if !boolean_available {
+        let through_all = self.reference.through_all();
+        if through_all {
+            self.operation = Some(PrismBoolean::Cut);
+        } else if !boolean_available {
             self.operation = None;
         }
         if !ui.collapsing_header("Output", imgui::TreeNodeFlags::DEFAULT_OPEN) {
@@ -35,6 +52,7 @@ impl ExtrudeDialog {
             if ui
                 .selectable_config("New Solid")
                 .selected(self.operation.is_none())
+                .disabled(through_all)
                 .build()
             {
                 self.operation = None;
@@ -46,7 +64,7 @@ impl ExtrudeDialog {
             ] {
                 if ui
                     .selectable_config(operation.to_string())
-                    .disabled(!boolean_available)
+                    .disabled(!boolean_available || (through_all && operation != PrismBoolean::Cut))
                     .selected(self.operation == Some(operation))
                     .build()
                 {

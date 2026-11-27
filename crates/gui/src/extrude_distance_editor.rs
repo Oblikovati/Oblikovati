@@ -325,6 +325,7 @@ impl super::ExtrudeDialog {
                 &mut self.direction,
                 self.edit_feature.is_some(),
                 icons,
+                true,
             );
             if self.direction == GuiExtrudeDirection::Asymmetric {
                 edited |= super::direction::draw_second_distance(
@@ -335,7 +336,26 @@ impl super::ExtrudeDialog {
             }
         }
         if self.edit_feature.is_none() {
-            edited |= self.reference.draw(ui);
+            let was_through_all = self.reference.through_all();
+            edited |= self.reference.draw(ui, super::single_body(state));
+            if !was_through_all
+                && self.reference.through_all()
+                && matches!(
+                    self.direction,
+                    GuiExtrudeDirection::Positive | GuiExtrudeDirection::Asymmetric
+                )
+            {
+                self.direction = GuiExtrudeDirection::Negative;
+            }
+        }
+        if self.reference.through_all() {
+            edited |= self.direction_style.draw(
+                ui,
+                &mut self.direction,
+                self.edit_feature.is_some(),
+                icons,
+                false,
+            );
         }
         if !self.reference.numeric() {
             self.distance_editor = Default::default();

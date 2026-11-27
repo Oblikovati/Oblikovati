@@ -119,8 +119,8 @@ impl<
         &self,
         draft: &oblikovati_gui::GuiExtrudePreview,
     ) -> Result<oblikovati_api::wire::featureargs::Extrude, String> {
-        use oblikovati_gui::GuiExtrudeReferenceExtent::{FromTo, ToFace};
-        let Some(extent) = &draft.reference_extent else {
+        use oblikovati_gui::GuiExtrudeReferenceExtent::{FromTo, ThroughAll, ToFace};
+        if matches!(draft.reference_extent, None | Some(ThroughAll)) {
             let mut request = self.extrusion_request(
                 draft.document,
                 draft.sketch,
@@ -132,11 +132,15 @@ impl<
             if let Some(operation) = draft.operation {
                 request.operation = operation.to_string().to_ascii_lowercase();
             }
+            if draft.reference_extent.is_some() {
+                request.extent = "through-all".into();
+            }
             return Ok(request);
-        };
-        let (extent, from, to) = match extent {
-            ToFace { to } => ("to-face", "", to),
-            FromTo { from, to } => ("from-to", from.as_str(), to),
+        }
+        let (extent, from, to) = match &draft.reference_extent {
+            Some(ToFace { to }) => ("to-face", "", to),
+            Some(FromTo { from, to }) => ("from-to", from.as_str(), to),
+            _ => return Err("extrusion extent: expected a face reference".into()),
         };
         Ok(oblikovati_api::wire::featureargs::Extrude {
             sketch_index: self.extrusion_sketch_index(draft.document, draft.sketch)?,

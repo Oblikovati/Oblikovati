@@ -21,9 +21,10 @@ pub struct GuiExtrudePreview {
     pub operation: Option<oblikovati_model::feature::sketch_prism::PrismBoolean>,
     pub reference_extent: Option<GuiExtrudeReferenceExtent>,
 }
-/// Bound a new extrusion using the document's selected semantic face keys.
+/// Bound a new extrusion by the target body's thickness or by selected face keys.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum GuiExtrudeReferenceExtent {
+    ThroughAll,
     ToFace { to: String },
     FromTo { from: String, to: String },
 }
