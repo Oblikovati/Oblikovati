@@ -25,6 +25,7 @@ mod script_docs;
 mod signing;
 mod tree;
 mod version;
+mod wasm;
 mod windows;
 
 #[cfg(test)]
@@ -63,8 +64,9 @@ fn dispatch(arguments: &[&str], root: &Path, runner: &dyn Runner) -> BuildResult
         ["version", channel] => print_version(root, runner, channel),
         [
             task @ ("native" | "gate" | "docs" | "tools" | "cache-tools" | "script-docs"
-            | "script-docs-check"),
+            | "script-docs-check" | "wasm-check" | "wasm-build"),
         ] => local_task(task, root, runner),
+        ["wasm-package", version] => wasm::package(root, runner, version),
         _ => release_task(arguments, root, runner),
     }
 }
@@ -84,6 +86,8 @@ fn local_task(task: &str, root: &Path, runner: &dyn Runner) -> BuildResult<()> {
         "cache-tools" => kache::install(root, runner),
         "script-docs" => script_docs::write(root, runner),
         "script-docs-check" => script_docs::check(root, runner),
+        "wasm-check" => wasm::check(root, runner),
+        "wasm-build" => wasm::build(root, runner),
         _ => Err(format!(
             "local task {task:?}: expected a repository validation or generation command"
         )),
