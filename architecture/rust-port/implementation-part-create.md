@@ -177,6 +177,11 @@ Typing in the focused second field updates the preview, and both
 keyboard moves leave the draft open without adding a history entry.
 [Value focus receipt](receipts/2026-11-27-extrude-value-focus-3893/README.md).
 
+The published Extrude preset example verifies Save Current, reselecting
+the saved distance, and renaming the preset while preserving its
+stored settings. The outline's Revolve example remains open.
+[Preset update receipt](receipts/2026-11-27-extrude-preset-update-3893/README.md).
+
 Extrude refreshes the preview as soon as the final reference face is
 selected. A [native From/To control](receipts/2026-11-27-extrude-between-faces-3870/README.md)
 verifies caps on opposite faces of a block and an independent midplane

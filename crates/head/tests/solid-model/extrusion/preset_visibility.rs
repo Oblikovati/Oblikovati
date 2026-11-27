@@ -3,6 +3,9 @@ use super::super::super::{diagnostics, ribbon_appearance::icon_quads::icon_quads
 use super::{ApplicationWorld, click_in_extrude, numeric_preview};
 use cucumber::{given, then, when};
 
+#[path = "preset_save_update.rs"]
+mod preset_save_update;
+
 const HIDE: &str = "HidePresets";
 const EMPTY: &str = "NoPreset";
 
@@ -100,6 +103,7 @@ fn open_disposable_profile(world: &mut ApplicationWorld) {
 #[given(
     "the user opens Extrude with the rectangular sketch profile selected and the preset row visible"
 )]
+#[given("Extrude is open with the rectangular profile selected, a valid draft and presets visible")]
 fn open_extrude_with_presets(world: &mut ApplicationWorld) {
     world.click_text("Sketch1");
     world.click_text("Extrude");
@@ -236,11 +240,7 @@ fn update_and_remove_preset(world: &mut ApplicationWorld) {
     super::super::replace_extrusion_distance(world, "7");
     open_preset_menu(world, "Saveddepth");
     click_menu_row(world, "SaveCurrent");
-    open_preset_menu(world, "Saveddepth");
-    click_menu_row(world, "RenameCurrent");
-    world.key(oblikovati_viewport::ViewportPhysicalKey::A, true);
-    world.type_text("Short depth");
-    click_in_extrude(world, "Savepreset");
+    rename_preset(world, "Saveddepth", "Short depth");
     world.run_in_window("Extrude", "Shortdepth");
 
     open_preset_menu(world, "Shortdepth");
@@ -266,4 +266,12 @@ fn last_used_extrude_settings_come_from_the_accepted_draft() {
     world.pump(Vec::new());
     assert_distance(&mut world, "8");
     world.close();
+}
+
+fn rename_preset(world: &mut ApplicationWorld, current: &str, name: &str) {
+    open_preset_menu(world, current);
+    click_menu_row(world, "RenameCurrent");
+    world.key(oblikovati_viewport::ViewportPhysicalKey::A, true);
+    world.type_text(name);
+    click_in_extrude(world, "Savepreset");
 }

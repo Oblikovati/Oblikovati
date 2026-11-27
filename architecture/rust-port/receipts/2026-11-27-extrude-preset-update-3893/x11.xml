@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Properties panel for creating and editing a modeled feature: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/feature-properties/feature-properties.feature" package="testsuite/Feature: Properties panel for creating and editing a modeled feature: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/feature-properties/feature-properties.feature" tests="2" errors="0" failures="1" hostname="localhost" timestamp="2026-11-27T06:04:42.338595093Z" time="18.464610922"><testcase name="Rule: Dockable Properties commands reuse the Properties shell: Scenario: Save a reusable definition and update it through the preset menu: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/feature-properties/feature-properties.feature:189:7" time="15.461185841"><system-out><![CDATA[  Scenario Outline: Save a reusable definition and update it through the preset menu
+   ✔  Given a fresh copy of `fixtures/cad/revolve/revolve-profile.opd` is open in a disposable application profile
+   ✔  And Extrude is open with the rectangular profile selected, a valid draft and presets visible
+   ✔  And for Revolve the long Y=0 sketch edge is the selected axis
+   ✔  When the user saves the draft using the preset row add button and gives it a unique name
+   ✔  Then the named preset is selectable from the preset list
+   ✔  When the user changes the main value and chooses Save Current
+   ✔  And the user reselects the saved preset
+   ✔  Then the saved value is restored into the panel
+   ✔  When the user chooses Rename Current and enters a different name
+   ✔  Then the list uses the new name for the same stored settings
+]]></system-out></testcase><testcase name="Rule: Dockable Properties commands reuse the Properties shell: Scenario: Save a reusable definition and update it through the preset menu: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/feature-properties/feature-properties.feature:190:7" time="3.003425081"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario Outline: Save a reusable definition and update it through the preset menu
+   ✔  Given a fresh copy of `fixtures/cad/revolve/revolve-profile.opd` is open in a disposable application profile
+   ✘  And Revolve is open with the rectangular profile selected, a valid draft and presets visible
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/feature-properties/feature-properties.feature:177:7
+      Step doesn't match any function
+]]></system-out></testcase></testsuite></testsuites>
