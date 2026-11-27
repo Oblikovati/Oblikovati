@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! The shared workspace dockspace and its pass-through document area.
 use crate::application::document_creation::workspaces::WorkspaceArea;
-use imgui::{Condition, StyleVar, Ui, WindowFlags};
+use imgui::{Condition, Ui, WindowFlags};
 pub(crate) mod persistence;
 
 /// Draw the nested panel docks and return the document viewport.
@@ -18,15 +18,14 @@ pub(crate) fn draw(
         (outer.right - outer.left).max(1.),
         (outer.bottom - outer.top).max(1.),
     ];
-    let _padding = ui.push_style_var(StyleVar::WindowPadding([0., 0.]));
+    let _padding = crate::widget_abi::window_padding(ui, [0., 0.]);
+    crate::widget_abi::window_geometry(ui, [outer.left, outer.top], size, Condition::Always);
     let mut host_open = true;
     <crate::application::workspace_layout::WorkspaceLayout as crate::dockable_window::Window>::window(
         ui,
         "##workspace-outer-host",
         &mut host_open,
     )
-        .position([outer.left, outer.top], Condition::Always)
-        .size(size, Condition::Always)
         .flags(host_flags())
         .build(|| draw_inner_workspace(ui, outer, size, layout, display, band, seed_asset_dock))
         .unwrap_or(outer)
@@ -63,15 +62,17 @@ fn draw_inner_child(ui: &Ui, outer: WorkspaceArea, workspace: WorkspaceArea) -> 
         ui,
         [workspace.left - outer.left, workspace.top - outer.top],
     );
-    ui.child_window("##workspace-docking-host")
-        .size(size)
-        .flags(
-            WindowFlags::NO_BACKGROUND
-                | WindowFlags::NO_SCROLLBAR
-                | WindowFlags::NO_SCROLL_WITH_MOUSE,
-        )
-        .build(|| crate::widget_abi::workspace_dockspace(ui, size))
-        .flatten()
+    let region = crate::widget_abi::child_region(
+        ui,
+        "##workspace-docking-host",
+        size,
+        0.,
+        WindowFlags::NO_BACKGROUND | WindowFlags::NO_SCROLLBAR | WindowFlags::NO_SCROLL_WITH_MOUSE,
+    );
+    if !region.visible {
+        return workspace;
+    }
+    crate::widget_abi::workspace_dockspace(ui, size)
         .and_then(|bounds| contained_center(workspace, bounds))
         .unwrap_or(workspace)
 }
