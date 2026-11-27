@@ -65,6 +65,15 @@ pub(crate) fn evaluate_resolved_prism(
     resolved: oblikovati_model::feature::sketch_prism::ResolvedSketchPrism<'_>,
 ) -> Result<PrismProbeSnapshot, EvaluationFailure> {
     let sketch_id = resolved.sketch.sketch.id();
+    if !resolved.additional_outputs.is_empty() {
+        return Err(Phase::Input
+            .refused(
+                Kind::InvalidInput,
+                Entity::Body,
+                "single-body extrusion: expected one output".into(),
+            )
+            .with_sketch_identity(sketch_id));
+    }
     let native = selected_definition(
         resolved.sketch.sketch.geometry(),
         resolved.selection,

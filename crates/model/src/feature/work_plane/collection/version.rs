@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::{WorkPlaneFeatureRecipe, WorkPlaneProgramRecipe, WorkPlaneProgramRecipeError};
 
-pub(super) const MAX_PROGRAM_VERSION: u32 = 42;
+pub(super) const MAX_PROGRAM_VERSION: u32 = 43;
 
 pub(super) fn program_recipe_version(features: &[WorkPlaneFeatureRecipe]) -> u32 {
     let definitions = features

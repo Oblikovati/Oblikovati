@@ -31,8 +31,7 @@ impl NamedPrismSnapshot {
         &mut self,
         history: &DocumentEditHistory,
         document: DocumentGuid,
-        feature: FeatureId,
-        sketch: u64,
+        output: PrismOutputName,
         lineage: &PrismSubentityHistory,
         shapes: Vec<Shape>,
     ) -> Result<(), String> {
@@ -49,7 +48,7 @@ impl NamedPrismSnapshot {
             .zip(shapes)
             .map(|(record, shape)| {
                 Ok((
-                    subentity_key(document, feature, sketch, record)?,
+                    subentity_key(document, output, record)?,
                     BoundSubentity {
                         provenance: record.clone(),
                         shape,
@@ -124,8 +123,7 @@ pub(super) fn analytic_edge_length(shape: &Shape) -> Result<f64, String> {
 }
 fn subentity_key(
     document: DocumentGuid,
-    feature: FeatureId,
-    sketch: u64,
+    output: PrismOutputName,
     record: &PrismSubentityProvenance,
 ) -> Result<Vec<u8>, String> {
     let (source, source_tag) = match record.source {
@@ -139,13 +137,15 @@ fn subentity_key(
         PrismSubentityRole::StartVertex => (3, "start-vertex"),
         PrismSubentityRole::EndVertex => (3, "end-vertex"),
     };
+    let sources = [output.sketch.0, source, u64::from(output.slot)];
+    let count = if output.slot == 0 { 2 } else { 3 };
     SemanticReferenceName::new(
         document,
-        feature.0,
+        output.feature.0,
         kind,
         "sketch-prism",
         &format!("{role}-{source_tag}"),
-        &[sketch, source],
+        &sources[..count],
     )?
     .encode()
 }

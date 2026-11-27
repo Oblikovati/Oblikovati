@@ -146,6 +146,16 @@ where
             .evaluate_sweep_boolean(feature, body.get(), input, operation)
             .map(PrefixBody::Created)
     }
+    fn evaluate_prism_outputs(
+        &mut self,
+        feature: FeatureId,
+        input: ResolvedSketchPrism<'_>,
+    ) -> Result<Vec<Self::Body>, PartFeatureFailure<Self::Failure>> {
+        self.0
+            .evaluate_prism_outputs(feature, input)
+            .map(|bodies| bodies.into_iter().map(PrefixBody::Created).collect())
+    }
+
     fn evaluate_prism(
         &mut self,
         feature: FeatureId,

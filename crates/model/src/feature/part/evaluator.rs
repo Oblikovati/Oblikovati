@@ -135,6 +135,17 @@ pub trait PartFeatureEvaluator {
             "sweep: expected an available named Boolean evaluator".into(),
         ))
     }
+    /// Construct all solid outputs in authored order, including the primary result.
+    /// Example: `backend.evaluate_prism_outputs(feature, input)?`.
+    fn evaluate_prism_outputs(
+        &mut self,
+        _feature: FeatureId,
+        _input: ResolvedSketchPrism<'_>,
+    ) -> Result<Vec<Self::Body>, PartFeatureFailure<Self::Failure>> {
+        Err(PartFeatureFailure::Unsupported(
+            "extrude: expected an available multiple-output evaluator".into(),
+        ))
+    }
     /// Construct an isolated result from checked inputs; example: `backend.evaluate_prism(feature.id(), input)?`.
     fn evaluate_prism(
         &mut self,

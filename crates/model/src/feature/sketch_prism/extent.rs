@@ -63,6 +63,7 @@ impl SketchPrismDefinition {
         let definition = Self {
             sketch,
             selection,
+            additional_outputs: Vec::new(),
             displacement: [DatumLength::Constant(0.); 3],
             direction: SketchPrismDirection::Positive,
             second_depth: None,

@@ -14,6 +14,7 @@ pub struct ResolvedSketchPrism<'a> {
     pub sketch: ResolvedDocumentSketch<'a>,
     pub sweep_start: SketchPlane,
     pub selection: &'a SketchPrismSelection,
+    pub additional_outputs: &'a [SketchPrismOutput],
     pub displacement: [f64; 3],
     pub taper_radians: f64,
 }
@@ -88,6 +89,7 @@ impl SketchPrismDefinition {
             sketch,
             sweep_start,
             selection: &self.selection,
+            additional_outputs: &self.additional_outputs,
             displacement,
             taper_radians,
         })

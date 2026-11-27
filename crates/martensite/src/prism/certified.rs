@@ -47,7 +47,18 @@ pub fn retain_certified_profile_prisms(
     vector: [f64; 3],
     resolution: Resolution,
 ) -> Result<Vec<CertifiedPrismSnapshot>, EvaluationFailure> {
-    if selections.is_empty() {
+    retain_certified_tapered_prisms(profile, selections.iter(), vector, resolution, None)
+}
+
+pub(crate) fn retain_certified_tapered_prisms<'a>(
+    profile: &SketchProfile,
+    selections: impl Iterator<Item = &'a SketchPrismSelection>,
+    vector: [f64; 3],
+    resolution: Resolution,
+    taper: Option<PrismTaper>,
+) -> Result<Vec<CertifiedPrismSnapshot>, EvaluationFailure> {
+    let mut selections = selections.peekable();
+    if selections.peek().is_none() {
         return Err(Phase::Input.refused(
             Kind::InvalidInput,
             Entity::Body,
@@ -57,7 +68,6 @@ pub fn retain_certified_profile_prisms(
     let arrangement = CertifiedPrismRegions::new(profile, resolution)?;
     let mut seen = BTreeSet::new();
     let selected = selections
-        .iter()
         .map(|selection| {
             let region = arrangement.resolve(selection)?;
             if !seen.insert(region.id()) {
@@ -72,7 +82,7 @@ pub fn retain_certified_profile_prisms(
         .collect::<Result<Vec<_>, _>>()?;
     selected
         .into_iter()
-        .map(|region| arrangement.retain(region, vector, None))
+        .map(|region| arrangement.retain(region, vector, taper))
         .collect()
 }
 

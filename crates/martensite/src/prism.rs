@@ -4,7 +4,7 @@ use crate::{
     EvaluationPhase as Phase,
 };
 mod certified;
-pub(crate) use certified::retain_certified_tapered_prism;
+pub(crate) use certified::{retain_certified_tapered_prism, retain_certified_tapered_prisms};
 pub(crate) mod input;
 pub use certified::{
     CertifiedPrismSnapshot, PrismAchievedTolerance, retain_certified_profile_prism,

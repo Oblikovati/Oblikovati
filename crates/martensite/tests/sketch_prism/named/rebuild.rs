@@ -410,3 +410,6 @@ fn canonical_triangles(triangles: impl IntoIterator<Item = [[f64; 3]; 3]>) -> Ve
     result.sort();
     result
 }
+
+#[path = "rebuild/grouped_extrude.rs"]
+mod grouped_extrude;

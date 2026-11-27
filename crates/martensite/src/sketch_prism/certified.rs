@@ -43,6 +43,13 @@ pub(crate) fn evaluate(
     input: ResolvedSketchPrism<'_>,
     resolution: Resolution,
 ) -> Result<crate::CertifiedPrismSnapshot, EvaluationFailure> {
+    if !input.additional_outputs.is_empty() {
+        return Err(Phase::Input.refused(
+            Kind::InvalidInput,
+            Entity::Body,
+            "single-body extrusion: expected one output".into(),
+        ));
+    }
     let plane = input.sweep_start;
     let (profile, sources) = super::regions::input::profile(input.sketch.sketch.geometry(), plane)?;
     let vector = crate::prism::placement::model_displacement(plane, input.displacement)?;
@@ -56,6 +63,41 @@ pub(crate) fn evaluate(
     )?;
     result.vertex_sources = sources;
     Ok(result)
+}
+
+pub(crate) fn evaluate_feature_outputs(
+    input: ResolvedSketchPrism<'_>,
+    policy: crate::PrismResolutionPolicy,
+    feature: FeatureId,
+) -> Result<(Vec<crate::CertifiedPrismSnapshot>, crate::PrismResolution), EvaluationFailure> {
+    let sketch = input.sketch.sketch.id();
+    let failure =
+        |cause: EvaluationFailure| cause.with_sketch_identity(sketch).for_feature(feature);
+    let resolution = policy.for_sketch(&input.sketch).map_err(failure)?;
+    let plane = input.sweep_start;
+    let (profile, sources) =
+        super::regions::input::profile(input.sketch.sketch.geometry(), plane).map_err(failure)?;
+    let vector =
+        crate::prism::placement::model_displacement(plane, input.displacement).map_err(failure)?;
+    let taper = crate::prism::PrismTaper::new(plane, vector, input.taper_radians);
+    let selections = std::iter::once(input.selection).chain(
+        input
+            .additional_outputs
+            .iter()
+            .map(|output| &output.selection),
+    );
+    let mut bodies = crate::prism::retain_certified_tapered_prisms(
+        &profile,
+        selections,
+        [vector.x(), vector.y(), vector.z()],
+        resolution.kernel(),
+        taper,
+    )
+    .map_err(failure)?;
+    for body in &mut bodies {
+        body.vertex_sources = sources.clone();
+    }
+    Ok((bodies, resolution))
 }
 
 pub(super) fn profile_line(

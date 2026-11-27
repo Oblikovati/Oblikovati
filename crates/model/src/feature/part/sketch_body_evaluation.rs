@@ -3,6 +3,7 @@
 use super::{
     PartFeatureDefinition, PartFeatureEvaluation, PartFeatureEvaluator, PartFeatureFailure,
     PartFeatureProgramError,
+    body_lineage::BodySlot,
     body_resolution::{resolve_body_face, resolve_body_slot},
     evaluate::require_replay_current,
 };
@@ -85,6 +86,27 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
                 Err("through-all extent: expected Cut against a current target body".into())
             })
             .map_err(PartFeatureFailure::Inputs)?;
+        if !input.additional_outputs.is_empty() {
+            let slots: Vec<_> = std::iter::once(BodySlot::from(feature.id()))
+                .chain(input.additional_outputs.iter().map(|output| BodySlot {
+                    feature: feature.id(),
+                    output: output.slot,
+                }))
+                .collect();
+            let bodies = backend.evaluate_prism_outputs(feature.id(), input)?;
+            if bodies.len() != slots.len() {
+                return Err(PartFeatureFailure::BodyReference(format!(
+                    "extrude outputs: expected {} bodies, got {}",
+                    slots.len(),
+                    bodies.len()
+                )));
+            }
+            self.body_lineage
+                .register_outputs(feature.id(), slots.iter().copied().collect())
+                .map_err(PartFeatureFailure::BodyReference)?;
+            self.bodies.extend(slots.into_iter().zip(bodies));
+            return Ok(());
+        }
         let body = backend
             .evaluate_prism(feature.id(), input)
             .map_err(PartFeatureFailure::Kernel)?;
