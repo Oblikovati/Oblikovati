@@ -137,11 +137,11 @@ fn choose_on_press(
             feature: feature.id,
         });
     }
-    if clicked
-        && ui.is_mouse_double_clicked(MouseButton::Left)
-        && let Some(edit) = loft_edit_action(feature).filter(|edit| edit.enabled(state))
-    {
-        actions.push(edit);
+    if clicked && ui.is_mouse_double_clicked(MouseButton::Left) {
+        let edit = loft_edit_action(feature).unwrap_or(GuiShellAction::OpenExtrudeEdit(feature.id));
+        if edit.enabled(state) {
+            actions.push(edit);
+        }
     }
 }
 fn feature_menu(

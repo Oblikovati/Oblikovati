@@ -97,6 +97,12 @@ solid and resolves the extent from the current target. The
 [native Through All receipt](receipts/2026-11-27-extrude-through-all-3870/README.md)
 checks both openings in the preview and accepted body.
 
+Double-clicking a supported Extrude browser row opens its edit draft.
+The panel shows the saved sketch-plane start and the body name, and
+shows Match Shape checked and disabled on the saved closed profile.
+The [native edit properties receipt](receipts/2026-11-27-extrude-edit-properties-3870/README.md)
+covers the retained preview depth and cancellation.
+
 ## Sweep, Loft, and Revolve
 
 The [release probes](../../crates/martensite/tests/release_probe/create.rs)

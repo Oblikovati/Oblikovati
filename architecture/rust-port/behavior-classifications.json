@@ -3994,8 +3994,19 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
       "state": "inventoried",
-      "baseline_source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
-      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
+      "baseline_source_sha256": "ccb973b10334aa2f8f31a189392ad8049212caaa2938db03b034bc9f49008821",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json",
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a app/feature_edit_test.go.",
+      "go_test_premise": "TestExtrudeEditRoundTripsFullCreationSurface verifies that editing an extrusion starts from its authored properties.",
+      "api_revision": "c8200b2da97c9a7dde43afb25debc977ff23b2fd",
+      "kernel_revision": "d463526642b7bf950ba33c7ab4a4c9bc97caffaf",
+      "kernel_capabilities": "Replay of the saved closed-profile prism with the original geometry and body identity.",
+      "platforms": "Linux COSMIC Wayland and X11 under Xvfb with Openbox.",
+      "kernel_integration": "Reopen the saved normal prism using its authored profile and resolve its current body name.",
+      "rust_tests": "crates/head/tests/solid-model/extrusion/edit_properties.rs",
+      "oracle": "Open Edit Feature, check the selected disabled Match Shape control, cancel, and compare the retained feature distance. See receipts/2026-11-27-extrude-edit-properties-3870/README.md.",
+      "expected_result": "Match Shape is visible, checked, and disabled. Cancel retains the accepted solid.",
+      "last_receipt": "architecture/rust-port/receipts/2026-11-27-extrude-edit-properties-3870/README.md"
     },
     {
       "id": "scenario:b5b837eabb4d68e50d4579523ef8d0c66f9a0b487a8f97b91c3ea7f820091ddc",

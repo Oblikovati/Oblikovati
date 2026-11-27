@@ -228,7 +228,11 @@ fn accepted_extrusion_stays_unchanged(world: &mut ApplicationWorld) {
         .values()
         .next()
         .expect("expected the accepted extrusion");
-    assert_extrusion_is_eight_millimetres(world, &feature.distance);
+    if let Some(original) = world.observed_rows.as_deref() {
+        assert_eq!(feature.distance, original);
+    } else {
+        assert_extrusion_is_eight_millimetres(world, &feature.distance);
+    }
     assert!(!state.extrude_preview_active);
 }
 

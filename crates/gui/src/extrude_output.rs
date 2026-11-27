@@ -25,9 +25,11 @@ impl ExtrudeDialog {
     }
 
     pub(super) fn draw_output(&mut self, ui: &Ui, state: &GuiCommandState) -> bool {
-        if self.edit_feature.is_some()
-            || !(self.reference.numeric() || self.reference.through_all())
-        {
+        if let Some(feature) = self.edit_feature {
+            self.draw_edit_output(ui, state, feature);
+            return false;
+        }
+        if !(self.reference.numeric() || self.reference.through_all()) {
             return self.operation.take().is_some();
         }
         let Some(browser) = &state.browser else {
@@ -79,6 +81,28 @@ impl ExtrudeDialog {
                 .build();
         }
         self.operation != previous
+    }
+
+    fn draw_edit_output(
+        &self,
+        ui: &Ui,
+        state: &GuiCommandState,
+        feature: oblikovati_model::feature::FeatureId,
+    ) {
+        let Some(body) = state
+            .browser
+            .as_ref()
+            .and_then(|browser| browser.bodies.iter().find(|body| body.feature == feature))
+        else {
+            return;
+        };
+        if ui.collapsing_header("Output", imgui::TreeNodeFlags::DEFAULT_OPEN) {
+            crate::theme::property_label(ui, "Body Name");
+            ui.text(&body.name);
+            // A saved closed profile fixes the section for this distance edit.
+            let _disabled = ui.begin_disabled(true);
+            ui.checkbox("Match Shape", &mut true);
+        }
     }
 
     fn choose_boolean_operation(&mut self, operation: PrismBoolean) {

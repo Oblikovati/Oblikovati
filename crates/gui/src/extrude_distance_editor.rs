@@ -335,6 +335,10 @@ impl super::ExtrudeDialog {
                 );
             }
         }
+        if self.edit_feature.is_some() {
+            crate::theme::property_label(ui, "From");
+            ui.text("1 Sketch Plane");
+        }
         if self.edit_feature.is_none() {
             let was_through_all = self.reference.through_all();
             edited |= self.reference.draw(ui, super::single_body(state));
