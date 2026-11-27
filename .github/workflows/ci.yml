@@ -119,7 +119,7 @@ jobs:
           else
             cargo xtask native
           fi
-      - name: Capture Windows ARM64 New dialog assertion stack
+      - name: Capture Windows ARM64 GUI assertion stack
         if: failure() && matrix.target == 'aarch64-pc-windows-msvc' && steps.native-workspaces.conclusion == 'failure'
         timeout-minutes: 6
         shell: pwsh
