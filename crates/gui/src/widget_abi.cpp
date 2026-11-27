@@ -355,6 +355,10 @@ bool oblikovati_gui_begin_child_region(const char* identity, float width, float 
 void oblikovati_gui_dummy(float width, float height) {
     ImGui::Dummy(ImVec2(width, height));
 }
+
+void oblikovati_gui_image(std::uintptr_t texture, float width, float height) {
+    ImGui::Image(reinterpret_cast<ImTextureID>(texture), ImVec2(width, height));
+}
 bool oblikovati_gui_selectable(const unsigned char* label, bool selected, int flags) {
     return ImGui::Selectable(reinterpret_cast<const char*>(label), selected, flags, ImVec2(0, 0));
 }

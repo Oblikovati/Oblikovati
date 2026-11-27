@@ -31,7 +31,7 @@ pub(crate) use scroll_region::{child_region, scroll_region};
 #[path = "widget_scalars.rs"]
 mod scalars;
 pub(crate) use scalars::{
-    filled_circle, frame_padding, line, push_style_color, window_min_size, window_padding,
+    filled_circle, frame_padding, image, line, push_style_color, window_min_size, window_padding,
 };
 #[cfg(test)]
 #[path = "widget_text_line_advance_tests.rs"]

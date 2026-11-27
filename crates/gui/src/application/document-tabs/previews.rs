@@ -211,9 +211,13 @@ impl TabPreviews {
             return;
         };
         self.preview_visible = true;
+        crate::widget_abi::window_geometry(
+            ui,
+            placement.position,
+            placement.size,
+            imgui::Condition::Always,
+        );
         ui.window("##tab-preview")
-            .position(placement.position, imgui::Condition::Always)
-            .size(placement.size, imgui::Condition::Always)
             .flags(
                 imgui::WindowFlags::NO_DECORATION
                     | imgui::WindowFlags::NO_INPUTS
@@ -239,13 +243,9 @@ impl TabPreviews {
     }
     fn picture(&mut self, ui: &Ui, key: PreviewKey, size: [f32; 2]) {
         if self.texture.bind(key) {
-            imgui::Image::new(
-                imgui::TextureId::new(crate::GuiTextureKey::TAB_PREVIEW.raw()),
-                size,
-            )
-            .build(ui);
+            crate::widget_abi::image(ui, crate::GuiTextureKey::TAB_PREVIEW.raw(), size);
         } else {
-            ui.dummy(size);
+            crate::widget_abi::dummy(ui, size);
         }
     }
 
