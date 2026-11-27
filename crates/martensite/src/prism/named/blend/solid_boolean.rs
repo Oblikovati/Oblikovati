@@ -115,11 +115,11 @@ fn checked_boolean(
     crate::checked_shape::require_geometry(&result, &format!("{operation} result"))
         .map_err(|error| error.to_string())?;
     validate_result_faces(&result, operation)?;
-    let certified_tools = tools
+    let resolved_tools = tools
         .iter()
         .filter_map(|tool| Some((&tool.shape, tool.resolution?)));
     let achieved = if tools.iter().any(|tool| tool.resolution.is_some()) {
-        tolerances::check_boolean(target, certified_tools, &result, resolution, operation)?
+        tolerances::check_boolean(target, resolved_tools, &result, resolution, operation)?
     } else {
         tolerances::check(target, &result, resolution, operation)?
     };
