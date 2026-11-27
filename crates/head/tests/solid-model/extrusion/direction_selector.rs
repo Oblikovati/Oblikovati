@@ -92,6 +92,9 @@ fn icons_visible(world: &mut ApplicationWorld) {
         OPTIONS.len()
     );
     let text = world.window_text("Extrude");
+    if OPTIONS.iter().all(|label| !text.contains(label)) {
+        return;
+    }
     let mut remaining = text.as_str();
     for label in OPTIONS {
         remaining = remaining

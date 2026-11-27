@@ -49,8 +49,16 @@ fn choose_direction_icon(world: &mut ApplicationWorld, index: usize) {
 pub(super) fn direction_icons(world: &ApplicationWorld) -> Vec<([f32; 2], [f32; 2])> {
     use super::super::{diagnostics, ribbon_appearance::icon_quads};
     let ([left, _], [width, _]) = diagnostics::window_geometry("Extrude").unwrap();
-    let y = world.run_in_window("Extrude", "Default").center()[1];
-    icon_quads::icon_quads_inside(([left, y - 28.], [left + width, y - 4.]))
+    if world.window_text("Extrude").contains("Default") {
+        let y = world.run_in_window("Extrude", "Default").center()[1];
+        return icon_quads::icon_quads_inside(([left, y - 28.], [left + width, y - 4.]));
+    }
+    let y = world.run_in_window("Extrude", "Direction").center()[1];
+    let mut icons = icon_quads::icon_quads_inside(([left, y + 7.], [left + width, y + 47.]));
+    if let Some(top) = icons.iter().map(|(low, _)| low[1]).min_by(f32::total_cmp) {
+        icons.retain(|(low, _)| (low[1] - top).abs() < 1.);
+    }
+    icons
 }
 
 #[then("Distance B and Taper B controls appear")]
