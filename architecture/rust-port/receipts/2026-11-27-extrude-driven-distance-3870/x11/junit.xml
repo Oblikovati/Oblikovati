@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Extrude a profile in a part document: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature" package="testsuite/Feature: Extrude a profile in a part document: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-27T03:28:47.283430693Z" time="9.987529511"><testcase name="Scenario: Use a named length parameter in the distance expression: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature:464:3" time="9.987529511"><system-out><![CDATA[  Scenario: Use a named length parameter in the distance expression
+   ✔> Given the MCAD Software is displaying a part in the solid modeling workspace
+   ✔> And the viewport pointer is idle
+   ✔  Given a fresh copy of `fixtures/cad/extrusion/profile-depth-4mm.opd` is open
+   ✔  And the user makes Sketch1 visible and selects its rectangular profile
+   ✔  When the user starts a fixed-distance extrusion and enters Depth * 2 into Distance A
+   ✔  Then the preview has a depth of 8 mm and OK is enabled
+   ✔  When the user accepts the feature and changes Depth to 5 mm in the part parameters
+   ✔  Then the extrusion updates to a depth of 10 mm
+]]></system-out></testcase></testsuite></testsuites>
