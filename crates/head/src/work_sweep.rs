@@ -54,6 +54,13 @@ macro_rules! sweep_work_methods {
         ) -> Result<bool, String> {
             Err("import: expected an available desktop owner".into())
         }
+        /// Dispatch an Unwrap command. Example: `work.unwrap_from_gui(action)?`.
+        fn unwrap_from_gui(
+            &mut self,
+            _action: oblikovati_gui::GuiUnwrapAction,
+        ) -> Result<bool, String> {
+            Err("unwrap: expected an available desktop owner".into())
+        }
         /// Dispatch a Sweep command. Example: `work.sweep_from_gui(action)?`.
         fn sweep_from_gui(
             &mut self,
@@ -103,6 +110,12 @@ macro_rules! forward_sweep_work_methods {
             action: oblikovati_gui::GuiImportAction,
         ) -> Result<bool, String> {
             self.$owner.import_from_gui(action)
+        }
+        fn unwrap_from_gui(
+            &mut self,
+            action: oblikovati_gui::GuiUnwrapAction,
+        ) -> Result<bool, String> {
+            self.$owner.unwrap_from_gui(action)
         }
         fn sweep_from_gui(
             &mut self,

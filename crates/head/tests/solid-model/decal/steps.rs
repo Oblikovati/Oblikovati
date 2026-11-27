@@ -248,7 +248,8 @@ fn user_clears_chain_and_cancels(world: &mut ApplicationWorld) {
 #[then("the properties close.")]
 fn decal_properties_close(_world: &mut ApplicationWorld) {
     assert!(
-        super::super::diagnostics::window_geometry(DECAL_WINDOW).is_none(),
-        "expected Decal properties panel to close"
+        super::super::diagnostics::window_geometry(DECAL_WINDOW).is_none()
+            && super::super::diagnostics::window_geometry("Unwrap").is_none(),
+        "expected feature properties panel to close"
     );
 }

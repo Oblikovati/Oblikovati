@@ -189,6 +189,11 @@ pub use import_dialog::{
     GuiImportAction, GuiImportEditSeed, GuiImportPreview, GuiImportPreviewState, GuiImportRequest,
     GuiImportSourceSummary,
 };
+mod unwrap_dialog;
+pub use unwrap_dialog::{
+    GuiUnwrapAction, GuiUnwrapEdgeMode, GuiUnwrapEditSeed, GuiUnwrapFacePick, GuiUnwrapPreview,
+    GuiUnwrapPreviewState, GuiUnwrapRequest,
+};
 mod revolve_dialog;
 pub use revolve_dialog::{
     GuiRevolveAction, GuiRevolveEditSeed, GuiRevolveExtent, GuiRevolvePreview,

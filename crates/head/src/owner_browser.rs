@@ -192,6 +192,7 @@ fn populate_browser<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
     browser.rib_edits = super::owner_blend::owner_rib::edit_seeds(snapshot);
     browser.decal_edits = super::owner_blend::owner_decal::edit_seeds(snapshot);
     browser.import_edits = super::owner_blend::owner_import::edit_seeds(snapshot);
+    browser.unwrap_edits = super::owner_blend::owner_unwrap::edit_seeds(snapshot);
     browser.third_party_entries = super::owner_blend::owner_import::third_party_entries(snapshot);
     browser.extrusion_edits = snapshot
         .work_geometry
@@ -357,7 +358,7 @@ fn feature_kind_name(
 ) -> &'static str {
     use oblikovati_model::feature::part::PartFeatureDefinition::{
         Chamfer, DeleteBody, DerivedPart, Fillet, ImportedModel, SketchCoil, SketchDecal,
-        SketchEmboss, SketchLoft, SketchPrism, SketchRevolve, SketchRib, SketchSweep,
+        SketchEmboss, SketchLoft, SketchPrism, SketchRevolve, SketchRib, SketchSweep, Unwrap,
     };
     match definition {
         SketchPrism(_) => "Extrusion",
@@ -373,6 +374,7 @@ fn feature_kind_name(
             }
             oblikovati_model::feature::imported_model::ImportMode::ConvertModel => "Imported Model",
         },
+        Unwrap(_) => "Unwrap",
         SketchSweep(_) => "Sweep",
         SketchLoft(_) => "Loft",
         Fillet(_) => "Fillet",

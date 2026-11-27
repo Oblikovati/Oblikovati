@@ -93,7 +93,9 @@ impl GuiFrameEngine {
             home_was_active,
             (
                 self.command_alias.text(),
-                self.extrude_dialog.distance_prompt(),
+                self.extrude_dialog
+                    .distance_prompt()
+                    .or_else(|| self.create_dialogs.status_prompt()),
             ),
         );
         self.workspace

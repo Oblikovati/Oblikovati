@@ -1,0 +1,55 @@
+running 1 test
+Feature: Unwrap
+  Scenario: unwrap-01 Inspect required inputs and defaults
+   ✔  Given a disposable copy of the native fixture "fixtures/cad/body-properties-start.opd" is open
+   ✔  And the part is displayed in the 3D Model environment
+   ✔  When Unwrap is opened
+   ✔  Then Faces is empty and OK is disabled
+   ✔  And Auto Face Chain and Merge Result Body are checked
+  Scenario: unwrap-02 Select chained faces
+   ✔  Given a disposable copy of `fixtures/cad/mark/45-face-shared-vertices-candidate.opd` is open in 3D Model
+   ✔  And the user opens Unwrap with Auto Face Chain enabled
+   ✔  When the user selects a lateral face of the prism
+   ✔  Then Faces shows 45 Faces and the MCAD Software displays an unwrap preview.
+   ✔  And the alignment vertex and edge selection controls appear.
+  Scenario: unwrap-03 Select one face
+   ✔  Given a disposable copy of the native fixture "fixtures/cad/fillet-circular-edge-candidate.opd" is open
+   ✔  And Unwrap is open with Auto Face Chain disabled and the face selection cleared
+   ✔  When the user selects the cylindrical side face
+   ✔  Then Faces shows 1 Face and OK is enabled.
+  Scenario: unwrap-04 Change alignment
+   ✔  Given a disposable copy of the native fixture "fixtures/cad/fillet-circular-edge-candidate.opd" is open
+   ✔  And the cylindrical side face is selected in Unwrap
+   ✔  When the user chooses different Alignment buttons
+   ✔  Then the displayed unwrap preview changes orientation.
+  Scenario: unwrap-05 Create an unmerged result
+   ✔  Given a disposable copy of the native fixture "fixtures/cad/fillet-circular-edge-candidate.opd" is open
+   ✔  And the cylindrical side face is selected in Unwrap and Merge Result Body is cleared
+   ✔  When the user clicks OK
+   ✔  Then the panel closes, Unwrap1 appears in the browser, and the browser shows one surface body.
+  Scenario: unwrap-06 Reopen an unwrap and inspect edge selectors
+   ✔  Given a disposable copy of `fixtures/cad/mark/45-face-shared-vertices-candidate.opd` is open in 3D Model
+   ✔  And the user opens Unwrap with Auto Face Chain enabled and selects a lateral face of the prism
+   ✔  And the user disables Auto Face Chain, clears the selection and reselects that lateral face
+   ✔  And the user selects the next Alignment option and then the following Alignment option
+   ✔  And the user clears Merge Result Body and accepts to create Unwrap1
+   ✔  When the user double-clicks Unwrap1
+   ✔  Then the properties show 1 Face and 1 Vertex
+   ✔  And Auto Face Chain and Merge Result Body are cleared
+   ✔  When the user activates Linear Result
+   ✔  Then the status bar requests a contiguous edge set to create one linear edge
+   ✔  When the user attempts to select the lower edge of the displayed triangular preview
+   ✔  Then the Linear Result selector remains unpopulated
+   ✔  When the user activates Rigid Result
+   ✔  Then the status bar requests contiguous planar edges that will not deform
+   ✔  When the user activates Seam Edges
+   ✔  Then the status bar requests edges to act as seams
+   ✔  When the user clicks Cancel
+   ✔  Then the properties close.
+[Summary]
+1 feature
+6 scenarios (6 passed)
+40 steps (40 passed)
+test native::gui_loop_tests::application_bdd::application_scenarios_use_the_native_window ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1794 filtered out; finished in 69.79s

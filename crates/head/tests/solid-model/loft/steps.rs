@@ -12,6 +12,8 @@ mod solid_emboss;
 mod solid_import;
 #[path = "../rib/steps.rs"]
 mod solid_rib;
+#[path = "../unwrap/steps.rs"]
+mod solid_unwrap;
 
 use super::*;
 use cucumber::{given, then, when};

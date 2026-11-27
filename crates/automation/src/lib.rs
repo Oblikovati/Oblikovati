@@ -36,6 +36,7 @@ mod revolve;
 mod rib;
 mod shell;
 mod sweep;
+mod unwrap;
 pub use coil::{CoilInputs, PreparedCoil, build_coil_definition, prepare_coil_definition};
 pub use decal::{
     DecalInputs, PreparedDecal, build_decal_definition, prepare_decal_definition, replace_decal,
@@ -77,6 +78,10 @@ pub use shell::{PreparedShell, prepare_shell};
 pub use sweep::{
     PreparedSweep, automatic_sweep, prepare_surface_sweep, prepare_sweep, prepare_sweep_for_target,
     prepare_sweep_taper, prepare_sweep_twist, sweep_boolean_target,
+};
+pub use unwrap::{
+    PreparedUnwrap, UnwrapInputs, build_unwrap_definition, prepare_unwrap_definition,
+    replace_unwrap,
 };
 mod interests;
 pub use file_host::{

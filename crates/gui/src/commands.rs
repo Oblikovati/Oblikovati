@@ -354,6 +354,7 @@ pub enum GuiShellAction {
     Rib(crate::GuiRibAction),
     Decal(crate::GuiDecalAction),
     Import(crate::GuiImportAction),
+    Unwrap(crate::GuiUnwrapAction),
     OpenFillet,
     OpenMoveBody,
     PreviewMoveBody(Option<GuiMoveBodyRequest>),

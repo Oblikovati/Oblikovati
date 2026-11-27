@@ -60,6 +60,7 @@ glyph_catalog! {
     Emboss => "emboss",
     Rib => "rib",
     Decal => "decal",
+    Unwrap => "unwrap",
     Hole => "hole",
     Shell => "shell",
     Fillet => "fillet",

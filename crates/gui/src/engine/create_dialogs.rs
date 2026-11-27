@@ -13,6 +13,7 @@ pub(super) struct CreateFeatureDialogs {
     pub(super) rib: crate::rib_dialog::RibDialog,
     pub(super) decal: crate::decal_dialog::DecalDialog,
     pub(super) import: crate::import_dialog::ImportDialog,
+    pub(super) unwrap: crate::unwrap_dialog::UnwrapDialog,
 }
 
 impl CreateFeatureDialogs {
@@ -28,6 +29,7 @@ impl CreateFeatureDialogs {
         self.rib.register_dockable(registry)?;
         self.decal.register_dockable(registry)?;
         self.import.register_dockable(registry)?;
+        self.unwrap.register_dockable(registry)?;
         self.loft.register_dockable(registry)
     }
 
@@ -43,8 +45,13 @@ impl CreateFeatureDialogs {
         self.rib.synchronize(state, actions);
         self.decal.synchronize(state, actions);
         self.import.synchronize(state, actions);
+        self.unwrap.synchronize(state, actions);
         self.sweep.synchronize(state, actions);
         self.loft.synchronize(state, actions);
+    }
+
+    pub(super) fn status_prompt(&self) -> Option<&'static str> {
+        self.unwrap.status_prompt()
     }
 
     pub(super) fn take_sketch_plane_request(&mut self) -> bool {
@@ -80,5 +87,6 @@ impl CreateFeatureDialogs {
         self.rib.panel(ui, commands, (area, icons), selected);
         self.decal.panel(ui, commands, (area, icons), selected);
         self.import.panel(ui, commands, (area, icons), selected);
+        self.unwrap.panel(ui, commands, (area, icons), selected);
     }
 }

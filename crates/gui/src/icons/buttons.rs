@@ -238,6 +238,7 @@ pub(crate) fn action_glyph(action: &GuiShellAction) -> Option<IconGlyph> {
         GuiShellAction::Rib(crate::GuiRibAction::Open) => IconGlyph::Rib,
         GuiShellAction::Decal(crate::GuiDecalAction::Open) => IconGlyph::Decal,
         GuiShellAction::Import(crate::GuiImportAction::Open) => IconGlyph::Import,
+        GuiShellAction::Unwrap(crate::GuiUnwrapAction::Open) => IconGlyph::Unwrap,
         GuiShellAction::Derive(crate::GuiDeriveAction::Open) => IconGlyph::Derive,
         _ => return None,
     })

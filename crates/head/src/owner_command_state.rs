@@ -261,6 +261,8 @@ impl<
             decal_images: self.gui_decal_images(document),
             import_preview: self.gui_import_preview(document, session.generation()),
             import_source: self.gui_import_source(document),
+            unwrap_preview: self.gui_unwrap_preview(document, session.generation()),
+            unwrap_pick: self.gui_unwrap_pick(document, session.generation()),
             selected_model_face: self
                 .chosen_model_face(document)
                 .map(|face| face.key.clone()),

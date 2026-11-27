@@ -80,6 +80,12 @@ macro_rules! desktop_extrusion_work {
         ) -> Result<bool, String> {
             self.import_command(action)
         }
+        fn unwrap_from_gui(
+            &mut self,
+            action: oblikovati_gui::GuiUnwrapAction,
+        ) -> Result<bool, String> {
+            self.unwrap_command(action)
+        }
         fn sweep_from_gui(
             &mut self,
             action: oblikovati_gui::GuiSweepAction,

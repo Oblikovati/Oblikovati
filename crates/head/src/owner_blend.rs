@@ -25,6 +25,8 @@ mod owner_shell_face_body;
 mod owner_shell_feature;
 #[path = "owner_sweep.rs"]
 pub(super) mod owner_sweep;
+#[path = "owner_unwrap.rs"]
+pub(super) mod owner_unwrap;
 use oblikovati_automation::{PreparedChamfer, PreparedFillet, prepare_chamfer, prepare_fillet};
 
 /// Bundled preview and session state for Part Create feature dialogs on `DesktopOwner`.
@@ -34,6 +36,7 @@ pub(super) struct CreateFeatureState {
     pub(super) rib: Option<owner_rib::RibPreview>,
     pub(super) decal: Option<owner_decal::DecalPreview>,
     pub(super) import: owner_import::ImportOwnerState,
+    pub(super) unwrap: owner_unwrap::UnwrapOwnerState,
 }
 
 impl<
