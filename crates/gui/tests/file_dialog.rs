@@ -109,6 +109,9 @@ fn choose_save_as(engine: &mut GuiFrameEngine, request: &mut GuiFrameRequest) {
         engine.frame(request).unwrap();
     }
 }
+fn dialog_path(directory: &tempfile::TempDir, name: &str) -> String {
+    directory.path().join(name).to_str().unwrap().to_owned()
+}
 #[test]
 fn file_menu_opens_a_visible_document_without_an_existing_document() {
     let _guard = GUI_CONTEXT
@@ -120,13 +123,15 @@ fn file_menu_opens_a_visible_document_without_an_existing_document() {
     engine.frame(&request).unwrap();
     engine.frame(&request).unwrap();
     assert!(choose_file_item(&mut engine, &mut request, "Open...").is_empty());
-    request.events = vec![GuiInputEvent::Text("/tmp/input.opd".into())];
+    let directory = tempfile::tempdir().unwrap();
+    let target = dialog_path(&directory, "input.opd");
+    request.events = vec![GuiInputEvent::Text(target.clone())];
     engine.frame(&request).unwrap();
     assert_eq!(
         key_frames(&mut engine, &mut request, GuiKey::Enter),
         [GuiShellAction::OpenDocument(
             oblikovati_api::wire::OpenDocumentArgs {
-                full_document_name: "/tmp/input.opd".into(),
+                full_document_name: target,
                 visible: true,
                 defer_content: false,
                 express: false,
@@ -168,19 +173,24 @@ fn file_menu_save_as_discards_a_cancelled_draft_and_accepts_a_fresh_path() {
     let mut request = file_request();
     engine.frame(&request).unwrap();
     engine.frame(&request).unwrap();
+    let directory = tempfile::tempdir().unwrap();
     choose_save_as(&mut engine, &mut request);
-    request.events = vec![GuiInputEvent::Text("/tmp/discarded.opd".into())];
+    request.events = vec![GuiInputEvent::Text(dialog_path(
+        &directory,
+        "discarded.opd",
+    ))];
     engine.frame(&request).unwrap();
     assert!(key_frames(&mut engine, &mut request, GuiKey::Escape).is_empty());
     choose_save_as(&mut engine, &mut request);
-    request.events = vec![GuiInputEvent::Text("/tmp/kept.opd".into())];
+    let target = dialog_path(&directory, "kept.opd");
+    request.events = vec![GuiInputEvent::Text(target.clone())];
     engine.frame(&request).unwrap();
     assert_eq!(
         key_frames(&mut engine, &mut request, GuiKey::Enter),
         [GuiShellAction::SaveDocumentAs(
             oblikovati_api::wire::SaveDocumentAsArgs {
                 document: 7,
-                new_full_document_name: "/tmp/kept.opd".into(),
+                new_full_document_name: target,
             }
         )]
     );
@@ -195,7 +205,9 @@ fn native_text_widget_submits_the_typed_path_and_escape_discards_the_next_draft(
     assert!(engine.request_save_path(0).unwrap_err().contains("nonzero"));
     engine.frame(&request).unwrap();
     show_save_dialog(&mut engine, &mut request);
-    request.events = vec![GuiInputEvent::Text("/tmp/部品.opd".into())];
+    let directory = tempfile::tempdir().unwrap();
+    let target = dialog_path(&directory, "部品.opd");
+    request.events = vec![GuiInputEvent::Text(target.clone())];
     engine.frame(&request).unwrap();
     let actions = key_frames(&mut engine, &mut request, GuiKey::Enter);
     assert_eq!(
@@ -203,7 +215,7 @@ fn native_text_widget_submits_the_typed_path_and_escape_discards_the_next_draft(
         [GuiShellAction::SaveDocumentAs(
             oblikovati_api::wire::SaveDocumentAsArgs {
                 document: 7,
-                new_full_document_name: "/tmp/部品.opd".into(),
+                new_full_document_name: target,
             }
         )]
     );
