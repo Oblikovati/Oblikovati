@@ -124,15 +124,28 @@ impl TemplateChooser {
         self.folders(ui);
         ui.next_column();
         self.navigation_bar(ui);
-        let layout = self.details_layout(ui, state);
-        ui.child_window("##template-gallery")
-            .size([0., GALLERY_HEIGHT])
-            .horizontal_scrollbar(self.view != TemplateView::List)
-            .content_size([self.gallery_width(ui, state, icons, layout), 0.])
-            .build(|| self.gallery(ui, state, layout, icons));
+        self.gallery_panel(ui, state, icons);
         ui.next_column();
         self.details(ui, state);
         ui.columns(1, "template-layout-end", false);
+    }
+    fn gallery_panel(
+        &mut self,
+        ui: &Ui,
+        state: &GuiCommandState,
+        icons: &crate::icons::GuiRibbonIcons,
+    ) {
+        let layout = self.details_layout(ui, state);
+        let region = crate::widget_abi::scroll_region_with_content_width(
+            ui,
+            "##template-gallery",
+            [0., GALLERY_HEIGHT],
+            self.gallery_width(ui, state, icons, layout),
+            self.view != TemplateView::List,
+        );
+        if region.visible {
+            self.gallery(ui, state, layout, icons);
+        }
     }
     fn folders(&mut self, ui: &Ui) {
         for folder in TemplateFolder::ALL {
