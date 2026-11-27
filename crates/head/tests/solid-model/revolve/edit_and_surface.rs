@@ -190,7 +190,7 @@ fn profile_selected_no_axis_angle_90(world: &mut ApplicationWorld) {
 
 #[when("the output type control is clicked")]
 fn click_output_type_control(world: &mut ApplicationWorld) {
-    click_revolve_button(world, "Output:Solid");
+    click_revolve_button(world, "Surface");
 }
 
 #[then("Profiles displays 4 Curves")]

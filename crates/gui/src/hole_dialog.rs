@@ -98,11 +98,17 @@ impl HoleDialog {
         }
     }
     fn draw_properties(&mut self, ui: &Ui, state: &GuiCommandState) {
-        ui.text(if self.request(state).is_some() {
-            "1 Face"
-        } else {
-            "Select a planar face"
-        });
+        let has_face = self.request(state).is_some();
+        crate::theme::property_label(ui, "Placement");
+        crate::feature_properties::draw_pick_pill(
+            ui,
+            if has_face {
+                "1 Face"
+            } else {
+                "Select a planar face"
+            },
+            has_face,
+        );
         hole_value(ui, "Diameter", &mut self.diameter, "");
         hole_value(ui, "Depth", &mut self.depth, "Through all");
     }
@@ -127,8 +133,8 @@ impl HoleDialog {
             self.submitted = Some(request.clone());
             actions.push(GuiShellAction::CreateHole(request));
         }
-        ui.same_line();
-        if crate::widget_abi::button(ui, "Cancel", [72., 28.])
+        ui.same_line_with_spacing(0., 6.);
+        if crate::theme::property_cancel(ui)
             || (ui.is_window_focused() && ui.is_key_pressed_no_repeat(imgui::Key::Escape))
         {
             self.close(actions);

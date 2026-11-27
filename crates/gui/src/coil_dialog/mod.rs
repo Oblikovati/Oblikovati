@@ -231,17 +231,22 @@ impl CoilDialog {
             return;
         }
 
-        crate::widget_abi::fit_viewport_properties(ui, "Coil", area, [320., 620.]);
+        crate::widget_abi::fit_viewport_properties(ui, "Coil", area, [280., 620.]);
         let _border = crate::theme::property_window_border(ui);
         Self::dockable_window(ui, "Coil", &mut keep_open).build(|| {
             crate::theme::floating_property_shadow(ui);
-            draw_properties_header(
+            let header = draw_properties_header(
                 ui,
                 icons,
+                "Coil",
                 "##coil-advanced-settings",
                 &mut self.presets.shown,
+                Some((self.preview_hidden, ok_enabled || self.preview_hidden)),
                 |_| {},
             );
+            if header.toggle_preview {
+                self.preview_hidden = !self.preview_hidden;
+            }
             let preset_fields = ok_enabled.then(|| CoilPresetFields {
                 method: self.method,
                 pitch: self.pitch.clone(),
@@ -266,7 +271,7 @@ impl CoilDialog {
                 self.taper = chosen.taper;
                 self.handedness = chosen.handedness;
             }
-            let footer_height = ui.frame_height_with_spacing() + 12.;
+            let footer_height = 44.;
             let body_height = (ui.content_region_avail()[1] - footer_height).max(120.);
             {
                 let body = crate::widget_abi::scroll_region(ui, "##coil-body", [0., body_height]);
@@ -277,12 +282,9 @@ impl CoilDialog {
                     self.draw_output(ui, icons, state);
                 }
             }
-            let footer = draw_properties_footer(ui, ok_enabled, self.preview_hidden);
+            let footer = draw_properties_footer(ui, ok_enabled);
             commit_now = footer.ok;
             close_now = footer.cancel;
-            if footer.toggle_preview {
-                self.preview_hidden = !self.preview_hidden;
-            }
         });
 
         if !keep_open || close_now {

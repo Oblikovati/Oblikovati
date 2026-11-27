@@ -30,7 +30,7 @@ fn open_multi_profile_draft(world: &mut ApplicationWorld) {
 
 #[given("Keep sketches visible on (+) is checked in Advanced Settings")]
 fn keep_sketch_checked(world: &mut ApplicationWorld) {
-    click_in_extrude(world, "AdvancedSettings");
+    super::preset_visibility::open_settings(world);
     assert!(world.checked_run(super::preset_visibility::menu_row(
         world,
         "Keepsketchesvisibleon(+)"

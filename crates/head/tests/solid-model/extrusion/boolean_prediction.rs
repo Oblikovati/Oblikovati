@@ -13,14 +13,14 @@ fn circular_preview(world: &mut ApplicationWorld) {
 
 #[given("Advanced Settings offers Predict Boolean Operation")]
 fn prediction_is_available(world: &mut ApplicationWorld) {
-    click_panel(world, "AdvancedSettings");
+    super::feature_properties::preset_visibility::open_settings(world);
     assert!(world.checked_run(popup_option(world, PREDICTION)));
 }
 
 #[when("the user disables Predict Boolean Operation")]
 fn disable_prediction(world: &mut ApplicationWorld) {
     choose_popup_option(world, PREDICTION);
-    click_panel(world, "AdvancedSettings");
+    super::feature_properties::preset_visibility::open_settings(world);
     assert!(!world.checked_run(popup_option(world, PREDICTION)));
     world.escape();
 }

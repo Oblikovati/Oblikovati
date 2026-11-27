@@ -13,9 +13,27 @@ pub(crate) enum SelectorStyle {
 
 impl SelectorStyle {
     pub(crate) fn draw_style_menu(&mut self, ui: &Ui, title: &str, popup: &str) {
-        if widget_abi::button(ui, title, [0.; 2]) {
+        let _bg = ui.push_style_color(StyleColor::Button, [0.; 4]);
+        let _border = ui.push_style_var(imgui::StyleVar::FrameBorderSize(0.));
+        let _pad = ui.push_style_var(imgui::StyleVar::FramePadding([2., 2.]));
+        let _ink = ui.push_style_color(StyleColor::Text, crate::theme::text_secondary(ui));
+        let label = format!("{title}##{popup}");
+        if widget_abi::button(ui, &label, [0.; 2]) {
             ui.open_popup(popup);
         }
+        let [right, top] = [ui.item_rect_max()[0], ui.item_rect_min()[1]];
+        let bottom = ui.item_rect_max()[1];
+        let mid_y = ((top + bottom) * 0.5).floor();
+        let x = right + 4.;
+        ui.get_window_draw_list()
+            .add_triangle(
+                [x, mid_y - 1.],
+                [x + 6., mid_y - 1.],
+                [x + 3., mid_y + 3.],
+                crate::theme::text_muted(ui),
+            )
+            .filled(true)
+            .build();
         let Some(_popup) = ui.begin_popup(popup) else {
             return;
         };
@@ -50,13 +68,12 @@ fn draw_icons<T: Copy + Eq>(
     choices: &[(T, &str, IconGlyph)],
     enabled: impl Fn(T) -> bool,
 ) -> Option<T> {
-    const CELLS: f32 = 4.;
     let spacing = 4.;
-    let cell =
-        ((ui.content_region_avail()[0] - spacing * (choices.len() - 1) as f32) / CELLS).max(1.);
+    let count = choices.len().max(1) as f32;
+    let cell = ((ui.content_region_avail()[0] - spacing * (count - 1.)) / count).max(1.);
     let show_caption = choices
         .iter()
-        .all(|(_, label, _)| ui.calc_text_size(label)[0] + 2. <= cell);
+        .all(|(_, label, _)| ui.calc_text_size(label)[0] + 12. <= cell);
     let icon = icons.logical[IconSize::Small.index()].map(|axis| axis.min(cell));
     let mut selected = None;
     for (index, (choice, label, glyph)) in choices.iter().copied().enumerate() {
@@ -64,12 +81,23 @@ fn draw_icons<T: Copy + Eq>(
             ui.same_line_with_spacing(0., spacing);
         }
         let _disabled = ui.begin_disabled(!enabled(choice));
-        let active = ui.style_color(StyleColor::ButtonActive);
-        let _highlight = (choice == current)
-            .then(|| widget_abi::push_style_color(ui, StyleColor::Button, active));
+        let is_active = choice == current;
+        let fill = if is_active {
+            crate::theme::brand_subtle(ui)
+        } else {
+            crate::theme::surface_subtle(ui)
+        };
+        let border = if is_active {
+            crate::theme::brand_accent(ui)
+        } else {
+            ui.style_color(StyleColor::Border)
+        };
+        let _fill = widget_abi::push_style_color(ui, StyleColor::Button, fill);
+        let _edge = widget_abi::push_style_color(ui, StyleColor::Border, border);
+        let _bw = ui.push_style_var(imgui::StyleVar::FrameBorderSize(1.));
         let presentation = IconButtonPresentation {
             texture: icons.key(glyph, IconSize::Small),
-            size: [cell, icon[1] + ui.text_line_height() + 6.],
+            size: [cell, icon[1] + ui.text_line_height() + 10.],
             icon,
             large: true,
             show_caption,

@@ -197,18 +197,23 @@ impl EmbossDialog {
         let mut commit_now = false;
         let mut clear_selected_face = false;
 
-        widget_abi::fit_viewport_properties(ui, "Emboss", area, [320., 460.]);
+        widget_abi::fit_viewport_properties(ui, "Emboss", area, [280., 460.]);
         let _border = crate::theme::property_window_border(ui);
         Self::dockable_window(ui, "Emboss", &mut keep_open).build(|| {
             crate::theme::floating_property_shadow(ui);
-            draw_properties_header(
+            let header = draw_properties_header(
                 ui,
                 icons,
+                "Emboss",
                 "##emboss-advanced-settings",
                 &mut self.presets_shown,
+                Some((self.preview_hidden, ok_enabled || self.preview_hidden)),
                 |_| {},
             );
-            let footer_height = ui.frame_height_with_spacing() + 12.;
+            if header.toggle_preview {
+                self.preview_hidden = !self.preview_hidden;
+            }
+            let footer_height = 44.;
             let body_height = (ui.content_region_avail()[1] - footer_height).max(120.);
             {
                 let body = widget_abi::scroll_region(ui, "##emboss-body", [0., body_height]);
@@ -216,12 +221,9 @@ impl EmbossDialog {
                     self.draw_body(ui, current_result, &mut clear_selected_face);
                 }
             }
-            let footer = draw_properties_footer(ui, ok_enabled, self.preview_hidden);
+            let footer = draw_properties_footer(ui, ok_enabled);
             commit_now = footer.ok;
             close_now = footer.cancel;
-            if footer.toggle_preview {
-                self.preview_hidden = !self.preview_hidden;
-            }
         });
 
         if matches!(self.modals.draw(ui), ModalOutcome::CloseEmboss) {
@@ -270,11 +272,12 @@ impl EmbossDialog {
     ) {
         if ui.collapsing_header("Input Geometry", imgui::TreeNodeFlags::DEFAULT_OPEN) {
             crate::theme::property_label(ui, "Profile");
-            ui.text(match result {
-                Some(GuiEmbossPreview::MissingProfile) => "Select Profile",
-                Some(GuiEmbossPreview::OpenLoop(_)) => "Open Loop",
-                _ => "1 Profile",
-            });
+            let (profile_label, has_profile) = match result {
+                Some(GuiEmbossPreview::MissingProfile) => ("Select Profile", false),
+                Some(GuiEmbossPreview::OpenLoop(_)) => ("Open Loop", false),
+                _ => ("1 Profile", true),
+            };
+            crate::feature_properties::draw_pick_pill(ui, profile_label, has_profile);
             crate::theme::property_label(ui, "Operation");
             ui.set_next_item_width(-1.);
             if let Some(_combo) = ui.begin_combo("##emboss-operation", op_label(self.emboss_type)) {
@@ -299,11 +302,15 @@ impl EmbossDialog {
         if ui.collapsing_header("Behavior", imgui::TreeNodeFlags::DEFAULT_OPEN) {
             crate::theme::property_label(ui, "Depth");
             ui.set_next_item_width(-1.);
-            ui.input_text("##emboss-depth", &mut self.depth).build();
+            {
+                let _numeric = crate::ui_scale::numeric_font(ui);
+                ui.input_text("##emboss-depth", &mut self.depth).build();
+            }
 
             if self.emboss_type == EmbossType::EmbossEngraveFromPlane {
                 crate::theme::property_label(ui, "Taper");
                 ui.set_next_item_width(-1.);
+                let _numeric = crate::ui_scale::numeric_font(ui);
                 ui.input_text("##emboss-taper", &mut self.taper).build();
             } else {
                 crate::theme::property_label(ui, "Direction");

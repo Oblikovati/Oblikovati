@@ -240,17 +240,34 @@ impl RevolveDialog {
             return;
         }
 
-        crate::widget_abi::fit_viewport_properties(ui, "Revolution", area, [300., 440.]);
+        crate::widget_abi::fit_viewport_properties(ui, "Revolution", area, [280., 440.]);
         let _border = crate::theme::property_window_border(ui);
         Self::dockable_window(ui, "Revolution", &mut keep_open).build(|| {
             crate::theme::floating_property_shadow(ui);
-            draw_properties_header(
+            let title = self
+                .feature
+                .and_then(|id| {
+                    state
+                        .browser
+                        .as_ref()?
+                        .features
+                        .iter()
+                        .find(|row| row.id == id)
+                        .map(|row| row.name.as_str())
+                })
+                .unwrap_or("New Revolution");
+            let header = draw_properties_header(
                 ui,
                 icons,
+                title,
                 "##revolve-advanced-settings",
                 &mut self.presets.shown,
+                Some((self.preview_hidden, ok_enabled || self.preview_hidden)),
                 |_| {},
             );
+            if header.toggle_preview {
+                self.preview_hidden = !self.preview_hidden;
+            }
             let preset_fields = ok_enabled.then(|| RevolvePresetFields {
                 extent: self.extent,
                 direction: self.direction,
@@ -274,12 +291,9 @@ impl RevolveDialog {
             self.draw_input_geometry(ui, preview);
             self.draw_behavior(ui, icons, current_result, document, parameters);
             self.draw_output(ui, icons, state);
-            let footer = draw_properties_footer(ui, ok_enabled, self.preview_hidden);
+            let footer = draw_properties_footer(ui, ok_enabled);
             commit_now = footer.ok;
             close_now = footer.cancel;
-            if footer.toggle_preview {
-                self.preview_hidden = !self.preview_hidden;
-            }
         });
 
         if !keep_open || close_now {
@@ -333,9 +347,9 @@ impl RevolveDialog {
         } else {
             "1 Profile".to_owned()
         };
-        ui.text(&profile_text);
+        crate::feature_properties::draw_pick_pill(ui, &profile_text, !self.profile_cleared);
         if !self.profile_cleared {
-            ui.same_line_with_spacing(0., 12.);
+            ui.same_line_with_spacing(0., 6.);
             if widget_abi::button(ui, "ClearProfile", [0.; 2]) {
                 self.profile_cleared = true;
             }
@@ -346,9 +360,9 @@ impl RevolveDialog {
         } else {
             "Select Axis"
         };
-        ui.text(axis_text);
+        crate::feature_properties::draw_pick_pill(ui, axis_text, self.axis.is_some());
         if self.axis.is_some() {
-            ui.same_line_with_spacing(0., 12.);
+            ui.same_line_with_spacing(0., 6.);
             if widget_abi::button(ui, "ClearAxis", [0.; 2]) {
                 self.axis = None;
             }

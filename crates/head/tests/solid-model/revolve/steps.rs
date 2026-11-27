@@ -427,15 +427,18 @@ fn profile_axis_and_preferences_menu_open(world: &mut ApplicationWorld) {
         world.state().revolve_preview.unwrap().result,
         GuiRevolvePreview::Ready
     );
-    click_revolve_button(world, "AdvancedSettings");
+    let ([l, t], [w, _]) = super::diagnostics::window_geometry("Revolution").unwrap();
+    world.click(super::diagnostics::pointer_pixels([l + w - 22., t + 45.]));
+    world.pump(Vec::new());
     world.expect_text("Hide Presets");
 }
-
 #[then("the Revolution panel and preview close")]
 fn revolution_panel_and_preview_close(world: &mut ApplicationWorld) {
-    assert!(super::diagnostics::window_geometry("Revolution").is_none());
-    assert!(world.state().revolve_preview.is_none());
-    assert!(world.app().window.scene_triangles.is_empty());
+    assert!(
+        super::diagnostics::window_geometry("Revolution").is_none()
+            && world.state().revolve_preview.is_none()
+            && world.app().window.scene_triangles.is_empty()
+    );
 }
 
 #[then("Sketch1 remains without a solid body")]
@@ -457,13 +460,11 @@ fn press_r_shortcut(world: &mut ApplicationWorld) {
     world.key(ViewportPhysicalKey::R, false);
     world.pump(Vec::new());
 }
-
 #[then("Revolution reopens with 1 Profile and no selected axis")]
 fn revolution_reopens_clean(world: &mut ApplicationWorld) {
     assert!(super::diagnostics::window_geometry("Revolution").is_some());
     revolve_has_profile_and_no_axis(world);
 }
-
 #[then("the full 360 degree setting and first direction are shown")]
 fn full_360_and_first_direction_shown(world: &mut ApplicationWorld) {
     let preview = world.state().revolve_preview.unwrap();
@@ -472,13 +473,11 @@ fn full_360_and_first_direction_shown(world: &mut ApplicationWorld) {
     let panel = super::world::squeezed(&world.window_text("Revolution"));
     assert!(panel.contains("360deg"), "{panel}");
 }
-
 #[given("the rectangular profile and its long edge at Y=0 are selected with the full-turn setting")]
 fn profile_and_axis_full_turn(world: &mut ApplicationWorld) {
     pick_bottom_rectangle_axis(world);
     full_cylindrical_preview_appears(world);
 }
-
 #[then("Revolution1 and Solid Bodies(1) appear with a cylinder")]
 #[then("Revolution1 and the solid return")]
 fn revolution1_and_cylinder_appear(world: &mut ApplicationWorld) {
@@ -487,11 +486,9 @@ fn revolution1_and_cylinder_appear(world: &mut ApplicationWorld) {
     let browser = world.state().browser.unwrap();
     assert_eq!(browser.bodies.len(), 1);
     assert_eq!(browser.bodies[0].faces, 3);
-    assert!(
-        browser
-            .features
-            .iter()
-            .any(|f| f.name == "Revolution1" && f.kind == "Revolution")
-    );
-    assert!(!world.app().window.scene_triangles.is_empty());
+    let has = browser
+        .features
+        .iter()
+        .any(|f| f.name == "Revolution1" && f.kind == "Revolution");
+    assert!(has && !world.app().window.scene_triangles.is_empty());
 }

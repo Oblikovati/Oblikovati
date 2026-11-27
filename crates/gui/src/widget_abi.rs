@@ -368,17 +368,30 @@ pub(crate) fn fit_viewport_properties(
     area: crate::application::document_creation::workspaces::WorkspaceArea,
     size: [f32; 2],
 ) {
-    let horizontal = ((area.right - area.left - 1.) * 0.5).clamp(0., 14.);
-    let vertical = ((area.bottom - area.top - 1.) * 0.5).clamp(0., 14.);
+    let span_x = (area.right - area.left).max(1.);
+    let span_y = (area.bottom - area.top).max(1.);
+    let left_margin = ((span_x - 1.) * 0.5).clamp(0., 14.);
+    let top_margin = ((span_y - 1.) * 0.5).clamp(0., 14.);
+    // Reserve the upper-right ViewCube/Nav HUD (124px) and lower-left XYZ triad (76px) when space allows.
+    let right_margin = if span_x > size[0] + 152. {
+        124.
+    } else {
+        left_margin
+    };
+    let bottom_margin = if span_y > size[1] + 104. {
+        76.
+    } else {
+        top_margin
+    };
     let title = ImString::new(title);
     // SAFETY: ImGui consumes the scalar geometry for its next window in this frame.
     unsafe {
         oblikovati_gui_fit_viewport_properties(
             title.as_ptr().cast(),
-            area.left + horizontal,
-            area.top + vertical,
-            area.right - horizontal,
-            area.bottom - vertical,
+            area.left + left_margin,
+            area.top + top_margin,
+            area.right - right_margin,
+            area.bottom - bottom_margin,
             size[0],
             size[1],
         )

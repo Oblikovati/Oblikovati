@@ -373,10 +373,10 @@ fn native_extrude_applies_and_reopens_a_fresh_draft() {
     for label in ["8mm", "1Profile"] {
         world.run_in_window("Extrude", label);
     }
-    let preview = world.run_in_window("Extrude", "HidePreview").center();
+    let ([left, top], [width, _]) = diagnostics::window_geometry("Extrude").unwrap();
+    let preview = [left + width - 50., top + 45.];
     world.click(diagnostics::pointer_pixels(preview));
     assert!(!world.state().extrude_preview_active);
-    let preview = world.run_in_window("Extrude", "ShowPreview").center();
     world.click(diagnostics::pointer_pixels(preview));
     assert!(world.state().extrude_preview_active);
     world.save_capture("extrude-profile-and-actions");

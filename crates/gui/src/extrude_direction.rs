@@ -70,13 +70,17 @@ pub(super) fn draw_second_distance(ui: &Ui, first: &mut String, second: &mut Str
         + 2. * style.frame_padding[0];
     ui.set_next_item_width((ui.content_region_avail()[0] - reserved).max(1.));
     let _border = ui.push_style_var(imgui::StyleVar::FrameBorderSize(1.));
-    let edited = ui.input_text(label, second).build();
+    let edited = {
+        let _numeric = crate::ui_scale::numeric_font(ui);
+        ui.input_text(label, second).build()
+    };
     ui.same_line();
     let flipped = crate::widget_abi::button(ui, flip, [0.; 2]);
     if flipped {
         std::mem::swap(first, second);
     }
     let _disabled = ui.begin_disabled(true);
+    let _numeric = crate::ui_scale::numeric_font(ui);
     ui.input_text("Taper B", &mut String::from("0 deg")).build();
     edited || flipped
 }

@@ -27,29 +27,37 @@ impl CoilDialog {
             return;
         }
         crate::theme::property_label(ui, "Profiles");
-        ui.text(if self.profile_cleared {
-            "Select Profiles"
-        } else {
-            "1 Profile"
-        });
+        crate::feature_properties::draw_pick_pill(
+            ui,
+            if self.profile_cleared {
+                "Select Profiles"
+            } else {
+                "1 Profile"
+            },
+            !self.profile_cleared,
+        );
         if !self.profile_cleared {
-            ui.same_line_with_spacing(0., 12.);
+            ui.same_line_with_spacing(0., 6.);
             if widget_abi::button(ui, "ClearProfile", [0.; 2]) {
                 self.profile_cleared = true;
             }
         }
         crate::theme::property_label(ui, "Axis");
-        ui.text(if self.axis.is_some() {
-            "1 Axis"
-        } else {
-            "Select Axis"
-        });
+        crate::feature_properties::draw_pick_pill(
+            ui,
+            if self.axis.is_some() {
+                "1 Axis"
+            } else {
+                "Select Axis"
+            },
+            self.axis.is_some(),
+        );
         if self.axis.is_some() {
-            ui.same_line_with_spacing(0., 8.);
+            ui.same_line_with_spacing(0., 6.);
             if widget_abi::button(ui, "FlipAxis", [0.; 2]) {
                 self.axis_reversed = !self.axis_reversed;
             }
-            ui.same_line_with_spacing(0., 8.);
+            ui.same_line_with_spacing(0., 6.);
             if widget_abi::button(ui, "ClearAxis", [0.; 2]) {
                 self.axis = None;
             }

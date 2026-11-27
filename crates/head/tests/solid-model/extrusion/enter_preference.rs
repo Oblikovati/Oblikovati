@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::super::{direction::preview_depth, replace_extrusion_distance};
-use super::preset_visibility::menu_row;
-use super::{ApplicationWorld, click_in_extrude, feature_count, native_fixture_preview};
+use super::preset_visibility::{menu_row, open_settings};
+use super::{ApplicationWorld, feature_count, native_fixture_preview};
 use cucumber::{given, then};
 
 const ENTER: &str = "SingleENTERtofinishcommand";
@@ -11,10 +11,10 @@ const ENTER: &str = "SingleENTERtofinishcommand";
 )]
 fn set_enter_preference(world: &mut ApplicationWorld, setting: String) {
     native_fixture_preview(world);
-    click_in_extrude(world, "AdvancedSettings");
+    open_settings(world);
     let checked = setting == "checked";
     toggle_enter_if_needed(world, checked);
-    click_in_extrude(world, "AdvancedSettings");
+    open_settings(world);
     assert_eq!(world.checked_run(menu_row(world, ENTER)), checked);
     world.escape();
 }
