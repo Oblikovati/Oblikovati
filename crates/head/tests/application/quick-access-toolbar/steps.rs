@@ -483,7 +483,7 @@ fn unsupported_revolve_cannot_be_added_to_quick_access() {
     let mut world = ApplicationWorld::new();
     world.add_part();
     world.click_text("3D Model");
-    let position = world.run("Revolve").center().map(|value| value as i32);
+    let position = super::diagnostics::pointer_pixels(world.run("Revolve").center());
     world.right_click(position);
     world.pump(Vec::new());
     assert!(!world.run_is_enabled("Add to Quick Access Toolbar"));

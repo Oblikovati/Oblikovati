@@ -358,8 +358,13 @@ fn part_feature_icons_distinguish_empty_part_availability() {
     let mut world = ApplicationWorld::new();
     world.add_part();
     world.pump(Vec::new());
-    assert!(world.run_is_enabled("Hole"));
-    for label in ["Revolve", "Fillet", "Chamfer"] {
+    for label in ["Hole", "Revolve"] {
+        assert!(
+            world.run_is_enabled(label),
+            "{label}: expected available in empty part"
+        );
+    }
+    for label in ["Fillet", "Chamfer"] {
         world.expect_text(label);
         assert!(
             !world.run_is_enabled(label),

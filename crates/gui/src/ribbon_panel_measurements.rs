@@ -144,8 +144,8 @@ pub(super) fn temporary_content_height(
 // These authored grids have known bounds before their controls first enter the draw list.
 fn sketch_normal_width(panel: RibbonPanel) -> Option<f32> {
     Some(match panel {
-        RibbonPanel::Create => 380.,
-        RibbonPanel::Constrain => 320.,
+        RibbonPanel::Create => 622.,
+        RibbonPanel::Constrain => 456.,
         RibbonPanel::Format | RibbonPanel::Layout => 224.,
         RibbonPanel::Modify
         | RibbonPanel::Insert

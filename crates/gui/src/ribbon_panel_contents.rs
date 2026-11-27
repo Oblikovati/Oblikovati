@@ -312,6 +312,9 @@ fn part_create_controls(
         size,
         actions,
     );
+    owners
+        .quick_access
+        .ribbon_command_menu(ui, "Revolve", false, state);
     let (position, size) = owners.icons.appearance.cell(2);
     owners.icons.cursor(ui, origin, position);
     owners.icons.command_button(

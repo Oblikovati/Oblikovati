@@ -15,6 +15,7 @@ pub(crate) fn trigger(ui: &Ui, icons: &GuiRibbonIcons, id: &str, height: f32) ->
     ui.same_line_with_spacing(0., TRIGGER_GAP * icons.layout_factor());
     let _bg = ui.push_style_color(imgui::StyleColor::Button, [0.; 4]);
     let _border = ui.push_style_var(imgui::StyleVar::FrameBorderSize(0.));
+    let _pad = ui.push_style_var(imgui::StyleVar::FramePadding([0., 0.]));
     let _ink = ui.push_style_color(imgui::StyleColor::Text, crate::theme::text_muted(ui));
     let clicked =
         crate::widget_abi::button(ui, &format!("▼{id}"), icons.cell([TRIGGER_WIDTH, height]));

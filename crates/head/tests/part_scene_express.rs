@@ -57,8 +57,8 @@ fn save_qualified_assembly(
         sources: files.assembly_saved_sources(assembly, &path).unwrap(),
         catalog_digest: files.assembly_view_catalog_digest().unwrap(),
         producer_digest: crate::assembly_producer::current_executable_digest().unwrap(),
-        chord_error: 0.05,
-        angular_error: 0.5,
+        chord_error: DISPLAY_MESH.chord_error,
+        angular_error: DISPLAY_MESH.angular_error,
         triangles: triangles.clone(),
     };
     files.stage_assembly_view(assembly, &path, view).unwrap();

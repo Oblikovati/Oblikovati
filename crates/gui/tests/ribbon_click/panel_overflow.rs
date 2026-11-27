@@ -66,7 +66,10 @@ fn sketch_compaction_is_visible_on_the_first_frame_and_keeps_the_viewport_height
             .runs
             .iter()
             .find(|run| run.text == "FinishSketch")
-            .unwrap();
+            .unwrap_or_else(|| {
+                let labels: Vec<_> = runs.runs.iter().map(|run| run.text.as_str()).collect();
+                panic!("expected FinishSketch in {labels:?}");
+            });
         assert!(finish.maximum[0] < 920. && finish.maximum[1] < part_top as f32);
         assert!(runs.runs.iter().any(|run| run.text == "Create"));
     }

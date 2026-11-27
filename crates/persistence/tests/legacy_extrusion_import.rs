@@ -14,6 +14,9 @@ use oblikovati_persistence::package::{
 const GO_CUBE: &[u8] = include_bytes!(
     "../../../architecture/rust-port/receipts/2026-11-14-go-cube-fixture/go-cube.obk"
 );
+fn normalized_text(bytes: &[u8]) -> String {
+    std::str::from_utf8(bytes).unwrap().replace("\r\n", "\n")
+}
 struct GoCubeProfile;
 impl LegacyProfileResolver for GoCubeProfile {
     fn resolve(
@@ -70,7 +73,7 @@ fn go_cube_extrusion_becomes_an_explicit_fixed_prism_candidate() {
 }
 #[test]
 fn unrecognized_extrusion_modes_and_metadata_are_refused() {
-    let source = std::str::from_utf8(GO_CUBE).unwrap();
+    let source = normalized_text(GO_CUBE);
     for modified in [
         source.replacen("operation: newBody", "operation: join", 1),
         source.replacen("direction: positive", "direction: symmetric", 1),
@@ -144,7 +147,7 @@ fn resolver_cannot_supply_a_boundary_from_another_sketch() {
 
 #[test]
 fn unconverted_model_sections_are_not_silently_ignored() {
-    let source = std::str::from_utf8(GO_CUBE).unwrap();
+    let source = normalized_text(GO_CUBE);
     let input = source.replacen(
         "model:\n",
         "model:\n    futureFeatureData: {keep: true}\n",
@@ -246,7 +249,7 @@ fn go_face_offset_rejects_unsupported_values_without_mutation() {
     let bytes = include_bytes!(
         "../../../architecture/rust-port/receipts/2026-11-14-go-dependent-face/cube-with-face-plane.obk"
     );
-    let source = std::str::from_utf8(bytes).unwrap();
+    let source = normalized_text(bytes);
     for modified in [
         source.replacen("kind: plane-offset", "kind: plane-angle", 1),
         source.replacen("seq: 3", "seq: 0", 1),
@@ -284,7 +287,7 @@ fn face_offset_cannot_share_a_creation_sequence_with_other_nodes() {
     let bytes = include_bytes!(
         "../../../architecture/rust-port/receipts/2026-11-14-go-dependent-face/cube-with-face-plane.obk"
     );
-    let source = std::str::from_utf8(bytes).unwrap();
+    let source = normalized_text(bytes);
     for sequence in [1, 2] {
         let invalid = source.replacen("seq: 3", &format!("seq: {sequence}"), 1);
         let package = DocumentPackage::decode(invalid.as_bytes()).unwrap();
@@ -371,7 +374,7 @@ fn face_offset_rejects_a_missing_or_later_extrusion_producer() {
     let bytes = include_bytes!(
         "../../../architecture/rust-port/receipts/2026-11-14-go-dependent-face/cube-with-face-plane.obk"
     );
-    let source = std::str::from_utf8(bytes).unwrap();
+    let source = normalized_text(bytes);
     for invalid in [
         source.replacen("name: Extrusion1", "name: Other", 1),
         source.replacen(
