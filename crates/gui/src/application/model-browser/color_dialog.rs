@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! The color dialog behind Select in a line color list: swatches, slots and defined colors.
-use imgui::{ColorStackToken, StyleColor, Ui};
+use crate::widget_abi;
+use imgui::{ImColor32, StyleColor, Ui};
 
 pub(crate) const TITLE: &str = "Color";
 const BASIC_SIZE: [f32; 2] = [300., 360.];
@@ -208,21 +209,23 @@ impl ColorDialog {
     fn color_field(&mut self, ui: &Ui) {
         let origin = ui.cursor_screen_pos();
         let [_, _, luminance] = hsl_of_rgb(self.color);
-        ui.invisible_button("##color-field", [FIELD_SIDE, FIELD_SIDE]);
-        let list = ui.get_window_draw_list();
+        widget_abi::invisible_button(ui, c"##color-field", [FIELD_SIDE, FIELD_SIDE]);
         let cell = FIELD_SIDE / FIELD_CELLS as f32;
         for row in 0..FIELD_CELLS {
             for column in 0..FIELD_CELLS {
                 let hue = (column * 360 / FIELD_CELLS) as i32;
                 let saturation = 100 - (row * 100 / FIELD_CELLS) as i32;
-                let color = as_floats(rgb_of_hsl([hue, saturation, 50]));
+                let [r, g, b] = rgb_of_hsl([hue, saturation, 50]);
                 let at = [
                     origin[0] + column as f32 * cell,
                     origin[1] + row as f32 * cell,
                 ];
-                list.add_rect(at, [at[0] + cell, at[1] + cell], color)
-                    .filled(true)
-                    .build();
+                widget_abi::filled_rect(
+                    ui,
+                    at,
+                    [at[0] + cell, at[1] + cell],
+                    ImColor32::from_rgba(r, g, b, 255),
+                );
             }
         }
         if ui.is_item_active() {
@@ -231,23 +234,24 @@ impl ColorDialog {
             let share = (100. - (y - origin[1]) / FIELD_SIDE * 100.).clamp(0., 100.) as i32;
             self.color = rgb_of_hsl([hue, share, luminance]);
         }
-        drop(list);
         ui.same_line();
         self.brightness_bar(ui);
     }
     fn brightness_bar(&mut self, ui: &Ui) {
         let origin = ui.cursor_screen_pos();
-        let list = ui.get_window_draw_list();
         let [hue, saturation, _] = hsl_of_rgb(self.color);
-        ui.invisible_button("##color-brightness", [BAR_WIDTH, FIELD_SIDE]);
+        widget_abi::invisible_button(ui, c"##color-brightness", [BAR_WIDTH, FIELD_SIDE]);
         let cell = FIELD_SIDE / FIELD_CELLS as f32;
         for row in 0..FIELD_CELLS {
             let level = 100 - (row * 100 / FIELD_CELLS) as i32;
-            let color = as_floats(rgb_of_hsl([hue, saturation, level]));
+            let [r, g, b] = rgb_of_hsl([hue, saturation, level]);
             let top = origin[1] + row as f32 * cell;
-            list.add_rect([origin[0], top], [origin[0] + BAR_WIDTH, top + cell], color)
-                .filled(true)
-                .build();
+            widget_abi::filled_rect(
+                ui,
+                [origin[0], top],
+                [origin[0] + BAR_WIDTH, top + cell],
+                ImColor32::from_rgba(r, g, b, 255),
+            );
         }
         if ui.is_item_active() {
             let level = 100. - (ui.io().mouse_pos[1] - origin[1]) / FIELD_SIDE * 100.;
@@ -255,15 +259,16 @@ impl ColorDialog {
         }
         ui.same_line();
         let preview = ui.cursor_screen_pos();
-        ui.dummy([FIELD_WIDTH, FIELD_SIDE]);
-        list.add_rect(
+        widget_abi::dummy(ui, [FIELD_WIDTH, FIELD_SIDE]);
+        let [r, g, b] = self.color;
+        widget_abi::filled_rect(
+            ui,
             preview,
             [preview[0] + FIELD_WIDTH, preview[1] + FIELD_SIDE / 2.],
-            as_floats(self.color),
-        )
-        .filled(true)
-        .build();
-        list.add_text(
+            ImColor32::from_rgba(r, g, b, 255),
+        );
+        widget_abi::literal_text(
+            ui,
             [preview[0], preview[1] + FIELD_SIDE / 2.],
             [1., 1., 1., 1.],
             "Preview",
@@ -279,9 +284,9 @@ fn number_row(ui: &Ui, label: &str, value: &mut i32, limit: i32) -> bool {
 fn swatch_grid(ui: &Ui, group: &str, colors: &[[u8; 3]]) -> Option<[u8; 3]> {
     let mut chosen = None;
     for (index, color) in colors.iter().enumerate() {
-        let _tinted: [ColorStackToken<'_>; 2] = [
-            ui.push_style_color(StyleColor::Button, as_floats(*color)),
-            ui.push_style_color(StyleColor::ButtonHovered, as_floats(*color)),
+        let _tinted = [
+            widget_abi::push_style_color(ui, StyleColor::Button, as_floats(*color)),
+            widget_abi::push_style_color(ui, StyleColor::ButtonHovered, as_floats(*color)),
         ];
         if crate::widget_abi::button(ui, &format!("##{group}-{index}"), SWATCH) {
             chosen = Some(*color);

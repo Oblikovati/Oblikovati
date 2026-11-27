@@ -356,6 +356,14 @@ void oblikovati_gui_dummy(float width, float height) {
     ImGui::Dummy(ImVec2(width, height));
 }
 
+void oblikovati_gui_invisible_button(const char* label, float width, float height) {
+    ImGui::InvisibleButton(label, ImVec2(width, height));
+}
+
+void oblikovati_gui_filled_rect(float x1, float y1, float x2, float y2, ImU32 color) {
+    ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(x1, y1), ImVec2(x2, y2), color);
+}
+
 void oblikovati_gui_image(std::uintptr_t texture, float width, float height) {
     ImGui::Image(reinterpret_cast<ImTextureID>(texture), ImVec2(width, height));
 }

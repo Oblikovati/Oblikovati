@@ -8,6 +8,8 @@ unsafe extern "C" {
     fn oblikovati_gui_filled_circle(x: f32, y: f32, radius: f32, color: u32);
     fn oblikovati_gui_line(x1: f32, y1: f32, x2: f32, y2: f32, color: u32);
     fn oblikovati_gui_image(texture: usize, width: f32, height: f32);
+    fn oblikovati_gui_invisible_button(label: *const std::ffi::c_char, width: f32, height: f32);
+    fn oblikovati_gui_filled_rect(x1: f32, y1: f32, x2: f32, y2: f32, color: u32);
     fn oblikovati_gui_foreground_dimension(
         x1: f32,
         y1: f32,
@@ -83,6 +85,17 @@ pub(crate) fn line(_: &Ui, [x1, y1]: [f32; 2], [x2, y2]: [f32; 2], color: [f32; 
 pub(crate) fn image(_: &Ui, texture: usize, size: [f32; 2]) {
     // The UI frame owns the draw list and retains the texture ID in its draw commands.
     unsafe { oblikovati_gui_image(texture, size[0], size[1]) };
+}
+
+/// Reserve an interactive hit area without passing an ImGui vector across the ABI.
+pub(crate) fn invisible_button(_: &Ui, label: &std::ffi::CStr, size: [f32; 2]) {
+    // The label and live UI are borrowed for the whole native call.
+    unsafe { oblikovati_gui_invisible_button(label.as_ptr(), size[0], size[1]) };
+}
+
+pub(crate) fn filled_rect(_: &Ui, [x1, y1]: [f32; 2], [x2, y2]: [f32; 2], color: ImColor32) {
+    // The borrowed UI retains the active window draw list for this call.
+    unsafe { oblikovati_gui_filled_rect(x1, y1, x2, y2, color.to_bits()) };
 }
 
 /// Draw the extrusion distance guide, tip and literal label in the foreground layer.
