@@ -17,7 +17,7 @@ pub(crate) fn trigger(ui: &Ui, icons: &GuiRibbonIcons, id: &str, height: f32) ->
     let _border = ui.push_style_var(imgui::StyleVar::FrameBorderSize(0.));
     let _ink = ui.push_style_color(imgui::StyleColor::Text, crate::theme::text_muted(ui));
     let clicked =
-        crate::widget_abi::button(ui, &format!("▾{id}"), icons.cell([TRIGGER_WIDTH, height]));
+        crate::widget_abi::button(ui, &format!("▼{id}"), icons.cell([TRIGGER_WIDTH, height]));
     if ui.is_item_hovered() || ui.is_item_active() {
         let [lo, hi] = [ui.item_rect_min(), ui.item_rect_max()];
         let draw = ui.get_window_draw_list();

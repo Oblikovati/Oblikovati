@@ -60,6 +60,23 @@ fn chrome_font_config(size_pixels: f32, glyph_ranges: FontGlyphRanges) -> FontCo
         ..FontConfig::default()
     }
 }
+const UI_SYMBOL_FALLBACK_RANGES: &[u32] = &[
+    0x22EE, 0x22EE, // vertical ellipsis ⋮
+    0x25B4, 0x25B4, // small up triangle ▴
+    0x25B8, 0x25B8, // small right triangle ▸
+    0x25BE, 0x25BE, // small down triangle ▾
+    0,
+];
+fn ui_symbol_fallback(size_pixels: f32) -> FontSource<'static> {
+    FontSource::TtfData {
+        data: NUMERIC_FACE,
+        size_pixels,
+        config: Some(chrome_font_config(
+            size_pixels,
+            FontGlyphRanges::from_slice(UI_SYMBOL_FALLBACK_RANGES),
+        )),
+    }
+}
 fn install_editor_fonts(context: &mut Context, scale: f32) {
     let base_pixels = DEFAULT_FONT_PIXELS * scale;
     let content_config = FontConfig {
@@ -82,6 +99,7 @@ fn install_editor_fonts(context: &mut Context, scale: f32) {
             size_pixels: base_pixels,
             config: Some(base_chrome.clone()),
         },
+        ui_symbol_fallback(base_pixels),
         sketch_symbols(symbols.clone()),
     ]);
     // Slots 1..=4: Sketch content faces (Liberation Sans Regular/Bold/Italic/BoldItalic)
@@ -110,11 +128,14 @@ fn install_editor_fonts(context: &mut Context, scale: f32) {
         sketch_symbols(symbols),
     ]);
     // Slot 6: Ribbon group caption (Inter Medium 500, 10px)
-    context.fonts().add_font(&[FontSource::TtfData {
-        data: INTER_MEDIUM,
-        size_pixels: 10. * scale,
-        config: Some(chrome_font_config(10. * scale, chrome_ranges.clone())),
-    }]);
+    context.fonts().add_font(&[
+        FontSource::TtfData {
+            data: INTER_MEDIUM,
+            size_pixels: 10. * scale,
+            config: Some(chrome_font_config(10. * scale, chrome_ranges.clone())),
+        },
+        ui_symbol_fallback(10. * scale),
+    ]);
     // Slot 7: Status & key-tip micro monospace (JetBrains Mono Medium 500, 11px min)
     context.fonts().add_font(&[FontSource::TtfData {
         data: NUMERIC_FACE,
@@ -122,23 +143,32 @@ fn install_editor_fonts(context: &mut Context, scale: f32) {
         config: Some(chrome_font_config(11. * scale, chrome_ranges.clone())),
     }]);
     // Slot 8: Inter Medium 500 (active tabs, buttons, filenames)
-    context.fonts().add_font(&[FontSource::TtfData {
-        data: INTER_MEDIUM,
-        size_pixels: base_pixels,
-        config: Some(base_chrome.clone()),
-    }]);
+    context.fonts().add_font(&[
+        FontSource::TtfData {
+            data: INTER_MEDIUM,
+            size_pixels: base_pixels,
+            config: Some(base_chrome.clone()),
+        },
+        ui_symbol_fallback(base_pixels),
+    ]);
     // Slot 9: Inter SemiBold 600 (section headings, breadcrumbs)
-    context.fonts().add_font(&[FontSource::TtfData {
-        data: INTER_SEMIBOLD,
-        size_pixels: base_pixels,
-        config: Some(base_chrome),
-    }]);
+    context.fonts().add_font(&[
+        FontSource::TtfData {
+            data: INTER_SEMIBOLD,
+            size_pixels: base_pixels,
+            config: Some(base_chrome),
+        },
+        ui_symbol_fallback(base_pixels),
+    ]);
     // Slot 10: Inter SemiBold 600 14px (dialog titles)
-    context.fonts().add_font(&[FontSource::TtfData {
-        data: INTER_SEMIBOLD,
-        size_pixels: 14. * scale,
-        config: Some(chrome_font_config(14. * scale, chrome_ranges)),
-    }]);
+    context.fonts().add_font(&[
+        FontSource::TtfData {
+            data: INTER_SEMIBOLD,
+            size_pixels: 14. * scale,
+            config: Some(chrome_font_config(14. * scale, chrome_ranges)),
+        },
+        ui_symbol_fallback(14. * scale),
+    ]);
     // Slot 11: Inter SemiBold 600 20px (Home display heading)
     context.fonts().add_font(&[FontSource::TtfData {
         data: INTER_SEMIBOLD,

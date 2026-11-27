@@ -3,7 +3,7 @@
 use super::{ExtrudeDialog, GuiCommandState, GuiShellAction};
 use imgui::{Key, StyleColor, Ui};
 
-const WIDTH: f32 = 280.;
+const WIDTH: f32 = 304.;
 const CLEAR_WIDTH: f32 = 44.;
 pub(super) const FOOTER_HEIGHT: f32 = 44.;
 const DEFAULT_HEIGHT: f32 = 340.;

@@ -417,17 +417,9 @@ fn native_command_artwork_is_visible_across_document_workspaces() {
     world.save_capture("assembly-command-icons");
     world.add_template(oblikovati_gui::GuiTemplateKind::Drawing);
     world.click_text("Place Views");
-    assert_command_art(
-        &world,
-        &[
-            "BaseView",
-            "ProjectedView",
-            "Break",
-            "Crop",
-            "StartSketch",
-            "NewSheet",
-        ],
-    );
+    assert_command_art(&world, &["BaseView", "ProjectedView", "Break", "Crop"]);
+    ribbon_chrome::assert_stacked_command_art(&world, "StartSketch");
+    ribbon_chrome::assert_stacked_command_art(&world, "NewSheet");
     world.save_capture("drawing-command-icons");
     world.close();
 }
@@ -438,7 +430,7 @@ fn assert_command_art(world: &ApplicationWorld, labels: &[&str]) {
         let [x, y] = row.minimum;
         let [_, bottom] = row.maximum;
         let quads = ribbon_appearance::icon_quads::icon_quads_inside((
-            [x - 24., y - 11.],
+            [x - 28., y - 11.],
             [x, bottom + 10.],
         ));
         assert!(!quads.is_empty(), "expected command artwork beside {label}");

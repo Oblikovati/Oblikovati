@@ -174,7 +174,7 @@ fn sketch_selectable(ui: &Ui, row: &GuiBrowserSketch, view: &BrowserView, select
     );
     let metadata_x = caption_x + ui.calc_text_size(&row.name)[0] + 14.;
     let row_height = ui.text_line_height();
-    let _mono = crate::ui_scale::mono_micro_font(ui);
+    let _badge = crate::ui_scale::group_caption_font(ui);
     let metadata_y = y + ((row_height - ui.text_line_height()) * 0.5).floor();
     crate::widget_abi::literal_text(
         ui,

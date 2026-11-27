@@ -103,7 +103,7 @@ pub(super) fn trigger(
     let _bg = ui.push_style_color(imgui::StyleColor::Button, [0.; 4]);
     let _border = ui.push_style_var(imgui::StyleVar::FrameBorderSize(0.));
     let _ink = ui.push_style_color(imgui::StyleColor::Text, crate::theme::text_muted(ui));
-    let clicked = ui.small_button("▾##additional-commands");
+    let clicked = ui.small_button("▼##additional-commands");
     let arrow_bounds = [ui.item_rect_min(), ui.item_rect_max()];
     let trigger = [
         [

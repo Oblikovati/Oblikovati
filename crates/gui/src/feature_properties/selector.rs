@@ -73,7 +73,7 @@ fn draw_icons<T: Copy + Eq>(
     let cell = ((ui.content_region_avail()[0] - spacing * (count - 1.)) / count).max(1.);
     let show_caption = choices
         .iter()
-        .all(|(_, label, _)| ui.calc_text_size(label)[0] + 12. <= cell);
+        .all(|(_, label, _)| ui.calc_text_size(label)[0] + 4. <= cell);
     let icon = icons.logical[IconSize::Small.index()].map(|axis| axis.min(cell));
     let mut selected = None;
     for (index, (choice, label, glyph)) in choices.iter().copied().enumerate() {
@@ -97,7 +97,7 @@ fn draw_icons<T: Copy + Eq>(
         let _bw = ui.push_style_var(imgui::StyleVar::FrameBorderSize(1.));
         let presentation = IconButtonPresentation {
             texture: icons.key(glyph, IconSize::Small),
-            size: [cell, icon[1] + ui.text_line_height() + 10.],
+            size: [cell, icon[1] + ui.text_line_height() + 6.],
             icon,
             large: true,
             show_caption,
