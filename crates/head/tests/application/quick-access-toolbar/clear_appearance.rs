@@ -274,9 +274,15 @@ pub(super) fn ctrl_click(world: &mut ApplicationWorld, text: &str) {
 
 #[test]
 fn viewport_two_bodies_clear_with_modifiers() {
-    let mut world = ApplicationWorld::new();
+    let mut world = ApplicationWorld::with_asset_tools_closed();
     let keys = open_separate_bodies(&mut world);
     fit_separate_bodies(&mut world);
+    world.click(row_center(&world, "Select"));
+    world.click_text("Components");
+    assert_eq!(
+        world.state().selection_mode,
+        oblikovati_gui::GuiSelectionMode::Components
+    );
     enable_clear(&mut world);
     world.click(row_center(&world, "Clear"));
     assert!(!world.run_is_enabled("OK"));
