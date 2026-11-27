@@ -16,6 +16,8 @@ pub(crate) use output::single_body;
 mod panel;
 #[path = "extrude_pending.rs"]
 mod pending;
+#[path = "extrude_presets.rs"]
+mod presets;
 #[path = "extrude_reference.rs"]
 mod reference;
 #[path = "extrude_selector.rs"]
@@ -40,6 +42,7 @@ pub(crate) struct ExtrudeDialog {
     direction_style: selector::SelectorStyle,
     operation_style: selector::SelectorStyle,
     manual_boolean: bool,
+    presets: presets::ExtrudePresets,
     reference: reference::ReferenceDraft,
     operation: Option<oblikovati_model::feature::sketch_prism::PrismBoolean>,
     body_name: String,
@@ -98,6 +101,7 @@ impl ExtrudeDialog {
             return;
         };
         self.set_document(state.document);
+        self.presets.clear_selection();
         self.sketch = Some(seed.sketch);
         self.profile = 0;
         self.distance = seed.distance.clone();
@@ -144,6 +148,7 @@ impl ExtrudeDialog {
             self.direction = GuiExtrudeDirection::Positive;
             self.reference = Default::default();
             self.edit_feature = None;
+            self.seed_preset();
         }
         if self.document != state.document
             || !state.extrude_available
@@ -166,6 +171,7 @@ impl ExtrudeDialog {
         actions: &mut Vec<GuiShellAction>,
         mut controls: ExtrudePanelControls<'_>,
     ) {
+        self.presets.observe_command_state(state);
         if let Some(sketch) = self.pending.observe(state, plane_active, actions) {
             self.set_document(state.document);
             self.sketch = Some(sketch);
@@ -177,6 +183,7 @@ impl ExtrudeDialog {
             self.reference = Default::default();
             self.attempted = None;
             self.edit_feature = None;
+            self.seed_preset();
         }
         if self.requested && self.previewed {
             actions.push(GuiShellAction::PreviewExtrude(None));
@@ -255,7 +262,8 @@ impl ExtrudeDialog {
         let expanded = imgui::TreeNodeFlags::DEFAULT_OPEN;
         self.draw_advanced_settings(ui, controls.icons);
         self.breadcrumb(ui, state);
-        let mut edited =
+        let mut edited = self.draw_presets(ui, state, controls.icons);
+        edited |=
             ui.collapsing_header("Input Geometry", expanded) && self.geometry_controls(ui, state);
         if ui.collapsing_header("Behavior", expanded) {
             edited |= self.draw_extent(ui, state, controls.icons, controls.parameters);
@@ -409,30 +417,6 @@ impl ExtrudeDialog {
             taper: self.taper.as_ref().and_then(taper::TaperDraft::change),
         })
     }
-    fn commit_request(
-        &mut self,
-        request: Option<&crate::GuiExtrudePreview>,
-        actions: &mut Vec<GuiShellAction>,
-    ) -> bool {
-        let Some(request) = request else {
-            return false;
-        };
-        if let Some(edit) = self.edit_request(request) {
-            self.submitted_edit = Some(edit.clone());
-            actions.push(GuiShellAction::EditExtrudeDistance(edit));
-        } else {
-            let mut submitted = request.clone();
-            submitted.generation = None;
-            self.submitted = Some(submitted);
-            actions.push(self.creation_action(request));
-        }
-        let taper = self.taper.take();
-        self.set_document(None);
-        self.taper = taper;
-        self.edit_feature = None;
-        self.previewed = false;
-        true
-    }
     pub(crate) fn close(&mut self, actions: &mut Vec<GuiShellAction>) {
         if self.previewed {
             actions.push(GuiShellAction::PreviewExtrude(None));
@@ -468,6 +452,7 @@ impl ExtrudeDialog {
         if self.submitted.as_ref() != Some(request) {
             return;
         }
+        self.presets.reject_submission();
         self.requested = false;
         self.set_document(Some(request.document));
         self.operation = request.operation;

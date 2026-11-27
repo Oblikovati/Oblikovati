@@ -72,13 +72,15 @@ impl ExtrudeDialog {
         if crate::widget_abi::icon_button(ui, label, button) {
             ui.open_popup(POPUP);
         }
-        if let Some(_popup) = ui.begin_popup(POPUP)
-            && ui
+        if let Some(_popup) = ui.begin_popup(POPUP) {
+            self.presets.draw_visibility_setting(ui);
+            if ui
                 .menu_item_config("Predict Boolean Operation")
                 .selected(!self.manual_boolean)
                 .build()
-        {
-            self.manual_boolean = !self.manual_boolean;
+            {
+                self.manual_boolean = !self.manual_boolean;
+            }
         }
     }
 

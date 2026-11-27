@@ -155,6 +155,31 @@ impl ExtrudeDialog {
         }
     }
 
+    pub(super) fn commit_request(
+        &mut self,
+        request: Option<&crate::GuiExtrudePreview>,
+        actions: &mut Vec<GuiShellAction>,
+    ) -> bool {
+        let Some(request) = request else {
+            return false;
+        };
+        if let Some(edit) = self.edit_request(request) {
+            self.submitted_edit = Some(edit.clone());
+            actions.push(GuiShellAction::EditExtrudeDistance(edit));
+        } else {
+            self.presets.submit(request);
+            let mut submitted = request.clone();
+            submitted.generation = None;
+            self.submitted = Some(submitted);
+            actions.push(self.creation_action(request));
+        }
+        let taper = self.taper.take();
+        self.set_document(None);
+        self.taper = taper;
+        self.edit_feature = None;
+        self.previewed = false;
+        true
+    }
     fn cancel_control(&mut self, ui: &Ui, shortcuts: bool, actions: &mut Vec<GuiShellAction>) {
         let _outline = ui.push_style_var(imgui::StyleVar::FrameBorderSize(1.));
         if crate::widget_abi::button(ui, "Cancel", [62., 28.])

@@ -140,6 +140,11 @@ keeps the current direction when choosing Cut or Intersect. The published
 case checks the unchanged top face in Default direction and the opening
 after manually selecting Flipped. [Native receipt](receipts/2026-11-27-extrude-boolean-prediction-3893/README.md).
 
+Extrude starts with its preset row hidden. Advanced Settings reveals
+the selector, add button, and gear. Named presets reuse numeric depth and
+direction within the desktop session.
+[Pinned visibility receipt](receipts/2026-11-27-extrude-preset-visibility-3870/README.md).
+
 Extrude refreshes the preview as soon as the final reference face is
 selected. A [native From/To control](receipts/2026-11-27-extrude-between-faces-3870/README.md)
 verifies caps on opposite faces of a block and an independent midplane
