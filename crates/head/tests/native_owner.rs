@@ -124,7 +124,10 @@ fn verify_native_owner(
     assert!(summary.completed > 0);
     assert_eq!(owner.documents().workspace().documents(), [document]);
     assert!(!owner.documents().workspace().needs_save(document).unwrap());
-    assert_eq!(owner.documents().path(document).unwrap(), path);
+    assert_eq!(
+        owner.documents().path(document).unwrap(),
+        path.canonicalize().unwrap()
+    );
     assert!(path.is_file());
     assert!(owner.refused_close().is_empty());
 }

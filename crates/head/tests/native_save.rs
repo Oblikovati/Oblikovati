@@ -110,6 +110,7 @@ fn verify_owner_saved(
 ) {
     let workspace = owner.document_owner().documents().workspace();
     assert!(!workspace.needs_save(document).unwrap());
-    assert!(title.contains(path.to_str().unwrap()));
+    let destination = path.canonicalize().unwrap();
+    assert!(title.contains(destination.to_str().unwrap()), "{title}");
     verify_saved_width(path);
 }

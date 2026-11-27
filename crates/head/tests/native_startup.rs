@@ -78,7 +78,10 @@ fn verify_started_documents(owner: &NativeScriptDesktop, paths: &[PathBuf]) {
     let documents = owner.document_owner().documents();
     assert_eq!(documents.workspace().documents().len(), 2);
     let active = documents.workspace().active_document().unwrap();
-    assert_eq!(documents.path(active).unwrap(), paths[1]);
+    assert_eq!(
+        documents.path(active).unwrap(),
+        paths[1].canonicalize().unwrap()
+    );
     let caller = owner.document_owner().caller();
     assert!(
         oblikovati_api::client::Client::new(caller)
