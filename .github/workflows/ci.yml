@@ -76,6 +76,32 @@ jobs:
         if: matrix.target == 'x86_64-pc-windows-msvc'
         shell: pwsh
         run: ./tools/bootstrap/windows_vulkan_test.ps1 -Directory (Join-Path $env:RUNNER_TEMP 'oblikovati-vulkan')
+      - name: Install the Windows ARM64 Vulkan test runtime
+        if: matrix.target == 'aarch64-pc-windows-msvc'
+        id: arm64-vulkan
+        uses: msys2/setup-msys2@3c51bf698df1e37b2261f53cb67797b97761185c # v2.34.0
+        with:
+          msystem: CLANGARM64
+          update: true
+          install: >-
+            mingw-w64-clang-aarch64-mesa
+            mingw-w64-clang-aarch64-vulkan-loader
+            mingw-w64-clang-aarch64-vulkan-validation-layers
+      - name: Select Windows ARM64 Lavapipe
+        if: matrix.target == 'aarch64-pc-windows-msvc'
+        shell: pwsh
+        env:
+          MSYS2_LOCATION: ${{ steps.arm64-vulkan.outputs.msys2-location }}
+        run: |
+          $runtime = Join-Path $env:MSYS2_LOCATION 'clangarm64'
+          $binary = Join-Path $runtime 'bin'
+          $driver = Join-Path $runtime 'share/vulkan/icd.d/lvp_icd.aarch64.json'
+          if (-not (Test-Path -LiteralPath $driver -PathType Leaf)) {
+            throw "Expected the Windows ARM64 Lavapipe manifest at $driver"
+          }
+          @("VK_DRIVER_FILES=$driver", "VK_LAYER_PATH=$binary") |
+            Add-Content -LiteralPath $env:GITHUB_ENV -Encoding utf8
+          Add-Content -LiteralPath $env:GITHUB_PATH -Value $binary -Encoding utf8
       - name: Build and test every discovered Cargo workspace
         id: native-workspaces
         run: |
