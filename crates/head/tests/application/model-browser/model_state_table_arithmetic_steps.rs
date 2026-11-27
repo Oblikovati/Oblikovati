@@ -221,11 +221,7 @@ fn copy_parameter_values(world: &mut ApplicationWorld) {
 #[when("the user closes Parameters and activates Primary")]
 fn activate_primary(world: &mut ApplicationWorld) {
     click(world, "Done");
-    world.click_text("Model State");
-    let point = diagnostics::pointer_pixels(world.run("Primary").center());
-    super::super::x11_input::click(point);
-    super::super::x11_input::click(point);
-    world.pump(Vec::new());
+    super::model_state_suppression::activate_state_row(world, "Primary");
 }
 #[then("d0 shows equation 1 in and nominal and model values of 1 in")]
 fn primary_parameter_values(world: &mut ApplicationWorld) {
