@@ -369,12 +369,12 @@ impl LoftDialog {
         }
         match self.path_mode {
             GuiLoftPathMode::Rails => {
-                let region = crate::widget_abi::scroll_region_with_content_width(
+                let region = crate::widget_abi::child_region(
                     ui,
                     "##loft-rails",
                     [0., 27.],
                     0.,
-                    false,
+                    imgui::WindowFlags::empty(),
                 );
                 if region.visible {
                     ui.text_disabled("No rails selected");
@@ -434,12 +434,12 @@ impl LoftDialog {
             } else {
                 156.
             };
-            let region = crate::widget_abi::scroll_region_with_content_width(
+            let region = crate::widget_abi::child_region(
                 ui,
                 "##loft-mapping-point-sets",
                 [0., height],
                 0.,
-                false,
+                imgui::WindowFlags::empty(),
             );
             if region.visible {
                 draw_point_set(ui, sections, 1, "");
