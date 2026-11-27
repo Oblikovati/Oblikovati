@@ -145,6 +145,12 @@ the selector, add button, and gear. Named presets reuse numeric depth and
 direction within the desktop session.
 [Pinned visibility receipt](receipts/2026-11-27-extrude-preset-visibility-3870/README.md).
 
+The Extrude breadcrumb offers Show Preview and Hide Preview. The live
+input selections and distance remain in the panel while the viewport
+switches between the committed solid and the edit preview. The shared
+Preset Settings case also runs with the published rectangle.
+[Shared Properties receipt](receipts/2026-11-27-extrude-shared-properties-3893/README.md).
+
 Extrude refreshes the preview as soon as the final reference face is
 selected. A [native From/To control](receipts/2026-11-27-extrude-between-faces-3870/README.md)
 verifies caps on opposite faces of a block and an independent midplane

@@ -16,7 +16,7 @@ fn open_part(world: &mut ApplicationWorld) {
 #[given(
     "a copy of `fixtures/cad/extrusion/extrusion-rect-20mm.opd` is open with Edit Feature active for Extrusion1"
 )]
-fn start_published_edit(world: &mut ApplicationWorld) {
+pub(super) fn start_published_edit(world: &mut ApplicationWorld) {
     open_part(world);
     open_extrusion_editor(world);
 }

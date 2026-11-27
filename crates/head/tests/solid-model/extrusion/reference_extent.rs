@@ -15,6 +15,9 @@ mod distance_from_plane;
 #[path = "preset_visibility.rs"]
 mod preset_visibility;
 
+#[path = "preview_visibility.rs"]
+mod preview_visibility;
+
 #[given("a sketch-plane start and numeric distance")]
 #[given("the numeric Distance A extrusion preview")]
 fn numeric_preview(world: &mut ApplicationWorld) {

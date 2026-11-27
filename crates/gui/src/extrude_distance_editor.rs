@@ -313,6 +313,7 @@ impl super::ExtrudeDialog {
             .iter()
             .find(|row| Some(row.id) == self.edit_feature)
             .map_or("New Extrusion", |row| row.name.as_str());
+        ui.align_text_to_frame_padding();
         if let Some(sketch) = browser
             .sketches
             .iter()

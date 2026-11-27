@@ -30,6 +30,12 @@ fn assert_preset_controls(world: &mut ApplicationWorld) {
 #[when("the preset gear menu is inspected and dismissed")]
 fn inspect_preset_settings(world: &mut ApplicationWorld) {
     open_preset_menu(world, EMPTY);
+    assert_empty_menu(world);
+    dismiss_preset_settings(world);
+    preset_panel_stays_open(world);
+}
+
+fn assert_empty_menu(world: &mut ApplicationWorld) {
     for label in [
         "SaveCurrent",
         "RenameCurrent",
@@ -41,19 +47,72 @@ fn inspect_preset_settings(world: &mut ApplicationWorld) {
             "{label} should require a preset"
         );
     }
+    preset_menu_choices(world);
+    assert!(world.checked_run(menu_row(world, "RecentlyUsed")));
+    assert!(world.checked_run(menu_row(world, EMPTY)));
+}
+
+#[then("the menu offers sort-order and new-command-default choices")]
+fn preset_menu_choices(world: &mut ApplicationWorld) {
+    menu_row(world, "SortOrder");
+    menu_row(world, "NewCommandDefault");
     for label in [
         "RecentlyUsed",
         "DateCreated",
         "Alphanumeric",
         "LastModified",
         "LastUsed",
+        "UseCurrentPreset",
+        EMPTY,
     ] {
         menu_row(world, label);
     }
-    assert!(world.checked_run(menu_row(world, "RecentlyUsed")));
-    assert!(world.checked_run(menu_row(world, EMPTY)));
+}
+
+#[when("the user dismisses the menu without changing a choice")]
+fn dismiss_preset_settings(world: &mut ApplicationWorld) {
     world.escape();
+    assert!(
+        !world
+            .frame
+            .runs
+            .iter()
+            .any(|row| row.text == "SortOrder" && world.frame.is_popup_row(row))
+    );
+}
+
+#[then("the feature Properties panel remains open")]
+fn preset_panel_stays_open(world: &mut ApplicationWorld) {
     world.run_in_window("Extrude", EMPTY);
+    world.run_in_window("Extrude", "DistanceA");
+}
+
+#[given(
+    "a fresh copy of `fixtures/cad/revolve/revolve-profile.opd` is open in a disposable application profile"
+)]
+fn open_disposable_profile(world: &mut ApplicationWorld) {
+    let relative = "fixtures/cad/revolve/revolve-profile.opd";
+    let copy = world.scratch_folder().join("revolve-profile.opd");
+    std::fs::copy(super::super::super::scenario_root().join(relative), &copy).unwrap();
+    world.open_fixture(&copy);
+}
+
+#[given(
+    "the user opens Extrude with the rectangular sketch profile selected and the preset row visible"
+)]
+fn open_extrude_with_presets(world: &mut ApplicationWorld) {
+    world.click_text("Sketch1");
+    world.click_text("Extrude");
+    world.pump(Vec::new());
+    world.run_in_window("Extrude", "1Profile");
+    open_settings(world);
+    reveal_presets(world);
+    assert_preset_controls(world);
+}
+
+#[when("the user opens Preset Settings")]
+fn open_published_preset_menu(world: &mut ApplicationWorld) {
+    open_preset_menu(world, EMPTY);
 }
 
 #[when("Hide Presets is restored")]

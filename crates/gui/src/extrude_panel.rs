@@ -40,11 +40,12 @@ impl ExtrudeDialog {
         let _disabled = ui.begin_disabled(self.edit_feature.is_some());
         let changed_sketch = self.sketch_choice(ui, state);
         crate::theme::property_label(ui, "Profiles");
-        let label = if state.extrude_preview_active {
-            "1 Profile".to_owned()
-        } else {
-            format!("Profile {}", self.profile.saturating_add(1))
-        };
+        let label =
+            if state.extrude_preview_active || self.preview_hidden || self.edit_feature.is_some() {
+                "1 Profile".to_owned()
+            } else {
+                format!("Profile {}", self.profile.saturating_add(1))
+            };
         let rounding = ui.push_style_var(imgui::StyleVar::FrameRounding(11.));
         let tint = ui.push_style_color(StyleColor::FrameBg, [0.05, 0.58, 0.53, 0.22]);
         let choices = ui.begin_combo("##profile", &label);
@@ -64,7 +65,6 @@ impl ExtrudeDialog {
         state: &GuiCommandState,
         document: u64,
         interaction: (bool, bool),
-        presentation: &GuiRibbonIcons,
         actions: &mut Vec<GuiShellAction>,
     ) {
         let (edited, shortcuts) = interaction;
@@ -82,17 +82,6 @@ impl ExtrudeDialog {
 
         ui.same_line_with_spacing(0., 6.);
         self.cancel_control(ui, shortcuts, actions);
-        ui.same_line_with_spacing(0., 6.);
-        let disabled = ui.begin_disabled(!enabled);
-        self.preview_control(
-            ui,
-            request,
-            presentation,
-            state.extrude_preview_active,
-            actions,
-        );
-        drop(disabled);
-
         let right = ui.window_content_region_max()[0];
         ui.same_line_with_pos(right - 28.);
         let disabled = ui.begin_disabled(!enabled || self.edit_feature.is_some());
@@ -110,48 +99,51 @@ impl ExtrudeDialog {
         }
     }
 
-    fn preview_control(
+    pub(super) fn preview_control(
         &mut self,
         ui: &Ui,
-        request: Option<&crate::GuiExtrudePreview>,
         icons: &GuiRibbonIcons,
         preview_active: bool,
         actions: &mut Vec<GuiShellAction>,
     ) {
+        let label = if self.preview_hidden {
+            "Show Preview"
+        } else {
+            "Hide Preview"
+        };
+        let icon = icons.logical[IconSize::Small.index()];
+        let width = ui.calc_text_size(label)[0] + icon[0] + 12.;
+        let right = ui.window_content_region_max()[0];
+        if ui.item_rect_max()[0] - ui.window_pos()[0] + width + ui.clone_style().item_spacing[0]
+            <= right
+        {
+            ui.same_line_with_pos(right - width);
+        }
+        let _disabled = ui.begin_disabled(!preview_active && !self.preview_hidden);
         let pressed = crate::widget_abi::icon_button(
             ui,
-            "Preview",
+            &format!("{label}##extrude-preview-visibility"),
             crate::widget_abi::IconButtonPresentation {
                 texture: icons.key(IconGlyph::SketchVisibility, IconSize::Small),
-                size: [74., 28.],
-                icon: [16.; 2],
+                size: [width, ui.frame_height()],
+                icon,
                 large: false,
                 show_caption: true,
             },
         );
-        if ui.is_item_hovered() {
-            let tooltip = if preview_active {
-                "Hide preview"
-            } else {
-                "Show preview"
-            };
-            ui.tooltip_text(tooltip);
+        if pressed {
+            self.toggle_preview(actions);
         }
-        if !pressed {
-            return;
-        }
-        if preview_active {
-            self.preview_hidden = true;
+    }
+
+    fn toggle_preview(&mut self, actions: &mut Vec<GuiShellAction>) {
+        self.preview_hidden = !self.preview_hidden;
+        if self.preview_hidden {
             self.previewed = false;
             actions.push(GuiShellAction::PreviewExtrude(None));
-        } else if let Some(request) = request {
-            self.preview_hidden = false;
-            let action = self.edit_request(request).map_or_else(
-                || GuiShellAction::PreviewExtrude(Some(request.clone())),
-                GuiShellAction::PreviewExtrudeEdit,
-            );
-            actions.push(action);
-            self.previewed = true;
+        } else {
+            // Rebuild through the current request and validation path.
+            self.attempted = None;
         }
     }
 

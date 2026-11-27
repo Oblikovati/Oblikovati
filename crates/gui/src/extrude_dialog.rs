@@ -235,14 +235,7 @@ impl ExtrudeDialog {
                 let shortcuts = !controls.popup_was_open
                     && !crate::widget_abi::any_popup_open(ui)
                     && ui.is_window_focused_with_flags(imgui::WindowFocusedFlags::CHILD_WINDOWS);
-                self.controls(
-                    ui,
-                    state,
-                    document,
-                    (edited, shortcuts),
-                    controls.icons,
-                    actions,
-                );
+                self.controls(ui, state, document, (edited, shortcuts), actions);
             });
         if !open {
             self.close(actions);
@@ -262,6 +255,7 @@ impl ExtrudeDialog {
         let expanded = imgui::TreeNodeFlags::DEFAULT_OPEN;
         self.draw_advanced_settings(ui, controls.icons);
         self.breadcrumb(ui, state);
+        self.preview_control(ui, controls.icons, state.extrude_preview_active, actions);
         let mut edited = self.draw_presets(ui, state, controls.icons);
         edited |=
             ui.collapsing_header("Input Geometry", expanded) && self.geometry_controls(ui, state);
