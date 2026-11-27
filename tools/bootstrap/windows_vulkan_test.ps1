@@ -4,8 +4,8 @@ param([Parameter(Mandatory)][string] $Directory)
 $ErrorActionPreference = 'Stop'
 . "$PSScriptRoot/windows_process.ps1"
 
-if (-not $env:GITHUB_ENV -or -not $env:GITHUB_PATH) {
-    throw 'Expected GitHub Actions environment and path files for the Windows Vulkan test driver'
+if (-not $env:GITHUB_PATH) {
+    throw 'Expected the GitHub Actions path file for the Windows Vulkan test driver'
 }
 
 # Chrome for Testing publishes a Windows x64 SwiftShader ICD and Vulkan loader together.
@@ -32,7 +32,5 @@ try {
 } finally { Remove-Item -LiteralPath $archive -Force -ErrorAction SilentlyContinue }
 
 $manifest = Join-Path $Directory 'vk_swiftshader_icd.json'
-# New loaders prefer VK_DRIVER_FILES. Earlier loaders recognize VK_ICD_FILENAMES.
-@("VK_DRIVER_FILES=$manifest", "VK_ICD_FILENAMES=$manifest") |
-    Add-Content -LiteralPath $env:GITHUB_ENV -Encoding utf8
+& "$PSScriptRoot/windows_vulkan_registry.ps1" -DriverManifest $manifest
 Add-Content -LiteralPath $env:GITHUB_PATH -Value $Directory -Encoding utf8
