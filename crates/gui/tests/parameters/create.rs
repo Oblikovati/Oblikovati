@@ -118,21 +118,16 @@ impl ParameterCreationWidgetFixture {
         }
         let ui = self.context.frame();
         let mut actions = Vec::new();
-        ui.window("Parameter creation probe")
-            .position([8., 8.], imgui::Condition::Always)
-            .size([740., 180.], imgui::Condition::Always)
-            .build(|| {
-                if let Some(offset) = focus {
-                    ui.set_keyboard_focus_here_with_offset(imgui::FocusedWidget::Offset(
-                        offset as u32,
-                    ));
-                }
-                self.form.draw(ui, &mut actions);
-                let minimum = ui.item_rect_min();
-                let maximum = ui.item_rect_max();
-                self.add_position =
-                    std::array::from_fn(|axis| (minimum[axis] + maximum[axis]) / 2.);
-            });
+        crate::widget_abi::window_geometry(ui, [8., 8.], [740., 180.], imgui::Condition::Always);
+        ui.window("Parameter creation probe").build(|| {
+            if let Some(offset) = focus {
+                ui.set_keyboard_focus_here_with_offset(imgui::FocusedWidget::Offset(offset as u32));
+            }
+            self.form.draw(ui, &mut actions);
+            let minimum = ui.item_rect_min();
+            let maximum = ui.item_rect_max();
+            self.add_position = std::array::from_fn(|axis| (minimum[axis] + maximum[axis]) / 2.);
+        });
         self.context.render();
         actions
     }

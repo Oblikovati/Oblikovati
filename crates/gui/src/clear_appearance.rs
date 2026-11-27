@@ -44,8 +44,8 @@ impl ClearAppearance {
         let width =
             ui.calc_text_size("Select bodies or faces with an appearance override to continue.")[0];
         let size = [width + ui.frame_height() * 2., ui.frame_height() * 6.];
+        crate::widget_abi::window_size(ui, size, imgui::Condition::FirstUseEver);
         Self::dockable_window(ui, "Clear Appearance", &mut open)
-            .size(size, imgui::Condition::FirstUseEver)
             .build(|| done = confirm_clear(ui, state, action, actions));
         if !open || done {
             self.set_document(None);

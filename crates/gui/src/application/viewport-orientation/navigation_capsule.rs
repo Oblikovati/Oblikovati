@@ -104,9 +104,8 @@ impl OrientationControl {
         let _padding = ui.push_style_var(imgui::StyleVar::WindowPadding([4., 8.]));
         let _minimum = ui.push_style_var(imgui::StyleVar::WindowMinSize([1., 1.]));
         let _rounding = ui.push_style_var(imgui::StyleVar::WindowRounding(4.));
+        crate::widget_abi::window_geometry(ui, position, size, imgui::Condition::Always);
         ui.window(NAVIGATION_WINDOW)
-            .position(position, imgui::Condition::Always)
-            .size(size, imgui::Condition::Always)
             .flags(control_flags() - WindowFlags::NO_BACKGROUND)
             .build(|| {
                 self.navigation

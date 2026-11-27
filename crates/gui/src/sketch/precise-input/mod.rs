@@ -194,9 +194,9 @@ impl PreciseInputBar {
         draw_triad(ui, target, self.relative);
         let [width, _] = ui.io().display_size;
         let mut open = self.open.is_open();
-        let window = Self::dockable_window(ui, "Precise Input", &mut open)
-            .position([width * 0.5, 200.], imgui::Condition::FirstUseEver)
-            .flags(self.window_flags());
+        crate::widget_abi::window_position(ui, [width * 0.5, 200.], imgui::Condition::FirstUseEver);
+        let window =
+            Self::dockable_window(ui, "Precise Input", &mut open).flags(self.window_flags());
         let window = if self.auto_fade && self.expanded_width > 0. {
             window.size_constraints([self.expanded_width, 0.], [f32::MAX, f32::MAX])
         } else {

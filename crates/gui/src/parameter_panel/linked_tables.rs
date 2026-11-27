@@ -56,8 +56,8 @@ impl LinkPicker {
             return;
         };
         let mut open = true;
+        crate::widget_abi::window_size(ui, [360., 320.], Condition::FirstUseEver);
         Self::dockable_window(ui, "Link Parameters", &mut open)
-            .size([360., 320.], Condition::FirstUseEver)
             .build(|| self.draw_body(ui, snapshot, actions));
         if !open {
             self.close();

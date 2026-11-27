@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use imgui::{Condition, ImColor32, ImString, SelectableFlags, Ui};
+use imgui::{ImColor32, ImString, SelectableFlags, Ui};
 
 /// Fill adjacent quads without feathering their shared edges. The caller draws the outer stroke.
 pub(crate) fn fill_joined_quads(_: &Ui, quads: &[[[f32; 2]; 4]], color: [f32; 4]) {
@@ -33,6 +33,11 @@ mod scalars;
 pub(crate) use scalars::{
     document_tab_underline, filled_circle, filled_rect, foreground_dimension, frame_padding, image,
     invisible_button, line, push_style_color, window_min_size, window_padding,
+};
+#[path = "widget_window_abi.rs"]
+mod window;
+pub(crate) use window::{
+    next_window_position, window_geometry, window_position, window_position_with_pivot, window_size,
 };
 #[cfg(test)]
 #[path = "widget_text_line_advance_tests.rs"]
@@ -90,8 +95,6 @@ unsafe extern "C" {
         width: f32,
         height: f32,
     );
-    fn oblikovati_gui_window_position(x: f32, y: f32, condition: i32);
-    fn oblikovati_gui_window_size(width: f32, height: f32, condition: i32);
     fn oblikovati_gui_cursor_position(x: f32, y: f32);
     fn oblikovati_gui_button(label: *const u8, width: f32, height: f32, selected: bool) -> bool;
     fn oblikovati_gui_selectable(label: *const u8, selected: bool, flags: i32) -> bool;
@@ -211,24 +214,6 @@ pub(crate) enum DockTabAction {
     ModelMenu,
 }
 
-/// Prepare a window through scalar ABI calls; example: `window_geometry(ui, [0.,0.], [640.,480.], Condition::Always)`.
-pub(crate) fn window_geometry(_: &Ui, position: [f32; 2], size: [f32; 2], condition: Condition) {
-    if condition == Condition::Never {
-        return;
-    }
-    // The live Ui owns this thread's context; only scalar arguments cross into C++ (#3803).
-    unsafe {
-        oblikovati_gui_window_position(position[0], position[1], condition as i32);
-        oblikovati_gui_window_size(size[0], size[1], condition as i32);
-    }
-}
-/// Place the next window where it first appears; example: a list opened beside its menu row.
-pub(crate) fn next_window_position(_: &Ui, position: [f32; 2]) {
-    // The live Ui owns this thread's context; only scalar arguments cross into C++ (#3803).
-    unsafe {
-        oblikovati_gui_window_position(position[0], position[1], Condition::Appearing as i32)
-    };
-}
 /// Move the current window cursor; example: `cursor_position(ui, [16.,59.])` before a ribbon control.
 pub(crate) fn cursor_position(_: &Ui, position: [f32; 2]) {
     // The Ui borrow keeps the current context and window alive for this scalar call.

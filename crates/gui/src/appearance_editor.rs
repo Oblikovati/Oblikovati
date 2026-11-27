@@ -263,39 +263,38 @@ impl AppearanceEditor {
         let title = format!("Appearance Editor — {}###appearance-editor", original.name);
         let mut open = true;
         let mut exit = EditorExit::KeepOpen;
-        Self::dockable_window(ui, &title, &mut open)
-            .size([405., 410.], Condition::FirstUseEver)
-            .position(
-                [ui.io().display_size[0] * 0.34, 173.],
-                Condition::FirstUseEver,
-            )
-            .build(|| {
-                self.preview_options.draw(ui, &preview_asset(asset, draft));
-                ui.input_text("Name", &mut draft.name).build();
-                let height =
-                    (ui.content_region_avail()[1] - ui.frame_height_with_spacing()).max(1.);
-                ui.child_window("##appearance-properties")
-                    .size([0., height])
-                    .build(|| {
-                        draw_properties(
-                            ui,
-                            draft,
-                            &mut self.color_dialog,
-                            &mut self.texture_open,
-                            &mut self.image_chooser,
-                        )
-                    });
-                self.image_chooser.draw(ui, &mut draft.metadata);
-                let changed = draft != original;
-                let editable = changed && !draft.name.trim().is_empty() && !read_only;
-                exit = editor_buttons(ui, editable);
-                if exit == EditorExit::KeepOpen {
-                    exit = creation::menu(ui, !changed && !read_only);
-                }
-                if self.confirm_close {
-                    exit = confirm_exit(ui, editable);
-                }
-            });
+        crate::widget_abi::window_geometry(
+            ui,
+            [ui.io().display_size[0] * 0.34, 173.],
+            [405., 410.],
+            Condition::FirstUseEver,
+        );
+        Self::dockable_window(ui, &title, &mut open).build(|| {
+            self.preview_options.draw(ui, &preview_asset(asset, draft));
+            ui.input_text("Name", &mut draft.name).build();
+            let height = (ui.content_region_avail()[1] - ui.frame_height_with_spacing()).max(1.);
+            ui.child_window("##appearance-properties")
+                .size([0., height])
+                .build(|| {
+                    draw_properties(
+                        ui,
+                        draft,
+                        &mut self.color_dialog,
+                        &mut self.texture_open,
+                        &mut self.image_chooser,
+                    )
+                });
+            self.image_chooser.draw(ui, &mut draft.metadata);
+            let changed = draft != original;
+            let editable = changed && !draft.name.trim().is_empty() && !read_only;
+            exit = editor_buttons(ui, editable);
+            if exit == EditorExit::KeepOpen {
+                exit = creation::menu(ui, !changed && !read_only);
+            }
+            if self.confirm_close {
+                exit = confirm_exit(ui, editable);
+            }
+        });
         self.texture_window
             .draw(ui, &mut draft.metadata.checker, &mut self.texture_open);
         if !open {

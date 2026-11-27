@@ -191,21 +191,19 @@ impl ValueListWidgetFixture {
         let padding = self.context.style().frame_padding[0];
         let ui = self.context.frame();
         let mut actions = Vec::new();
-        ui.window("Value-list widget probe")
-            .position([8., 8.], Condition::Always)
-            .size([400., 300.], Condition::Always)
-            .build(|| {
-                if focus {
-                    ui.set_keyboard_focus_here();
-                }
-                self.editor.draw_body(ui, &mut actions);
-                let minimum = ui.item_rect_min();
-                let maximum = ui.item_rect_max();
-                self.ok_position = [
-                    minimum[0] - spacing - (ui.calc_text_size("OK")[0] + 2. * padding) / 2.,
-                    (minimum[1] + maximum[1]) / 2.,
-                ];
-            });
+        crate::widget_abi::window_geometry(ui, [8., 8.], [400., 300.], Condition::Always);
+        ui.window("Value-list widget probe").build(|| {
+            if focus {
+                ui.set_keyboard_focus_here();
+            }
+            self.editor.draw_body(ui, &mut actions);
+            let minimum = ui.item_rect_min();
+            let maximum = ui.item_rect_max();
+            self.ok_position = [
+                minimum[0] - spacing - (ui.calc_text_size("OK")[0] + 2. * padding) / 2.,
+                (minimum[1] + maximum[1]) / 2.,
+            ];
+        });
         self.context.render();
         actions
     }

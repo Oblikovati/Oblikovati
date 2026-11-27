@@ -126,8 +126,8 @@ impl ParameterValueListEditor {
             return;
         }
         let mut open = true;
+        crate::widget_abi::window_size(ui, [360., 250.], Condition::FirstUseEver);
         Self::dockable_window(ui, "Value List Editor", &mut open)
-            .size([360., 250.], Condition::FirstUseEver)
             .build(|| self.draw_body(ui, actions));
         if !open {
             self.close();

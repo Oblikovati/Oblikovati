@@ -38,8 +38,8 @@ impl HistoryBrowser {
         }
         synchronize_documents(&state.histories, &mut self.selected, &mut self.initialized);
         let mut open = self.open.is_open();
+        crate::widget_abi::window_size(ui, [560., 480.], imgui::Condition::FirstUseEver);
         Self::dockable_window(ui, "History Browser", &mut open)
-            .size([560., 480.], imgui::Condition::FirstUseEver)
             .build(|| self.contents(ui, state, actions));
         self.open.set_open(open);
     }

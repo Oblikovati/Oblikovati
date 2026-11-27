@@ -35,8 +35,12 @@ impl CommandAliasBox {
             return;
         }
         let [width, height] = ui.io().display_size;
+        crate::widget_abi::window_position(
+            ui,
+            [width * 0.5, height - 60.],
+            imgui::Condition::Always,
+        );
         ui.window("##command-alias")
-            .position([width * 0.5, height - 60.], imgui::Condition::Always)
             .flags(
                 WindowFlags::NO_DECORATION
                     | WindowFlags::ALWAYS_AUTO_RESIZE

@@ -101,9 +101,8 @@ impl ParameterGroupEditor {
             return;
         }
         let mut open = true;
-        Self::dockable_window(ui, "Add to Group", &mut open)
-            .size([360., 180.], Condition::FirstUseEver)
-            .build(|| self.draw_body(ui, actions));
+        crate::widget_abi::window_size(ui, [360., 180.], Condition::FirstUseEver);
+        Self::dockable_window(ui, "Add to Group", &mut open).build(|| self.draw_body(ui, actions));
         if !open {
             self.close();
         }

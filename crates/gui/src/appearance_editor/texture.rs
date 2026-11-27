@@ -74,21 +74,21 @@ impl TextureWindow {
         let Some(checker) = checker.as_mut().filter(|_| *open) else {
             return;
         };
-        Self::dockable_window(ui, TITLE, open)
-            .size([370., 600.], Condition::FirstUseEver)
-            .position(
-                [ui.io().display_size[0] * 0.055, 170.],
-                Condition::FirstUseEver,
-            )
-            .build(|| {
-                preview(ui, *checker);
-                color(ui, "Color 1", &mut checker.colors[0]);
-                color(ui, "Color 2", &mut checker.colors[1]);
-                ui.slider_config("Soften", 0, 100)
-                    .display_format("%d%%")
-                    .build(&mut checker.soften);
-                transforms(ui, checker);
-            });
+        crate::widget_abi::window_geometry(
+            ui,
+            [ui.io().display_size[0] * 0.055, 170.],
+            [370., 600.],
+            Condition::FirstUseEver,
+        );
+        Self::dockable_window(ui, TITLE, open).build(|| {
+            preview(ui, *checker);
+            color(ui, "Color 1", &mut checker.colors[0]);
+            color(ui, "Color 2", &mut checker.colors[1]);
+            ui.slider_config("Soften", 0, 100)
+                .display_format("%d%%")
+                .build(&mut checker.soften);
+            transforms(ui, checker);
+        });
         self.set_open(*open);
     }
 }

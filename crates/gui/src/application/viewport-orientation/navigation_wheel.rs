@@ -210,12 +210,13 @@ impl NavigationWheel {
         } else {
             wheel_flags() | WindowFlags::NO_INPUTS
         };
+        crate::widget_abi::window_geometry(
+            ui,
+            [center[0] - side / 2., center[1] - side / 2.],
+            [side, side],
+            imgui::Condition::Always,
+        );
         ui.window(WINDOW)
-            .position(
-                [center[0] - side / 2., center[1] - side / 2.],
-                imgui::Condition::Always,
-            )
-            .size([side, side], imgui::Condition::Always)
             .flags(flags)
             .build(|| self.contents(ui, state, center, side, actions));
         let options_were_open = self.options_visible.is_open() || self.options_opening;

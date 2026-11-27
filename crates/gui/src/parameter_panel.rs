@@ -300,8 +300,8 @@ impl ParameterPanel {
             return actions;
         }
         let mut open = self.open.is_open();
+        crate::widget_abi::window_size(ui, [1020., 480.], Condition::FirstUseEver);
         Self::dockable_window(ui, "Parameters", &mut open)
-            .size([1020., 480.], Condition::FirstUseEver)
             .build(|| self.draw_body(ui, &mut actions));
         if !open {
             self.open.set_open(false);
