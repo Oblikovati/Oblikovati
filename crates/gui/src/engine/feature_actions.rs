@@ -34,11 +34,12 @@ pub(super) fn draw_feature_dialogs(
         bool,
         Option<String>,
     ),
-    (revolve, sweep, loft, coil, picked_axis): (
+    (revolve, sweep, loft, coil, emboss, picked_axis): (
         &mut crate::revolve_dialog::RevolveDialog,
         &mut crate::sweep_dialog::SweepDialog,
         &mut crate::loft_dialog::LoftDialog,
         &mut crate::coil_dialog::CoilDialog,
+        &mut crate::emboss_dialog::EmbossDialog,
         Option<oblikovati_model::feature::work_axis::WorkAxisReference>,
     ),
     (blend, hole, shell, motion, offset): (
@@ -67,6 +68,7 @@ pub(super) fn draw_feature_dialogs(
     sweep.panel(ui, commands, (area, icons), selected);
     loft.panel(ui, commands, area, selected);
     coil.panel(ui, commands, (area, icons, picked_axis), selected);
+    emboss.panel(ui, commands, (area, icons), selected);
     blend.panel(ui, commands, selected, area);
     hole.panel(ui, commands, area, selected);
     shell.panel(ui, commands, area, selected);
@@ -133,6 +135,7 @@ enum Draft {
     Extrude,
     Revolve,
     Coil,
+    Emboss,
     Sweep,
     Loft,
     Blend,
@@ -149,6 +152,9 @@ fn requested_draft(action: &GuiShellAction) -> Option<Draft> {
         GuiShellAction::Coil(crate::GuiCoilAction::Open | crate::GuiCoilAction::OpenEdit(_)) => {
             Draft::Coil
         }
+        GuiShellAction::Emboss(
+            crate::GuiEmbossAction::Open | crate::GuiEmbossAction::OpenEdit(_),
+        ) => Draft::Emboss,
         GuiShellAction::Sweep(crate::GuiSweepAction::Open | crate::GuiSweepAction::OpenEdit(_)) => {
             Draft::Sweep
         }
@@ -178,11 +184,12 @@ pub(super) fn open_drafts(
         &mut crate::move_body_dialog::MoveBodyDialog,
         &mut crate::blend_dialog::BlendDialog,
     ),
-    (sweep, loft, revolve, coil): (
+    (sweep, loft, revolve, coil, emboss): (
         &mut crate::sweep_dialog::SweepDialog,
         &mut crate::loft_dialog::LoftDialog,
         &mut crate::revolve_dialog::RevolveDialog,
         &mut crate::coil_dialog::CoilDialog,
+        &mut crate::emboss_dialog::EmbossDialog,
     ),
     extrude: &mut crate::extrude_dialog::ExtrudeDialog,
 ) {
@@ -208,6 +215,9 @@ pub(super) fn open_drafts(
     }
     if draft != Draft::Coil {
         coil.close(actions);
+    }
+    if draft != Draft::Emboss {
+        emboss.close(actions);
     }
     if draft != Draft::Sweep {
         sweep.close(actions);
@@ -235,6 +245,10 @@ pub(super) fn open_drafts(
         GuiShellAction::Coil(crate::GuiCoilAction::Open) => coil.open(state, None),
         GuiShellAction::Coil(crate::GuiCoilAction::OpenEdit(feature)) => {
             coil.open(state, Some(feature))
+        }
+        GuiShellAction::Emboss(crate::GuiEmbossAction::Open) => emboss.open(state, None),
+        GuiShellAction::Emboss(crate::GuiEmbossAction::OpenEdit(feature)) => {
+            emboss.open(state, Some(feature))
         }
         GuiShellAction::Sweep(crate::GuiSweepAction::Open) => sweep.open(state, None),
         GuiShellAction::Sweep(crate::GuiSweepAction::OpenEdit(feature)) => {

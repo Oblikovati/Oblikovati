@@ -205,6 +205,7 @@ pub(crate) fn action_glyph(action: &GuiShellAction) -> Option<IconGlyph> {
         GuiShellAction::Sweep(crate::GuiSweepAction::Open) => IconGlyph::Sweep,
         GuiShellAction::Loft(crate::GuiLoftAction::Open) => IconGlyph::Loft,
         GuiShellAction::Coil(crate::GuiCoilAction::Open) => IconGlyph::Coil,
+        GuiShellAction::Emboss(crate::GuiEmbossAction::Open) => IconGlyph::Emboss,
         _ => return None,
     })
 }

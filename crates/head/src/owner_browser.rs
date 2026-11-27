@@ -187,6 +187,7 @@ fn populate_browser<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
     browser.sweep_edits = super::owner_blend::owner_sweep::edit_seeds(snapshot);
     browser.revolve_edits = super::owner_blend::owner_revolve::edit_seeds(snapshot);
     browser.coil_edits = super::owner_blend::owner_coil::edit_seeds(snapshot);
+    browser.emboss_edits = super::owner_blend::owner_emboss::edit_seeds(snapshot);
     browser.extrusion_edits = snapshot
         .work_geometry
         .features()
@@ -350,13 +351,14 @@ fn feature_kind_name(
     definition: &oblikovati_model::feature::part::PartFeatureDefinition,
 ) -> &'static str {
     use oblikovati_model::feature::part::PartFeatureDefinition::{
-        Chamfer, DeleteBody, Fillet, SketchCoil, SketchLoft, SketchPrism, SketchRevolve,
-        SketchSweep,
+        Chamfer, DeleteBody, Fillet, SketchCoil, SketchEmboss, SketchLoft, SketchPrism,
+        SketchRevolve, SketchSweep,
     };
     match definition {
         SketchPrism(_) => "Extrusion",
         SketchRevolve(_) => "Revolution",
         SketchCoil(_) => "Coil",
+        SketchEmboss(_) => "Emboss",
         SketchSweep(_) => "Sweep",
         SketchLoft(_) => "Loft",
         Fillet(_) => "Fillet",

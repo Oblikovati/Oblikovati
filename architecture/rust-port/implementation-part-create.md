@@ -13,7 +13,7 @@ helical-spring sweep use the owning command and are additional scenario files.
 | Sweep | 21 |
 | Loft | 22 |
 | [Coil](implementation-coil.md) | 7 |
-| Emboss | 7 |
+| [Emboss](implementation-emboss.md) | 7 |
 | Derive | 6 |
 | Rib | 5 |
 | Decal | 4 |

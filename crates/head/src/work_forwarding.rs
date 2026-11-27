@@ -159,6 +159,12 @@ macro_rules! forward_owner_view_work {
         fn coil_from_gui(&mut self, action: oblikovati_gui::GuiCoilAction) -> Result<bool, String> {
             self.$owner.coil_from_gui(action)
         }
+        fn emboss_from_gui(
+            &mut self,
+            action: oblikovati_gui::GuiEmbossAction,
+        ) -> Result<bool, String> {
+            self.$owner.emboss_from_gui(action)
+        }
         fn sweep_from_gui(
             &mut self,
             action: oblikovati_gui::GuiSweepAction,

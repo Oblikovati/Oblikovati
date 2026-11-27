@@ -196,7 +196,8 @@ impl<
         self.extrusion_handle_axis = None;
         let sweep_changed = self.sweep_preview.take().is_some()
             | self.revolve_preview.take().is_some()
-            | self.coil_preview.take().is_some();
+            | self.coil_preview.take().is_some()
+            | self.emboss_preview.take().is_some();
         if self.extrusion_preview.take().is_none() {
             return sweep_changed;
         }

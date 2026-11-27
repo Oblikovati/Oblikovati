@@ -82,7 +82,8 @@ fn status_reason(
         | FeatureEvaluationStatus::Failed(PartFeatureFailure::Metadata(cause)) => cause.to_string(),
         FeatureEvaluationStatus::Failed(PartFeatureFailure::Inputs(cause)) => cause.to_string(),
         FeatureEvaluationStatus::Failed(PartFeatureFailure::LoftInput(cause))
-        | FeatureEvaluationStatus::Failed(PartFeatureFailure::CoilInput(cause)) => cause.clone(),
+        | FeatureEvaluationStatus::Failed(PartFeatureFailure::CoilInput(cause))
+        | FeatureEvaluationStatus::Failed(PartFeatureFailure::EmbossInput(cause)) => cause.clone(),
         FeatureEvaluationStatus::Failed(PartFeatureFailure::RevolveInput(cause)) => {
             cause.to_string()
         }

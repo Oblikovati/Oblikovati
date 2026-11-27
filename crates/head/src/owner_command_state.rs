@@ -252,6 +252,10 @@ impl<
             sweep_preview: self.gui_sweep_preview(document, session.generation()),
             revolve_preview: self.gui_revolve_preview(document, session.generation()),
             coil_preview: self.gui_coil_preview(document, session.generation()),
+            emboss_preview: self.gui_emboss_preview(document, session.generation()),
+            selected_model_face: self
+                .chosen_model_face(document)
+                .map(|face| face.key.clone()),
             extrude_draft_preview: self
                 .extrusion_draft_preview
                 .as_ref()

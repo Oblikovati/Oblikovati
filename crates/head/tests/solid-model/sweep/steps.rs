@@ -237,6 +237,13 @@ fn set_twist(world: &mut ApplicationWorld) {
 
 #[when("the edit is accepted")]
 fn accept_twisted_sweep(world: &mut ApplicationWorld) {
+    if super::diagnostics::window_geometry("Emboss").is_some() {
+        let pixel =
+            super::diagnostics::pointer_pixels(world.run_in_window("Emboss", "OK").center());
+        world.click(pixel);
+        world.pump(Vec::new());
+        return;
+    }
     assert!(world.run_is_enabled("OK"));
     accept(world);
 }

@@ -286,11 +286,13 @@ impl GuiFrameEngine {
                 &mut self.loft_dialog,
                 &mut self.revolve_dialog,
                 &mut self.coil_dialog,
+                &mut self.emboss_dialog,
             ),
             &mut self.extrude_dialog,
         );
         let revolve_needs_plane = self.revolve_dialog.take_sketch_plane_request()
-            || self.coil_dialog.take_sketch_plane_request();
+            || self.coil_dialog.take_sketch_plane_request()
+            || self.emboss_dialog.take_sketch_plane_request();
         if revolve_needs_plane {
             self.plane_selection.active = true;
         }
@@ -325,6 +327,7 @@ impl GuiFrameEngine {
             &mut self.sweep_dialog,
             &mut self.loft_dialog,
             &mut self.coil_dialog,
+            &mut self.emboss_dialog,
             browser_axis,
         );
         let modify_dialogs = (

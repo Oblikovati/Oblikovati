@@ -2,6 +2,8 @@
 //! Exercise the Loft command through native ribbon and viewport input.
 #[path = "../coil/steps.rs"]
 mod solid_coil;
+#[path = "../emboss/steps.rs"]
+mod solid_emboss;
 
 use super::*;
 use cucumber::{given, then, when};

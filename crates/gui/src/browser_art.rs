@@ -56,6 +56,8 @@ pub(crate) fn feature_glyph(kind: &str) -> Option<IconGlyph> {
         "Sweep" => IconGlyph::Sweep,
         "Loft" => IconGlyph::Loft,
         "Revolution" | "Revolve" => IconGlyph::Revolve,
+        "Coil" => IconGlyph::Coil,
+        "Emboss" => IconGlyph::Emboss,
         "Hole" => IconGlyph::Hole,
         "Fillet" => IconGlyph::Fillet,
         "Chamfer" => IconGlyph::Chamfer,

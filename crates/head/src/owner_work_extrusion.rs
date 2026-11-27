@@ -53,6 +53,12 @@ macro_rules! desktop_extrusion_work {
         fn coil_from_gui(&mut self, action: oblikovati_gui::GuiCoilAction) -> Result<bool, String> {
             self.coil_command(action)
         }
+        fn emboss_from_gui(
+            &mut self,
+            action: oblikovati_gui::GuiEmbossAction,
+        ) -> Result<bool, String> {
+            self.emboss_command(action)
+        }
         fn sweep_from_gui(
             &mut self,
             action: oblikovati_gui::GuiSweepAction,

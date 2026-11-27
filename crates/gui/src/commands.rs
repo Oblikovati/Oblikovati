@@ -349,12 +349,10 @@ pub enum GuiShellAction {
     Sweep(crate::GuiSweepAction),
     Loft(crate::GuiLoftAction),
     Coil(crate::GuiCoilAction),
+    Emboss(crate::GuiEmbossAction),
     OpenFillet,
-    /// Open a body motion draft.
     OpenMoveBody,
-    /// Show or clear the private motion preview.
     PreviewMoveBody(Option<GuiMoveBodyRequest>),
-    /// Commit the motion draft.
     CreateMoveBody(GuiMoveBodyRequest),
     /// Open a straight-hole draft.
     OpenHole,

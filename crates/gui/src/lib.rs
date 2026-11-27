@@ -165,6 +165,10 @@ mod coil_dialog;
 pub use coil_dialog::{
     GuiCoilAction, GuiCoilEditSeed, GuiCoilPreview, GuiCoilPreviewState, GuiCoilRequest,
 };
+mod emboss_dialog;
+pub use emboss_dialog::{
+    GuiEmbossAction, GuiEmbossEditSeed, GuiEmbossPreview, GuiEmbossPreviewState, GuiEmbossRequest,
+};
 mod revolve_dialog;
 pub use revolve_dialog::{
     GuiRevolveAction, GuiRevolveEditSeed, GuiRevolveExtent, GuiRevolvePreview,

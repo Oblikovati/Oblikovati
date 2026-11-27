@@ -17,6 +17,9 @@ pub(super) fn feature_edit_action(
     if browser.coil_edits.contains_key(&feature.id) {
         return GuiShellAction::Coil(crate::GuiCoilAction::OpenEdit(feature.id));
     }
+    if browser.emboss_edits.contains_key(&feature.id) {
+        return GuiShellAction::Emboss(crate::GuiEmbossAction::OpenEdit(feature.id));
+    }
     if browser.chamfer_edits.contains_key(&feature.id) {
         return GuiShellAction::OpenChamferEdit(feature.id);
     }

@@ -87,6 +87,7 @@ pub(super) fn apply(owner: &mut dyn HeadWork, action: &GuiShellAction) -> Result
         GuiShellAction::Loft(action) => owner.loft_from_gui(*action),
         GuiShellAction::Revolve(action) => owner.revolve_from_gui(action.clone()),
         GuiShellAction::Coil(action) => owner.coil_from_gui(action.clone()),
+        GuiShellAction::Emboss(action) => owner.emboss_from_gui(action.clone()),
         GuiShellAction::Sweep(action) => owner.sweep_from_gui(action.clone()),
         GuiShellAction::OpenMoveBody => Ok(false),
         GuiShellAction::PreviewMoveBody(request) => {

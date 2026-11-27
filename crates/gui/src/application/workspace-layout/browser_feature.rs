@@ -15,7 +15,7 @@ mod states;
 
 #[path = "browser_feature_edit.rs"]
 mod edit;
-use edit::{feature_edit_action, loft_edit_action};
+use edit::feature_edit_action;
 
 const FEATURE_MENU: &str = "##feature-menu";
 const BODIES_MENU: &str = "##bodies-menu";
@@ -97,7 +97,7 @@ pub(crate) fn feature_row<'ui>(
     choose_on_press(
         ui,
         state,
-        feature,
+        (browser, feature),
         view,
         actions,
         row_hovered && !indicator_hovered,
@@ -110,7 +110,7 @@ pub(crate) fn feature_row<'ui>(
 fn choose_on_press(
     ui: &Ui,
     state: &GuiCommandState,
-    feature: &GuiBrowserFeature,
+    (browser, feature): (&GuiModelBrowser, &GuiBrowserFeature),
     view: &mut BrowserView,
     actions: &mut Vec<GuiShellAction>,
     hovered: bool,
@@ -141,7 +141,7 @@ fn choose_on_press(
         view.picked_plane_reference = Some(format!("datum/v1/{}", feature.id.0));
     }
     if clicked && ui.is_mouse_double_clicked(MouseButton::Left) {
-        let edit = loft_edit_action(feature).unwrap_or(GuiShellAction::OpenExtrudeEdit(feature.id));
+        let edit = feature_edit_action(browser, feature);
         if edit.enabled(state) {
             actions.push(edit);
         }

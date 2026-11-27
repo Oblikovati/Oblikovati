@@ -181,4 +181,8 @@ pub(super) const INFRASTRUCTURE: &[(&str, &str)] = &[
     // The failed edit and intermediate section prompts keep their draft in the dockable Loft.
     ("loft_edit_warning.rs", "modal:TITLE"),
     ("loft_section_dimensions.rs", "modal:TITLE"),
+    // Emboss diagnostic, failed edit, and range warning prompts keep their draft in dockable Emboss.
+    ("emboss_dialog/modals.rs", "modal:SKETCH_DOCTOR_TITLE"),
+    ("emboss_dialog/modals.rs", "modal:EDIT_FAILED_TITLE"),
+    ("emboss_dialog/modals.rs", "modal:RANGE_WARNING_TITLE"),
 ];

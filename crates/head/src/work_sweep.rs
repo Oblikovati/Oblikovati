@@ -22,6 +22,13 @@ macro_rules! sweep_work_methods {
         ) -> Result<bool, String> {
             Err("coil: expected an available desktop owner".into())
         }
+        /// Dispatch an Emboss command. Example: `work.emboss_from_gui(action)?`.
+        fn emboss_from_gui(
+            &mut self,
+            _action: oblikovati_gui::GuiEmbossAction,
+        ) -> Result<bool, String> {
+            Err("emboss: expected an available desktop owner".into())
+        }
         /// Dispatch a Sweep command. Example: `work.sweep_from_gui(action)?`.
         fn sweep_from_gui(
             &mut self,
