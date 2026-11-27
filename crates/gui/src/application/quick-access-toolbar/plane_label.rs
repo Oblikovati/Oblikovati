@@ -91,6 +91,15 @@ impl PlaneLabel {
 }
 
 fn orient(corners: &mut [[f32; 2]; 4]) {
+    // Align text along whichever perimeter edge projects closest to horizontal so vertical
+    // planes (e.g. YZ/XZ in isometric view) never print 90-degree vertical labels.
+    let e01 = delta(corners[0], corners[1]);
+    let e03 = delta(corners[0], corners[3]);
+    let h01 = e01[0].abs() / e01[0].hypot(e01[1]).max(1e-4);
+    let h03 = e03[0].abs() / e03[0].hypot(e03[1]).max(1e-4);
+    if h03 > h01 + 0.05 {
+        *corners = [corners[1], corners[2], corners[3], corners[0]];
+    }
     let [x, y] = delta(corners[0], corners[1]);
     if x < -0.01 || (x.abs() <= 0.01 && y > 0.) {
         corners.swap(0, 1);
@@ -280,5 +289,19 @@ mod tests {
         let down = delta(center, half.point([0., 10.]));
         assert!(right[0] > 0. && cross(right, down) > 0.);
         assert!(PlaneLabel::place(reverse, [65., 13.], 0., VIEW).is_none());
+    }
+
+    #[test]
+    fn vertical_plane_rotates_label_to_its_more_horizontal_edge() {
+        let vertical_first = [[100., 80.], [115., 260.], [300., 240.], [285., 60.]];
+        let label = PlaneLabel::place(vertical_first, [65., 13.], 0.8, VIEW).unwrap();
+        let center = label.point([0., 0.]);
+        let right = delta(center, label.point([10., 0.]));
+        let down = delta(center, label.point([0., 10.]));
+        assert!(
+            right[0] > right[1].abs(),
+            "expected horizontal baseline: {right:?}"
+        );
+        assert!(cross(right, down) > 0.);
     }
 }

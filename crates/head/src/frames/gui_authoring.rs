@@ -197,7 +197,7 @@ pub(super) fn view_command(
             yaw: *yaw,
             pitch: *pitch,
         }),
-        FitAll => window.navigate_view(Navigation::Fit { margin: 0.1 }),
+        FitAll => window.navigate_view(Navigation::Fit { margin: 0.15 }),
         Previous => window.previous_view(),
         Roll(angle) => {
             let camera = window.view_camera()?;

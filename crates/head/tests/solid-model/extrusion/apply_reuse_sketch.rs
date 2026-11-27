@@ -4,7 +4,7 @@ use super::super::distance_editor::dimension_pick::{
 };
 use super::super::viewport_interaction::click_at;
 use super::apply_next::click_settled;
-use super::{ApplicationWorld, click_in_extrude, feature_count};
+use super::{ApplicationWorld, feature_count};
 use cucumber::{given, then, when};
 
 const FIXTURE: &str = "fixtures/cad/extrusion/extrusion-dimension-pick.opd";

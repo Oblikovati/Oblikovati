@@ -13,6 +13,7 @@ impl NavigationBar {
         extent: [u32; 2],
         actions: &mut Vec<GuiShellAction>,
     ) {
+        let _spacing = ui.push_style_var(imgui::StyleVar::ItemSpacing([0., 4.]));
         if icons.navigation_button(ui, "Navigation Wheel", IconGlyph::NavWheel, BUTTON) {
             self.wheel.request();
         }
@@ -24,29 +25,35 @@ impl NavigationBar {
                 self.start(GuiNavigationMode::Pan, actions);
             }
         }
-        if self.mode_button(
-            ui,
-            icons,
-            "Zoom",
-            IconGlyph::NavZoom,
-            GuiNavigationMode::Zoom,
-        ) {
-            self.run_zoom_action(self.zoom_action, state, extent, actions);
+        {
+            let _tight = ui.push_style_var(imgui::StyleVar::ItemSpacing([0., 0.]));
+            if self.mode_button(
+                ui,
+                icons,
+                "Zoom",
+                IconGlyph::NavZoom,
+                GuiNavigationMode::Zoom,
+            ) {
+                self.run_zoom_action(self.zoom_action, state, extent, actions);
+            }
+            if menu_button(ui, "##zoom-actions", "Zoom options") {
+                ui.open_popup(ZOOM_MENU);
+            }
         }
-        if menu_button(ui, "##zoom-actions", "Zoom options") {
-            ui.open_popup(ZOOM_MENU);
-        }
-        if self.mode_button(
-            ui,
-            icons,
-            "Orbit",
-            IconGlyph::NavOrbit,
-            GuiNavigationMode::Orbit,
-        ) {
-            self.run_orbit_action(actions);
-        }
-        if menu_button(ui, "##orbit-actions", "Orbit options") {
-            ui.open_popup(ORBIT_MENU);
+        {
+            let _tight = ui.push_style_var(imgui::StyleVar::ItemSpacing([0., 0.]));
+            if self.mode_button(
+                ui,
+                icons,
+                "Orbit",
+                IconGlyph::NavOrbit,
+                GuiNavigationMode::Orbit,
+            ) {
+                self.run_orbit_action(actions);
+            }
+            if menu_button(ui, "##orbit-actions", "Orbit options") {
+                ui.open_popup(ORBIT_MENU);
+            }
         }
         self.zoom_menu(ui, state, extent, actions);
         self.orbit_menu(ui, actions);
@@ -67,15 +74,23 @@ impl NavigationBar {
 }
 
 fn menu_button(ui: &Ui, id: &str, tooltip: &str) -> bool {
-    let pressed = crate::widget_abi::button(ui, id, BUTTON);
+    let _bg = ui.push_style_color(StyleColor::Button, [0.; 4]);
+    let _bw = ui.push_style_var(imgui::StyleVar::FrameBorderSize(0.));
+    let pressed = crate::widget_abi::button(ui, id, [BUTTON[0], 9.]);
     let [left, top] = ui.item_rect_min();
     let [right, bottom] = ui.item_rect_max();
-    let [x, y] = [(left + right) * 0.5, (top + bottom) * 0.5];
+    let [x, y] = [
+        ((left + right) * 0.5).floor(),
+        ((top + bottom) * 0.5).floor(),
+    ];
+    let ink = if ui.is_item_hovered() {
+        ui.style_color(StyleColor::Text)
+    } else {
+        crate::theme::text_muted(ui)
+    };
     ui.get_window_draw_list()
-        .add_polyline(
-            vec![[x - 3., y - 1.5], [x, y + 1.5], [x + 3., y - 1.5]],
-            ui.style_color(StyleColor::Text),
-        )
+        .add_triangle([x - 3., y - 1.], [x + 3., y - 1.], [x, y + 2.], ink)
+        .filled(true)
         .build();
     if ui.is_item_hovered() {
         ui.tooltip_text(tooltip);

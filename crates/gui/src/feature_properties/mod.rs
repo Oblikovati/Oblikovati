@@ -326,9 +326,8 @@ pub(crate) fn draw_error_badge(ui: &Ui, message: &str) {
 pub(crate) fn draw_properties_footer(ui: &Ui, ok_enabled: bool) -> PropertiesFooterOutcome {
     ui.separator();
     ui.dummy([0., 2.]);
-    let mut outcome = PropertiesFooterOutcome::default();
-    outcome.ok = crate::theme::property_accept(ui, ok_enabled);
+    let ok = crate::theme::property_accept(ui, ok_enabled);
     ui.same_line_with_spacing(0., 6.);
-    outcome.cancel = crate::theme::property_cancel(ui);
-    outcome
+    let cancel = crate::theme::property_cancel(ui);
+    PropertiesFooterOutcome { ok, cancel }
 }

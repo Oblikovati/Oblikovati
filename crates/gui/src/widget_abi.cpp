@@ -362,7 +362,14 @@ void oblikovati_gui_foreground_dimension(float x1, float y1, float x2, float y2,
     draw->AddLine(ImVec2(x1, y1), ImVec2(x2, y2), color, 2.0f);
     draw->AddCircleFilled(ImVec2(x2, y2), 5.0f, color);
     const char* begin = reinterpret_cast<const char*>(label);
-    draw->AddText(ImVec2(x2 + 10.0f, y2 - 8.0f), color, begin, begin + length);
+    const ImVec2 size = ImGui::CalcTextSize(begin, begin + length);
+    const ImVec2 lo(ImFloor(x2 + 10.0f), ImFloor(y2 - size.y * 0.5f - 3.0f));
+    const ImVec2 hi(lo.x + ImFloor(size.x) + 12.0f, lo.y + ImFloor(size.y) + 6.0f);
+    ImVec4 bg = ImGui::GetStyleColorVec4(ImGuiCol_PopupBg);
+    bg.w = 0.92f;
+    draw->AddRectFilled(lo, hi, ImGui::GetColorU32(bg), 4.0f);
+    draw->AddRect(lo, hi, ImGui::GetColorU32(ImGuiCol_Border), 4.0f, 0, 1.0f);
+    draw->AddText(ImVec2(lo.x + 6.0f, lo.y + 3.0f), ImGui::GetColorU32(ImGuiCol_Text), begin, begin + length);
 }
 bool oblikovati_gui_selectable(const unsigned char* label, bool selected, int flags) {
     return ImGui::Selectable(reinterpret_cast<const char*>(label), selected, flags, ImVec2(0, 0));

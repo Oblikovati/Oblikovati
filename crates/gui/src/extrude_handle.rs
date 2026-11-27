@@ -73,12 +73,15 @@ impl DistanceHandle {
             .as_ref()
             .map_or("", |units| units.length_unit.as_str());
         let caption = format!("A {label} {unit}");
-        widget_abi::foreground_dimension(
-            ui,
-            projection.as_ref().map_or(points, |(p, _, _)| *p),
-            [0.22, 0.72, 1., 1.],
-            &caption,
-        );
+        {
+            let _mono = crate::ui_scale::mono_micro_font(ui);
+            widget_abi::foreground_dimension(
+                ui,
+                projection.as_ref().map_or(points, |(p, _, _)| *p),
+                crate::theme::selection_accent(ui),
+                &caption,
+            );
+        }
         handle_window(ui, tip, || {
             widget_abi::button(ui, "##distance-a-tip", [SIDE; 2]);
             if ui.is_item_activated()

@@ -136,10 +136,10 @@ impl AssetBrowserView {
             .build();
     }
 
-    fn document_region<'a>(
+    fn document_region(
         &mut self,
         ui: &Ui,
-        rows: Vec<&'a GuiAssetChoice>,
+        rows: Vec<&GuiAssetChoice>,
         selection: &mut AssetRows<'_>,
         height: f32,
         query: &str,

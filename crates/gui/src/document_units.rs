@@ -163,7 +163,7 @@ fn edit_unit(ui: &Ui, label: &str, value: &mut String, options: &[&str]) {
 }
 fn select_unit<'a>(ui: &Ui, label: &str, current: &str, options: &'a [&str]) -> Option<&'a str> {
     crate::theme::property_label(ui, label);
-    let _combo = ui.begin_combo(&format!("##unit-{label}"), current)?;
+    let _combo = ui.begin_combo(format!("##unit-{label}"), current)?;
     options.iter().copied().find(|name| {
         ui.selectable_config(name)
             .selected(*name == current)
