@@ -86,12 +86,16 @@ fn anchor_rectangle_at_origin(world: &mut ApplicationWorld) {
 
 fn extrude_parameter_rectangle(world: &mut ApplicationWorld) -> u64 {
     click_label(world, "Extrude");
-    let distance = world.run_in_window("Extrude", "DistanceA").center();
-    let field = diagnostics::pointer_pixels([distance[0] - 100., distance[1]]);
+    let distance = world.run_in_window("Extrude", "10.00mm");
+    let field = diagnostics::pointer_pixels(distance.center());
     x11_input::click(field);
     world.pump(Vec::new());
+    x11_input::press_control_a();
+    world.pump(Vec::new());
     type_text(world, "size");
-    assert!(world.state().extrude_preview_active);
+    let state = world.state();
+    assert_eq!(state.extrude_distance_validation.unwrap().distance, "size");
+    assert!(state.extrude_preview_active);
     click_label(world, "OK");
     let document = active_document(world);
     assert_eq!(
@@ -191,6 +195,7 @@ fn create_size_parameter(world: &mut ApplicationWorld) {
         world.pump(Vec::new());
         type_text(world, value);
     }
+    super::super::parameters::assert_size_expression(&mut world.app().owner, "10 mm");
     click_label(world, "Done");
 }
 
@@ -203,21 +208,38 @@ fn type_text(world: &mut ApplicationWorld, text: &str) {
 
 fn edit_size_parameter(world: &mut ApplicationWorld) {
     click_label(world, "Parameters");
-    let (position, size) = diagnostics::window_geometry("Parameters").unwrap();
-    let name = super::rendered_label_in_rect(
-        "size",
-        position,
-        [position[0] + 200., position[1] + size[1]],
-    );
-    let x = diagnostics::pointer_pixels([position[0] + 290., position[1]])[0];
-    x11_input::click([x, name[1]]);
+    let user_parameters = world.run_in_window("Parameters", "UserParameters");
+    let name = world
+        .frame
+        .runs
+        .iter()
+        .find(|run| run.text == "size" && run.minimum[1] > user_parameters.maximum[1])
+        .expect("expected the size row below User Parameters");
+    // The equation appears to the left of the repeated nominal and model values.
+    let equation = world
+        .frame
+        .runs
+        .iter()
+        .filter(|run| {
+            run.list == name.list
+                && run.text == "10mm"
+                && run.minimum[0] > name.maximum[0]
+                && (run.center()[1] - name.center()[1]).abs() < 4.
+        })
+        .min_by(|left, right| left.minimum[0].total_cmp(&right.minimum[0]))
+        .expect("expected the size equation in the Parameters row");
+    let position = diagnostics::pointer_pixels(equation.center());
+    x11_input::move_pointer(position);
     world.pump(Vec::new());
-    x11_input::press_keysym(0xff57);
-    for _ in 0..5 {
-        x11_input::press_keysym(0xff08);
-        world.pump(Vec::new());
-    }
+    x11_input::click(position);
+    world.pump(Vec::new());
+    x11_input::press_control_a();
+    world.pump(Vec::new());
     type_text(world, "20 mm");
+    world.run_in_window("Parameters", "20mm");
+    x11_input::press_keysym(0xff0d);
+    world.pump(Vec::new());
+    super::super::parameters::assert_size_expression(&mut world.app().owner, "20 mm");
     click_label(world, "Done");
 }
 
