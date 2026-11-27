@@ -11,6 +11,8 @@ pub(super) mod owner_derive;
 pub(super) mod owner_emboss;
 #[path = "owner_hole.rs"]
 mod owner_hole;
+#[path = "owner_import.rs"]
+pub(super) mod owner_import;
 #[path = "owner_move_body.rs"]
 mod owner_move_body;
 #[path = "owner_revolve.rs"]
@@ -31,6 +33,7 @@ pub(super) struct CreateFeatureState {
     pub(super) derive: owner_derive::DeriveOwnerState,
     pub(super) rib: Option<owner_rib::RibPreview>,
     pub(super) decal: Option<owner_decal::DecalPreview>,
+    pub(super) import: owner_import::ImportOwnerState,
 }
 
 impl<

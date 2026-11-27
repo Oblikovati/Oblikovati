@@ -74,6 +74,12 @@ macro_rules! desktop_extrusion_work {
         ) -> Result<bool, String> {
             self.decal_command(action)
         }
+        fn import_from_gui(
+            &mut self,
+            action: oblikovati_gui::GuiImportAction,
+        ) -> Result<bool, String> {
+            self.import_command(action)
+        }
         fn sweep_from_gui(
             &mut self,
             action: oblikovati_gui::GuiSweepAction,

@@ -60,6 +60,7 @@ pub(crate) fn feature_glyph(kind: &str) -> Option<IconGlyph> {
         "Emboss" => IconGlyph::Emboss,
         "Rib" => IconGlyph::Rib,
         "Decal" => IconGlyph::Decal,
+        "Imported Model" | "Imported Reference" => IconGlyph::Import,
         "Derived Part" => IconGlyph::Derive,
         "Hole" => IconGlyph::Hole,
         "Fillet" => IconGlyph::Fillet,

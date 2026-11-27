@@ -26,17 +26,9 @@ const EDGE_HOVER_REACH: f32 = 8.;
 const EDGE_THICKNESS: f32 = 2.;
 const SELECTION_TOOLBAR: &str = "##selection-toolbar";
 const TOOLBAR_RISE: f32 = 40.;
-
-/// Show Extended Names adds what the row's feature does; a suppressed feature says so.
+#[cfg(test)]
 fn feature_label(feature: &GuiBrowserFeature, extended_names: bool) -> String {
-    let mut label = feature.name.clone();
-    if feature.suppressed {
-        label.push_str(" (suppressed)");
-    }
-    if let (true, Some(extended)) = (extended_names, &feature.extended) {
-        label.push_str(&format!(" ({extended})"));
-    }
-    label
+    crate::browser::browser_import::plain_feature_label(feature, extended_names)
 }
 /// Draw one feature row; a press on it, with either button, chooses the feature.
 /// The token holds the branch open for its children; example: the sketch it consumed.
@@ -62,7 +54,11 @@ pub(crate) fn feature_row<'ui>(
         .tree_node_config("feature-row")
         .label::<String, String>(format!(
             "{icon_inset}{}",
-            feature_label(feature, view.show_extended_names)
+            crate::browser::browser_import::feature_label(
+                browser,
+                feature,
+                view.show_extended_names
+            )
         ))
         .flags(flags)
         .default_open(true);
@@ -84,6 +80,7 @@ pub(crate) fn feature_row<'ui>(
     if let Some(glyph) = glyph {
         crate::browser::browser_art::prefix(ui, view, glyph, label);
     }
+    crate::browser::browser_import::draw_link_indicator(ui, browser, feature, label);
     if feature.suppressed {
         crate::browser::browser_art::strike_feature_name(
             ui,
@@ -158,6 +155,9 @@ fn feature_menu(
     let Some(_menu) = ui.begin_popup(FEATURE_MENU) else {
         return;
     };
+    if crate::browser::browser_import::reference_menu(ui, state, browser, feature, actions) {
+        return;
+    }
     edit_sketch_row(ui, state, browser, feature, actions);
     let edit = feature_edit_action(browser, feature);
     if ui

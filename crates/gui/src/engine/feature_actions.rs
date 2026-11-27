@@ -136,6 +136,7 @@ enum Draft {
     Derive,
     Rib,
     Decal,
+    Import,
     Sweep,
     Loft,
     Blend,
@@ -164,6 +165,9 @@ fn requested_draft(action: &GuiShellAction) -> Option<Draft> {
         GuiShellAction::Decal(crate::GuiDecalAction::Open | crate::GuiDecalAction::OpenEdit(_)) => {
             Draft::Decal
         }
+        GuiShellAction::Import(
+            crate::GuiImportAction::Open | crate::GuiImportAction::OpenEdit(_),
+        ) => Draft::Import,
         GuiShellAction::Sweep(crate::GuiSweepAction::Open | crate::GuiSweepAction::OpenEdit(_)) => {
             Draft::Sweep
         }
@@ -231,6 +235,9 @@ pub(super) fn open_drafts(
     if draft != Draft::Decal {
         create.decal.close(actions);
     }
+    if draft != Draft::Import {
+        create.import.close(actions);
+    }
     if draft != Draft::Sweep {
         create.sweep.close(actions);
     }
@@ -275,6 +282,12 @@ pub(super) fn open_drafts(
         GuiShellAction::Decal(crate::GuiDecalAction::Open) => create.decal.open(state, None),
         GuiShellAction::Decal(crate::GuiDecalAction::OpenEdit(feature)) => {
             create.decal.open(state, Some(feature))
+        }
+        GuiShellAction::Import(crate::GuiImportAction::Open) => {
+            create.import.open(state, None, actions)
+        }
+        GuiShellAction::Import(crate::GuiImportAction::OpenEdit(feature)) => {
+            create.import.open(state, Some(feature), actions)
         }
         GuiShellAction::Sweep(crate::GuiSweepAction::Open) => create.sweep.open(state, None),
         GuiShellAction::Sweep(crate::GuiSweepAction::OpenEdit(feature)) => {

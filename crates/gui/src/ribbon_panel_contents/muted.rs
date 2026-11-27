@@ -24,11 +24,19 @@ pub(super) fn manage_insert_commands(
         (1, ("Feature", Some(IconGlyph::Feature))),
         (2, ("Insert iFeature", Some(IconGlyph::InsertIFeature))),
         (3, ("Insert Object", Some(IconGlyph::InsertModel))),
-        (4, ("Import", Some(IconGlyph::Import))),
     ] {
         let size = muted_command_position(ui, origin, icons, slot);
         muted_command(ui, label, NOT_PORTED, icons, glyph, false, size);
     }
+    let size = muted_command_position(ui, origin, icons, 4);
+    icons.command_button(
+        ui,
+        "Import",
+        crate::GuiShellAction::Import(crate::GuiImportAction::Open),
+        state,
+        size,
+        actions,
+    );
 }
 pub(super) fn part_modify_controls(
     ui: &Ui,

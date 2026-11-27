@@ -102,6 +102,16 @@ impl FileTypeList {
         rows.push((ALL_FILES, FileFilter::Everything));
         Self { rows }
     }
+    /// Exchange CAD and mesh files offered by the Import file picker.
+    pub(crate) fn importing() -> Self {
+        let mut rows = vec![(
+            "CAD and Mesh Files (*.stp;*.step;*.stl;*.igs;*.iges)",
+            FileFilter::Extensions(&["stp", "step", "stl", "igs", "iges"]),
+        )];
+        rows.extend(EXCHANGE_FILES);
+        rows.push((ALL_FILES, FileFilter::Everything));
+        Self { rows }
+    }
     /// Only assemblies; example: inserting a model into a presentation.
     pub(crate) fn assemblies() -> Self {
         Self {

@@ -30,6 +30,7 @@ mod feature_suppression;
 mod file_host;
 mod fillet;
 mod hole;
+mod import;
 mod loft;
 mod revolve;
 mod rib;
@@ -56,6 +57,10 @@ pub use fillet::{
     PreparedFillet, prepare_fillet,
 };
 pub use hole::{PreparedHole, prepare_hole};
+pub use import::{
+    ImportInputs, PreparedImport, build_import_definition, prepare_import_definition,
+    replace_imported_model,
+};
 pub use loft::{
     PreparedLoft, loft_definition, prepare_loft, replace_loft_section, replace_loft_takeoff,
 };

@@ -29,6 +29,8 @@ use crate::application::workspace_layout::{
 use sketch_rows::sketch_row;
 #[path = "browser_art.rs"]
 pub(crate) mod browser_art;
+#[path = "browser_import.rs"]
+pub(crate) mod browser_import;
 /// Draw the browser tree, or the rows a search leaves; example: inside the Model window.
 pub(crate) fn browser_contents(
     ui: &Ui,
@@ -105,6 +107,7 @@ impl BrowserTree<'_> {
         self.bodies(view, actions);
         self.surface_bodies(view, actions);
         self.origin(view, actions);
+        browser_import::third_party_folder(self.ui, self.browser, self.expansion);
         self.parameters();
         self.blocks(actions);
         self.sketches(view, actions);

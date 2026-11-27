@@ -184,6 +184,11 @@ pub use decal_dialog::{
     GuiDecalAction, GuiDecalEditSeed, GuiDecalImageCandidate, GuiDecalPreview,
     GuiDecalPreviewState, GuiDecalRequest,
 };
+mod import_dialog;
+pub use import_dialog::{
+    GuiImportAction, GuiImportEditSeed, GuiImportPreview, GuiImportPreviewState, GuiImportRequest,
+    GuiImportSourceSummary,
+};
 mod revolve_dialog;
 pub use revolve_dialog::{
     GuiRevolveAction, GuiRevolveEditSeed, GuiRevolveExtent, GuiRevolvePreview,

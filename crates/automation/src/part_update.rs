@@ -404,6 +404,7 @@ fn feature_kind(definition: &PartFeatureDefinition) -> &'static str {
         SketchRib(_) => "rib",
         SketchDecal(_) => "decal",
         DerivedPart(_) => "derive",
+        ImportedModel(_) => "import",
         DeleteBody(_) => "delete-body",
         Fillet(_) => "fillet",
         Chamfer(_) => "chamfer",

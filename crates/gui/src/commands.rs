@@ -353,6 +353,7 @@ pub enum GuiShellAction {
     Derive(crate::GuiDeriveAction),
     Rib(crate::GuiRibAction),
     Decal(crate::GuiDecalAction),
+    Import(crate::GuiImportAction),
     OpenFillet,
     OpenMoveBody,
     PreviewMoveBody(Option<GuiMoveBodyRequest>),

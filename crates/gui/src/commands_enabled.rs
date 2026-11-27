@@ -345,7 +345,8 @@ impl GuiShellAction {
             | Self::Emboss(_)
             | Self::Derive(_)
             | Self::Rib(_)
-            | Self::Decal(_) => false,
+            | Self::Decal(_)
+            | Self::Import(_) => false,
             Self::PreviewMoveBody(None)
             | Self::PreviewHole(None)
             | Self::PreviewShellFeature(None) => true,

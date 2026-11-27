@@ -86,7 +86,8 @@ fn status_reason(
         | FeatureEvaluationStatus::Failed(PartFeatureFailure::EmbossInput(cause))
         | FeatureEvaluationStatus::Failed(PartFeatureFailure::RibInput(cause))
         | FeatureEvaluationStatus::Failed(PartFeatureFailure::DecalInput(cause))
-        | FeatureEvaluationStatus::Failed(PartFeatureFailure::DerivedPartInput(cause)) => {
+        | FeatureEvaluationStatus::Failed(PartFeatureFailure::DerivedPartInput(cause))
+        | FeatureEvaluationStatus::Failed(PartFeatureFailure::ImportedModelInput(cause)) => {
             cause.clone()
         }
         FeatureEvaluationStatus::Failed(PartFeatureFailure::RevolveInput(cause)) => {

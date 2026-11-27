@@ -45,6 +45,10 @@ pub struct GuiModelBrowser {
     pub rib_edits: std::collections::BTreeMap<FeatureId, crate::GuiRibEditSeed>,
     /// Authored options for editable Decal features.
     pub decal_edits: std::collections::BTreeMap<FeatureId, crate::GuiDecalEditSeed>,
+    /// Authored options for editable Imported Model features.
+    pub import_edits: std::collections::BTreeMap<FeatureId, crate::GuiImportEditSeed>,
+    /// Named imported mesh entries listed under the 3rd Party browser folder.
+    pub third_party_entries: Vec<String>,
     /// Editable extrusion distance sources, indexed by their current feature identities.
     pub extrusion_edits: std::collections::BTreeMap<FeatureId, GuiExtrudeEditSeed>,
     /// Authored radius expressions for editable Fillet features.

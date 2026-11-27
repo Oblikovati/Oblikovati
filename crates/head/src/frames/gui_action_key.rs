@@ -143,6 +143,7 @@ pub(super) fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
         | GuiShellAction::Derive(_)
         | GuiShellAction::Rib(_)
         | GuiShellAction::Decal(_)
+        | GuiShellAction::Import(_)
         | GuiShellAction::Sweep(_)
         | GuiShellAction::Loft(_)
         | GuiShellAction::OpenMoveBody

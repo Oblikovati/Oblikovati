@@ -12,6 +12,7 @@ pub(super) struct CreateFeatureDialogs {
     pub(super) derive: crate::derive_dialog::DeriveDialog,
     pub(super) rib: crate::rib_dialog::RibDialog,
     pub(super) decal: crate::decal_dialog::DecalDialog,
+    pub(super) import: crate::import_dialog::ImportDialog,
 }
 
 impl CreateFeatureDialogs {
@@ -26,6 +27,7 @@ impl CreateFeatureDialogs {
         self.derive.register_dockable(registry)?;
         self.rib.register_dockable(registry)?;
         self.decal.register_dockable(registry)?;
+        self.import.register_dockable(registry)?;
         self.loft.register_dockable(registry)
     }
 
@@ -40,6 +42,7 @@ impl CreateFeatureDialogs {
         self.derive.synchronize(state, actions);
         self.rib.synchronize(state, actions);
         self.decal.synchronize(state, actions);
+        self.import.synchronize(state, actions);
         self.sweep.synchronize(state, actions);
         self.loft.synchronize(state, actions);
     }
@@ -51,7 +54,7 @@ impl CreateFeatureDialogs {
     }
 
     pub(super) fn is_opening(&self) -> bool {
-        self.derive.is_opening()
+        self.derive.is_opening() || self.import.is_opening()
     }
 
     pub(super) fn draw(
@@ -76,5 +79,6 @@ impl CreateFeatureDialogs {
         self.derive.panel(ui, commands, (area, icons), selected);
         self.rib.panel(ui, commands, (area, icons), selected);
         self.decal.panel(ui, commands, (area, icons), selected);
+        self.import.panel(ui, commands, (area, icons), selected);
     }
 }

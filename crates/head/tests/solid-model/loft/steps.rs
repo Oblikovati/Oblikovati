@@ -8,6 +8,8 @@ mod solid_decal;
 mod solid_derive;
 #[path = "../emboss/steps.rs"]
 mod solid_emboss;
+#[path = "../import/steps.rs"]
+mod solid_import;
 #[path = "../rib/steps.rs"]
 mod solid_rib;
 

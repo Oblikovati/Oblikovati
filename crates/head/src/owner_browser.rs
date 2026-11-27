@@ -191,6 +191,8 @@ fn populate_browser<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
     browser.derive_edits = super::owner_blend::owner_derive::edit_seeds(snapshot);
     browser.rib_edits = super::owner_blend::owner_rib::edit_seeds(snapshot);
     browser.decal_edits = super::owner_blend::owner_decal::edit_seeds(snapshot);
+    browser.import_edits = super::owner_blend::owner_import::edit_seeds(snapshot);
+    browser.third_party_entries = super::owner_blend::owner_import::third_party_entries(snapshot);
     browser.extrusion_edits = snapshot
         .work_geometry
         .features()
@@ -354,8 +356,8 @@ fn feature_kind_name(
     definition: &oblikovati_model::feature::part::PartFeatureDefinition,
 ) -> &'static str {
     use oblikovati_model::feature::part::PartFeatureDefinition::{
-        Chamfer, DeleteBody, DerivedPart, Fillet, SketchCoil, SketchDecal, SketchEmboss,
-        SketchLoft, SketchPrism, SketchRevolve, SketchRib, SketchSweep,
+        Chamfer, DeleteBody, DerivedPart, Fillet, ImportedModel, SketchCoil, SketchDecal,
+        SketchEmboss, SketchLoft, SketchPrism, SketchRevolve, SketchRib, SketchSweep,
     };
     match definition {
         SketchPrism(_) => "Extrusion",
@@ -365,6 +367,12 @@ fn feature_kind_name(
         SketchRib(_) => "Rib",
         SketchDecal(_) => "Decal",
         DerivedPart(_) => "Derived Part",
+        ImportedModel(def) => match def.import_mode() {
+            oblikovati_model::feature::imported_model::ImportMode::ReferenceModel => {
+                "Imported Reference"
+            }
+            oblikovati_model::feature::imported_model::ImportMode::ConvertModel => "Imported Model",
+        },
         SketchSweep(_) => "Sweep",
         SketchLoft(_) => "Loft",
         Fillet(_) => "Fillet",

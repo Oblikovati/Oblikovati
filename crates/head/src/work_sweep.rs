@@ -47,6 +47,13 @@ macro_rules! sweep_work_methods {
         ) -> Result<bool, String> {
             Err("decal: expected an available desktop owner".into())
         }
+        /// Dispatch an Import command. Example: `work.import_from_gui(action)?`.
+        fn import_from_gui(
+            &mut self,
+            _action: oblikovati_gui::GuiImportAction,
+        ) -> Result<bool, String> {
+            Err("import: expected an available desktop owner".into())
+        }
         /// Dispatch a Sweep command. Example: `work.sweep_from_gui(action)?`.
         fn sweep_from_gui(
             &mut self,
@@ -90,6 +97,12 @@ macro_rules! forward_sweep_work_methods {
             action: oblikovati_gui::GuiDecalAction,
         ) -> Result<bool, String> {
             self.$owner.decal_from_gui(action)
+        }
+        fn import_from_gui(
+            &mut self,
+            action: oblikovati_gui::GuiImportAction,
+        ) -> Result<bool, String> {
+            self.$owner.import_from_gui(action)
         }
         fn sweep_from_gui(
             &mut self,

@@ -190,4 +190,6 @@ pub(super) const INFRASTRUCTURE: &[(&str, &str)] = &[
     ("rib_dialog/modals.rs", "modal:CREATE_FAILED_TITLE"),
     ("rib_dialog/modals.rs", "modal:RANGE_WARNING_TITLE"),
     ("decal_dialog/modals.rs", "modal:IMAGE_TIP_TITLE"),
+    ("import_dialog/picker.rs", "modal:PICKER_TITLE"),
+    ("import_dialog/stl_options.rs", "modal:STL_OPTIONS_TITLE"),
 ];

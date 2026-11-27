@@ -142,6 +142,8 @@ pub struct GuiCommandState {
     pub rib_sketches: Vec<crate::GuiRibSketchCandidate>,
     pub decal_preview: Option<crate::GuiDecalPreviewState>,
     pub decal_images: Vec<crate::GuiDecalImageCandidate>,
+    pub import_preview: Option<crate::GuiImportPreviewState>,
+    pub import_source: Option<crate::GuiImportSourceSummary>,
     /// Selected named solid face reference key when a model face is chosen.
     pub selected_model_face: Option<Vec<u8>>,
     /// The exact extrusion draft accepted for preview at this document generation.

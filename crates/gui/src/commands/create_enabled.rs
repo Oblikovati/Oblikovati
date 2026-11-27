@@ -12,6 +12,7 @@ pub(crate) fn enabled(action: &GuiShellAction, state: &GuiCommandState) -> Optio
         GuiShellAction::Derive(action) => action.enabled(state),
         GuiShellAction::Rib(action) => action.enabled(state),
         GuiShellAction::Decal(action) => action.enabled(state),
+        GuiShellAction::Import(action) => action.enabled(state),
         _ => return None,
     })
 }

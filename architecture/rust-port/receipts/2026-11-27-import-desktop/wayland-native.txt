@@ -1,0 +1,90 @@
+
+running 1 test
+Feature: Import
+  Scenario: import-01 Open the picker
+   ✔  Given a disposable copy of the native fixture "fixtures/cad/blank-metric-part.opd" is open in the 3D Model environment
+   ✔  When the user clicks Import
+   ✔  Then the MCAD Software opens an Import file picker with a file type filter.
+  Scenario: import-02 Import a tetrahedron STL
+   ✔  Given a disposable copy of the native fixture "fixtures/cad/blank-metric-part.opd" is open in the 3D Model environment
+   ✔  And the user opens Import and selects "fixtures/cad/import/tetrahedron.stl" in the picker
+   ✔  When the user clicks Open
+   ✔  Then its geometry appears in the part and a named entry appears under 3rd Party in the browser.
+  Scenario: import-03 Inspect STL options
+   ✔  Given a disposable copy of the native fixture "fixtures/cad/blank-metric-part.opd" is open in the 3D Model environment
+   ✔  And the user opens Import and selects "fixtures/cad/import/tetrahedron.stl" in the picker
+   ✔  When the user clicks Options
+   ✔  Then STL Import Options displays the import units, template units, bounding box, translation report and color controls.
+  Scenario: import-04 Disable STL color
+   ✔  Given a disposable copy of the native fixture "fixtures/cad/blank-metric-part.opd" is open in the 3D Model environment
+   ✔  And the user opens Import and selects "fixtures/cad/import/tetrahedron.stl" in the picker
+   ✔  And the user opens STL Import Options and enables Color
+   ✔  When the user clears Color
+   ✔  Then the RGB selector is disabled.
+  Scenario: import-05 Cancel a second import
+   ✔  Given a disposable copy of the native fixture "fixtures/cad/blank-metric-part.opd" is open in the 3D Model environment
+   ✔  And the user imports "fixtures/cad/import/tetrahedron.stl" into the part
+   ✔  And the user reopens Import, selects that STL and opens its options
+   ✔  When the user cancels the options and cancels the picker
+   ✔  Then the MCAD Software returns to the part containing the earlier import.
+  Scenario: import-06 Inspect the import units list
+   ✔  Given a disposable copy of the native fixture "fixtures/cad/blank-metric-part.opd" is open in the 3D Model environment
+   ✔  And the user opens Import and selects "fixtures/cad/import/tetrahedron.stl" in the picker
+   ✔  And STL Import Options is open
+   ✔  When the user opens Import Units
+   ✔  Then the list offers Template Units, inch, foot, centimeter, millimeter, meter and micron.
+  Scenario: import-07 Configure a STEP conversion
+   ✔  Given a disposable copy of the native fixture "fixtures/cad/body-properties-start.opd" is open
+   ✔  And the user opens Import and selects "fixtures/cad/import/single-solid.stp" in the picker
+   ✔  When the user clicks Open and chooses Convert Model
+   ✔  Then the import panel exposes object filters and Part Options with a Surfaces choice.
+  Scenario: import-08 Load and import the STEP model
+   ✔  Given a disposable copy of the native fixture "fixtures/cad/body-properties-start.opd" is open
+   ✔  And the user opens Import and selects "fixtures/cad/import/single-solid.stp" in the picker
+   ✔  And the user opens the file and selects Convert Model
+   ✔  And the destination part initially has one solid body
+   ✔  When the user opens Select and clicks Load Model
+   ✔  Then the tree shows Solid1 and the viewport shows a preview
+   ✔  When the user clicks OK
+   ✔  Then Solid1:1 appears in the browser and the part shows two solid bodies.
+  Scenario: import-09 Import a STEP reference model
+   ✔  Given a disposable copy of the native fixture "fixtures/cad/combine/two-bodies.opd" is open
+   ✔  And the user opens Import and selects "fixtures/cad/import/single-solid.stp" in the picker
+   ✔  And the destination part has two solid bodies
+   ✔  When the user clicks Open and chooses Reference Model
+   ✔  And the user clicks OK
+   ✔  Then the part browser shows a named reference entry and the solid body count increases from two to three.
+test native::gui_loop_tests::application_bdd::application_scenarios_use_the_native_window has been running for over 60 seconds
+  Scenario: import-10 Inspect reference model commands
+   ✔  Given a disposable copy of the native fixture "fixtures/cad/combine/two-bodies.opd" is open
+   ✔  And the user imports "fixtures/cad/import/single-solid.stp" using Reference Model
+   ✔  And the imported reference entry is present in the browser
+   ✔  When the user right-clicks the entry
+   ✔  Then its context menu offers Edit Import, Suppress Link and Break Link.
+  Scenario: import-11 Reopen a reference import
+   ✔  Given a disposable copy of the native fixture "fixtures/cad/combine/two-bodies.opd" is open
+   ✔  And the user imports "fixtures/cad/import/single-solid.stp" using Reference Model
+   ✔  And the imported reference entry is present in the browser
+   ✔  When the user chooses Edit Import from its context menu
+   ✔  Then the Import panel reopens for that file and displays its reference options
+   ✔  When the user clicks Cancel
+   ✔  Then the panel closes and the reference entry remains in the browser.
+  Scenario: import-12 Suppress and restore a reference link
+   ✔  Given a disposable copy of the native fixture "fixtures/cad/combine/two-bodies.opd" is open
+   ✔  And the user imports "fixtures/cad/import/single-solid.stp" using Reference Model
+   ✔  And the imported reference entry is present in the browser
+   ✔  And the imported reference remains linked
+   ✔  When the user chooses Suppress Link from its browser context menu
+   ✔  Then a crossed-link indicator appears and the geometry remains visible
+   ✔  When the user reopens the reference entry context menu
+   ✔  Then it offers Unsuppress Link and disables Edit Import
+   ✔  When the user chooses Unsuppress Link
+   ✔  Then the crossed-link indicator disappears.
+[Summary]
+1 feature
+12 scenarios (12 passed)
+66 steps (66 passed)
+test native::gui_loop_tests::application_bdd::application_scenarios_use_the_native_window ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1794 filtered out; finished in 97.04s
+
