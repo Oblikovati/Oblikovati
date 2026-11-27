@@ -251,7 +251,12 @@ fn verify_lifecycle_controls(
     );
     let new_name = find_label("Newname");
     assert!(
-        click(engine, request, [new_name.maximum[0] + 40., new_name.center()[1]]).is_empty()
+        click(
+            engine,
+            request,
+            [new_name.maximum[0] + 40., new_name.center()[1]]
+        )
+        .is_empty()
     );
     deliver(
         engine,

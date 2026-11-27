@@ -69,6 +69,11 @@ pub(super) fn choose_emboss_operation(world: &mut ApplicationWorld, popup_text: 
 }
 
 pub(super) fn start_emboss(world: &mut ApplicationWorld) {
+    if !world.shows("Emboss") {
+        let create = world.run("CREATE▼").center();
+        world.click(super::super::super::diagnostics::pointer_pixels(create));
+        world.pump(Vec::new());
+    }
     world.click_text("Emboss");
     world.pump(Vec::new());
     world.pump(Vec::new());

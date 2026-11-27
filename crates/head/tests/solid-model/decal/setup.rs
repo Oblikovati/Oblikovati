@@ -74,6 +74,11 @@ pub(super) fn insert_decal_image(world: &mut ApplicationWorld, relative: &str) {
 }
 
 pub(super) fn click_decal_ribbon(world: &mut ApplicationWorld) {
+    if !world.shows("Decal") {
+        let create = world.run("CREATE▼").center();
+        world.click(super::super::super::diagnostics::pointer_pixels(create));
+        world.pump(Vec::new());
+    }
     world.click_text("Decal");
     world.pump(Vec::new());
     world.pump(Vec::new());

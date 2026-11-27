@@ -81,7 +81,7 @@ pub(super) fn available(tab: RibbonTab, panel: RibbonPanel) -> bool {
         (tab, panel),
         (
             RibbonTab::Model,
-            RibbonPanel::PartModify | RibbonPanel::PartSimplification
+            RibbonPanel::PartCreate | RibbonPanel::PartModify | RibbonPanel::PartSimplification,
         ) | (RibbonTab::Tools, RibbonPanel::ToolOptions)
             | (
                 RibbonTab::Sketch,

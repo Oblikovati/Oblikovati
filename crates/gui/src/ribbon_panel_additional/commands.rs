@@ -194,6 +194,13 @@ fn additional_icon_entries(
 ) -> Option<&'static [(&'static str, crate::icons::IconGlyph)]> {
     use crate::icons::IconGlyph as Glyph;
     Some(match panel {
+        RibbonPanel::PartCreate => &[
+            ("Coil", Glyph::Coil),
+            ("Emboss", Glyph::Emboss),
+            ("Rib", Glyph::Rib),
+            ("Decal", Glyph::Decal),
+            ("Unwrap", Glyph::Unwrap),
+        ],
         RibbonPanel::PartModify => &[
             ("Move Bodies", Glyph::MoveBodies),
             ("Bend Part", Glyph::BendPart),
@@ -277,6 +284,11 @@ fn create_commands(
 
 fn additional_action(label: &str) -> Option<GuiShellAction> {
     match label {
+        "Coil" => Some(GuiShellAction::Coil(crate::GuiCoilAction::Open)),
+        "Emboss" => Some(GuiShellAction::Emboss(crate::GuiEmbossAction::Open)),
+        "Rib" => Some(GuiShellAction::Rib(crate::GuiRibAction::Open)),
+        "Decal" => Some(GuiShellAction::Decal(crate::GuiDecalAction::Open)),
+        "Unwrap" => Some(GuiShellAction::Unwrap(crate::GuiUnwrapAction::Open)),
         "Move Bodies" => Some(GuiShellAction::OpenMoveBody),
         crate::shell_ribbon::LABEL => Some(GuiShellAction::OpenShellFeature),
         "Constraint Inference Scope" => Some(GuiShellAction::OpenInferenceScope),

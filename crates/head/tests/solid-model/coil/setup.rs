@@ -153,6 +153,11 @@ pub(super) fn no_visible_coil_profile(world: &mut ApplicationWorld) {
 
 #[when("Coil is opened and a planar face is selected")]
 pub(super) fn open_coil_and_select_xy_base_face(world: &mut ApplicationWorld) {
+    if !world.shows("Coil") {
+        let create = world.run("CREATE▼").center();
+        world.click(super::super::super::diagnostics::pointer_pixels(create));
+        world.pump(Vec::new());
+    }
     world.click_text("Coil");
     world.pump(Vec::new());
     world.click_text("XY Plane");

@@ -46,6 +46,11 @@ pub(super) fn ensure_sketch_visible(world: &mut ApplicationWorld, name: &str) {
 }
 
 pub(super) fn click_rib_ribbon(world: &mut ApplicationWorld) {
+    if !world.shows("Rib") {
+        let create = world.run("CREATE▼").center();
+        world.click(super::super::super::diagnostics::pointer_pixels(create));
+        world.pump(Vec::new());
+    }
     world.click_text("Rib");
     world.pump(Vec::new());
     world.pump(Vec::new());

@@ -15,8 +15,8 @@ use setup::{
 fn part_displayed_in_3d_model(world: &mut ApplicationWorld) {
     assert!(!world.app().window.scene_triangles.is_empty());
     assert!(
-        world.shows("Unwrap"),
-        "expected Unwrap button on 3D Model ribbon"
+        world.shows("CREATE▼"),
+        "expected Create expandable panel on 3D Model ribbon"
     );
 }
 

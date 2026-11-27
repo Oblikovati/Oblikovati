@@ -157,9 +157,9 @@ fn full_row(context: &mut PanelDrawContext<'_>, tab: RibbonTab, layout: &mut Rib
     let height = icons.appearance.full_row_height() * icons.layout_factor();
     // Scrolling remains available below the compact row's minimum width without moving the viewport.
     let flags = imgui::WindowFlags::HORIZONTAL_SCROLLBAR | imgui::WindowFlags::NO_SCROLLBAR;
-    if crate::widget_abi::child_region(ui, "##ribbon-panels", [available, height], 0., flags)
-        .visible
-    {
+    let region =
+        crate::widget_abi::child_region(ui, "##ribbon-panels", [available, height], 0., flags);
+    if region.visible {
         draw_row(context, tab, layout, available);
     }
 }
