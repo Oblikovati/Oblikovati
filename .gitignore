@@ -8,6 +8,7 @@
 /stage/
 /stage-archives/
 /.tools/
+/web/pkg/
 
 # Installed development tools and local test/coverage output.
 **/node_modules/
