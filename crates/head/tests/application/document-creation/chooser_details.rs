@@ -9,7 +9,7 @@ fn details_view_retains_controls_in_a_narrow_window_with_larger_text() {
     open_narrow_scaled_details(&mut world);
     world.expect_text("Template details");
     world.save_capture("template-details-narrow-large-text");
-    world.drag([300, 503], [540, 503]);
+    type_visibility::scroll_gallery_right(&mut world);
     world.expect_text("Size");
     world.expect_text("Type");
     expect_full_type_value(&world, "Presentation");

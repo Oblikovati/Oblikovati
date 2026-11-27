@@ -73,9 +73,9 @@ fn part_one_shown(world: &mut ApplicationWorld) {
 
 fn select_dock_tab(world: &mut ApplicationWorld, title: &str) {
     let (min, max) = diagnostics::window_dock_tab_bounds(title).expect("expected dock tab");
-    world.click(diagnostics::pointer_pixels(std::array::from_fn(|axis| {
-        (min[axis] + max[axis]) * 0.5
-    })));
+    let point = [min[0] + 14., (min[1] + max[1]) * 0.5];
+    dock_menu_steps::click_workspace_pointer(world, diagnostics::pointer_pixels(point));
+    world.pump(Vec::new());
     assert_eq!(diagnostics::window_dock_tab_visible(title), Some(true));
 }
 

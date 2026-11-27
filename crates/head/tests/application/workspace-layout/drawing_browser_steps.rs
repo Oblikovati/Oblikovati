@@ -183,7 +183,7 @@ pub(super) fn select_log_tab(world: &mut ApplicationWorld) {
 fn select_dock_tab(world: &mut ApplicationWorld, name: &str) {
     let (minimum, maximum) = super::super::diagnostics::window_dock_tab_bounds(name)
         .unwrap_or_else(|| panic!("{name:?}: expected a dock tab"));
-    let center = std::array::from_fn(|axis| (minimum[axis] + maximum[axis]) * 0.5);
+    let center = [minimum[0] + 14., (minimum[1] + maximum[1]) * 0.5];
     click_panel_action(world, center);
 }
 #[when("I close the log panel tab")]
