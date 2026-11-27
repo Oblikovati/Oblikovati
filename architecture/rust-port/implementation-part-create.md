@@ -151,6 +151,11 @@ switches between the committed solid and the edit preview. The shared
 Preset Settings case also runs with the published rectangle.
 [Shared Properties receipt](receipts/2026-11-27-extrude-shared-properties-3893/README.md).
 
+Apply and Create New carries Extrude settings into a new draft and
+clears its geometry picks. The published case applies an 8 mm Flipped
+extrusion and cancels the following draft, leaving one solid.
+[Native receipt](receipts/2026-11-27-extrude-apply-next-3893/README.md).
+
 Extrude refreshes the preview as soon as the final reference face is
 selected. A [native From/To control](receipts/2026-11-27-extrude-between-faces-3870/README.md)
 verifies caps on opposite faces of a block and an independent midplane

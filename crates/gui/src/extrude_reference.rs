@@ -60,6 +60,13 @@ impl ReferenceDraft {
         }
     }
 
+    pub(super) fn clear_picks(&mut self) {
+        self.from = None;
+        self.to = None;
+        self.active = None;
+        self.changed_by_pick = false;
+    }
+
     pub(super) fn awaits_pick(&self) -> bool {
         self.active.is_some()
     }

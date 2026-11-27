@@ -123,32 +123,7 @@ impl ExtrudeDialog {
     }
     fn synchronize(&mut self, state: &GuiCommandState) {
         if self.requested {
-            self.requested = false;
-            self.submitted = None;
-            self.body_name.clear();
-            self.commit_error = None;
-            self.attempted = None;
-            self.set_document(state.document);
-            let browser = state
-                .browser
-                .as_ref()
-                .filter(|_| !self.start_without_sketch);
-            self.start_without_sketch = false;
-            self.sketch = browser.and_then(|browser| {
-                browser
-                    .selected_sketches
-                    .first()
-                    .copied()
-                    .or_else(|| browser.sketches.first().map(|row| row.id))
-            });
-            self.profile = 0;
-            self.distance = DEFAULT_DISTANCE.into();
-            self.distance_editor = Default::default();
-            self.second_distance = "5 mm".into();
-            self.direction = GuiExtrudeDirection::Positive;
-            self.reference = Default::default();
-            self.edit_feature = None;
-            self.seed_preset();
+            self.open_requested_draft(state);
         }
         if self.document != state.document
             || !state.extrude_available
@@ -158,6 +133,44 @@ impl ExtrudeDialog {
             self.edit_feature = None;
         }
     }
+    fn open_requested_draft(&mut self, state: &GuiCommandState) {
+        self.requested = false;
+        let apply_more = std::mem::take(&mut self.start_without_sketch);
+        let carried = self
+            .submitted
+            .take()
+            .filter(|draft| apply_more && state.document == Some(draft.document));
+        self.body_name.clear();
+        self.commit_error = None;
+        self.attempted = None;
+        self.set_document(state.document);
+        self.profile = 0;
+        self.distance_editor = Default::default();
+        self.edit_feature = None;
+        if let Some(draft) = carried {
+            self.sketch = None;
+            self.operation = draft.operation;
+            self.reference.clear_picks();
+        } else {
+            self.initialize_fresh_draft(state);
+        }
+    }
+
+    fn initialize_fresh_draft(&mut self, state: &GuiCommandState) {
+        self.sketch = state.browser.as_ref().and_then(|browser| {
+            browser
+                .selected_sketches
+                .first()
+                .copied()
+                .or_else(|| browser.sketches.first().map(|row| row.id))
+        });
+        self.distance = DEFAULT_DISTANCE.into();
+        self.second_distance = "5 mm".into();
+        self.direction = GuiExtrudeDirection::Positive;
+        self.reference = Default::default();
+        self.seed_preset();
+    }
+
     pub(crate) fn sync_before_docking(&mut self, state: &GuiCommandState) {
         if !self.requested {
             self.synchronize(state);
@@ -435,6 +448,7 @@ impl ExtrudeDialog {
         }
         state.extrude_distance_validation.as_ref().filter(|result| {
             result.document == document
+                && state.document_generation == Some(result.generation)
                 && result.distance == self.distance
                 && result.second_distance.as_deref() == self.active_second_distance()
         })
@@ -448,6 +462,7 @@ impl ExtrudeDialog {
         }
         self.presets.reject_submission();
         self.requested = false;
+        self.start_without_sketch = false;
         self.set_document(Some(request.document));
         self.operation = request.operation;
         self.attempted = None;

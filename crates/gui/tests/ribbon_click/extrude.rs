@@ -7,6 +7,7 @@ fn request_with_profile() -> GuiFrameRequest {
     let mut request = ribbon_request();
     enter_part(&mut request);
     request.commands.extrude_available = true;
+    request.commands.document_generation = Some(1);
     request.commands.extrude_distance_validation = Some(valid_distance(DEFAULT_DISTANCE));
     request.commands.browser = Some(GuiModelBrowser {
         name: "Part".into(),
@@ -93,8 +94,15 @@ fn extrusion_preview_button_and_escape_send_transient_actions() {
     request.events = vec![GuiInputEvent::Text("size".into())];
     engine.frame(&request).unwrap();
     validate_size(&mut engine, &mut request);
-    let preview = ribbon_caption(&mut engine, &mut request, "Preview", false);
-    let actions = click_ribbon(&mut engine, &mut request, preview);
+    request.commands.extrude_preview_active = true;
+    let hide = ribbon_caption(&mut engine, &mut request, "Hide Preview", false);
+    assert_eq!(
+        click_ribbon(&mut engine, &mut request, hide),
+        [GuiShellAction::PreviewExtrude(None)]
+    );
+    request.commands.extrude_preview_active = false;
+    let show = ribbon_caption(&mut engine, &mut request, "Show Preview", false);
+    let actions = click_ribbon(&mut engine, &mut request, show);
     assert_eq!(
         actions,
         [GuiShellAction::PreviewExtrude(Some(GuiExtrudePreview {
@@ -109,6 +117,7 @@ fn extrusion_preview_button_and_escape_send_transient_actions() {
             direction: Default::default(),
         }))]
     );
+    request.commands.extrude_preview_active = true;
     assert_eq!(
         dimension_editor_key(&mut engine, &mut request, GuiKey::Escape),
         [GuiShellAction::PreviewExtrude(None)]
@@ -123,8 +132,7 @@ fn changing_distance_clears_the_existing_preview() {
     request.events = vec![GuiInputEvent::Text("size".into())];
     engine.frame(&request).unwrap();
     validate_size(&mut engine, &mut request);
-    let preview = ribbon_caption(&mut engine, &mut request, "Preview", false);
-    click_ribbon(&mut engine, &mut request, preview);
+    request.commands.extrude_preview_active = true;
     click_distance_field(&mut engine, &mut request);
     request.events = vec![GuiInputEvent::Text("2".into())];
     let actions = engine.frame(&request).unwrap().actions;
@@ -139,8 +147,7 @@ fn reopening_extrusion_clears_the_previous_preview() {
     request.events = vec![GuiInputEvent::Text("size".into())];
     engine.frame(&request).unwrap();
     validate_size(&mut engine, &mut request);
-    let preview = ribbon_caption(&mut engine, &mut request, "Preview", false);
-    click_ribbon(&mut engine, &mut request, preview);
+    request.commands.extrude_preview_active = true;
     let actions = click_extrude(&mut engine, &mut request);
     assert_eq!(actions.first(), Some(&GuiShellAction::OpenExtrude));
     assert!(actions.contains(&GuiShellAction::PreviewExtrude(None)));

@@ -40,12 +40,15 @@ impl ExtrudeDialog {
         let _disabled = ui.begin_disabled(self.edit_feature.is_some());
         let changed_sketch = self.sketch_choice(ui, state);
         crate::theme::property_label(ui, "Profiles");
-        let label =
-            if state.extrude_preview_active || self.preview_hidden || self.edit_feature.is_some() {
-                "1 Profile".to_owned()
-            } else {
-                format!("Profile {}", self.profile.saturating_add(1))
-            };
+        let label = if self.sketch.is_none() {
+            "Select Profile".to_owned()
+        } else if state.extrude_preview_active || self.preview_hidden || self.edit_feature.is_some()
+        {
+            "1 Profile".to_owned()
+        } else {
+            format!("Profile {}", self.profile.saturating_add(1))
+        };
+        let _profile_disabled = ui.begin_disabled(self.sketch.is_none());
         let rounding = ui.push_style_var(imgui::StyleVar::FrameRounding(11.));
         let tint = ui.push_style_color(StyleColor::FrameBg, [0.05, 0.58, 0.53, 0.22]);
         let choices = ui.begin_combo("##profile", &label);
