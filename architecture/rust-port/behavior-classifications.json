@@ -18584,8 +18584,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/browser_view.go; ../Oblikovati/head/ui/dockable_panel.go",
-      "mapping_reason": "Model browser UI behavior; model-state and geometry prerequisites belong to their domain milestones."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a app/representation_ui_test.go and app/browser_activate_test.go.",
+      "mapping_reason": "Model browser UI behavior; model-state and geometry prerequisites belong to their domain milestones.",
+      "go_test_premise": "TestModelStateCaptureAndActivate checks that the assembly browser creates a state row and restores the stored representation. TestModelStateHandleActivate checks restoration through the browser handle. The pinned scenario specifies the Part table action menus.",
+      "api_revision": "c8200b2da97c9a7dde43afb25debc977ff23b2fd",
+      "kernel_revision": "d463526642b7bf950ba33c7ab4a4c9bc97caffaf",
+      "kernel_capabilities": "Part fixture regeneration and Vulkan presentation. Menu availability itself is a GUI behavior.",
+      "platforms": "Linux Wayland under Weston and X11 under Openbox and Xvfb, both with Vulkan Lavapipe.",
+      "kernel_integration": "The desktop uses a real four-member Part with an angular parameter. Opening and dismissing its action menus leaves the table open.",
+      "rust_tests": "crates/head/tests/application/model-browser/model_state_parameter_menu.rs; native_parameter_menus_stage_row_and_column_actions; native_parameter_cell_menu_opens_without_a_prior_header_menu.",
+      "oracle": "The native scenario opens both menus with right clicks and checks their rendered enablement and dismissal. See receipts/2026-11-27-pinned-model-state-marking-4184/{x11,wayland}-state-menus.json.",
+      "expected_result": "The header offers Delete Column; the member cell also offers Insert Row and Delete Row. The listed unsupported commands stay disabled and Escape preserves the open table.",
+      "baseline_source_sha256": "603382ec4009d73a74e960c5981d255c4ca9ac5489b94fcf57193c7b09458b2e"
     },
     {
       "id": "scenario:e3daad9d85d685c7833bf2d5fb765bb3e4b5eb1d43198665c298b218f22ad819",
