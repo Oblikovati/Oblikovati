@@ -1,0 +1,27 @@
+$ cargo test --locked -p oblikovati-model --lib body_resolution -j4 -- --test-threads=1
+running 3 tests
+test feature::part::body_resolution::tests::failed_body_lookup_retains_the_backend_error_and_reference ... ok
+test feature::part::body_resolution::tests::grouped_body_names_follow_one_replacement_and_preserve_its_sibling ... ok
+test feature::part::body_resolution::tests::multiple_candidate_owners_are_rejected_without_selecting_a_match ... ok
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 200 filtered out; finished in 0.00s
+
+$ cargo test --locked -p oblikovati-model --test part_features -j4 -- --test-threads=1
+running 96 tests
+test result: ok. 96 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.08s
+
+$ cargo test --locked -p oblikovati-martensite --test sketch_prism -j4 -- --test-threads=1
+running 142 tests
+test named::rebuild::fillet_replay::candidate::measure_named_edge_pick_latency ... ignored, manual release-mode latency measurement
+test named::rebuild::fillet_replay::shell_candidate::inward_shell_keeps_input_and_names_every_result_face ... ignored, Martensite #554 widens vertex tolerances; retain the exact per-face acceptance gate
+test result: ok. 140 passed; 0 failed; 2 ignored; 0 measured; 0 filtered out; finished in 30.55s
+
+Published extrusion-15 Cut selects inward direction and supports history
+wayland
+9 steps (9 passed)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1793 filtered out; finished in 12.87s
+x11
+9 steps (9 passed)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1793 filtered out; finished in 14.09s
+
+$ cargo clippy --locked -p oblikovati-model -p oblikovati-martensite -p oblikovati-head --all-targets --all-features -j5 -- -D warnings
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 2m 09s

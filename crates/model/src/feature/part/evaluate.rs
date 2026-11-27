@@ -56,7 +56,7 @@ pub enum PartFeatureFailure<Failure> {
 #[derive(Clone)]
 pub struct PartFeatureEvaluation<Body, Failure> {
     pub(super) datums: WorkGeometryEvaluation,
-    pub(super) bodies: BTreeMap<FeatureId, Body>,
+    pub(super) bodies: BTreeMap<super::body_lineage::BodySlot, Body>,
     pub(super) body_lineage: super::body_lineage::BodyLineageIndex,
     pub(super) deleted: BTreeMap<FeatureId, Vec<u8>>,
     pub(super) health: Vec<FeatureHealthRecord<PartFeatureFailure<Failure>>>,
@@ -110,9 +110,9 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
     pub fn deleted_body(&self, feature: FeatureId) -> Option<&[u8]> {
         self.deleted.get(&feature).map(Vec::as_slice)
     }
-    /// Inspect successful current outputs only; example: `evaluation.body(feature_id)` returns none for a failed feature.
+    /// Inspect a feature's current primary body; example: `evaluation.body(feature_id)` returns none for a failed feature.
     pub fn body(&self, feature: FeatureId) -> Option<&Body> {
-        self.bodies.get(&feature)
+        self.bodies.get(&feature.into())
     }
     /// Find the current body descended from a producer; example: `evaluation.body_from_source(feature)?`.
     pub fn body_from_source(&self, source: FeatureId) -> Result<&Body, String> {
@@ -130,15 +130,19 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
     pub fn ordered_bodies(&self) -> impl Iterator<Item = &Body> {
         self.health
             .iter()
-            .filter_map(|record| self.body(record.feature))
+            .flat_map(|record| {
+                self.bodies
+                    .range(super::body_lineage::BodySlot::feature_range(record.feature))
+            })
+            .map(|(_, body)| body)
     }
     /// Inspect complete ordered health; example: `evaluation.health()` includes failures and their blocked readers.
     pub fn health(&self) -> &[FeatureHealthRecord<PartFeatureFailure<Failure>>] {
         &self.health
     }
-    /// Transfer one isolated output without cloning native state; example: `evaluation.into_body(feature_id)`.
+    /// Transfer the primary output without cloning native state; example: `evaluation.into_body(feature_id)`.
     pub fn into_body(mut self, feature: FeatureId) -> Option<Body> {
-        self.bodies.remove(&feature)
+        self.bodies.remove(&feature.into())
     }
 }
 fn datum_health<Failure>(

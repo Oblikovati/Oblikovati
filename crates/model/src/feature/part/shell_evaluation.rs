@@ -41,7 +41,7 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
             .replace(slot, feature)
             .map_err(PartFeatureFailure::BodyReference)?;
         self.bodies.remove(&slot);
-        self.bodies.insert(feature, result);
+        self.bodies.insert(feature.into(), result);
         Ok(())
     }
 }

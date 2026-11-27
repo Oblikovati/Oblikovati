@@ -91,7 +91,7 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
         self.body_lineage
             .register(feature.id())
             .map_err(PartFeatureFailure::BodyReference)?;
-        self.bodies.insert(feature.id(), body);
+        self.bodies.insert(feature.id().into(), body);
         Ok(())
     }
 
@@ -109,7 +109,7 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
         self.body_lineage
             .register(feature)
             .map_err(PartFeatureFailure::BodyReference)?;
-        self.bodies.insert(feature, body);
+        self.bodies.insert(feature.into(), body);
         Ok(())
     }
 
@@ -134,7 +134,7 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
         self.body_lineage
             .register(feature)
             .map_err(PartFeatureFailure::BodyReference)?;
-        self.bodies.insert(feature, body);
+        self.bodies.insert(feature.into(), body);
         Ok(())
     }
 }

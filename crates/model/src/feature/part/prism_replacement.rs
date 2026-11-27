@@ -52,7 +52,7 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
         &mut self,
         backend: &B,
         feature: FeatureId,
-        slot: FeatureId,
+        slot: super::body_lineage::BodySlot,
         key: &[u8],
         result: Body,
     ) -> Result<(), PartFeatureFailure<Failure>> {
@@ -63,7 +63,7 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
             .replace(slot, feature)
             .map_err(PartFeatureFailure::BodyReference)?;
         self.bodies.remove(&slot);
-        self.bodies.insert(feature, result);
+        self.bodies.insert(feature.into(), result);
         Ok(())
     }
 }

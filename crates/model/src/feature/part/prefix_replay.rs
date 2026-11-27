@@ -205,7 +205,7 @@ impl<Body, Failure: Clone> PartFeatureEvaluation<Body, Failure> {
         let bodies = self
             .bodies
             .iter()
-            .map(|(id, body)| capture(*id, body).map(|body| (*id, body)))
+            .map(|(id, body)| capture(id.feature, body).map(|body| (*id, body)))
             .collect::<Result<_, _>>()?;
         Ok(PartFeatureEvaluation {
             datums: self.datums.clone(),
@@ -228,7 +228,7 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
         let bodies = self
             .bodies
             .into_iter()
-            .map(|(id, body)| map(id, body).map(|body| (id, body)))
+            .map(|(id, body)| map(id.feature, body).map(|body| (id, body)))
             .collect::<Result<_, _>>()?;
         Ok(PartFeatureEvaluation {
             datums: self.datums,
