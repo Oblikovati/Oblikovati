@@ -126,19 +126,23 @@ fn native_asymmetric_flip_changes_both_distances_and_one_history_step() {
 }
 
 fn replace_second_distance(world: &mut ApplicationWorld, value: &str) {
-    use super::super::x11_input;
     let row = second_distance_row(world);
-    let position = [row.minimum[0] as i32 - 30, row.center()[1] as i32];
-    x11_input::click(position);
-    world.pump(Vec::new());
-    x11_input::press_control_a();
-    x11_input::type_digits(value);
+    let position =
+        super::super::diagnostics::pointer_pixels([row.minimum[0] - 30., row.center()[1]]);
+    world.click(position);
+    world.key(ViewportPhysicalKey::A, true);
+    world.type_text(value);
     world.pump(Vec::new());
 }
 
 fn second_distance_row(world: &ApplicationWorld) -> &super::super::diagnostics::RenderedRun {
-    // The native text reader groups the label and the adjacent Flip A/B caption.
-    world.run_in_window("Extrude", "DistanceBFlipA/B")
+    // Depending on scale, the text reader can group the label with the adjacent button.
+    let label = if world.frame.runs.iter().any(|run| run.text == "DistanceB") {
+        "DistanceB"
+    } else {
+        "DistanceBFlipA/B"
+    };
+    world.run_in_window("Extrude", label)
 }
 
 #[then("the preview changes its side or extent relative to Default direction")]
@@ -174,4 +178,87 @@ fn flipped_literal_preview_and_commit_use_the_same_direction() {
         .unwrap();
     assert!((body.centroid_z_mm + 5.).abs() < 1e-8);
     world.close();
+}
+
+// Use the published rectangular part for every row of the direction outline.
+#[given(
+    "a fresh copy of `fixtures/cad/revolve/revolve-profile.opd` is open in Extrude with its rectangle selected"
+)]
+fn open_for_measured_direction(world: &mut ApplicationWorld) {
+    super::reference_extent::native_fixture_preview(world);
+}
+
+#[given("the start reference is the sketch plane with both tapers zero")]
+fn untapered_sketch_plane_start(world: &mut ApplicationWorld) {
+    world.run_in_window("Extrude", "SketchPlane");
+    assert_eq!(preview_depth(world), [0., 1.]);
+    assert_matching_caps(world, [0., 1.]);
+}
+
+#[when(regex = r"^the user chooses (Default|Flipped|Symmetric) and sets Distance A to (\d+) mm$")]
+fn set_measured_direction(world: &mut ApplicationWorld, direction: String, a: String) {
+    let index = ["Default", "Flipped", "Symmetric"]
+        .iter()
+        .position(|label| *label == direction)
+        .unwrap();
+    choose_direction_icon(world, index);
+    super::replace_extrusion_distance(world, &a);
+}
+
+#[when("the user chooses Asymmetric and sets Distance A to 8 mm and B to 4 mm")]
+fn set_measured_asymmetric(world: &mut ApplicationWorld) {
+    choose_asymmetric(world);
+    super::replace_extrusion_distance(world, "8");
+    replace_second_distance(world, "4");
+}
+
+#[then(
+    regex = r"^the extrusion preview extends (8 mm along the default direction|8 mm opposite the default direction|4 mm on each side of the sketch plane|8 mm on the default side and 4 mm on the opposite side)$"
+)]
+fn check_measured_extent(world: &mut ApplicationWorld, extent: String) {
+    let expected = match extent.as_str() {
+        "8 mm along the default direction" => [0., 0.8],
+        "8 mm opposite the default direction" => [-0.8, 0.],
+        "4 mm on each side of the sketch plane" => [-0.4, 0.4],
+        "8 mm on the default side and 4 mm on the opposite side" => [-0.4, 0.8],
+        _ => unreachable!("unrecognized extrusion extent {extent:?}"),
+    };
+    assert_eq!(preview_depth(world), expected);
+    assert_matching_caps(world, expected);
+    let capture = super::super::capture_framebuffer(&mut world.app().window.native);
+    let windows = super::super::diagnostics::window_occlusions();
+    assert!(super::super::solid_visibility::visible_preview_fill(
+        &capture, &windows
+    ));
+}
+
+#[then("the command is ready to accept")]
+fn measured_draft_is_ready(world: &mut ApplicationWorld) {
+    assert!(world.state().extrude_preview_active);
+    assert!(world.run_is_enabled("OK"));
+    assert_eq!(feature_count(world), 0);
+}
+
+fn assert_matching_caps(world: &mut ApplicationWorld, limits: [f32; 2]) {
+    let scene = &world.app().window.scene_triangles;
+    let bounds = |depth| {
+        scene
+            .iter()
+            .flat_map(|triangle| triangle.positions)
+            .filter(|point| point[2] == depth)
+            .fold(
+                [
+                    f32::INFINITY,
+                    f32::INFINITY,
+                    f32::NEG_INFINITY,
+                    f32::NEG_INFINITY,
+                ],
+                |[min_x, min_y, max_x, max_y], [x, y, _]| {
+                    [min_x.min(x), min_y.min(y), max_x.max(x), max_y.max(y)]
+                },
+            )
+    };
+    let first = bounds(limits[0]);
+    assert!(first[0] < first[2] && first[1] < first[3]);
+    assert_eq!(first, bounds(limits[1]), "expected parallel walls");
 }

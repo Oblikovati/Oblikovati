@@ -103,6 +103,11 @@ shows Match Shape checked and disabled on the saved closed profile.
 The [native edit properties receipt](receipts/2026-11-27-extrude-edit-properties-3870/README.md)
 covers the retained preview depth and cancellation.
 
+The [measured direction outline](receipts/2026-11-27-extrude-measured-directions-3870/README.md)
+checks signed preview bounds, parallel caps, and acceptance readiness
+for Default, Flipped, Symmetric, and Asymmetric Extrude on both Linux
+backends.
+
 ## Sweep, Loft, and Revolve
 
 The [release probes](../../crates/martensite/tests/release_probe/create.rs)
