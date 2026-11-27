@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::{ExtrudeDialog, GuiCommandState, GuiShellAction};
 use crate::GuiExtrudeDirection;
-use crate::icons::{GuiRibbonIcons, IconGlyph};
+use crate::icons::{GuiRibbonIcons, IconGlyph, IconSize};
 use imgui::Ui;
 use oblikovati_model::feature::sketch_prism::PrismBoolean;
 
@@ -52,6 +52,34 @@ impl ExtrudeDialog {
         self.distance = distance;
         self.commit_error = None;
         true
+    }
+
+    pub(super) fn draw_advanced_settings(&mut self, ui: &Ui, icons: &GuiRibbonIcons) {
+        const POPUP: &str = "##extrude-advanced-settings";
+        ui.align_text_to_frame_padding();
+        ui.text("Properties");
+        let icon = icons.logical[IconSize::Small.index()];
+        let label = "Advanced Settings";
+        let width = icon[0] + ui.calc_text_size(label)[0] + 16.;
+        ui.same_line_with_pos((ui.window_content_region_max()[0] - width).max(0.));
+        let button = crate::widget_abi::IconButtonPresentation {
+            texture: icons.key(IconGlyph::Preferences, IconSize::Small),
+            size: [width, icon[1] + 6.],
+            icon,
+            large: false,
+            show_caption: true,
+        };
+        if crate::widget_abi::icon_button(ui, label, button) {
+            ui.open_popup(POPUP);
+        }
+        if let Some(_popup) = ui.begin_popup(POPUP)
+            && ui
+                .menu_item_config("Predict Boolean Operation")
+                .selected(!self.manual_boolean)
+                .build()
+        {
+            self.manual_boolean = !self.manual_boolean;
+        }
     }
 
     pub(super) fn draw_output(
@@ -147,7 +175,8 @@ impl ExtrudeDialog {
     }
 
     fn choose_boolean_operation(&mut self, operation: PrismBoolean) {
-        if matches!(operation, PrismBoolean::Cut | PrismBoolean::Intersect)
+        if !self.manual_boolean
+            && matches!(operation, PrismBoolean::Cut | PrismBoolean::Intersect)
             && self.operation != Some(operation)
             && self.direction == GuiExtrudeDirection::Positive
         {

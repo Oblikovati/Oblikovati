@@ -135,6 +135,11 @@ named dropdown. The [native selector scenario](receipts/2026-11-27-extrude-boole
 checks Join, Cut, Intersect, and New Solid and verifies that changing the
 presentation preserves the selected Join operation and its preview.
 
+Advanced Settings offers Predict Boolean Operation. Clearing the option
+keeps the current direction when choosing Cut or Intersect. The published
+case checks the unchanged top face in Default direction and the opening
+after manually selecting Flipped. [Native receipt](receipts/2026-11-27-extrude-boolean-prediction-3893/README.md).
+
 Extrude refreshes the preview as soon as the final reference face is
 selected. A [native From/To control](receipts/2026-11-27-extrude-between-faces-3870/README.md)
 verifies caps on opposite faces of a block and an independent midplane
@@ -152,6 +157,13 @@ An Extrude can start on a parallel reference plane with a numeric
 distance. The published fixture previews caps at 3 mm and 11 mm with
 8 mm of depth. Commit and reopen retain the start plane by identity.
 [Native receipt](receipts/2026-11-27-extrude-distance-from-plane-3893/README.md).
+
+Face extension is pending. The existing planar reference path resolves
+the supporting plane for From and To. Disabling extension needs a
+certified comparison of the projected profile against the trimmed
+reference face, including holes and curved trim edges. Point picks and
+tessellated face bounds alone cannot establish that coverage.
+[Plane resolution](../../crates/model/src/feature/sketch_prism/extent.rs).
 
 ## Sweep, Loft, and Revolve
 

@@ -426,8 +426,10 @@ pub(super) fn dispatch_action(
             cause,
         );
     }
-    if matches!(action, GuiShellAction::PreviewFilletEdit(_))
-        && result.as_ref().is_ok_and(|changed| *changed)
+    if matches!(
+        action,
+        GuiShellAction::PreviewFilletEdit(_) | GuiShellAction::PreviewExtrude(Some(_))
+    ) && result.as_ref().is_ok_and(|changed| *changed)
     {
         window.show_command_notice(crate::DesktopCommandNotice::Ready)?;
     }

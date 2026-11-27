@@ -39,6 +39,7 @@ pub(crate) struct ExtrudeDialog {
     direction: GuiExtrudeDirection,
     direction_style: selector::SelectorStyle,
     operation_style: selector::SelectorStyle,
+    manual_boolean: bool,
     reference: reference::ReferenceDraft,
     operation: Option<oblikovati_model::feature::sketch_prism::PrismBoolean>,
     body_name: String,
@@ -252,6 +253,7 @@ impl ExtrudeDialog {
         actions: &mut Vec<GuiShellAction>,
     ) -> bool {
         let expanded = imgui::TreeNodeFlags::DEFAULT_OPEN;
+        self.draw_advanced_settings(ui, controls.icons);
         self.breadcrumb(ui, state);
         let mut edited =
             ui.collapsing_header("Input Geometry", expanded) && self.geometry_controls(ui, state);
