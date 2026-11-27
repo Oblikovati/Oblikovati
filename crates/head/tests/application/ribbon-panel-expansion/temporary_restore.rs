@@ -5,9 +5,7 @@ use cucumber::{given, then};
 
 #[given("the 3D Model tab is selected")]
 fn model_tab_selected(world: &mut ApplicationWorld) {
-    let model = world.pixel_left_of("3D Model");
-    let tools = world.pixel_left_of("Tools");
-    assert_ne!(model, tools, "expected the active 3D Model tab");
+    super::super::ribbon_display::model_selected(world);
 }
 #[then("its ribbon panels appear temporarily")]
 fn temporary_model_panels(world: &mut ApplicationWorld) {
