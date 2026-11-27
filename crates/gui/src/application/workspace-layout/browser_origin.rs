@@ -199,8 +199,11 @@ pub(crate) fn follow_view_click(
         && (part_context_open || !crate::widget_abi::any_popup_open(ui));
     let context_click = ui.is_mouse_clicked(MouseButton::Right)
         && (selector_context_gesture || !crate::widget_abi::any_popup_open(ui));
-    let on_view = (left_click || context_click)
-        && !ui.is_window_hovered_with_flags(crate::widget_abi::over_any_panel());
+    // An active text field can commit when clicked away. The panel underneath the click
+    // still owns it even when ImGui would otherwise report its window as blocked.
+    let panel_hover = crate::widget_abi::over_any_panel()
+        | imgui::WindowHoveredFlags::ALLOW_WHEN_BLOCKED_BY_ACTIVE_ITEM;
+    let on_view = (left_click || context_click) && !ui.is_window_hovered_with_flags(panel_hover);
     let [x, y] = ui.io().mouse_pos;
     // A tab may change the document in this same frame; the click was never on its model.
     let on_document = view.document_area.is_some_and(|area| {

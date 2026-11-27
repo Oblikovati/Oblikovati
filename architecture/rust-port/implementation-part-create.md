@@ -114,6 +114,16 @@ validation and preview path as panel input. The
 [native manipulator receipt](receipts/2026-11-27-extrude-manipulator-3870/README.md)
 checks the dimension, field, and preview mesh after both kinds of input.
 
+Extrude accepts length expressions that reference part parameters. The
+[native driven-distance receipt](receipts/2026-11-27-extrude-driven-distance-3870/README.md)
+checks that `Depth * 2` previews at 8 mm and rebuilds the same solid to
+10 mm after `Depth` changes to 5 mm in the Parameters panel.
+
+The [shared profile scenario](receipts/2026-11-27-extrude-reused-profile-3870/README.md)
+exercises selecting the visible sketch under Extrusion1 in the Model Browser.
+After the second extrusion, the browser shows two solids and one shared
+sketch. Both feature definitions reference that sketch.
+
 ## Sweep, Loft, and Revolve
 
 The [release probes](../../crates/martensite/tests/release_probe/create.rs)

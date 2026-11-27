@@ -7,6 +7,8 @@ pub(super) mod acceptance;
 #[cfg(target_os = "linux")]
 mod boolean;
 #[cfg(target_os = "linux")]
+mod consumed_profile;
+#[cfg(target_os = "linux")]
 mod direction;
 #[cfg(target_os = "linux")]
 mod direction_selector;
@@ -14,6 +16,8 @@ mod direction_selector;
 mod distance_editor;
 #[cfg(target_os = "linux")]
 mod distance_handle;
+#[cfg(target_os = "linux")]
+mod driven_distance;
 #[cfg(target_os = "linux")]
 mod edit_properties;
 #[cfg(target_os = "linux")]

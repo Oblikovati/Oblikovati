@@ -106,15 +106,16 @@ fn apply_distance(
     } else {
         "extrude distance"
     };
-    let distance = crate::extrusion::positive_length(snapshot, &edit.value, label)?;
     let feature = snapshot.work_geometry.get(id).map_err(api_error)?;
     if let Some(binding) = feature
         .owned_scalars()
         .iter()
         .find(|binding| binding.role == role)
     {
+        let distance = crate::extrusion::extrusion_length(snapshot, &edit.value, label)?;
         return edit_owned_distance(snapshot, binding.parameter, distance, &edit.value);
     }
+    let distance = crate::extrusion::positive_length(snapshot, &edit.value, label)?;
     let PartFeatureDefinition::SketchPrism(definition) = feature.definition() else {
         return Err(Error(format!("feature {id:?}: expected a sketch prism")));
     };

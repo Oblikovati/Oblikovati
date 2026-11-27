@@ -36,13 +36,23 @@ fn document_with_depth() -> DocumentSnapshot {
 #[test]
 fn draft_validation_uses_the_feature_distance_rules_without_edits() {
     let snapshot = document_with_depth();
-    for source in ["8", "8 mm", "1 mm + 2 mm", "depth"] {
+    for source in ["8", "8 mm", "1 mm + 2 mm", "depth", "depth * 2"] {
         assert!(
             validate_extrude_distance(&snapshot, source).is_ok(),
             "{source:?}"
         );
     }
-    for source in ["", "0", "-1 mm", "2 deg", "angle", "missing", "depth * 2"] {
+    for source in [
+        "",
+        "0",
+        "-1 mm",
+        "2 deg",
+        "angle",
+        "missing",
+        "angle * 2",
+        "missing * 2",
+        "depth * 0",
+    ] {
         assert!(
             validate_extrude_distance(&snapshot, source).is_err(),
             "{source:?}"
@@ -52,5 +62,6 @@ fn draft_validation_uses_the_feature_distance_rules_without_edits() {
         distance(&snapshot, "depth"),
         Ok(DatumLength::Parameter(1))
     ));
+    assert!((evaluated_extrude_distance(&snapshot, "depth * 2").unwrap() - 1.6).abs() < 1e-12);
     assert_eq!(snapshot.parameters.ids(), &[1, 2]);
 }

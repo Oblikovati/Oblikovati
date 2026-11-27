@@ -6,7 +6,6 @@ use oblikovati_api::{
 };
 use oblikovati_model::{
     document_sketch::DocumentSketchId,
-    expression::Expression,
     feature::{
         FeatureId,
         sketch_prism::{
@@ -26,6 +25,10 @@ use oblikovati_session::{
 
 mod boolean;
 mod extent;
+mod length;
+use length::distance;
+pub use length::{evaluated_extrude_distance, validate_extrude_distance};
+pub(crate) use length::{extrusion_length, finite_length, positive_length};
 mod region_access;
 pub use region_access::ExtrudeRegionAccess;
 mod replay;
@@ -266,7 +269,7 @@ fn prepare_distance_prism(
         _ => SketchPrismDirection::Positive,
     };
     let second = (!input.second_distance.is_empty())
-        .then(|| positive_length(snapshot, &input.second_distance, "extrude Distance B"))
+        .then(|| extrusion_length(snapshot, &input.second_distance, "extrude Distance B"))
         .transpose()?;
     let owned_second_distance = matches!(second, Some(DatumLength::Constant(_)))
         .then(|| input.second_distance.trim().to_owned());
@@ -383,84 +386,6 @@ fn sketch_index(snapshot: &DocumentSnapshot, index: i64) -> Result<DocumentSketc
                 snapshot.sketches.sketches().len()
             ))
         })
-}
-pub(super) fn distance(snapshot: &DocumentSnapshot, source: &str) -> Result<DatumLength, Error> {
-    positive_length(snapshot, source, "extrude distance")
-}
-pub(crate) fn positive_length(
-    snapshot: &DocumentSnapshot,
-    source: &str,
-    label: &str,
-) -> Result<DatumLength, Error> {
-    let length = finite_length(snapshot, source, label)?;
-    let quantity = length.resolve(&snapshot.parameters).map_err(api_error)?;
-    require_positive(quantity, Dimension::Length, source, label)?;
-    Ok(length)
-}
-pub(crate) fn finite_length(
-    snapshot: &DocumentSnapshot,
-    source: &str,
-    label: &str,
-) -> Result<DatumLength, Error> {
-    let parameters = &snapshot.parameters;
-    let text = source.trim();
-    if let Some(id) = parameters.find(text) {
-        let quantity = parameters.model_value(id).map_err(api_error)?;
-        require_finite_length(quantity.value, quantity.dimension, source, label)?;
-        return Ok(DatumLength::Parameter(id));
-    }
-    let expression = Expression::parse(text, parameters.units()).map_err(api_error)?;
-    if !expression.references().is_empty() {
-        return Err(Error(format!(
-            "{label} {source:?}: expected a parameter name or a reference-free length expression"
-        )));
-    }
-    let mut quantity = expression.evaluate().map_err(api_error)?;
-    if quantity.dimension == Dimension::Unitless {
-        quantity = parameters
-            .units()
-            .from_preferred(quantity.value, Dimension::Length);
-    }
-    require_finite_length(quantity.value, quantity.dimension, source, label)?;
-    Ok(DatumLength::Constant(quantity.value))
-}
-/// Check an extrusion expression with the same rules as feature creation.
-/// Example: `validate_extrude_distance(&snapshot, "10 mm")?`.
-pub fn validate_extrude_distance(snapshot: &DocumentSnapshot, source: &str) -> Result<(), Error> {
-    distance(snapshot, source).map(|_| ())
-}
-/// Evaluate the current distance in database units using the feature's expression rules.
-pub fn evaluated_extrude_distance(snapshot: &DocumentSnapshot, source: &str) -> Result<f64, Error> {
-    distance(snapshot, source)?
-        .resolve(&snapshot.parameters)
-        .map_err(api_error)
-}
-fn require_positive(
-    value: f64,
-    dimension: Dimension,
-    source: &str,
-    label: &str,
-) -> Result<(), Error> {
-    require_finite_length(value, dimension, source, label)?;
-    if value <= 0. {
-        return Err(Error(format!(
-            "{label} {source:?} resolved to {value:?} {dimension:?}: expected a finite positive length"
-        )));
-    }
-    Ok(())
-}
-fn require_finite_length(
-    value: f64,
-    dimension: Dimension,
-    source: &str,
-    label: &str,
-) -> Result<(), Error> {
-    if dimension != Dimension::Length || !value.is_finite() {
-        return Err(Error(format!(
-            "{label} {source:?} resolved to {value:?} {dimension:?}: expected a finite length"
-        )));
-    }
-    Ok(())
 }
 fn next_name(snapshot: &DocumentSnapshot) -> Result<String, Error> {
     let limit = snapshot
