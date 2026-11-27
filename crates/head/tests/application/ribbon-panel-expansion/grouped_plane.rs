@@ -81,14 +81,16 @@ fn grouped_plane_choices(world: &mut ApplicationWorld) {
 #[cfg(target_os = "linux")]
 #[given("the 3D Model ribbon is compact after regrouping the Plane choices")]
 fn compact_after_regrouping(world: &mut ApplicationWorld) {
-    let view = &mut world.app().window.native.view;
-    assert!(!view.window_maximized().unwrap());
-    view.resize([1240, 850]).unwrap();
-    world.pump(Vec::new());
+    assert!(!world.app().window.native.view.window_maximized().unwrap());
     ungroup_plane_choices(world);
     show_compact_work_features(world);
     regroup_plane_choices(world);
     world.escape();
+    world.app().window.native.view.resize([1240, 850]).unwrap();
+    for _ in 0..4 {
+        world.pump(Vec::new());
+    }
+    assert_eq!(world.extent()[0], 1240);
     compact_work_features(world);
     assert!(!diagnostics::command_popup_open());
     world.observed_counts = vec![model_ribbon_caption_count(world)];
