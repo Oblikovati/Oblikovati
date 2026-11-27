@@ -82,9 +82,9 @@ impl RecentSort {
             second.pinned.cmp(&first.pinned).then(order)
         });
     }
-    /// The header's direction mark; example: `v` for descending.
+    /// The header's direction mark; example: `▾` for descending.
     pub(crate) fn mark(self) -> &'static str {
-        if self.descending { "v" } else { "^" }
+        if self.descending { "▾" } else { "▴" }
     }
 }
 /// The columns after Name, in display order; each can be removed and added back.

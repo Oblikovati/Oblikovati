@@ -129,7 +129,7 @@ fn rows_unchecked(world: &mut ApplicationWorld) {
 #[given("Last Opened is the active descending sort")]
 fn opened_descending(world: &mut ApplicationWorld) {
     assert!(
-        home_shows(world, "Last Opened v"),
+        home_shows(world, "Last Opened ▾"),
         "expected the default sort mark"
     );
 }
@@ -142,11 +142,11 @@ fn select_name_header(world: &mut ApplicationWorld) {
 }
 #[then("a downward sort indicator appears in the Name header")]
 fn name_down(world: &mut ApplicationWorld) {
-    assert!(home_shows(world, "Name v"), "expected a downward mark");
+    assert!(home_shows(world, "Name ▾"), "expected a downward mark");
 }
 #[then("the Name header shows an upward sort indicator")]
 fn name_up(world: &mut ApplicationWorld) {
-    assert!(home_shows(world, "Name ^"), "expected an upward mark");
+    assert!(home_shows(world, "Name ▴"), "expected an upward mark");
 }
 #[then("Sort by shows Name with an upward direction indicator")]
 fn sort_by_up(world: &mut ApplicationWorld) {

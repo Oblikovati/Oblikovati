@@ -421,38 +421,35 @@ std::uint32_t oblikovati_gui_draw_dock_tab_actions() {
                                     ImGui::GetColorU32(ImGuiCol_NavHighlight));
         }
         const ImVec2 padding = context->Style.FramePadding;
-        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(padding.x + 3.0f, padding.y));
+        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(5.0f, padding.y));
+        const float optical = ImClamp(ImGui::GetFontSize() * 0.38f, 4.5f, 6.5f);
         if (ImGui::TabItemButton("   ##dock-panel-menu", trailing))
             ImGui::OpenPopup("##dock-panel-menu-popup");
-        const ImVec2 menu_min = ImGui::GetItemRectMin();
-        const ImVec2 menu_max = ImGui::GetItemRectMax();
-        const ImVec2 menu_center((menu_min.x + menu_max.x) * 0.5f, (menu_min.y + menu_max.y) * 0.5f);
-        const float menu_extent = ImGui::GetFontSize() * 0.48f;
+        const ImVec2 menu_min = ImGui::GetItemRectMin(), menu_max = ImGui::GetItemRectMax();
+        const ImVec2 menu_center(ImFloor((menu_min.x + menu_max.x) * 0.5f), ImFloor((menu_min.y + menu_max.y) * 0.5f));
         const ImU32 icon_color = ImGui::GetColorU32(ImGuiCol_Text);
-        draw->AddLine(ImVec2(menu_center.x - menu_extent, menu_center.y),
-                      ImVec2(menu_center.x + menu_extent, menu_center.y), icon_color, 1.5f);
-        draw->AddLine(ImVec2(menu_center.x, menu_center.y - menu_extent),
-                      ImVec2(menu_center.x, menu_center.y + menu_extent), icon_color, 1.5f);
+        draw->AddLine(ImVec2(menu_center.x - optical, menu_center.y),
+                      ImVec2(menu_center.x + optical, menu_center.y), icon_color, 1.5f);
+        draw->AddLine(ImVec2(menu_center.x, menu_center.y - optical),
+                      ImVec2(menu_center.x, menu_center.y + optical), icon_color, 1.5f);
         if (ImGui::IsItemHovered()) ImGui::SetTooltip("Open dockable windows");
         actions |= dock_panel_menu();
 
         if (ImGui::TabItemButton("   ##dock-search", trailing)) actions |= 1u << 8;
-        const ImVec2 search_min = ImGui::GetItemRectMin();
-        const ImVec2 search_max = ImGui::GetItemRectMax();
-        const ImVec2 search_center((search_min.x + search_max.x) * 0.5f,
-                                   (search_min.y + search_max.y) * 0.5f);
-        const float lens = ImGui::GetFontSize() * 0.34f;
-        draw->AddCircle(ImVec2(search_center.x - lens * 0.2f, search_center.y - lens * 0.2f),
-                        lens, icon_color, 12, 1.5f);
+        const ImVec2 search_min = ImGui::GetItemRectMin(), search_max = ImGui::GetItemRectMax();
+        const ImVec2 search_center(ImFloor((search_min.x + search_max.x) * 0.5f),
+                                   ImFloor((search_min.y + search_max.y) * 0.5f));
+        const float lens = optical * 0.72f;
+        draw->AddCircle(ImVec2(search_center.x - lens * 0.25f, search_center.y - lens * 0.25f),
+                        lens, icon_color, 16, 1.4f);
         draw->AddLine(ImVec2(search_center.x + lens * 0.45f, search_center.y + lens * 0.45f),
-                      ImVec2(search_center.x + lens * 1.45f, search_center.y + lens * 1.45f), icon_color, 1.5f);
+                      ImVec2(search_center.x + optical, search_center.y + optical), icon_color, 1.5f);
         if (ImGui::IsItemHovered()) ImGui::SetTooltip("Find in Model Browser");
 
         const ImGuiWindow* model = ImGui::FindWindowByName("Model");
         if (model && model->DockNode == node) {
             const bool visible = selected_window == model;
             if (!visible) {
-                // Reserve the same tab width when another browser takes focus.
                 ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.0f);
                 ImGui::BeginDisabled();
             }
@@ -461,12 +458,11 @@ std::uint32_t oblikovati_gui_draw_dock_tab_actions() {
                 ImGui::EndDisabled();
                 ImGui::PopStyleVar();
             } else {
-                const ImVec2 min = ImGui::GetItemRectMin();
-                const ImVec2 max = ImGui::GetItemRectMax();
-                const ImVec2 center((min.x + max.x) * 0.5f, (min.y + max.y) * 0.5f);
-                const float spacing = ImGui::GetFontSize() * 0.25f;
+                const ImVec2 min = ImGui::GetItemRectMin(), max = ImGui::GetItemRectMax();
+                const ImVec2 center(ImFloor((min.x + max.x) * 0.5f), ImFloor((min.y + max.y) * 0.5f));
+                const float spacing = optical * 0.72f;
                 for (int dot = -1; dot <= 1; ++dot)
-                    draw->AddCircleFilled(ImVec2(center.x + dot * spacing, center.y), 1.0f, icon_color, 8);
+                    draw->AddCircleFilled(ImVec2(center.x + dot * spacing, center.y), 1.25f, icon_color, 8);
                 if (ImGui::IsItemHovered()) ImGui::SetTooltip("Model Browser menu");
             }
         }

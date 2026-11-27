@@ -60,13 +60,13 @@ fn tile(ui: &Ui, asset: &GuiAssetChoice, selection: &mut AssetRows<'_>, size: f3
     let hovered = ui.is_item_hovered();
     let [left, top] = ui.item_rect_min();
     let draw = ui.get_window_draw_list();
-    paint_preview(
-        &draw,
-        [left + width / 2., top + size / 2. + 4.],
-        size / 2.,
-        asset,
-        PreviewLight::GRID,
-    );
+    let center = [left + width / 2., top + size / 2. + 4.];
+    let radius = size / 2.;
+    paint_preview(&draw, center, radius, asset, PreviewLight::GRID);
+    draw.add_circle(center, radius, crate::theme::strong_border(ui))
+        .num_segments(48)
+        .thickness(1.)
+        .build();
     let caption = crate::application::home_recent_documents::recent_rows::fit_recent_cell(
         &asset.name,
         (width - 8.).max(1.),
@@ -155,7 +155,7 @@ fn paint_surface(
     metalness: f32,
     light: PreviewLight,
 ) {
-    let layers = if radius > 40. { 24 } else { 10 };
+    let layers = (radius * 1.25).clamp(24., 48.) as usize;
     for step in 0..=layers {
         let fraction = step as f32 / layers as f32;
         let at = std::array::from_fn(|axis| {
@@ -165,6 +165,7 @@ fn paint_surface(
         let shade = 0.26 + fraction * (0.81 + metalness * 0.22);
         let [r, g, b] = light.illuminate(material.color([0.; 2], shade, fraction));
         draw.add_circle(at, radius * (1. - 0.82 * fraction), [r, g, b, 1.])
+            .num_segments(48)
             .filled(true)
             .build();
     }

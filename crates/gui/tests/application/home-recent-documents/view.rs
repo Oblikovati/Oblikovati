@@ -34,10 +34,10 @@ fn a_new_field_starts_descending_and_choosing_it_again_reverses() {
     assert_eq!(names(sort, &rows), ["B", "C", "A"]);
     sort.choose(SortField::Name);
     assert_eq!(names(sort, &rows), ["C", "B", "A"]);
-    assert_eq!(sort.mark(), "v");
+    assert_eq!(sort.mark(), "▾");
     sort.choose(SortField::Name);
     assert_eq!(names(sort, &rows), ["A", "B", "C"]);
-    assert_eq!(sort.mark(), "^");
+    assert_eq!(sort.mark(), "▴");
     sort.choose(SortField::Size);
     assert_eq!(names(sort, &rows), ["A", "C", "B"]);
 }

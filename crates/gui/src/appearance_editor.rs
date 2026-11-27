@@ -171,21 +171,26 @@ impl AppearanceEditor {
         let (Some(document), Some(browser)) = (state.document, &state.browser) else {
             return;
         };
+        ui.separator();
         let _disabled = ui.begin_disabled(state.transaction_open || self.target.is_some());
-        if ui.button("Create appearance") {
+        let avail = ui.content_region_avail()[0];
+        let _pad = ui.push_style_var(imgui::StyleVar::FramePadding([6., 4.]));
+        let inline = avail >= ui.calc_text_size("Create appearanceEdit appearance")[0] + 30.;
+        let half = if inline { (avail - 6.) * 0.5 } else { avail };
+        if crate::theme::secondary_button(ui, "Create appearance", [half, 0.]) {
             ui.open_popup("##new-appearance");
         }
-        ui.same_line();
+        if inline {
+            ui.same_line_with_spacing(0., 6.);
+        }
         let editable = selected.as_deref().and_then(|id| {
-            browser.appearances.iter().find(|asset| {
-                asset.id == id
-                    && asset
-                        .appearance_preview
-                        .is_some_and(|finish| finish.document_owned)
-            })
+            browser
+                .appearances
+                .iter()
+                .find(|a| a.id == id && a.appearance_preview.is_some_and(|f| f.document_owned))
         });
         let read_only = ui.begin_disabled(editable.is_none());
-        if ui.button("Edit appearance")
+        if crate::theme::secondary_button(ui, "Edit appearance", [half, 0.])
             && let Some(asset) = editable
         {
             self.target = Some((document, asset.id.clone()));

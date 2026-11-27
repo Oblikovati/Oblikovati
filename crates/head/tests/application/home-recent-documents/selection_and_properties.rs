@@ -175,7 +175,7 @@ fn select_size_header(world: &mut ApplicationWorld) {
 }
 #[then("the visible rows with known sizes are ordered from larger to smaller")]
 fn larger_first(world: &mut ApplicationWorld) {
-    assert!(home_shows(world, "Size v"), "expected Size descending");
+    assert!(home_shows(world, "Size ▾"), "expected Size descending");
     let rows = rows_by_size(world);
     assert!(
         rows.windows(2).all(|pair| pair[0].1 >= pair[1].1),
@@ -185,7 +185,7 @@ fn larger_first(world: &mut ApplicationWorld) {
 }
 #[then("the visible rows with known sizes are ordered from smaller to larger")]
 fn smaller_first(world: &mut ApplicationWorld) {
-    assert!(home_shows(world, "Size ^"), "expected Size ascending");
+    assert!(home_shows(world, "Size ▴"), "expected Size ascending");
     let rows = rows_by_size(world);
     assert!(
         rows.windows(2).all(|pair| pair[0].1 <= pair[1].1),
