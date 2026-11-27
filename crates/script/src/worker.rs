@@ -41,11 +41,7 @@ fn execute_program(_: crate::ScriptProgram, _: BufReader<io::Stdin>) -> Result<(
 #[cfg(target_os = "linux")]
 fn resource_limits(limits: &crate::ScriptLimits) -> Result<(), String> {
     use rustix::process::Resource;
-    // VM scratch and loaded process code also need a bounded address-space allowance outside the Lua heap.
-    let address = limits
-        .memory_bytes
-        .checked_add(128 << 20)
-        .ok_or("script memory: expected representable process allowance")?;
+    let address = address_space_limit(mapped_address_space_bytes(), limits)?;
     let cpu = limits.wall_millis.div_ceil(1000).saturating_add(1);
     for (resource, maximum) in [
         (Resource::Core, 0),
@@ -58,7 +54,63 @@ fn resource_limits(limits: &crate::ScriptLimits) -> Result<(), String> {
     Ok(())
 }
 #[cfg(target_os = "linux")]
+fn address_space_limit(mapped_bytes: u64, limits: &crate::ScriptLimits) -> Result<u64, String> {
+    // VM scratch and already-mapped process code/libraries sit outside the Lua heap allowance.
+    mapped_bytes
+        .checked_add(128 << 20)
+        .and_then(|base| base.checked_add(limits.memory_bytes))
+        .ok_or_else(|| "script memory: expected representable process allowance".into())
+}
+#[cfg(target_os = "linux")]
+fn mapped_address_space_bytes() -> u64 {
+    let Ok(status) = std::fs::read_to_string("/proc/self/status") else {
+        return 0;
+    };
+    status
+        .lines()
+        .find_map(|line| {
+            let value = line.strip_prefix("VmSize:")?.trim();
+            let kib = value.strip_suffix("kB")?.trim().parse::<u64>().ok()?;
+            kib.checked_mul(1024)
+        })
+        .unwrap_or(0)
+}
+#[cfg(target_os = "linux")]
 fn apply_resource_limit(resource: rustix::process::Resource, maximum: u64) -> Result<(), String> {
-    rustix::process::setrlimit(resource, rustix::process::Rlimit { current: Some(maximum), maximum: Some(maximum) })
-        .map_err(|error| format!("worker resource {resource:?} limit {maximum}: expected applicable bounded limit: {error}"))
+    rustix::process::setrlimit(
+        resource,
+        rustix::process::Rlimit {
+            current: Some(maximum),
+            maximum: Some(maximum),
+        },
+    )
+    .map_err(|error| {
+        format!("worker resource {resource:?} limit {maximum}: expected applicable bounded limit: {error}")
+    })
+}
+
+#[cfg(all(test, target_os = "linux"))]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn address_space_limit_preserves_mapped_image_and_refuses_overflow() {
+        let limits = crate::ScriptLimits::gui();
+        let mapped = mapped_address_space_bytes();
+        assert!(mapped > 0, "expected Linux /proc/self/status VmSize");
+        assert_eq!(
+            address_space_limit(mapped, &limits).unwrap(),
+            mapped + (128 << 20) + limits.memory_bytes
+        );
+        assert!(
+            address_space_limit(
+                mapped,
+                &crate::ScriptLimits {
+                    memory_bytes: u64::MAX,
+                    ..limits
+                }
+            )
+            .is_err()
+        );
+    }
 }
