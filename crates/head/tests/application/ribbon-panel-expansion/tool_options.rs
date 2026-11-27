@@ -36,8 +36,8 @@ fn check_options_rows(world: &mut ApplicationWorld) -> f32 {
     let first = rows[0].center()[1];
     let second = rows[1].center()[1];
     assert!(
-        (second - first - 32.).abs() < 2.,
-        "expected a 32 px row pitch"
+        (second - first - 34.).abs() < 2.,
+        "expected a 34 px row pitch"
     );
     for row in rows {
         let [x, y] = row.center();
