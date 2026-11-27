@@ -342,7 +342,7 @@ fn require_supported(input: &Extrude) -> Result<(), Error> {
         (
             "operation",
             input.operation.as_str(),
-            &["new", "newbody", "new-body", "cut", "join"][..],
+            &["new", "newbody", "new-body", "cut", "join", "intersect"][..],
         ),
         (
             "direction",

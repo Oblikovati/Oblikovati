@@ -105,7 +105,7 @@ pub(super) fn target_source(
         ));
     }
     if let Some(target) = &recipe.boolean_target
-        && (recipe.join_target.is_some() || target.operation == PrismBoolean::Join)
+        && (recipe.join_target.is_some() || target.operation != PrismBoolean::Cut)
     {
         return Err(SketchSweepError::Definition(
             "sweep: expected one canonical Boolean target".into(),

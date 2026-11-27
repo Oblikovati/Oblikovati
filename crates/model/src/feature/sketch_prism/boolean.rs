@@ -15,6 +15,7 @@ pub struct SketchPrismTarget {
 pub enum PrismBoolean {
     Cut,
     Join,
+    Intersect,
 }
 
 impl std::fmt::Display for PrismBoolean {
@@ -22,6 +23,7 @@ impl std::fmt::Display for PrismBoolean {
         formatter.write_str(match self {
             Self::Cut => "Cut",
             Self::Join => "Join",
+            Self::Intersect => "Intersect",
         })
     }
 }
@@ -55,7 +57,7 @@ impl SketchPrismDefinition {
     ) -> Result<Self, SketchPrismError> {
         let (_, source) = reference_identity(&key, 4, &format!("extrude {operation} target"))
             .map_err(|cause| self.decline(SketchPrismCause::Definition(cause)))?;
-        if operation == PrismBoolean::Join
+        if operation != PrismBoolean::Cut
             && matches!(
                 self.extent(),
                 Some(super::SketchPrismExtent::ThroughAll { .. })

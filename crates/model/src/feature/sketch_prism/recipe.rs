@@ -22,12 +22,20 @@ pub struct SketchPrismRecipe {
     pub cut_target: Option<Vec<u8>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub join_target: Option<Vec<u8>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub intersection_target: Option<Vec<u8>>,
 }
 impl SketchPrismDefinition {
     /// Capture only authored inputs; example: `serde_json::to_string(&definition.recipe())?`.
     pub fn recipe(&self) -> SketchPrismRecipe {
+        let target_key = |operation| {
+            self.boolean_target()
+                .filter(|target| target.operation() == operation)
+                .map(|target| target.key().to_vec())
+        };
+        let intersection_target = target_key(PrismBoolean::Intersect);
         SketchPrismRecipe {
-            version: if self.taper.is_some() { 2 } else { 1 },
+            version: prism_recipe_version(self.taper.is_some(), intersection_target.is_some()),
             sketch: self.sketch,
             selection: self.selection.clone(),
             displacement: self.displacement,
@@ -36,20 +44,20 @@ impl SketchPrismDefinition {
             second_depth: self.second_depth,
             taper: self.taper,
             extent: self.extent.clone(),
-            cut_target: self.cut_target().map(|target| target.key().to_vec()),
-            join_target: self
-                .boolean_target()
-                .filter(|target| target.operation() == PrismBoolean::Join)
-                .map(|target| target.key().to_vec()),
+            cut_target: target_key(PrismBoolean::Cut),
+            join_target: target_key(PrismBoolean::Join),
+            intersection_target,
         }
     }
     /// Validate the saved version and sources before adoption; example: `SketchPrismDefinition::from_recipe(&recipe)?`.
     pub fn from_recipe(recipe: &SketchPrismRecipe) -> Result<Self, SketchPrismError> {
-        if !matches!((recipe.version, recipe.taper), (1, None) | (2, Some(_))) {
+        let expected =
+            prism_recipe_version(recipe.taper.is_some(), recipe.intersection_target.is_some());
+        if recipe.version != expected {
             return Err(SketchPrismError {
                 sketch: recipe.sketch,
                 cause: Box::new(SketchPrismCause::Definition(format!(
-                    "prism recipe version {}: expected version 1 for an untapered prism or version 2 with Taper A",
+                    "prism recipe version {}: expected version {expected} for the saved prism inputs",
                     recipe.version
                 ))),
             });
@@ -59,23 +67,30 @@ impl SketchPrismDefinition {
             None => Self::from_distance_recipe(recipe),
         }?
         .with_taper(recipe.taper)?;
-        match (&recipe.cut_target, &recipe.join_target) {
-            (Some(key), None) => definition.with_cut_target(key.clone()),
-            (None, Some(key)) => definition.with_boolean_target(PrismBoolean::Join, key.clone()),
-            (Some(_), Some(_)) => Err(definition.decline(SketchPrismCause::Definition(
-                "extrude recipe: expected only one Boolean target".into(),
-            ))),
-            (None, None)
-                if matches!(
-                    definition.extent(),
-                    Some(SketchPrismExtent::ThroughAll { .. })
-                ) =>
+        definition.with_saved_target(recipe)
+    }
+    fn with_saved_target(self, recipe: &SketchPrismRecipe) -> Result<Self, SketchPrismError> {
+        match (
+            &recipe.cut_target,
+            &recipe.join_target,
+            &recipe.intersection_target,
+        ) {
+            (Some(key), None, None) => self.with_cut_target(key.clone()),
+            (None, Some(key), None) => self.with_boolean_target(PrismBoolean::Join, key.clone()),
+            (None, None, Some(key)) => {
+                self.with_boolean_target(PrismBoolean::Intersect, key.clone())
+            }
+            (None, None, None)
+                if matches!(self.extent(), Some(SketchPrismExtent::ThroughAll { .. })) =>
             {
-                Err(definition.decline(SketchPrismCause::Definition(
+                Err(self.decline(SketchPrismCause::Definition(
                     "through-all extent: expected a saved target body".into(),
                 )))
             }
-            (None, None) => Ok(definition),
+            (None, None, None) => Ok(self),
+            _ => Err(self.decline(SketchPrismCause::Definition(
+                "extrude recipe: expected only one Boolean target".into(),
+            ))),
         }
     }
     fn from_distance_recipe(recipe: &SketchPrismRecipe) -> Result<Self, SketchPrismError> {
@@ -112,5 +127,13 @@ impl SketchPrismDefinition {
         validation::validate_plane_extent(&definition)
             .map_err(|cause| definition.decline(cause))?;
         Ok(definition)
+    }
+}
+
+fn prism_recipe_version(tapered: bool, intersects: bool) -> u32 {
+    match (intersects, tapered) {
+        (true, _) => 3,
+        (false, true) => 2,
+        (false, false) => 1,
     }
 }

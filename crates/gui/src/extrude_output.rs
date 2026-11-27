@@ -39,7 +39,11 @@ impl ExtrudeDialog {
             {
                 self.operation = None;
             }
-            for operation in [PrismBoolean::Join, PrismBoolean::Cut] {
+            for operation in [
+                PrismBoolean::Join,
+                PrismBoolean::Cut,
+                PrismBoolean::Intersect,
+            ] {
                 if ui
                     .selectable_config(operation.to_string())
                     .disabled(!boolean_available)
@@ -60,7 +64,7 @@ impl ExtrudeDialog {
     }
 
     fn choose_boolean_operation(&mut self, operation: PrismBoolean) {
-        if operation == PrismBoolean::Cut
+        if matches!(operation, PrismBoolean::Cut | PrismBoolean::Intersect)
             && self.operation != Some(operation)
             && self.direction == GuiExtrudeDirection::Positive
         {

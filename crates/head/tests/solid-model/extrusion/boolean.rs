@@ -16,6 +16,9 @@ const BOSS_TOP: f32 = 1.6;
 #[given(
     "a copy of `fixtures/cad/extrusion/extrusion-base-circle.opd` is open with its diameter-3 mm circle sketch on the base top face"
 )]
+#[given(
+    "a copy of `fixtures/cad/extrusion/extrusion-base-circle.opd` is open with its base solid and circular sketch on the top plane"
+)]
 fn published_circle_part(world: &mut ApplicationWorld) {
     let source = super::super::scenario_root().join(FIXTURE);
     open_circle_part(world, &std::fs::read(source).unwrap());
@@ -24,6 +27,7 @@ fn published_circle_part(world: &mut ApplicationWorld) {
 #[given("a diameter-3 circular sketch on the top face of the existing solid")]
 #[given("the restored circular Sketch2 and existing Solid1")]
 #[given("the diameter-3 circle on the base top face")]
+#[given("the base and restored circular Sketch2")]
 fn pinned_circle_part(world: &mut ApplicationWorld) {
     open_circle_part(
         world,
@@ -68,11 +72,7 @@ fn preview_joined_boss(world: &mut ApplicationWorld) {
     assert_eq!(state.browser.unwrap().bodies[0].key, original);
     assert!(world.run_is_enabled("OK"));
     assert_circular_cap(world);
-    let frame = capture_framebuffer(&mut world.app().window.native);
-    assert!(solid_visibility::visible_replacement_preview_fill(
-        &frame,
-        &diagnostics::window_occlusions()
-    ));
+    assert_visible_replacement(world);
 }
 
 #[then("a cylindrical boss and Extrusion2 are visible")]
@@ -254,11 +254,7 @@ fn flipped_cut_preview(world: &mut ApplicationWorld) {
         oblikovati_gui::GuiExtrudeDirection::Negative
     );
     assert!(world.run_is_enabled("OK"));
-    let frame = capture_framebuffer(&mut world.app().window.native);
-    assert!(solid_visibility::visible_replacement_preview_fill(
-        &frame,
-        &diagnostics::window_occlusions()
-    ));
+    assert_visible_replacement(world);
     assert_top_opening(world, true);
 }
 
@@ -282,7 +278,7 @@ fn cut_result(world: &mut ApplicationWorld) {
 }
 
 #[when("Undo then Redo are invoked")]
-fn undo_redo_opening(world: &mut ApplicationWorld) {
+fn undo_redo_boolean(world: &mut ApplicationWorld) {
     world.key(ViewportPhysicalKey::Z, true);
     world.pump(Vec::new());
     assert_original_shape(world);
@@ -320,4 +316,96 @@ fn contains_xy(triangle: [[f32; 3]; 3], point: [f32; 2]) -> bool {
         (b[0] - a[0]) * (point[1] - a[1]) - (b[1] - a[1]) * (point[0] - a[0])
     });
     signs.iter().all(|sign| *sign >= -1e-6) || signs.iter().all(|sign| *sign <= 1e-6)
+}
+
+#[when("Intersect is selected in Extrude")]
+fn choose_intersect(world: &mut ApplicationWorld) {
+    world.click_text("Sketch1");
+    world.click_text("Extrude");
+    world.pump(Vec::new());
+    let generation = world.state().document_generation;
+    click_panel(world, "NewSolid");
+    world.click_text("Intersect");
+    world.pump(Vec::new());
+    assert_eq!(world.state().document_generation, generation);
+}
+
+#[then("Direction changes to Flipped and a cylindrical region is previewed")]
+fn intersect_preview(world: &mut ApplicationWorld) {
+    let draft = world
+        .state()
+        .extrude_draft_preview
+        .expect("certified Intersect preview");
+    assert_eq!(
+        draft.operation,
+        Some(oblikovati_model::feature::sketch_prism::PrismBoolean::Intersect)
+    );
+    assert_eq!(
+        draft.direction,
+        oblikovati_gui::GuiExtrudeDirection::Negative
+    );
+    assert!(world.run_is_enabled("OK"));
+    assert_retained_cylinder_mesh(world);
+    assert_visible_replacement(world);
+}
+
+#[then("the browser retains one solid body")]
+fn one_intersected_body(world: &mut ApplicationWorld) {
+    still_one_body(world);
+}
+
+#[then("the cylinder replaces the visible rectangular base result")]
+fn retained_cylinder(world: &mut ApplicationWorld) {
+    world.expect_text("Extrusion2");
+    let browser = world.state().browser.unwrap();
+    assert_eq!(browser.bodies[0].faces, 3);
+    assert_retained_cylinder_mesh(world);
+}
+
+#[then("the base returns then the cylinder returns")]
+fn intersect_after_history_and_reopen(world: &mut ApplicationWorld) {
+    retained_cylinder(world);
+    let key = world.state().browser.unwrap().bodies[0].key.clone();
+    let path = world
+        .scratch_folder()
+        .join("extrusion-intersection-accepted.opd");
+    super::acceptance::save_and_reopen(world, &path);
+    world.pump(Vec::new());
+    retained_cylinder(world);
+    assert_eq!(world.state().browser.unwrap().bodies[0].key, key);
+}
+
+fn assert_retained_cylinder_mesh(world: &mut ApplicationWorld) {
+    let mut min = [f32::INFINITY; 3];
+    let mut max = [f32::NEG_INFINITY; 3];
+    for point in world
+        .app()
+        .window
+        .scene_triangles
+        .iter()
+        .flat_map(|triangle| triangle.positions)
+    {
+        for axis in 0..3 {
+            min[axis] = min[axis].min(point[axis]);
+            max[axis] = max[axis].max(point[axis]);
+        }
+    }
+    for (actual, expected) in min
+        .into_iter()
+        .chain(max)
+        .zip([1.85, 1.35, 0., 2.15, 1.65, 0.8])
+    {
+        assert!(
+            (actual - expected).abs() < 0.01,
+            "intersection bound {actual} instead of {expected} cm"
+        );
+    }
+}
+
+fn assert_visible_replacement(world: &mut ApplicationWorld) {
+    let frame = capture_framebuffer(&mut world.app().window.native);
+    assert!(solid_visibility::visible_replacement_preview_fill(
+        &frame,
+        &diagnostics::window_occlusions()
+    ));
 }

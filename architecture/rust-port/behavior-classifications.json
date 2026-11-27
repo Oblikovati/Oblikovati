@@ -3844,8 +3844,19 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
       "state": "inventoried",
-      "baseline_source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
-      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
+      "baseline_source_sha256": "ccb973b10334aa2f8f31a189392ad8049212caaa2938db03b034bc9f49008821",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json",
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a model/feature/combine_acceptance_test.go.",
+      "go_test_premise": "TestCombineIntersectOverlapVolume verifies that a Boolean intersection retains the common volume.",
+      "api_revision": "c8200b2da97c9a7dde43afb25debc977ff23b2fd",
+      "kernel_revision": "d463526642b7bf950ba33c7ab4a4c9bc97caffaf",
+      "kernel_capabilities": "Native Common computes the overlap of one named solid and a closed prism and reports exact replacement history.",
+      "platforms": "Linux COSMIC Wayland and X11 under Xvfb with Openbox.",
+      "kernel_integration": "Resolve the saved target key before computing the detached common solid, and persist the intersection target in prism recipe version 3.",
+      "rust_tests": "crates/head/tests/solid-model/extrusion/boolean.rs and crates/model/tests/sketch_prism_recipe.rs.",
+      "oracle": "Check the exact cylinder bounds in the replacement preview and accepted solid, then Undo, Redo and reopen the Part. See receipts/2026-11-27-extrude-intersect-3870/README.md.",
+      "expected_result": "One 3 mm diameter, 8 mm tall cylinder replaces the base and retains the body key across Redo and reopen.",
+      "last_receipt": "architecture/rust-port/receipts/2026-11-27-extrude-intersect-3870/README.md"
     },
     {
       "id": "scenario:defa5c41357f0c0f54012b06d46fd26c98ab6ed3159a7838e90bc0a1ac94ad42",

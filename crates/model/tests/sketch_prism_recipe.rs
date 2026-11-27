@@ -208,3 +208,32 @@ fn join_recipe_preserves_the_target_and_refuses_conflicting_operations() {
     recipe.cut_target = Some(key);
     assert!(SketchPrismDefinition::from_recipe(&recipe).is_err());
 }
+
+#[test]
+fn intersection_recipe_requires_its_version_and_one_exact_target() {
+    use oblikovati_model::{
+        feature::{FeatureId, sketch_prism::PrismBoolean},
+        identity::{SketchPrismReferenceRole, sketch_prism_reference_name},
+    };
+    let document = "11111111-2222-3333-4444-555555555555".parse().unwrap();
+    let source = FeatureId(42);
+    let body =
+        sketch_prism_reference_name(document, source, SKETCH, SketchPrismReferenceRole::Body)
+            .unwrap();
+    let definition = driven_definition()
+        .with_boolean_target(PrismBoolean::Intersect, body.clone())
+        .unwrap();
+    let mut recipe = definition.recipe();
+    assert_eq!(recipe.version, 3);
+    let serialized = serde_json::to_vec(&recipe).unwrap();
+    let round_trip =
+        SketchPrismDefinition::from_recipe(&serde_json::from_slice(&serialized).unwrap()).unwrap();
+    assert!(round_trip.same_recipe(&definition));
+    assert_eq!(round_trip.boolean_target().unwrap().key(), body);
+    assert_eq!(round_trip.boolean_target().unwrap().source(), source);
+    recipe.version = 1;
+    assert!(SketchPrismDefinition::from_recipe(&recipe).is_err());
+    recipe.version = 3;
+    recipe.cut_target = Some(body);
+    assert!(SketchPrismDefinition::from_recipe(&recipe).is_err());
+}

@@ -79,6 +79,13 @@ Undo closes the opening, and Redo restores it. See the
 [native Cut receipt](receipts/2026-11-27-extrude-cut-3870/README.md)
 for scenario 15 on Wayland and X11.
 
+Extrude Intersect uses the native Common operation and checks that the
+result is one valid common solid with named topology. The saved
+intersection key uses prism recipe version 3 and Part program version
+41. See the
+[native Intersect receipt](receipts/2026-11-27-extrude-intersect-3870/README.md)
+for scenario 16, history, and package reopen.
+
 ## Sweep, Loft, and Revolve
 
 The [release probes](../../crates/martensite/tests/release_probe/create.rs)

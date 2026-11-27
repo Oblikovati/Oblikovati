@@ -5,6 +5,7 @@ pub(super) fn operation(input: &Extrude) -> Option<PrismBoolean> {
     match input.operation.trim().to_ascii_lowercase().as_str() {
         "cut" => Some(PrismBoolean::Cut),
         "join" => Some(PrismBoolean::Join),
+        "intersect" => Some(PrismBoolean::Intersect),
         _ => None,
     }
 }

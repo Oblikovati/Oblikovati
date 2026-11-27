@@ -89,6 +89,7 @@ fn performed_boolean(
     boolean.set_operation(match kind {
         PrismBoolean::Cut => Operation::Cut,
         PrismBoolean::Join => Operation::Fuse,
+        PrismBoolean::Intersect => Operation::Common,
     });
     boolean.build()?;
     Ok(boolean)
@@ -129,6 +130,7 @@ fn checked_boolean(
     let changed = match kind {
         PrismBoolean::Cut => after.volume > 0. && after.volume < before.volume,
         PrismBoolean::Join => after.volume > before.volume,
+        PrismBoolean::Intersect => after.volume > 0. && after.volume <= before.volume,
     };
     if !changed {
         let message = format!(

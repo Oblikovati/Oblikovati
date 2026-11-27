@@ -83,7 +83,7 @@ fn saved_sweep_output(definition: &SketchSweepDefinition) -> GuiSweepOutput {
         Some(PrismBoolean::Join) => GuiSweepOutput::Join,
         Some(PrismBoolean::Cut) => GuiSweepOutput::Cut,
         None if definition.recipe().surface => GuiSweepOutput::Surface,
-        None => GuiSweepOutput::NewSolid,
+        None | Some(PrismBoolean::Intersect) => GuiSweepOutput::NewSolid,
     }
 }
 
