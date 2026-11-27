@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Desktop window lifetime and document-owned frame dispatch. Native UI and model display remain open.
-#[cfg(test)]
+#[cfg(all(test, any(target_os = "linux", target_os = "windows")))]
 #[macro_use]
 #[path = "../tests/document_fixture_path.rs"]
 mod document_fixture_path;
