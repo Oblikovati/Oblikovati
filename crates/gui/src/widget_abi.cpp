@@ -332,9 +332,15 @@ bool oblikovati_gui_button(const unsigned char* label, float width, float height
     if (selected) ImGui::PopStyleColor();
     return clicked;
 }
-bool oblikovati_gui_begin_scroll_region(const unsigned char* identity, float width, float height) {
-    return ImGui::BeginChild(reinterpret_cast<const char*>(identity), ImVec2(width, height), false,
-                             ImGuiWindowFlags_HorizontalScrollbar);
+bool oblikovati_gui_begin_scroll_region(const char* identity, float width, float height) {
+    return ImGui::BeginChild(identity, ImVec2(width, height), false, ImGuiWindowFlags_HorizontalScrollbar);
+}
+bool oblikovati_gui_begin_scroll_region_with_content_width(const char* identity, float width,
+                                                            float height, float content_width,
+                                                            bool horizontal_scrollbar) {
+    if (content_width != 0.0f) ImGui::SetNextWindowContentSize(ImVec2(content_width, 0.0f));
+    const ImGuiWindowFlags flags = horizontal_scrollbar ? ImGuiWindowFlags_HorizontalScrollbar : 0;
+    return ImGui::BeginChild(ImGui::GetID(identity), ImVec2(width, height), false, flags);
 }
 void oblikovati_gui_dummy(float width, float height) {
     ImGui::Dummy(ImVec2(width, height));

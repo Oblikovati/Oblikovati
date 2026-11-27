@@ -25,6 +25,9 @@ pub(crate) use dockspace::{outer_dockspace, prepare_dock_hit_test, workspace_doc
 #[path = "widget_text_projection.rs"]
 mod text_projection;
 pub(crate) use text_projection::{projected_background_text, projected_text};
+#[path = "widget_scroll_region.rs"]
+mod scroll_region;
+pub(crate) use scroll_region::{scroll_region, scroll_region_with_content_width};
 #[cfg(test)]
 #[path = "widget_text_line_advance_tests.rs"]
 mod text_line_advance_tests;
@@ -62,7 +65,6 @@ unsafe extern "C" {
         companion: *const std::ffi::c_char,
         companion_height: f32,
     );
-    fn oblikovati_gui_begin_scroll_region(identity: *const u8, width: f32, height: f32) -> bool;
     fn oblikovati_gui_dummy(width: f32, height: f32);
     fn oblikovati_gui_window_is_docked() -> bool;
     fn oblikovati_gui_close_dock_tab(title: *const std::ffi::c_char);
@@ -330,29 +332,6 @@ fn draw_literal_text(_: &Ui, position: [f32; 2], color: [f32; 4], text: &str, ba
 #[path = "../tests/widget_abi/native.rs"]
 mod tests;
 
-/// A live child window is always ended, including clipped frames and unwinding.
-pub(crate) struct ScrollingRegion<'ui> {
-    pub visible: bool,
-    _ui: &'ui Ui,
-}
-impl Drop for ScrollingRegion<'_> {
-    fn drop(&mut self) {
-        // SAFETY: this token retains the UI that opened exactly one child, including a false BeginChild result.
-        unsafe { imgui::sys::igEndChild() };
-    }
-}
-/// Open scalar-sized scrolling content; example: `let region = scroll_region(ui, "panels", [640.,80.]);`.
-pub(crate) fn scroll_region<'ui>(
-    ui: &'ui Ui,
-    identity: &str,
-    size: [f32; 2],
-) -> ScrollingRegion<'ui> {
-    let identity = ImString::new(identity);
-    // SAFETY: the UI owns the current context; C++ copies the live ID and constructs its vector (#3803, #3849).
-    let visible =
-        unsafe { oblikovati_gui_begin_scroll_region(identity.as_ptr().cast(), size[0], size[1]) };
-    ScrollingRegion { visible, _ui: ui }
-}
 /// Reserve layout space through scalar ABI; example: `dummy(ui, [364.,0.])` keeps the Create grid's width.
 pub(crate) fn dummy(_: &Ui, size: [f32; 2]) {
     // SAFETY: the owning frame retains the context; only C++ constructs the aggregate argument (#3803).
