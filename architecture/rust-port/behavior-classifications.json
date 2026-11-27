@@ -16932,8 +16932,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/browser_view.go; ../Oblikovati/head/ui/dockable_panel.go",
-      "mapping_reason": "Model browser UI behavior; model-state and geometry prerequisites belong to their domain milestones."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a head/ui/browser_view.go provides the general feature and sketch browser reference. The pinned MCAD scenario specifies the line color dialog.",
+      "mapping_reason": "Model browser UI behavior; model-state and geometry prerequisites belong to their domain milestones.",
+      "go_test_premise": "No corresponding Go color-picker test was found in the browser or property panel tests. The pinned desktop scenario provides the expanded panel and cancellation premise.",
+      "api_revision": "c8200b2da97c9a7dde43afb25debc977ff23b2fd",
+      "kernel_revision": "d463526642b7bf950ba33c7ab4a4c9bc97caffaf",
+      "kernel_capabilities": "Native desktop presentation of the Part workspace and its existing geometry.",
+      "platforms": "Linux Wayland under Weston and X11 under Openbox and Xvfb, both with Vulkan Lavapipe.",
+      "kernel_integration": "The picker stages a desktop presentation choice. Cancel leaves the original sketch line style and geometry untouched.",
+      "rust_tests": "crates/head/tests/application/model-browser/line_properties.rs and the two-density color dialog render test in crates/gui/src/application/model-browser/color_dialog.rs.",
+      "oracle": "The named pinned scenario observes the native controls and checks the line style remains unchanged. See receipts/2026-11-27-pinned-color-picker-4184.",
+      "expected_result": "Custom controls and the preview become visible. Cancel returns to Default line color with Apply disabled and leaves the sketch color unset.",
+      "baseline_source_sha256": "603382ec4009d73a74e960c5981d255c4ca9ac5489b94fcf57193c7b09458b2e"
     },
     {
       "id": "scenario:8d920042f805d927fdc29c713ce5436f6c8836a88f61c8818764246be1c94689",
