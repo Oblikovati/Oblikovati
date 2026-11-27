@@ -159,6 +159,13 @@ pub use loft_dialog::{
     GuiLoftAction, GuiLoftEditSeed, GuiLoftElement, GuiLoftPathMode, GuiLoftPlacedView,
     GuiLoftSection,
 };
+mod feature_properties;
+pub use feature_properties::FeatureOutputMode;
+mod revolve_dialog;
+pub use revolve_dialog::{
+    GuiRevolveAction, GuiRevolveEditSeed, GuiRevolveExtent, GuiRevolvePreview,
+    GuiRevolvePreviewState, GuiRevolveRequest,
+};
 mod sweep_dialog;
 pub use sweep_dialog::{
     GuiSweepAction, GuiSweepEditSeed, GuiSweepOrientation, GuiSweepOutput, GuiSweepPresetStore,

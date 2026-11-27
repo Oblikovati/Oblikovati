@@ -157,7 +157,7 @@ fn run_owner_frame(
     control.pending |= gui.changed;
     // Deferred GUI input can dispatch after polling; drain its owner effects before idle.
     activity.pending |= !gui.actions.is_empty() || !gui.parameter_actions.is_empty();
-    activity.wake_after = gui::earliest_wake(activity.wake_after, gui.wake_after);
+    activity.wake_after = earliest_wake(activity.wake_after, gui.wake_after);
     control.startup_ready = owner.startup_ready();
     control.pending |= activity.changed;
     control.pending |= publish_owner_sketches(window, owner)?;
@@ -229,12 +229,12 @@ fn process_frame_inputs(
         let gui = gui::advance_gui(window, owner, Some(&event))?;
         let shortcut = owner.take_shortcut_action();
         let shortcut = match shortcut {
-            Some(oblikovati_gui::GuiShellAction::OpenExtrude)
-                if !oblikovati_gui::GuiShellAction::OpenExtrude
-                    .dispatchable(&owner.gui_command_state()?) =>
-            {
-                None
-            }
+            Some(
+                action @ (oblikovati_gui::GuiShellAction::OpenExtrude
+                | oblikovati_gui::GuiShellAction::Revolve(
+                    oblikovati_gui::GuiRevolveAction::Open,
+                )),
+            ) if !action.dispatchable(&owner.gui_command_state()?) => None,
             other => other,
         };
         changed |= gui.changed;
@@ -348,6 +348,13 @@ fn publish_owner_sketches(
     window.set_tool_feedback(None)?;
     window.submit_sketch_scene(update)?;
     Ok(true)
+}
+
+fn earliest_wake(
+    left: Option<std::time::Duration>,
+    right: Option<std::time::Duration>,
+) -> Option<std::time::Duration> {
+    left.into_iter().chain(right).min()
 }
 
 #[cfg(all(test, target_os = "linux"))]

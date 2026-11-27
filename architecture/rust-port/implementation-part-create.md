@@ -9,7 +9,7 @@ helical-spring sweep use the owning command and are additional scenario files.
 | Command | Declarations |
 | --- | ---: |
 | Extrude | 56 |
-| Revolve | 25 |
+| [Revolve](implementation-revolve.md) | 25 |
 | Sweep | 21 |
 | Loft | 22 |
 | Coil | 7 |

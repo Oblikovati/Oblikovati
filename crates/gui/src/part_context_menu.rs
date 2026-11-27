@@ -293,14 +293,15 @@ fn selected_face_command(id: &str) -> Option<MarkingEntry> {
     }
 }
 fn part_entry(id: &str) -> Option<MarkingEntry> {
-    if id == REVOLVE_COMMAND.0 {
-        return Some(MarkingEntry::disabled(REVOLVE_COMMAND.1));
-    }
     command(id).map(MarkingEntry::command)
 }
-const REVOLVE_COMMAND: (&str, &str) = ("Create.Revolve", "Revolve");
-const MARKING_COMMANDS: [(&str, &str, GuiShellAction); 8] = [
+const MARKING_COMMANDS: [(&str, &str, GuiShellAction); 9] = [
     ("Create.Extrude", "Extrude", GuiShellAction::OpenExtrude),
+    (
+        "Create.Revolve",
+        "Revolve",
+        GuiShellAction::Revolve(crate::GuiRevolveAction::Open),
+    ),
     ("Modify.Fillet", "Fillet", GuiShellAction::OpenFillet),
     ("Modify.Chamfer", "Chamfer", GuiShellAction::OpenChamfer),
     ("Modify.Hole", "Hole", GuiShellAction::OpenHole),
@@ -322,14 +323,11 @@ const MARKING_COMMANDS: [(&str, &str, GuiShellAction); 8] = [
     ),
 ];
 pub(crate) fn marking_commands() -> impl Iterator<Item = (&'static str, &'static str)> {
-    MARKING_COMMANDS
-        .iter()
-        .map(|&(id, label, _)| match id {
-            "Sketch.Create2D" => (id, "New Sketch"),
-            "WorkPlane.Offset" => (id, "Work Plane"),
-            _ => (id, label),
-        })
-        .chain([REVOLVE_COMMAND])
+    MARKING_COMMANDS.iter().map(|&(id, label, _)| match id {
+        "Sketch.Create2D" => (id, "New Sketch"),
+        "WorkPlane.Offset" => (id, "Work Plane"),
+        _ => (id, label),
+    })
 }
 fn command(id: &str) -> Option<(&'static str, GuiShellAction)> {
     MARKING_COMMANDS
@@ -476,7 +474,10 @@ mod tests {
         );
         assert_eq!(
             part_entry("Create.Revolve"),
-            Some(MarkingEntry::disabled("Revolve"))
+            Some(MarkingEntry::command((
+                "Revolve",
+                GuiShellAction::Revolve(crate::GuiRevolveAction::Open),
+            )))
         );
         assert_eq!(command("Modify.Unknown"), None);
     }

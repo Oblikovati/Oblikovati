@@ -44,6 +44,12 @@ macro_rules! desktop_extrusion_work {
         fn loft_from_gui(&mut self, action: oblikovati_gui::GuiLoftAction) -> Result<bool, String> {
             self.loft_command(action)
         }
+        fn revolve_from_gui(
+            &mut self,
+            action: oblikovati_gui::GuiRevolveAction,
+        ) -> Result<bool, String> {
+            self.revolve_command(action)
+        }
         fn sweep_from_gui(
             &mut self,
             action: oblikovati_gui::GuiSweepAction,

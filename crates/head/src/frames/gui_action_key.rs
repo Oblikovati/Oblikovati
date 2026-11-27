@@ -137,6 +137,7 @@ pub(super) fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
         | GuiShellAction::StartSketchAt { .. }
         | GuiShellAction::FinishSketch
         | GuiShellAction::OpenExtrude
+        | GuiShellAction::Revolve(_)
         | GuiShellAction::Sweep(_)
         | GuiShellAction::Loft(_)
         | GuiShellAction::OpenMoveBody

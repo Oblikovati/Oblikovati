@@ -29,7 +29,7 @@ fn click_button(world: &mut ApplicationWorld, tool: &str, label: &str) {
 }
 
 fn active_tool() -> &'static str {
-    ["Extrude", "Loft", "Sweep"]
+    ["Extrude", "Loft", "Sweep", "Revolution"]
         .into_iter()
         .find(|tool| super::super::diagnostics::window_geometry(tool).is_some())
         .expect("expected a Part Create properties window")

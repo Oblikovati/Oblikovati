@@ -153,6 +153,8 @@ fn cancel_edit(world: &mut ApplicationWorld) {
 fn edit_closed(world: &mut ApplicationWorld) {
     world.expect_no_text("Distance A");
     assert!(!world.state().extrude_preview_active);
+    assert!(super::super::diagnostics::window_geometry("Revolution").is_none());
+    assert!(world.state().revolve_preview.is_none());
 }
 
 #[then("the previously committed model remains visible")]

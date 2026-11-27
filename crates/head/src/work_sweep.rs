@@ -8,6 +8,13 @@ macro_rules! sweep_work_methods {
         ) -> Result<bool, String> {
             Err("loft: expected an available desktop owner".into())
         }
+        /// Dispatch a Revolve command. Example: `work.revolve_from_gui(action)?`.
+        fn revolve_from_gui(
+            &mut self,
+            _action: oblikovati_gui::GuiRevolveAction,
+        ) -> Result<bool, String> {
+            Err("revolve: expected an available desktop owner".into())
+        }
         /// Dispatch a Sweep command. Example: `work.sweep_from_gui(action)?`.
         fn sweep_from_gui(
             &mut self,

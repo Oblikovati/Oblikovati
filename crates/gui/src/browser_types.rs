@@ -33,6 +33,8 @@ pub struct GuiModelBrowser {
     pub loft_edits: std::collections::BTreeMap<FeatureId, crate::GuiLoftEditSeed>,
     /// Authored options for editable Sweep features.
     pub sweep_edits: std::collections::BTreeMap<FeatureId, crate::GuiSweepEditSeed>,
+    /// Authored options for editable Revolve features.
+    pub revolve_edits: std::collections::BTreeMap<FeatureId, crate::GuiRevolveEditSeed>,
     /// Editable extrusion distance sources, indexed by their current feature identities.
     pub extrusion_edits: std::collections::BTreeMap<FeatureId, GuiExtrudeEditSeed>,
     /// Authored radius expressions for editable Fillet features.

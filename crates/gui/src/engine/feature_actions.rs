@@ -13,9 +13,44 @@ impl GuiFrameEngine {
     }
 }
 
+impl crate::GuiFrameEngine {
+    /// Open a revolution draft for the active part. Example: `engine.request_revolve()`.
+    pub fn request_revolve(&mut self) {
+        self.revolve_dialog.request_open();
+    }
+}
+
+pub(super) fn resolve_menu_extrude(commands: &GuiCommandState, actions: &mut [GuiShellAction]) {
+    for action in actions {
+        if *action == GuiShellAction::OpenExtrude {
+            *action = crate::extrude_dialog::start_action(commands);
+        }
+    }
+}
+
+pub(super) fn finish_frame_capture(
+    capture: &mut crate::GuiInputCapture,
+    ribbon: &crate::ribbon::DocumentRibbon,
+    events: &[crate::GuiInputEvent],
+    (popup_open, dock_escape): (bool, bool),
+    pointer_flags: (bool, bool, bool),
+) {
+    let has_text = events
+        .iter()
+        .any(|event| matches!(event, crate::GuiInputEvent::Text(_)));
+    capture.text |= ribbon.tips.consumed || (ribbon.tips.active() && has_text);
+    capture.popup = popup_open
+        || dock_escape
+        || ribbon.tips.consumed
+        || ribbon.customization.escape_consumed
+        || ribbon.display.temporary_escape_consumed;
+    capture.pointer |= pointer_flags.0 || pointer_flags.1 || pointer_flags.2;
+}
+
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Draft {
     Extrude,
+    Revolve,
     Sweep,
     Loft,
     Blend,
@@ -26,6 +61,9 @@ enum Draft {
 
 fn requested_draft(action: &GuiShellAction) -> Option<Draft> {
     Some(match action {
+        GuiShellAction::Revolve(
+            crate::GuiRevolveAction::Open | crate::GuiRevolveAction::OpenEdit(_),
+        ) => Draft::Revolve,
         GuiShellAction::Sweep(crate::GuiSweepAction::Open | crate::GuiSweepAction::OpenEdit(_)) => {
             Draft::Sweep
         }
@@ -55,9 +93,10 @@ pub(super) fn open_drafts(
         &mut crate::move_body_dialog::MoveBodyDialog,
         &mut crate::blend_dialog::BlendDialog,
     ),
-    (sweep, loft): (
+    (sweep, loft, revolve): (
         &mut crate::sweep_dialog::SweepDialog,
         &mut crate::loft_dialog::LoftDialog,
+        &mut crate::revolve_dialog::RevolveDialog,
     ),
     extrude: &mut crate::extrude_dialog::ExtrudeDialog,
 ) {
@@ -78,6 +117,9 @@ pub(super) fn open_drafts(
     if draft != Draft::Extrude || matches!(action, GuiShellAction::OpenExtrudeEdit(_)) {
         extrude.close(actions);
     }
+    if draft != Draft::Revolve {
+        revolve.close(actions);
+    }
     if draft != Draft::Sweep {
         sweep.close(actions);
     }
@@ -97,6 +139,10 @@ pub(super) fn open_drafts(
         blend.close(actions);
     }
     match action {
+        GuiShellAction::Revolve(crate::GuiRevolveAction::Open) => revolve.open(state, None),
+        GuiShellAction::Revolve(crate::GuiRevolveAction::OpenEdit(feature)) => {
+            revolve.open(state, Some(feature))
+        }
         GuiShellAction::Sweep(crate::GuiSweepAction::Open) => sweep.open(state, None),
         GuiShellAction::Sweep(crate::GuiSweepAction::OpenEdit(feature)) => {
             sweep.open(state, Some(feature))

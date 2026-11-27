@@ -150,6 +150,12 @@ macro_rules! forward_owner_view_work {
         fn loft_from_gui(&mut self, action: oblikovati_gui::GuiLoftAction) -> Result<bool, String> {
             self.$owner.loft_from_gui(action)
         }
+        fn revolve_from_gui(
+            &mut self,
+            action: oblikovati_gui::GuiRevolveAction,
+        ) -> Result<bool, String> {
+            self.$owner.revolve_from_gui(action)
+        }
         fn sweep_from_gui(
             &mut self,
             action: oblikovati_gui::GuiSweepAction,

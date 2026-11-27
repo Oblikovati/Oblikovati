@@ -185,6 +185,11 @@ fn chord_action(id: &str) -> Option<oblikovati_gui::GuiShellAction> {
     if id == "Create.Extrude" {
         return Some(oblikovati_gui::GuiShellAction::OpenExtrude);
     }
+    if id == "Create.Revolve" {
+        return Some(oblikovati_gui::GuiShellAction::Revolve(
+            oblikovati_gui::GuiRevolveAction::Open,
+        ));
+    }
     sketch_action(id)
 }
 fn shortcut(

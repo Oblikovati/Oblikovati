@@ -1,0 +1,212 @@
+Command exited with code 0.
+
+Command output:
+
+running 1 test
+Feature: Revolve
+  Scenario: revolve-02 Supply a straight sketch edge as the axis
+   ✔  Given a fresh copy of `fixtures/cad/revolve/revolve-profile.opd` is open and Revolve is active
+   ✔  And Revolution has its rectangular profile selected and no axis
+   ✔  When the straight rectangle edge is selected
+   ✔  Then the Axis selector shows 1 Axis
+   ✔  And a full cylindrical preview appears
+   ✔  And OK is enabled
+  Scenario: revolve-03 Reject a zero angle in the current fixture
+   ✔  Given a fresh copy of `fixtures/cad/revolve/revolve-profile.opd` is open and Revolve is active
+   ✔  And a valid profile and the long rectangle edge at Y=0 are selected with editable Angle A
+   ✔  When Angle A is replaced with 0
+   ✔  Then a red error marker appears
+   ✔  And OK is disabled
+   ✔  And the preceding preview remains visible
+  Scenario: revolve-04 Restore a valid partial revolution preview
+   ✔  Given a fresh copy of `fixtures/cad/revolve/revolve-profile.opd` is open and Revolve is active
+   ✔  And the profile and axis are selected, Angle A is zero and OK is disabled
+   ✔  When the selected value is replaced with 9 then appended with 0
+   ✔  Then the field shows 90
+   ✔  And the preview changes to a partial revolution
+   ✔  And OK is enabled
+  Scenario: revolve-05 Change partial revolution direction previews
+   ✔  Given a fresh copy of `fixtures/cad/revolve/revolve-profile.opd` is open and Revolve is active
+   ✔  And the profile and axis are selected and a 90 degree preview uses the first direction icon
+   ✔  When the second direction icon is selected
+   ✔  Then the preview moves to the opposite side of the sketch
+   ✔  When the third direction icon is selected
+   ✔  Then a different preview placement appears
+  Scenario: revolve-06 Expose a second angle control
+   ✔  Given a fresh copy of `fixtures/cad/revolve/revolve-profile.opd` is open and Revolve is active
+   ✔  And the profile and axis are selected and Angle A is 90 degrees
+   ✔  When the fourth direction icon is selected
+   ✔  Then Angle B displays 45,00 deg
+   ✔  And both angle controls are visible
+  Scenario: revolve-07 Cancel from the open preferences menu and reenter
+   ✔  Given a fresh copy of `fixtures/cad/revolve/revolve-profile.opd` is open and Revolve is active
+   ✔  And the profile and axis are selected and the preferences menu is open over the uncommitted preview
+   ✔  When Escape is pressed
+   ✔  Then the Revolution panel and preview close
+   ✔  And Sketch1 remains without a solid body
+   ✔  When R is pressed
+   ✔  Then Revolution reopens with 1 Profile and no selected axis
+   ✔  And the full 360 degree setting and first direction are shown
+  Scenario: revolve-08 Accept and traverse full revolution history
+   ✔  Given a fresh copy of `fixtures/cad/revolve/revolve-profile.opd` is open and Revolve is active
+   ✔  And the rectangular profile and its long edge at Y=0 are selected with the full-turn setting
+   ✔  When OK is clicked
+   ✔  Then Revolution1 and Solid Bodies(1) appear with a cylinder
+   ✔  When Undo is invoked
+   ✔  Then Sketch1 remains and the solid disappears
+   ✔  When Redo is invoked
+   ✔  Then Revolution1 and the solid return
+  Scenario: revolve-09 Edit an accepted full revolution into a partial solid
+   ✔  Given a writable copy of `fixtures/cad/revolve/revolve-profile.opd` is open
+   ✔  And I create and accept a full solid Revolution1 from the rectangular profile using its long edge at Y=0 as the axis
+   ✔  When Edit Feature is selected from its context menu
+   ✔  Then its profile axis and full angle setting are retained
+   ✔  When Angle A is made editable and replaced with 90
+   ✔  And OK is clicked
+   ✔  Then Revolution1 remains with one solid body and a partial shape
+   ✔  When Undo is invoked
+   ✔  Then the full cylinder returns
+   ✔  When Redo is invoked
+   ✔  Then the partial shape returns
+  Scenario: revolve-10 Reject the sampled 400 degree angle and restores full mode
+   ✔  Given a writable copy of `fixtures/cad/revolve/revolve-profile.opd` is open
+   ✔  And I create and accept a full solid Revolution1 from the rectangular profile using its long edge at Y=0 as the axis
+   ✔  And I edit Revolution1 to a 90 degree partial revolution, accept it and reopen it for editing
+   ✔  When the angle is replaced by 4 then appended with 0 then 0
+   ✔  Then 400 shows a red error marker and disables OK
+   ✔  When the full revolution control is clicked
+   ✔  Then the angle displays the full 360 degree setting
+   ✔  And the cylinder preview and enabled OK return
+test native::gui_loop_tests::application_bdd::application_scenarios_use_the_native_window has been running for over 60 seconds
+  Scenario: revolve-11 Require a termination reference in the alternate extent mode
+   ✔  Given a writable copy of `fixtures/cad/revolve/revolve-profile.opd` is open
+   ✔  And I create and accept a full solid Revolution1 from the rectangular profile using its long edge at Y=0 as the axis
+   ✔  And I reopen Revolution1 for editing with a valid full preview
+   ✔  When the adjacent extent control is selected
+   ✔  Then From shows 1 Sketch Plane
+   ✔  And To requests a face
+   ✔  And OK is disabled
+  Scenario: revolve-12 Cancel an incomplete termination edit
+   ✔  Given a writable copy of `fixtures/cad/revolve/revolve-profile.opd` is open
+   ✔  And I create and accept a 90 degree solid Revolution1 using the rectangle region and its long Y=0 edge as axis
+   ✔  And I reopen Revolution1, select the alternate reference extent and attempt to select the YZ origin plane for To
+   ✔  And the To reference remains unselected
+   ✔  When Cancel is clicked
+   ✔  Then the properties panel closes
+   ✔  And the accepted partial Revolution1 solid returns
+  Scenario: revolve-13 Switch a rectangle profile to surface curves
+   ✔  Given a fresh copy of `fixtures/cad/revolve/revolve-profile.opd` is open and Revolve is active
+   ✔  And the rectangle profile is selected, Axis is empty and Angle A is set to 90 degrees
+   ✔  When the output type control is clicked
+   ✔  Then Profiles displays 4 Curves
+   ✔  And Body Name displays Srf1
+   ✔  When the rectangle edge is selected as axis
+   ✔  Then an orange partial surface preview appears
+   ✔  And OK is enabled
+  Scenario: revolve-14 Accept a surface revolution and traverse its history
+   ✔  Given a fresh copy of `fixtures/cad/revolve/revolve-profile.opd` is open and Revolve is active
+   ✔  And Surface mode shows 4 Curves and 1 Axis and Angle A is 90 degrees
+   ✔  When OK is clicked
+   ✔  Then RevolutionSrf1 and Surface Bodies(1) appear
+   ✔  When Undo is invoked
+   ✔  Then Sketch1 remains and the surface disappears
+   ✔  When Redo is invoked
+   ✔  Then RevolutionSrf1 and its surface body return
+  Scenario: revolve-15 Clear and repopulate surface profile selection
+   ✔  Given a writable copy of `fixtures/cad/revolve/revolve-profile.opd` is open
+   ✔  And I create and accept a 90 degree surface revolution from the four rectangle curves using the long Y=0 edge as the axis
+   ✔  And I reopen RevolutionSrf1 for editing
+   ✔  When the Profiles clear control is clicked
+   ✔  Then selects Profiles is required and OK is disabled
+   ✔  And 1 Axis remains selected
+   ✔  When the rectangle edge is clicked
+   ✔  Then Profiles displays 4 Curves and the valid preview returns
+   ✔  When Cancel is clicked
+   ✔  Then the panel closes and the accepted surface remains
+  Scenario: revolve-17 Display named revolution directions
+   ✔  Given a fresh copy of `fixtures/cad/revolve/revolve-profile.opd` is open and Revolve is active
+   ✔  And Direction uses icon selector style
+   ✔  When Dropdown is selected from Selector Style
+   ✔  Then Direction displays Default in a dropdown
+   ✔  When that dropdown is opened
+   ✔  Then Default Flipped Symmetric and Asymmetric choices are visible
+  Scenario: revolve-18 Accept and retain asymmetric surface angle settings
+   ✔  Given a writable copy of `fixtures/cad/revolve/revolve-profile.opd` is open
+   ✔  And I create and accept a 90 degree surface revolution from the four rectangle curves using the long Y=0 edge as the axis
+   ✔  And I reopen RevolutionSrf1 for editing
+   ✔  And Angle A shows 90 degrees
+   ✔  When Asymmetric is selected
+   ✔  Then Angle B 45,00 deg is displayed with a changed preview
+   ✔  When OK is clicked and the feature is reopened
+   ✔  Then Asymmetric and both angle values are retained
+   ✔  And 4 Curves and 1 Axis remain selected
+   ✔  When Cancel is clicked
+   ✔  Then the accepted asymmetric surface remains
+  Scenario: revolve-21 Accept and undo a default existing-solid revolution
+   ✔  Given a fresh copy of `fixtures/cad/revolve/revolve-boolean-base.opd` is open with its block and XZ sketch visible
+   ✔  And the rectangle in the visible XZ sketch is selected with its long edge at Z=10 mm as the axis for a full turn
+   ✔  When OK is clicked with the first Boolean icon selected
+   ✔  Then Revolution1 appears with a protrusion on the existing solid
+   ✔  And the browser shows Solid Bodies(1)
+   ✔  When Undo is invoked
+   ✔  Then the original block and the XZ sketch return
+   ✔  When Redo is invoked
+   ✔  Then Revolution1 and its protrusion return
+  Scenario: revolve-22 Edit an existing revolution from Join to Cut
+   ✔  Given a writable copy of `fixtures/cad/revolve/revolve-boolean-base.opd` is open with the block and XZ sketch visible
+   ✔  And I create and accept a full-turn Revolution1 using the XZ rectangle, its long edge at Z=10 mm as axis, and Join
+   ✔  When Boolean selector style is changed to Dropdown
+   ✔  Then the current selection is named Join
+   ✔  And Join Cut Intersect and New Solid are listed
+   ✔  When Cut is selected and OK is clicked
+   ✔  Then the protrusion is replaced by a recess
+   ✔  And Solid Bodies(1) remains visible
+  Scenario: revolve-23 Change Cut to Intersect
+   ✔  Given a writable copy of `fixtures/cad/revolve/revolve-boolean-base.opd` is open with the block and XZ sketch visible
+   ✔  And I create and accept a full-turn Revolution1 using the XZ rectangle, its long edge at Z=10 mm as axis, and Join
+   ✔  And I edit Revolution1, select Cut, accept it and reopen the feature for editing
+   ✔  When Intersect is selected and OK is clicked
+   ✔  Then the large block is replaced by a small curved solid
+   ✔  And Revolution1 and Solid Bodies(1) remain in the browser
+  Scenario: revolve-24 Change Intersect to New Solid
+   ✔  Given a writable copy of `fixtures/cad/revolve/revolve-boolean-base.opd` is open with the block and XZ sketch visible
+   ✔  And I create and accept a full-turn Revolution1 using the XZ rectangle, its long edge at Z=10 mm as axis, and Join
+   ✔  And I edit Revolution1 to Cut and accept it
+   ✔  And I reopen Revolution1, change Cut to Intersect, accept it and reopen it for editing
+   ✔  When New Solid is selected
+   ✔  Then Body Name displays Solid2 and a preview appears
+   ✔  When OK is clicked
+   ✔  Then the block and revolved shape are visible
+   ✔  And the browser shows Solid Bodies(2)
+  Scenario: revolve-25 Reject a sampled negative revolution angle
+   ✔  Given a writable copy of `fixtures/cad/revolve/revolve-profile.opd` is open
+   ✔  And I create and accept a full solid Revolution1 from the rectangular profile using its long edge at Y=0 as the axis
+   ✔  And I reopen Revolution1 for editing
+   ✔  When Full is switched off and Angle A is set to -90 deg
+   ✔  Then a red validation indicator appears and OK is disabled
+   ✔  When Cancel is clicked
+   ✔  Then the edit panel closes
+  Scenario: revolve-26 Compare two upper-angle values
+   ✔  Given a writable copy of `fixtures/cad/revolve/revolve-profile.opd` is open
+   ✔  And I create and accept a full solid Revolution1 from the rectangular profile using its long edge at Y=0 as the axis
+   ✔  And I reopen Revolution1 for editing and switch Full off
+   ✔  When Angle A is set to 360.01 deg
+   ✔  Then the field reports Out of Range and OK is disabled
+   ✔  When Angle A is replaced with 360 deg
+   ✔  Then the error indicator clears and OK is enabled
+  Scenario: revolve-27 Compare two lower-angle values
+   ✔  Given a writable copy of `fixtures/cad/revolve/revolve-profile.opd` is open
+   ✔  And I create and accept a full solid Revolution1 from the rectangular profile using its long edge at Y=0 as the axis
+   ✔  And I reopen Revolution1 for editing and switch Full off
+   ✔  When Angle A is set to 0 deg
+   ✔  Then a validation indicator appears and OK is disabled
+   ✔  When Angle A is replaced with 0.01 deg
+   ✔  Then the indicator clears and OK is enabled
+[Summary]
+1 feature
+23 scenarios (23 passed)
+174 steps (174 passed)
+test native::gui_loop_tests::application_bdd::application_scenarios_use_the_native_window ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1794 filtered out; finished in 164.60s
+

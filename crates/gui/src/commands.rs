@@ -345,6 +345,7 @@ pub enum GuiShellAction {
     },
     FinishSketch,
     OpenExtrude,
+    Revolve(crate::GuiRevolveAction),
     Sweep(crate::GuiSweepAction),
     Loft(crate::GuiLoftAction),
     /// Open a fillet draft for selected edges.

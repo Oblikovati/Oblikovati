@@ -11,6 +11,9 @@ pub(super) fn feature_edit_action(
     if browser.sweep_edits.contains_key(&feature.id) {
         return GuiShellAction::Sweep(crate::GuiSweepAction::OpenEdit(feature.id));
     }
+    if browser.revolve_edits.contains_key(&feature.id) {
+        return GuiShellAction::Revolve(crate::GuiRevolveAction::OpenEdit(feature.id));
+    }
     if browser.chamfer_edits.contains_key(&feature.id) {
         return GuiShellAction::OpenChamferEdit(feature.id);
     }

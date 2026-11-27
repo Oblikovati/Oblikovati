@@ -112,6 +112,7 @@ fn accepted_sweep(world: &mut ApplicationWorld) {
 
 #[when("Undo is invoked")]
 fn undo(world: &mut ApplicationWorld) {
+    world.pump(vec![oblikovati_viewport::ViewportEvent::Focus(true)]);
     world.key(ViewportPhysicalKey::Z, true);
     world.pump(Vec::new());
 }
@@ -132,6 +133,7 @@ fn sweep_was_undone(world: &mut ApplicationWorld) {
 
 #[when("Redo is invoked")]
 fn redo(world: &mut ApplicationWorld) {
+    world.pump(vec![oblikovati_viewport::ViewportEvent::Focus(true)]);
     world.key(ViewportPhysicalKey::Y, true);
     world.pump(Vec::new());
 }

@@ -270,11 +270,7 @@ impl GuiFrameEngine {
             if repeat_wheel == Some(true) {
                 self.orientation.repeat_wheel();
             }
-            for action in &mut menu_actions {
-                if *action == GuiShellAction::OpenExtrude {
-                    *action = crate::extrude_dialog::start_action(&request.commands);
-                }
-            }
+            feature_actions::resolve_menu_extrude(&request.commands, &mut menu_actions);
             if !menu_actions.is_empty() {
                 apply_quick_access(
                     &mut self.quick_access,
@@ -301,7 +297,11 @@ impl GuiFrameEngine {
             &mut selected,
             (&mut self.shell_feature_dialog, &mut self.hole_dialog),
             (&mut self.move_body_dialog, &mut self.blend_dialog),
-            (&mut self.sweep_dialog, &mut self.loft_dialog),
+            (
+                &mut self.sweep_dialog,
+                &mut self.loft_dialog,
+                &mut self.revolve_dialog,
+            ),
             &mut self.extrude_dialog,
         );
         self.home.panel(
@@ -320,13 +320,8 @@ impl GuiFrameEngine {
             .panel(ui, commands, &mut selected, icons);
         self.preferences
             .panel(ui, commands, &mut selected, self.home.active, icons);
-        Self::draw_asset_docks(
-            (&mut self.material_browser, &mut self.appearance_browser),
-            ui,
-            commands,
-            self.home.active,
-            &mut selected,
-        );
+        let assets = (&mut self.material_browser, &mut self.appearance_browser);
+        Self::draw_asset_docks(assets, ui, commands, self.home.active, &mut selected);
         self.extrude_dialog.panel(
             ui,
             commands,
@@ -340,6 +335,8 @@ impl GuiFrameEngine {
                 area,
             },
         );
+        self.revolve_dialog
+            .panel(ui, commands, (area, icons), &mut selected);
         self.sweep_dialog
             .panel(ui, commands, (area, icons), &mut selected);
         self.loft_dialog.panel(ui, commands, area, &mut selected);
@@ -359,8 +356,8 @@ impl GuiFrameEngine {
         self.sketch_pattern
             .panel(ui, &request.commands, &mut selected);
         let editors = (&mut self.sketch_text, &mut self.curvature_settings);
-        Self::draw_sketch_editors(editors, ui, &request.commands, &mut selected);
-        crate::sketch::line::command_menu(ui, &request.commands, &mut selected);
+        Self::draw_sketch_editors(editors, ui, commands, &mut selected);
+        crate::sketch::line::command_menu(ui, commands, &mut selected);
         self.precise_input
             .panel(ui, &request.commands, &mut selected);
         crate::sketch::inspect::canvas_menu(
@@ -466,19 +463,17 @@ impl GuiFrameEngine {
         if arrow_press && self.workspace.feature_keyboard_focus() {
             capture.keyboard = true;
         }
-        capture.text |= self.ribbon.tips.consumed
-            || (self.ribbon.tips.active()
-                && request
-                    .events
-                    .iter()
-                    .any(|event| matches!(event, GuiInputEvent::Text(_))));
-        capture.popup = popup_open
-            || self.dock_editor_consumed_escape()
-            || self.ribbon.tips.consumed
-            || self.ribbon.customization.escape_consumed
-            || self.ribbon.display.temporary_escape_consumed;
-        capture.pointer |=
-            self.dimension_value_editor.over_label || over_fields || over_extrude_measurement;
+        feature_actions::finish_frame_capture(
+            &mut capture,
+            &self.ribbon,
+            &request.events,
+            (popup_open, self.dock_editor_consumed_escape()),
+            (
+                self.dimension_value_editor.over_label,
+                over_fields,
+                over_extrude_measurement,
+            ),
+        );
         activity.pending_layout |=
             dock_lifecycle_changed || cancelled_pick || self.workspace_needs_frame(home_was_active);
         Ok(GuiFrameOutput {

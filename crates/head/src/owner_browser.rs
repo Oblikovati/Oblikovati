@@ -185,6 +185,7 @@ fn populate_browser<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
         .collect();
     browser.loft_edits = super::loft::loft_edits(snapshot);
     browser.sweep_edits = super::owner_blend::owner_sweep::edit_seeds(snapshot);
+    browser.revolve_edits = super::owner_blend::owner_revolve::edit_seeds(snapshot);
     browser.extrusion_edits = snapshot
         .work_geometry
         .features()
@@ -348,10 +349,11 @@ fn feature_kind_name(
     definition: &oblikovati_model::feature::part::PartFeatureDefinition,
 ) -> &'static str {
     use oblikovati_model::feature::part::PartFeatureDefinition::{
-        Chamfer, DeleteBody, Fillet, SketchLoft, SketchPrism, SketchSweep,
+        Chamfer, DeleteBody, Fillet, SketchLoft, SketchPrism, SketchRevolve, SketchSweep,
     };
     match definition {
         SketchPrism(_) => "Extrusion",
+        SketchRevolve(_) => "Revolution",
         SketchSweep(_) => "Sweep",
         SketchLoft(_) => "Loft",
         Fillet(_) => "Fillet",
