@@ -138,7 +138,10 @@ fn open_settings(world: &mut ApplicationWorld) {
     click_in_extrude(world, "AdvancedSettings");
 }
 
-fn menu_row<'a>(world: &'a ApplicationWorld, name: &str) -> &'a diagnostics::RenderedRun {
+pub(super) fn menu_row<'a>(
+    world: &'a ApplicationWorld,
+    name: &str,
+) -> &'a diagnostics::RenderedRun {
     world
         .frame
         .runs

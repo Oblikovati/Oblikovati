@@ -257,6 +257,9 @@ impl<
                     draft.document == document && draft.generation == Some(session.generation())
                 })
                 .cloned(),
+            extrude_profile_pick: self.extrusion_profile_pick.filter(|(pick, _)| {
+                pick.document == document && pick.generation == session.generation()
+            }),
             extrude_handle: self
                 .extrusion_handle_axis
                 .filter(|_| {

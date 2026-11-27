@@ -148,6 +148,27 @@ pub fn pick_sketch_region(
     policy: crate::PrismResolutionPolicy,
     [origin, direction]: [[f64; 3]; 2],
 ) -> Result<Option<SketchPrismSelection>, EvaluationFailure> {
+    pick_region(sketch, policy, [origin, direction], |_, region| {
+        region_boundary(region).selection()
+    })
+}
+
+/// Pick the index used by certified extrusion selection.
+/// Example: `pick_sketch_region_index(sketch, policy, view_line)?`.
+pub fn pick_sketch_region_index(
+    sketch: ResolvedDocumentSketch<'_>,
+    policy: crate::PrismResolutionPolicy,
+    line: [[f64; 3]; 2],
+) -> Result<Option<usize>, EvaluationFailure> {
+    pick_region(sketch, policy, line, |index, _| index)
+}
+
+fn pick_region<T>(
+    sketch: ResolvedDocumentSketch<'_>,
+    policy: crate::PrismResolutionPolicy,
+    [origin, direction]: [[f64; 3]; 2],
+    project: impl FnMut(usize, &PlanarRegion) -> T,
+) -> Result<Option<T>, EvaluationFailure> {
     let failed = |cause| Phase::Profile.refused(Kind::InvalidInput, Entity::Body, cause);
     let Some(point) = crate::sketch_projection(
         sketch.plane,
@@ -167,16 +188,17 @@ pub fn pick_sketch_region(
     let Some(regions) = resolved_regions(sketch, policy)? else {
         return Ok(None);
     };
-    classify_region(&regions, Point3::new(x, y, z), resolution.weld)
+    classify_region(&regions, Point3::new(x, y, z), resolution.weld, project)
 }
 
-fn classify_region(
+fn classify_region<T>(
     regions: &PlanarRegionSet,
     point: Point3,
     tolerance: f64,
-) -> Result<Option<SketchPrismSelection>, EvaluationFailure> {
+    mut project: impl FnMut(usize, &PlanarRegion) -> T,
+) -> Result<Option<T>, EvaluationFailure> {
     let mut hit = None;
-    for region in regions.regions() {
+    for (index, region) in regions.regions().iter().enumerate() {
         let classifier = BRepClassFaceClassifier::with_face_point3d(
             region.face(),
             &point,
@@ -191,7 +213,7 @@ fn classify_region(
             if hit.is_some() {
                 return Ok(None);
             }
-            hit = Some(region_boundary(region).selection());
+            hit = Some(project(index, region));
         }
     }
     Ok(hit)

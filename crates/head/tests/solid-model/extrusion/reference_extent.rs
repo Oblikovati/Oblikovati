@@ -21,6 +21,9 @@ mod preview_visibility;
 #[path = "apply_next.rs"]
 mod apply_next;
 
+#[path = "apply_reuse_sketch.rs"]
+mod apply_reuse_sketch;
+
 #[given("a sketch-plane start and numeric distance")]
 #[given("the numeric Distance A extrusion preview")]
 fn numeric_preview(world: &mut ApplicationWorld) {

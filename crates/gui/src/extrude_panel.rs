@@ -74,12 +74,12 @@ impl ExtrudeDialog {
         let preview = self.valid_preview_request(state, document, edited);
         let enabled = preview
             .as_ref()
-            .is_some_and(|request| self.creation_action(request).dispatchable(state));
+            .is_some_and(|request| self.creation_action(request, false).dispatchable(state));
         let request = preview.as_ref().filter(|_| enabled);
         ui.separator();
         let commit = crate::theme::property_accept(ui, enabled)
             || (shortcuts && ui.is_key_pressed_no_repeat(Key::Enter));
-        if commit && self.commit_request(request, actions) {
+        if commit && self.commit_request(request, false, actions) {
             return;
         }
 
@@ -87,7 +87,14 @@ impl ExtrudeDialog {
         self.cancel_control(ui, shortcuts, actions);
         let right = ui.window_content_region_max()[0];
         ui.same_line_with_pos(right - 28.);
-        let disabled = ui.begin_disabled(!enabled || self.edit_feature.is_some());
+        let keep_sketch = !self.release_sketch_on_apply;
+        let apply_request = preview.as_ref().filter(|request| {
+            self.edit_feature.is_none()
+                && self
+                    .creation_action(request, keep_sketch)
+                    .dispatchable(state)
+        });
+        let disabled = ui.begin_disabled(apply_request.is_none());
         let _base = ui.push_style_color(StyleColor::Button, [0.13, 0.77, 0.37, 1.]);
         let _hovered = ui.push_style_color(StyleColor::ButtonHovered, [0.29, 0.87, 0.50, 1.]);
         let _ink = ui.push_style_color(StyleColor::Text, [0.05, 0.15, 0.08, 1.]);
@@ -96,7 +103,7 @@ impl ExtrudeDialog {
         if ui.is_item_hovered_with_flags(imgui::ItemHoveredFlags::ALLOW_WHEN_DISABLED) {
             ui.tooltip_text("Apply & Create New");
         }
-        if apply_more && self.commit_request(request, actions) {
+        if apply_more && self.commit_request(apply_request, keep_sketch, actions) {
             self.requested = true;
             self.start_without_sketch = true;
         }
@@ -153,6 +160,7 @@ impl ExtrudeDialog {
     pub(super) fn commit_request(
         &mut self,
         request: Option<&crate::GuiExtrudePreview>,
+        keep_sketch: bool,
         actions: &mut Vec<GuiShellAction>,
     ) -> bool {
         let Some(request) = request else {
@@ -166,7 +174,7 @@ impl ExtrudeDialog {
             let mut submitted = request.clone();
             submitted.generation = None;
             self.submitted = Some(submitted);
-            actions.push(self.creation_action(request));
+            actions.push(self.creation_action(request, keep_sketch));
         }
         let taper = self.taper.take();
         self.set_document(None);

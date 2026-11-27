@@ -242,6 +242,7 @@ pub(crate) fn follow_view_click(
             document,
             pixel,
             toggle: ui.io().key_ctrl || ui.io().key_shift,
+            extrude_profile: None,
         });
     }
 }

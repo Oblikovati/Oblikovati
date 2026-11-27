@@ -68,7 +68,7 @@ fn first_feature_retained(world: &mut ApplicationWorld) {
     world.expect_no_text("Extrusion2");
 }
 
-fn click_settled(world: &mut ApplicationWorld, label: &str) {
+pub(super) fn click_settled(world: &mut ApplicationWorld, label: &str) {
     let point = |world: &ApplicationWorld| {
         diagnostics::pointer_pixels(world.run_in_window("Extrude", label).center())
     };

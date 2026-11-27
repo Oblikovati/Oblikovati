@@ -183,6 +183,8 @@ impl GuiFrameEngine {
             selector_context_gesture,
             &mut selected,
         );
+        self.extrude_dialog
+            .route_profile_pick(&request.commands, &mut selected);
         if selected.contains(&GuiShellAction::OpenModelStateTable) {
             self.model_state_table.open(&request.commands);
         }

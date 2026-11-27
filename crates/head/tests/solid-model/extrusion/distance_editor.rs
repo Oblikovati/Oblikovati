@@ -5,7 +5,7 @@ use super::viewport_interaction::{click_text_native, replace_distance_native};
 use super::*;
 
 #[path = "dimension_pick.rs"]
-mod dimension_pick;
+pub(super) mod dimension_pick;
 
 #[given("Edit Feature is open for an existing extrusion")]
 fn existing_extrusion_editor(world: &mut ApplicationWorld) {

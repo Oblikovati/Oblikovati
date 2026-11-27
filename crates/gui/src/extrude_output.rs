@@ -73,6 +73,13 @@ impl ExtrudeDialog {
             ui.open_popup(POPUP);
         }
         if let Some(_popup) = ui.begin_popup(POPUP) {
+            if ui
+                .menu_item_config("Keep sketches visible on (+)")
+                .selected(!self.release_sketch_on_apply)
+                .build()
+            {
+                self.release_sketch_on_apply = !self.release_sketch_on_apply;
+            }
             self.presets.draw_visibility_setting(ui);
             if ui
                 .menu_item_config("Predict Boolean Operation")
@@ -187,15 +194,24 @@ impl ExtrudeDialog {
         self.operation = Some(operation);
     }
 
-    pub(super) fn creation_action(&self, request: &crate::GuiExtrudePreview) -> GuiShellAction {
+    pub(super) fn creation_action(
+        &self,
+        request: &crate::GuiExtrudePreview,
+        keep_sketch: bool,
+    ) -> GuiShellAction {
         let body_name = self.body_name.trim();
         let named_new_solid = request.operation.is_none()
             && request.reference_extent.is_none()
             && !body_name.is_empty();
-        if request.reference_extent.is_some() || request.operation.is_some() || named_new_solid {
+        if keep_sketch
+            || request.reference_extent.is_some()
+            || request.operation.is_some()
+            || named_new_solid
+        {
             return GuiShellAction::CommitExtrudeDraft(
                 request.clone(),
                 named_new_solid.then(|| body_name.to_owned()),
+                keep_sketch,
             );
         }
         GuiShellAction::Extrude {

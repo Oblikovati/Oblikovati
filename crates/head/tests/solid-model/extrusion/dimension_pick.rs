@@ -25,7 +25,7 @@ fn pinned_dimension_fixture(world: &mut ApplicationWorld) {
     open_rectangle_preview(world);
 }
 
-fn open_dimension_package(world: &mut ApplicationWorld, bytes: &[u8]) {
+pub(in super::super) fn open_dimension_package(world: &mut ApplicationWorld, bytes: &[u8]) {
     let copy = world.scratch_folder().join("extrusion-dimension-pick.opd");
     std::fs::write(&copy, bytes).unwrap();
     world.open_fixture(&copy);
@@ -42,7 +42,7 @@ fn open_dimension_package(world: &mut ApplicationWorld, bytes: &[u8]) {
 }
 
 #[given("the rectangular profile is selected in an active Extrude preview")]
-fn open_rectangle_preview(world: &mut ApplicationWorld) {
+pub(in super::super) fn open_rectangle_preview(world: &mut ApplicationWorld) {
     world.click_text("Sketch1");
     world.click_text("Extrude");
     world.pump(Vec::new());

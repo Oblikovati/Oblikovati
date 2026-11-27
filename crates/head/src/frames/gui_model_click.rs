@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Resolve ribbon pick ownership even when viewport selection fails (#4099).
 use super::{HeadWindow, HeadWork};
-use oblikovati_gui::{GuiCommandState, GuiModelPickCue};
+use oblikovati_gui::{GuiCommandState, GuiExtrudeProfilePick, GuiModelPickCue};
 
 pub(super) fn project_cues(window: &dyn HeadWindow, commands: &mut GuiCommandState) {
     let shared = commands
@@ -64,9 +64,14 @@ pub(super) fn dispatch(
     window: &mut dyn HeadWindow,
     owner: &mut dyn HeadWork,
     document: u64,
-    pixel: [i32; 2],
-    toggle: bool,
+    (pixel, toggle, profile): ([i32; 2], bool, Option<GuiExtrudeProfilePick>),
 ) -> Result<bool, String> {
+    if let Some(profile) = profile {
+        if window.has_pending_ribbon_model_pick() {
+            window.resolve_ribbon_model_pick(false);
+        }
+        return owner.pick_extrude_profile(profile, window.view_line(pixel)?);
+    }
     let result = select(window, owner, document, pixel, toggle);
     if !toggle && matches!(result, Ok(true)) {
         window.resolve_extrusion_model_pick(&mut || {
@@ -170,12 +175,12 @@ mod tests {
             ..Default::default()
         };
         assert_eq!(
-            dispatch(&mut window, &mut IdleWork, 1, [3, 4], false).unwrap_err(),
+            dispatch(&mut window, &mut IdleWork, 1, ([3, 4], false, None)).unwrap_err(),
             "test projection refused"
         );
         assert_eq!(window.resolutions, [false]);
         assert_eq!(
-            dispatch(&mut window, &mut IdleWork, 1, [3, 4], false).unwrap_err(),
+            dispatch(&mut window, &mut IdleWork, 1, ([3, 4], false, None)).unwrap_err(),
             "test projection refused"
         );
         assert_eq!(window.resolutions, [false]);

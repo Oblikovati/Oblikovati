@@ -18,6 +18,8 @@ mod panel;
 mod pending;
 #[path = "extrude_presets.rs"]
 mod presets;
+#[path = "extrude_profile_pick.rs"]
+mod profile_pick;
 #[path = "extrude_reference.rs"]
 mod reference;
 #[path = "extrude_selector.rs"]
@@ -34,6 +36,8 @@ pub(crate) struct ExtrudeDialog {
     dock_state: crate::dockable_lifecycle::DockableState,
     sketch: Option<DocumentSketchId>,
     profile: i32,
+    profile_pick_sketch: Option<DocumentSketchId>,
+    release_sketch_on_apply: bool,
     distance: String,
     distance_editor: distance_editor::DistanceEditor,
     second_distance: String,
@@ -83,6 +87,7 @@ impl ExtrudeDialog {
             self.taper = None;
             self.operation = None;
             self.preview_hidden = false;
+            self.profile_pick_sketch = None;
             self.size = Default::default();
         }
         self.document = document;
@@ -103,6 +108,7 @@ impl ExtrudeDialog {
         self.set_document(state.document);
         self.presets.clear_selection();
         self.sketch = Some(seed.sketch);
+        self.profile_pick_sketch = None;
         self.profile = 0;
         self.distance = seed.distance.clone();
         self.distance_editor = Default::default();
@@ -133,29 +139,6 @@ impl ExtrudeDialog {
             self.edit_feature = None;
         }
     }
-    fn open_requested_draft(&mut self, state: &GuiCommandState) {
-        self.requested = false;
-        let apply_more = std::mem::take(&mut self.start_without_sketch);
-        let carried = self
-            .submitted
-            .take()
-            .filter(|draft| apply_more && state.document == Some(draft.document));
-        self.body_name.clear();
-        self.commit_error = None;
-        self.attempted = None;
-        self.set_document(state.document);
-        self.profile = 0;
-        self.distance_editor = Default::default();
-        self.edit_feature = None;
-        if let Some(draft) = carried {
-            self.sketch = None;
-            self.operation = draft.operation;
-            self.reference.clear_picks();
-        } else {
-            self.initialize_fresh_draft(state);
-        }
-    }
-
     fn initialize_fresh_draft(&mut self, state: &GuiCommandState) {
         self.sketch = state.browser.as_ref().and_then(|browser| {
             browser
@@ -203,6 +186,7 @@ impl ExtrudeDialog {
             self.previewed = false;
         }
         self.synchronize(state);
+        self.observe_profile_pick(state);
         if self.document.is_none() && self.previewed {
             actions.push(GuiShellAction::PreviewExtrude(None));
             self.previewed = false;

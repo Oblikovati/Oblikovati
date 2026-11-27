@@ -171,6 +171,7 @@ pub struct DesktopOwner<O, W, F, G, R, S: DispatchWakeup> {
     sweep_preview: Option<owner_blend::owner_sweep::SweepPreview>,
     extrusion_preview: Option<owner_extrusion_preview::ScenePreview>,
     extrusion_draft_preview: Option<oblikovati_gui::GuiExtrudePreview>,
+    extrusion_profile_pick: Option<(oblikovati_gui::GuiExtrudeProfilePick, i32)>,
     extrusion_handle_axis: Option<[[f64; 3]; 2]>,
     extrusion_distance_validation: Option<(u64, oblikovati_gui::GuiExtrudeDistanceValidation)>,
     offset_plane_validation: Option<oblikovati_gui::GuiOffsetPlaneValidation>,
@@ -294,6 +295,7 @@ impl<
             sweep_preview: None,
             extrusion_preview: None,
             extrusion_draft_preview: None,
+            extrusion_profile_pick: None,
             extrusion_handle_axis: None,
             extrusion_distance_validation: None,
             offset_plane_validation: None,
@@ -351,18 +353,6 @@ impl<
         self.with_extrusion_policy(oblikovati_martensite::PrismResolutionPolicy::Fixed(
             resolution,
         ))
-    }
-    /// Configure one policy for preview, feature creation and replay.
-    /// Example: `owner.with_extrusion_policy(policy)?`.
-    pub fn with_extrusion_policy(
-        mut self,
-        policy: oblikovati_martensite::PrismResolutionPolicy,
-    ) -> Result<Self, String> {
-        let policy = policy.validate()?;
-        self.part_scenes.use_certified_resolution(policy)?;
-        self.extrusion_access = Some(crate::part_scene::extrusion::CertifiedExtrudeAccess(policy));
-        self.fillet_access = Some(oblikovati_automation::CertifiedFilletAccess::new(policy)?);
-        Ok(self)
     }
     /// Clone only the queued worker transport; example: `Client::new(owner.caller())` on a worker.
     pub fn caller(&self) -> QueuedCaller<S> {

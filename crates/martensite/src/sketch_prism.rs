@@ -7,6 +7,7 @@ pub use regions::{
     SketchRegionBoundary, SketchRegionCurveUse, SketchRegionMeasure,
     certified_sketch_region_measures, certified_sketch_regions,
     certified_sketch_regions_with_datums, certified_sketch_regions_with_policy, pick_sketch_region,
+    pick_sketch_region_index,
 };
 pub(crate) mod certified;
 mod conditional_profile;

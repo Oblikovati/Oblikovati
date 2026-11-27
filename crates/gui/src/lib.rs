@@ -122,11 +122,11 @@ mod extrude_handle;
 pub use commands::{
     GuiAuthoringContext, GuiBaseViewRequest, GuiBrowserChoice, GuiCommandState, GuiDocumentStorage,
     GuiDrawingLayoutAction, GuiDrawingLine, GuiDrawingProjection, GuiExtrudeDistanceValidation,
-    GuiExtrudeEditRequest, GuiExtrudePreview, GuiExtrudeReferenceExtent, GuiFilletEditRequest,
-    GuiFilletRequest, GuiHoleRequest, GuiLayoutComponent, GuiMoveBodyRequest, GuiOffsetPlaneBase,
-    GuiOffsetPlaneValidation, GuiParameterMutation, GuiPartAssetKind, GuiPreviewImage, GuiProject,
-    GuiProjectAction, GuiProjectGroup, GuiProjectSettings, GuiSelectionMode, GuiShellAction,
-    GuiShellFeatureRequest, GuiSketchLineStyle,
+    GuiExtrudeEditRequest, GuiExtrudePreview, GuiExtrudeProfilePick, GuiExtrudeReferenceExtent,
+    GuiFilletEditRequest, GuiFilletRequest, GuiHoleRequest, GuiLayoutComponent, GuiMoveBodyRequest,
+    GuiOffsetPlaneBase, GuiOffsetPlaneValidation, GuiParameterMutation, GuiPartAssetKind,
+    GuiPreviewImage, GuiProject, GuiProjectAction, GuiProjectGroup, GuiProjectSettings,
+    GuiSelectionMode, GuiShellAction, GuiShellFeatureRequest, GuiSketchLineStyle,
 };
 pub use engine::{
     GuiFrameEngine, GuiFrameOutput, GuiFrameRequest, GuiWindowAction, GuiWindowControls,

@@ -32,6 +32,13 @@ macro_rules! desktop_selection_work {
         ) -> Result<bool, String> {
             self.click_model_with_modifiers(document, line, window, toggle)
         }
+        fn pick_extrude_profile(
+            &mut self,
+            selection: oblikovati_gui::GuiExtrudeProfilePick,
+            line: [[f64; 3]; 2],
+        ) -> Result<bool, String> {
+            self.select_extrude_profile(selection, line)
+        }
         fn context_click_model(
             &mut self,
             document: u64,

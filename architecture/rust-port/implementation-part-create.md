@@ -156,6 +156,12 @@ clears its geometry picks. The published case applies an 8 mm Flipped
 extrusion and cancels the following draft, leaving one solid.
 [Native receipt](receipts/2026-11-27-extrude-apply-next-3893/README.md).
 
+With Keep sketches visible on (+) checked, Apply and Create New commits
+the extrusion and leaves its source sketch visible in a single undo step.
+A viewport pick of the second closed region in the two-profile sketch
+previews it without altering the committed extrusion.
+[Sketch reuse receipt](receipts/2026-11-27-extrude-apply-reuse-3893/README.md).
+
 Extrude refreshes the preview as soon as the final reference face is
 selected. A [native From/To control](receipts/2026-11-27-extrude-between-faces-3870/README.md)
 verifies caps on opposite faces of a block and an independent midplane

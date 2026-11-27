@@ -232,6 +232,7 @@ pub enum GuiShellAction {
         document: u64,
         pixel: [i32; 2],
         toggle: bool,
+        extrude_profile: Option<GuiExtrudeProfilePick>,
     },
     /// Select the target of a context menu without clearing selection on empty space.
     ContextClickModel {
@@ -402,7 +403,7 @@ pub enum GuiShellAction {
     /// Show or clear a transient extrusion preview.
     PreviewExtrude(Option<GuiExtrudePreview>),
     /// Accept a certified extrusion draft and its optional new body name.
-    CommitExtrudeDraft(GuiExtrudePreview, Option<String>),
+    CommitExtrudeDraft(GuiExtrudePreview, Option<String>, bool),
     /// Ask the document owner to validate the current extrusion expression.
     ValidateExtrudeDistance {
         document: u64,
@@ -471,13 +472,12 @@ pub enum GuiSelectionMode {
 mod feature_requests;
 pub use feature_requests::{
     GuiBaseViewRequest, GuiDrawingLayoutAction, GuiDrawingLine, GuiDrawingProjection,
-    GuiExtrudeDistanceValidation, GuiExtrudeEditRequest, GuiExtrudePreview,
+    GuiExtrudeDistanceValidation, GuiExtrudeEditRequest, GuiExtrudePreview, GuiExtrudeProfilePick,
     GuiExtrudeReferenceExtent, GuiFilletEditRequest, GuiFilletRequest, GuiHoleRequest,
     GuiLayoutComponent, GuiMoveBodyRequest, GuiShellFeatureRequest,
 };
 mod parameter_mutation;
 pub use parameter_mutation::GuiParameterMutation;
-/// A bounded owner snapshot; the GUI holds no document history or transaction token.
 mod asset_kind;
 pub use asset_kind::GuiPartAssetKind;
 mod line_style;

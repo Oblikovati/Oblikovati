@@ -347,9 +347,8 @@ pub(super) fn dispatch_action(
             document,
             pixel,
             toggle,
-        } => {
-            return model_click::dispatch(window, owner, *document, *pixel, *toggle);
-        }
+            extrude_profile: profile,
+        } => return model_click::dispatch(window, owner, *document, (*pixel, *toggle, *profile)),
         GuiShellAction::ContextClickModel { document, pixel } => {
             let line = window.view_line(*pixel)?;
             let depth_window = model_click::depth_window(window)?;
@@ -396,7 +395,7 @@ pub(super) fn dispatch_action(
     {
         window.reject_extrusion_edit(request, cause);
     }
-    if let (Err(cause), GuiShellAction::CommitExtrudeDraft(draft, _)) = (&result, action) {
+    if let (Err(cause), GuiShellAction::CommitExtrudeDraft(draft, _, _)) = (&result, action) {
         let mut submitted = draft.clone();
         submitted.generation = None;
         window.reject_extrusion(&submitted, cause);
