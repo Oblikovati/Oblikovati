@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Solid feature editing through the viewport scenario (#4038).
-use super::acceptance::{edit_menu_position, feature_count, feature_distance, named_solid_edges};
+use super::acceptance::{
+    feature_count, feature_distance, named_solid_edges, open_extrusion_editor,
+};
 use super::*;
 
 #[given("the MCAD Software is displaying a part in the solid modeling workspace")]
@@ -28,15 +30,23 @@ pub(super) fn committed_extrusion(world: &mut ApplicationWorld) {
     world.pump(Vec::new());
 }
 
+#[given("the fixture contains its accepted 8 mm extrusion")]
+fn published_edit_fixture(world: &mut ApplicationWorld) {
+    super::taper::open_published_part(world);
+    world.extrusion_edit_distances = Some([8., 6.]);
+}
+
 #[when("the user opens the feature for modification")]
+#[when("the user opens that extrusion for modification")]
 fn open_editor(world: &mut ApplicationWorld) {
-    let position = world.run("Extrusion1").center().map(|value| value as i32);
-    super::super::x11_input::right_click(position);
-    world.pump(Vec::new());
-    world.expect_text("Show Dimensions");
-    let position = edit_menu_position(world);
-    super::super::x11_input::click(position);
-    world.pump(Vec::new());
+    world.extrusion_edit_distances.get_or_insert([10., 20.]);
+    open_extrusion_editor(world);
+}
+
+#[given("the user opens the fixture extrusion for modification")]
+fn open_published_edit(world: &mut ApplicationWorld) {
+    published_edit_fixture(world);
+    open_editor(world);
 }
 
 #[then("its current selection and parameters are displayed")]
@@ -50,46 +60,66 @@ fn restored_parameters(world: &mut ApplicationWorld) {
         .next()
         .expect("expected the saved Extrusion1 distance");
     world.run_in_window("Extrude", &super::super::world::squeezed(&seed.distance));
-    assert_eq!(feature_distance(world), 10.);
+    assert_eq!(feature_distance(world), edit_distances(world)[0]);
 }
 
 #[when("the user changes a parameter or requested viewport selection")]
 fn change_distance(world: &mut ApplicationWorld) {
-    replace_distance_native(world, "12");
+    replace_extrusion_distance(world, "12");
     world.last_capture = Some(super::super::capture_framebuffer(
         &mut world.app().window.native,
     ));
-    replace_distance_native(world, "20");
+    replace_extrusion_distance(world, "20");
+}
+
+#[when("the user changes its extrusion distance from 8 mm to 6 mm")]
+fn change_published_distance(world: &mut ApplicationWorld) {
+    world.pump(Vec::new());
+    world.last_capture = Some(super::super::capture_framebuffer(
+        &mut world.app().window.native,
+    ));
+    replace_extrusion_distance(world, "6");
+}
+
+#[given("the user changes its distance from 8 mm to 6 mm and the changed preview is visible")]
+fn change_and_check_published_distance(world: &mut ApplicationWorld) {
+    change_published_distance(world);
+    changed_preview(world);
 }
 
 #[then("the preview reflects the pending modification")]
 fn changed_preview(world: &mut ApplicationWorld) {
     assert!(world.state().extrude_preview_active);
-    assert_eq!(feature_distance(world), 10.);
+    assert_eq!(feature_distance(world), edit_distances(world)[0]);
     let capture = super::super::capture_framebuffer(&mut world.app().window.native);
     let windows = super::super::diagnostics::window_occlusions();
-    assert!(super::super::solid_visibility::visible_preview_fill(
-        &capture, &windows
-    ));
+    if std::env::var_os("OBK_BDD_SCENARIO").is_some() {
+        world.save_capture("solid-extrude-edit-preview-4038");
+    }
+    assert!(super::super::solid_visibility::visible_replacement_preview_fill(&capture, &windows));
     assert!(preview_changed_outside_windows(
         world.last_capture.as_ref().expect("12 mm preview capture"),
         &capture,
         &windows
     ));
-    if std::env::var_os("OBK_BDD_SCENARIO").is_some() {
-        world.save_capture("solid-extrude-edit-preview-4038");
-    }
 }
 
 #[when("the user confirms the modification")]
 fn accept_edit(world: &mut ApplicationWorld) {
-    click_text_native(world, "OK");
+    world.click_text("OK");
+    world.pump(Vec::new());
 }
 
 #[then("the existing feature is updated in the model browser")]
+#[then("the existing extrusion remains in the model browser")]
 fn updated_feature(world: &mut ApplicationWorld) {
     assert_eq!(feature_count(world), 1);
-    assert_eq!(feature_distance(world), 20.);
+    let expected = edit_distances(world)[1];
+    let actual = feature_distance(world);
+    assert!(
+        (actual - expected).abs() < 1e-8,
+        "depth {actual} versus {expected} mm"
+    );
     world.expect_text("Extrusion1");
 }
 
@@ -100,7 +130,7 @@ fn updated_result(world: &mut ApplicationWorld) {
     assert!(super::super::solid_visibility::visible_solid_fill(
         &capture, &windows
     ));
-    assert_extrusion_edges(world, 20.);
+    assert_extrusion_edges(world, edit_distances(world)[1]);
     world.save_capture("solid-extrude-edit-accepted-4038");
 }
 
@@ -115,7 +145,8 @@ fn open_changed_preview(world: &mut ApplicationWorld) {
 
 #[when("the user cancels the modification")]
 fn cancel_edit(world: &mut ApplicationWorld) {
-    click_text_native(world, "Cancel");
+    world.click_text("Cancel");
+    world.pump(Vec::new());
 }
 
 #[then("the edit panel closes")]
@@ -127,10 +158,17 @@ fn edit_closed(world: &mut ApplicationWorld) {
 #[then("the previously committed model remains visible")]
 fn original_result(world: &mut ApplicationWorld) {
     assert_eq!(feature_count(world), 1);
-    assert_eq!(feature_distance(world), 10.);
-    assert_extrusion_edges(world, 10.);
+    let original = edit_distances(world)[0];
+    assert_eq!(feature_distance(world), original);
+    assert_extrusion_edges(world, original);
     updated_solid_is_visible(world);
     world.save_capture("solid-extrude-edit-cancelled-4038");
+}
+
+fn edit_distances(world: &ApplicationWorld) -> [f64; 2] {
+    world
+        .extrusion_edit_distances
+        .expect("expected an Extrude edit fixture")
 }
 
 fn updated_solid_is_visible(world: &mut ApplicationWorld) {
@@ -200,8 +238,9 @@ fn changed_visible_preview(
     let covered = windows
         .iter()
         .any(|w| point[0] >= w[0] && point[0] < w[2] && point[1] >= w[1] && point[1] < w[3]);
-    use super::super::solid_visibility::preview_hue;
-    !covered && before != after && (preview_hue(before) || preview_hue(after))
+    use super::super::solid_visibility::{preview_hue, replacement_preview_hue};
+    let preview = |pixel: &[u8]| preview_hue(pixel) || replacement_preview_hue(pixel);
+    !covered && before != after && (preview(before) || preview(after))
 }
 
 fn assert_extrusion_edges(world: &mut ApplicationWorld, expected: f64) {

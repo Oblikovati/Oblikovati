@@ -55111,7 +55111,18 @@
         "https://github.com/Oblikovati/Oblikovati/issues/4038"
       ],
       "state": "inventoried",
-      "last_receipt": null
+      "last_receipt": "architecture/rust-port/receipts/2026-11-27-viewport-extrude-edits-4038/README.md",
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a app/extrude_session_test.go.",
+      "go_test_premise": "TestExtrudeDistanceDisplayRoundTripsThroughDocUnit checks the conversion between database depth and displayed length.",
+      "api_revision": "c8200b2da97c9a7dde43afb25debc977ff23b2fd",
+      "kernel_revision": "d463526642b7bf950ba33c7ab4a4c9bc97caffaf",
+      "kernel_capabilities": "Certified replay of a named extrusion with the amended depth, with exact edge length measurements.",
+      "platforms": "Linux COSMIC Wayland and X11 under Xvfb with Openbox.",
+      "kernel_integration": "Use a private replacement preview and preserve the existing extrusion when committing the updated depth or canceling the edit.",
+      "rust_tests": "crates/head/tests/solid-model/extrusion/viewport_interaction.rs",
+      "oracle": "Compare the shaded replacement at the two measured depths, accept the changed distance, and measure four matching depth edges on the same feature. See receipts/2026-11-27-viewport-extrude-edits-4038/README.md.",
+      "expected_result": "The same extrusion owns the modified shape and the new depth is measurable.",
+      "baseline_source_sha256": "75678c715f07c208dcabf9e60a81194b01b5a6c2f95dcc13e231ea5cf45b5229"
     },
     {
       "id": "scenario:5dfbff723362d709abd49f6bec81fbfe81a301986457704d4265665d31b55b92",
@@ -55125,7 +55136,18 @@
         "https://github.com/Oblikovati/Oblikovati/issues/4038"
       ],
       "state": "inventoried",
-      "last_receipt": null
+      "last_receipt": "architecture/rust-port/receipts/2026-11-27-viewport-extrude-edits-4038/README.md",
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a app/extrude_session_test.go.",
+      "go_test_premise": "TestExtrudeDistanceDisplayRoundTripsThroughDocUnit checks the conversion between database depth and displayed length.",
+      "api_revision": "c8200b2da97c9a7dde43afb25debc977ff23b2fd",
+      "kernel_revision": "d463526642b7bf950ba33c7ab4a4c9bc97caffaf",
+      "kernel_capabilities": "Certified replay of a named extrusion with the amended depth, with exact edge length measurements.",
+      "platforms": "Linux COSMIC Wayland and X11 under Xvfb with Openbox.",
+      "kernel_integration": "Use a private replacement preview and preserve the existing extrusion when committing the updated depth or canceling the edit.",
+      "rust_tests": "crates/head/tests/solid-model/extrusion/viewport_interaction.rs",
+      "oracle": "Preview the changed depth, cancel, and verify the original named extrusion, its four measured depth edges, and visible shaded geometry. See receipts/2026-11-27-viewport-extrude-edits-4038/README.md.",
+      "expected_result": "The edit panel closes and the original solid and depth remain.",
+      "baseline_source_sha256": "75678c715f07c208dcabf9e60a81194b01b5a6c2f95dcc13e231ea5cf45b5229"
     },
     {
       "id": "scenario:f9cbf51a3dd9ef08be0b463be71ec36ca88f4c3a9a0fee75ac3bf03d2360b235",

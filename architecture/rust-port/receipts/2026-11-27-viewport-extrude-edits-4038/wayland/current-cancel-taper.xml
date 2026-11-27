@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Create and modify solid features through viewport interactions: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/viewport-feature-interaction/viewport-feature-interaction.feature" package="testsuite/Feature: Create and modify solid features through viewport interactions: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/viewport-feature-interaction/viewport-feature-interaction.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-27T01:45:17.591269235Z" time="14.058173861"><testcase name="Scenario: Cancel a taper change to an existing feature: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/viewport-feature-interaction/viewport-feature-interaction.feature:64:3" time="14.058173861"><system-out><![CDATA[  Scenario: Cancel a taper change to an existing feature
+   ✔> Given a disposable copy of the native fixture "fixtures/cad/extrusion/extrusion-rect-8mm.opd" is open in the part modeling workspace
+   ✔> And the viewport pointer is idle
+   ✔  Given the user edits the fixture extrusion, sets Taper A to 5 degrees and accepts the edit
+   ✔  And the user reopens the extrusion for editing
+   ✔  When the user reverses the taper sign
+   ✔  Then Taper A is -5 degrees and the preview narrows
+   ✔  When the user cancels the edit and reopens the extrusion for editing
+   ✔  Then Taper A remains 5 degrees
+]]></system-out></testcase></testsuite></testsuites>

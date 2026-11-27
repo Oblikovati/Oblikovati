@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Create and modify solid features through viewport interactions: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/viewport-feature-interaction/viewport-feature-interaction.feature" package="testsuite/Feature: Create and modify solid features through viewport interactions: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/viewport-feature-interaction/viewport-feature-interaction.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-27T01:45:07.452009065Z" time="9.274331002"><testcase name="Scenario: Accept a taper change to an existing feature: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/viewport-feature-interaction/viewport-feature-interaction.feature:54:3" time="9.274331002"><system-out><![CDATA[  Scenario: Accept a taper change to an existing feature
+   ✔> Given a disposable copy of the native fixture "fixtures/cad/extrusion/extrusion-rect-8mm.opd" is open in the part modeling workspace
+   ✔> And the viewport pointer is idle
+   ✔  Given the fixture contains its accepted untapered extrusion
+   ✔  When the user opens the extrusion for editing
+   ✔  Then Distance A is 8 mm and Taper A is zero
+   ✔  When the user enters 5 degrees for Taper A and confirms the edit
+   ✔  Then the solid visibly widens toward its far end
+   ✔  When the user reopens the extrusion for editing
+   ✔  Then Taper A is 5 degrees
+]]></system-out></testcase></testsuite></testsuites>

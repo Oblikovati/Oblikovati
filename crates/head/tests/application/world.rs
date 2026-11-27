@@ -62,6 +62,8 @@ pub(super) struct ApplicationWorld {
     pub observed_row_plain: Option<[u8; 4]>,
     pub observed_view: Option<[i32; 2]>,
     pub last_capture: Option<oblikovati_viewport::ViewportCapture>,
+    #[cfg(target_os = "linux")]
+    pub extrusion_edit_distances: Option<[f64; 2]>,
     pub observed_second_view: Option<[i32; 2]>,
     pub observed_annotations: Option<bool>,
     /// Text read before a later step changes what the window shows.
@@ -158,6 +160,8 @@ impl ApplicationWorld {
             observed_row_plain: None,
             observed_view: None,
             last_capture: None,
+            #[cfg(target_os = "linux")]
+            extrusion_edit_distances: None,
             observed_second_view: None,
             observed_annotations: None,
             observed_rows: None,

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Create and modify solid features through viewport interactions: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/viewport-feature-interaction/viewport-feature-interaction.feature" package="testsuite/Feature: Create and modify solid features through viewport interactions: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/viewport-feature-interaction/viewport-feature-interaction.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-27T01:44:16.104018806Z" time="14.975701461"><testcase name="Scenario: Modify an existing feature and accept the updated preview: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/viewport-feature-interaction/viewport-feature-interaction.feature:33:3" time="14.975701461"><system-out><![CDATA[  Scenario: Modify an existing feature and accept the updated preview
+   ✔> Given a disposable copy of the native fixture "fixtures/cad/extrusion/extrusion-rect-8mm.opd" is open in the part modeling workspace
+   ✔> And the viewport pointer is idle
+   ✔  Given the fixture contains its accepted 8 mm extrusion
+   ✔  When the user opens that extrusion for modification
+   ✔  Then its current selection and parameters are displayed
+   ✔  When the user changes its extrusion distance from 8 mm to 6 mm
+   ✔  Then the preview reflects the pending modification
+   ✔  When the user confirms the modification
+   ✔  Then the existing extrusion remains in the model browser
+   ✔  And the updated result appears in the viewport
+]]></system-out></testcase></testsuite></testsuites>

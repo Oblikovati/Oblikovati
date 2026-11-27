@@ -12,6 +12,7 @@ const FIXTURE: &str = "fixtures/cad/extrusion/extrusion-rect-8mm.opd";
     "a copy of `fixtures/cad/extrusion/extrusion-rect-8mm.opd` is open with its accepted untapered Extrusion1"
 )]
 #[given("the fixture contains its accepted untapered extrusion")]
+#[given(r#"a disposable copy of the native fixture "fixtures/cad/extrusion/extrusion-rect-8mm.opd" is open in the part modeling workspace"#)]
 pub(super) fn open_published_part(world: &mut ApplicationWorld) {
     let source = super::super::scenario_root().join(FIXTURE);
     open_copy(world, &std::fs::read(source).unwrap());
@@ -27,8 +28,10 @@ fn open_pinned_part(world: &mut ApplicationWorld) {
 
 fn open_copy(world: &mut ApplicationWorld, package: &[u8]) {
     let path = world.scratch_folder().join("extrusion-rect-8mm.opd");
-    std::fs::write(&path, package).unwrap();
-    world.open_fixture(&path);
+    if !path.is_file() || world.state().document.is_none() {
+        std::fs::write(&path, package).unwrap();
+        world.open_fixture(&path);
+    }
     assert_eq!(feature_count(world), 1);
     assert_eq!(feature_distance(world), 8.);
     assert_eq!(saved_angle(world), 0.);
