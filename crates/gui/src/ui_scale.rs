@@ -348,7 +348,8 @@ impl GuiScalePreferences {
                     self.sketch_draft.clear();
                     close_requested = true;
                 }
-                ui.is_window_focused() && ui.is_key_pressed_no_repeat(imgui::Key::Escape)
+                ui.is_window_focused_with_flags(imgui::WindowFocusedFlags::ROOT_AND_CHILD_WINDOWS)
+                    && ui.is_key_pressed_no_repeat(imgui::Key::Escape)
             })
             .unwrap_or(false);
         self.sketch_draft.draw_hud(ui);

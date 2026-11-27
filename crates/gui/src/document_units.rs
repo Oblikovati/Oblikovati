@@ -82,7 +82,9 @@ impl GuiDocumentUnits {
                 ui.separator();
                 ui.dummy([0., 2.]);
                 done = unit_actions(ui, document, units, draft, actions, state.transaction_open);
-                done |= ui.is_window_focused() && ui.is_key_pressed_no_repeat(Key::Escape);
+                done |= ui.is_window_focused_with_flags(
+                    imgui::WindowFocusedFlags::ROOT_AND_CHILD_WINDOWS,
+                ) && ui.is_key_pressed_no_repeat(Key::Escape);
             });
         if !open || done {
             self.set_document(None);
