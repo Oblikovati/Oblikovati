@@ -110,7 +110,11 @@ jobs:
               dpkg-query -W vulkan-validationlayers mesa-vulkan-drivers
             fi
             ./tools/with-xvfb.sh --window-manager cargo xtask native
-          elif [ "$RUNNER_OS" = Windows ] && [ "$RUNNER_ARCH" = ARM64 ]; then
+          elif [ "$RUNNER_OS" = Windows ]; then
+            if [ "$RUNNER_ARCH" = X64 ]; then
+              # A later native abort must not hide an earlier test's panic output.
+              export RUST_TEST_NOCAPTURE=1
+            fi
             cargo xtask native 2>&1 | tee "$(cygpath -u "$RUNNER_TEMP")/oblikovati-native.log"
           else
             cargo xtask native
@@ -119,4 +123,9 @@ jobs:
         if: failure() && matrix.target == 'aarch64-pc-windows-msvc' && steps.native-workspaces.conclusion == 'failure'
         timeout-minutes: 6
         shell: pwsh
-        run: ./tools/bootstrap/windows_gui_debug.ps1 -NativeLog (Join-Path $env:RUNNER_TEMP 'oblikovati-native.log')
+        run: ./tools/bootstrap/windows_gui_debug.ps1 -Architecture arm64 -NativeLog (Join-Path $env:RUNNER_TEMP 'oblikovati-native.log')
+      - name: Capture Windows x64 native GUI composition crash stack
+        if: failure() && matrix.target == 'x86_64-pc-windows-msvc' && steps.native-workspaces.conclusion == 'failure'
+        timeout-minutes: 6
+        shell: pwsh
+        run: ./tools/bootstrap/windows_gui_debug.ps1 -Architecture x64 -NativeLog (Join-Path $env:RUNNER_TEMP 'oblikovati-native.log')
