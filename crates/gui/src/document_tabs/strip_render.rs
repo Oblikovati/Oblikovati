@@ -43,7 +43,7 @@ pub(super) fn home_tab(
     let shown = ui.tab_item_with_flags("###home-workspace-tab", None, flags);
     draw_tab_label(ui, owner.icons, IconGlyph::Home, "Home");
     if owner.home.active {
-        underline_document_tab(ui);
+        crate::widget_abi::document_tab_underline(ui);
     }
     owner.order.note(
         TabKey::Home,
@@ -115,7 +115,7 @@ pub(super) fn document_tab(
     let selected = !behind && is_active_window(state, tab);
     let keep = draw_document_tab(ui, owner.icons, tab, selected, room);
     if selected {
-        underline_document_tab(ui);
+        crate::widget_abi::document_tab_underline(ui);
     }
     #[cfg(test)]
     record_test_tab_bounds(ui, tab.row.id, owner.test_tab_bounds);
@@ -285,25 +285,6 @@ fn draw_tab_label(ui: &Ui, icons: &crate::icons::GuiRibbonIcons, glyph: IconGlyp
         ui.style_color(imgui::StyleColor::Text),
         label,
     );
-}
-
-fn underline_document_tab(ui: &Ui) {
-    let [left, _] = ui.item_rect_min();
-    let [right, _] = ui.item_rect_max();
-    let [x, y] = ui.window_pos();
-    let [width, height] = ui.window_size();
-    let bottom = y + height - 1.;
-    let draw = ui.get_window_draw_list();
-    // Reserve the end of the strip for the accent even when ImGui's tab row is shorter.
-    draw.with_clip_rect([x, y], [x + width, bottom], || {
-        draw.add_rect(
-            [left, bottom - 2.],
-            [right, bottom],
-            ui.style_color(imgui::StyleColor::NavHighlight),
-        )
-        .filled(true)
-        .build();
-    });
 }
 
 #[cfg(test)]

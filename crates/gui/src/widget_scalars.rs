@@ -10,6 +10,7 @@ unsafe extern "C" {
     fn oblikovati_gui_image(texture: usize, width: f32, height: f32);
     fn oblikovati_gui_invisible_button(label: *const std::ffi::c_char, width: f32, height: f32);
     fn oblikovati_gui_filled_rect(x1: f32, y1: f32, x2: f32, y2: f32, color: u32);
+    fn oblikovati_gui_document_tab_underline();
     fn oblikovati_gui_foreground_dimension(
         x1: f32,
         y1: f32,
@@ -96,6 +97,11 @@ pub(crate) fn invisible_button(_: &Ui, label: &std::ffi::CStr, size: [f32; 2]) {
 pub(crate) fn filled_rect(_: &Ui, [x1, y1]: [f32; 2], [x2, y2]: [f32; 2], color: ImColor32) {
     // The borrowed UI retains the active window draw list for this call.
     unsafe { oblikovati_gui_filled_rect(x1, y1, x2, y2, color.to_bits()) };
+}
+
+pub(crate) fn document_tab_underline(_: &Ui) {
+    // The current tab item and strip window stay live for the native draw call.
+    unsafe { oblikovati_gui_document_tab_underline() };
 }
 
 /// Draw the extrusion distance guide, tip and literal label in the foreground layer.
