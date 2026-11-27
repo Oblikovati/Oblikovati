@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::resources::{FixtureResources, run};
 use std::{
+    env::consts::{DLL_PREFIX, DLL_SUFFIX},
     path::{Path, PathBuf},
     process::Command,
 };
@@ -35,13 +36,15 @@ impl WorkflowCompiler {
             .arg(project.join("Cargo.toml"))
             .arg("--target-dir")
             .arg(project.join("target")));
-        project.join("target/debug/libtyped_workflow_fixture.so")
+        project
+            .join("target/debug")
+            .join(format!("{DLL_PREFIX}typed_workflow_fixture{DLL_SUFFIX}"))
     }
     /// Build an API-only Go document add-in; example: `compiler.go_workflow(path, false)`.
     pub fn go_workflow(&self, output: &Path, catalog: bool) -> PathBuf {
         let project = self.resources.directory.path().join("typed-go");
         prepare_go_workflow(&project, &self.resources.sdk, output, catalog);
-        let library = project.join("typed-go.so");
+        let library = project.join(format!("typed-go{DLL_SUFFIX}"));
         run(Command::new("go")
             .current_dir(&project)
             .env("GOWORK", "off")
