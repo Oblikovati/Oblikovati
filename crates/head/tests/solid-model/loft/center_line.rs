@@ -17,7 +17,12 @@ fn center_line_inputs_are_visible(world: &mut ApplicationWorld) {
 
 #[when("both circular profiles are selected in Loft and Center Line mode is chosen")]
 fn draft_a_center_line_loft(world: &mut ApplicationWorld) {
-    pick_both_circles(world);
+    draft_on_guide(world, 3.);
+}
+
+pub(super) fn draft_on_guide(world: &mut ApplicationWorld, height: f64) {
+    open_loft_with_fitted_view(world);
+    pick_model_points(world, [[1., 0., 0.], [0.5, 0., height]]);
     click_loft_control(world, "CenterLine");
 }
 
@@ -30,8 +35,12 @@ fn asks_for_the_center_line(world: &mut ApplicationWorld) {
 
 #[when("the Center Line selector is activated and Sketch3 is shown as the selected center line")]
 fn pick_the_straight_center_line(world: &mut ApplicationWorld) {
+    pick_guide(world, 1.5);
+}
+
+pub(super) fn pick_guide(world: &mut ApplicationWorld, z: f64) {
     click_loft_control(world, "SelectCenterLine");
-    let pixel = crate::HeadWindow::model_pixel(&world.app().window.native, [0., 0., 1.5]).unwrap();
+    let pixel = crate::HeadWindow::model_pixel(&world.app().window.native, [0., 0., z]).unwrap();
     world.click(pixel);
     world.pump(Vec::new());
     assert_eq!(world.state().loft_center_line.as_deref(), Some("Sketch3"));

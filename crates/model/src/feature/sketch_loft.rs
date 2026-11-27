@@ -38,8 +38,44 @@ impl SketchLoftOutput {
     }
 }
 
+/// An intermediate section's normalized position and area multiplier.
+#[derive(Clone, Copy, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SketchLoftPlacedSection {
+    pub position: f64,
+    pub area_scale: f64,
+}
+
+impl SketchLoftPlacedSection {
+    /// Validate one intermediate section. Example: `SketchLoftPlacedSection::new(0.5, 1.0)?`.
+    pub fn new(position: f64, area_scale: f64) -> Result<Self, String> {
+        if !position.is_finite()
+            || position <= 0.
+            || position >= 1.
+            || !area_scale.is_finite()
+            || area_scale <= 0.
+        {
+            return Err(format!(
+                "placed Loft section ({position}, {area_scale}): expected a position strictly between 0 and 1 and a finite positive area multiplier"
+            ));
+        }
+        Ok(Self {
+            position,
+            area_scale,
+        })
+    }
+}
+
+/// The fitted circle of an intermediate section in Part coordinates.
+pub struct LoftPlacedCircle {
+    pub center: [f64; 3],
+    pub normal: [f64; 3],
+    pub x_direction: [f64; 3],
+    pub radius: f64,
+}
+
 /// Persisted section identities in the order in which the loft passes through them.
-#[derive(Clone, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct SketchLoftRecipe {
     pub sections: [SketchLoftSection; 2],
@@ -47,10 +83,12 @@ pub struct SketchLoftRecipe {
     pub output: SketchLoftOutput,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub center_line: Option<SketchLoftCenterLine>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub placed: Option<SketchLoftPlacedSection>,
 }
 
 /// A Loft whose sources are structurally valid and can be resolved for the current Part.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct SketchLoftDefinition(SketchLoftRecipe);
 
 /// A solved section in database coordinates with its source identity.
@@ -73,6 +111,26 @@ pub struct ResolvedSketchLoft {
     pub sections: [ResolvedLoftCircle; 2],
     pub output: SketchLoftOutput,
     pub center_line: Option<ResolvedLoftCenterLine>,
+    pub placed: Option<SketchLoftPlacedSection>,
+}
+
+impl ResolvedSketchLoft {
+    /// Compute the section sent to the builder. Example: `input.placed_circle()`.
+    pub fn placed_circle(&self) -> Option<LoftPlacedCircle> {
+        let dimensions = self.placed?;
+        let [first, last] = &self.sections;
+        let normal = std::array::from_fn(|axis| last.center[axis] - first.center[axis]);
+        let center =
+            std::array::from_fn(|axis| first.center[axis] + dimensions.position * normal[axis]);
+        let radius = (first.radius + dimensions.position * (last.radius - first.radius))
+            * dimensions.area_scale.sqrt();
+        Some(LoftPlacedCircle {
+            center,
+            normal,
+            x_direction: first.x_direction,
+            radius,
+        })
+    }
 }
 
 impl SketchLoftDefinition {
@@ -91,16 +149,17 @@ impl SketchLoftDefinition {
             sections,
             output: SketchLoftOutput::Solid,
             center_line: None,
+            placed: None,
         }))
     }
 
     /// Restore ordered section IDs. Example: `SketchLoftDefinition::from_recipe(recipe)?`.
     pub fn from_recipe(recipe: SketchLoftRecipe) -> Result<Self, String> {
-        let loft = Self::new(recipe.sections)?.with_output(recipe.output);
-        match recipe.center_line {
-            Some(source) => loft.with_center_line(source),
-            None => Ok(loft),
+        let mut loft = Self::new(recipe.sections)?.with_output(recipe.output);
+        if let Some(path) = recipe.center_line {
+            loft = loft.with_center_line(path)?;
         }
+        loft.with_placed_section(recipe.placed)
     }
 
     /// Choose the result kind over the same sections. Example: `loft.with_output(SketchLoftOutput::Surface)`.
@@ -124,6 +183,21 @@ impl SketchLoftDefinition {
             ));
         }
         self.0.center_line = Some(path);
+        Ok(self)
+    }
+
+    /// Set the intermediate section. Example: `loft.with_placed_section(Some(section))?`.
+    pub fn with_placed_section(
+        mut self,
+        placed: Option<SketchLoftPlacedSection>,
+    ) -> Result<Self, String> {
+        if let Some(section) = placed {
+            if self.0.center_line.is_none() {
+                return Err("A placed Loft section requires a Center Line.".into());
+            }
+            SketchLoftPlacedSection::new(section.position, section.area_scale)?;
+        }
+        self.0.placed = placed;
         Ok(self)
     }
 
@@ -164,7 +238,8 @@ impl SketchLoftDefinition {
         Ok(FeatureReadFootprint::new(keys, unattributed))
     }
 
-    pub(super) fn resolve(
+    /// Resolve the current geometry for preview or replay. Example: `loft.resolve(snapshot, datums)?`.
+    pub fn resolve(
         &self,
         snapshot: &DocumentSnapshot,
         datums: &WorkGeometryEvaluation,
@@ -190,6 +265,7 @@ impl SketchLoftDefinition {
             sections: [resolve(first)?, resolve(last)?],
             output: self.0.output,
             center_line,
+            placed: self.0.placed,
         })
     }
 }

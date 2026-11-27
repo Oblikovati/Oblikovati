@@ -245,6 +245,7 @@ impl<
             ),
             loft_sections: self.gui_loft_sections(document, session.generation()),
             loft_center_line: self.gui_loft_center_line(document, session.generation()),
+            loft_placed: self.gui_loft_placed(document, session.generation()),
             loft_preview: self.gui_loft_preview(document, session.generation()),
             sweep_preview: self.gui_sweep_preview(document, session.generation()),
             extrude_reference_preview: self

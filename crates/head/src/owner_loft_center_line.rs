@@ -17,6 +17,29 @@ impl<
     S: DispatchWakeup,
 > DesktopOwner<O, W, F, G, R, S>
 {
+    pub(in crate::owner) fn gui_loft_sections(
+        &self,
+        document: u64,
+        generation: u64,
+    ) -> Vec<GuiLoftSection> {
+        self.loft_selection
+            .as_ref()
+            .filter(|draft| draft.document == document && draft.generation == generation)
+            .map_or_else(Vec::new, |draft| draft.sections.clone())
+    }
+
+    pub(in crate::owner) fn gui_loft_preview(
+        &self,
+        document: u64,
+        generation: u64,
+    ) -> Option<Result<(), String>> {
+        let draft = self.loft_selection.as_ref()?;
+        if draft.document != document || draft.generation != generation {
+            return None;
+        }
+        draft.preview.clone()
+    }
+
     pub(in crate::owner) fn gui_loft_center_line(
         &self,
         document: u64,
@@ -151,11 +174,7 @@ pub(in crate::owner) fn loft_edits(
         .filter_map(|feature| match feature.definition() {
             PartFeatureDefinition::SketchLoft(definition) => {
                 let recipe = definition.recipe();
-                let path_mode = if recipe.center_line.is_some() {
-                    GuiLoftPathMode::CenterLine
-                } else {
-                    GuiLoftPathMode::Rails
-                };
+                let path_mode = path_mode(recipe.center_line.is_some(), recipe.placed.is_some());
                 Some((
                     feature.id(),
                     GuiLoftEditSeed {
@@ -169,17 +188,32 @@ pub(in crate::owner) fn loft_edits(
         .collect()
 }
 
+#[derive(Default)]
+pub(super) struct LoftDraftSources {
+    pub(super) sections: Vec<GuiLoftSection>,
+    pub(super) output: SketchLoftOutput,
+    pub(super) center_line: Option<CenterLinePick>,
+    pub(super) placed: Option<SketchLoftPlacedSection>,
+}
+
+impl LoftDraftSources {
+    pub(super) fn mode(&self) -> GuiLoftPathMode {
+        path_mode(self.center_line.is_some(), self.placed.is_some())
+    }
+}
+
+fn path_mode(center_line: bool, placed: bool) -> GuiLoftPathMode {
+    match (center_line, placed) {
+        (_, true) => GuiLoftPathMode::PlacedSections,
+        (true, false) => GuiLoftPathMode::CenterLine,
+        (false, false) => GuiLoftPathMode::Rails,
+    }
+}
+
 pub(super) fn loft_sources(
     snapshot: &DocumentSnapshot,
     id: FeatureId,
-) -> Result<
-    (
-        Vec<GuiLoftSection>,
-        SketchLoftOutput,
-        Option<CenterLinePick>,
-    ),
-    String,
-> {
+) -> Result<LoftDraftSources, String> {
     let authored = snapshot
         .work_geometry
         .get(id)
@@ -215,5 +249,10 @@ pub(super) fn loft_sources(
             })
         })
         .transpose()?;
-    Ok((sections, recipe.output, center_line))
+    Ok(LoftDraftSources {
+        sections,
+        output: recipe.output,
+        center_line,
+        placed: recipe.placed,
+    })
 }

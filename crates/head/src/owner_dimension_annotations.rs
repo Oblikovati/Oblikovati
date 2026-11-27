@@ -57,6 +57,9 @@ impl<
             Ok(None) => {}
             Err(cause) => output.declines.push(cause),
         }
+        output
+            .labels
+            .extend(self.loft_placement_annotations(document, session.generation()));
         Ok(output)
     }
 }

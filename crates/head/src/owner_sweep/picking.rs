@@ -200,14 +200,22 @@ fn path_segment(
 }
 
 pub(in crate::owner) fn ray_hits_segment(
+    ray: [[f64; 3]; 2],
+    segment: [[f64; 3]; 2],
+    tolerance: f64,
+) -> bool {
+    ray_segment_fraction(ray, segment, tolerance).is_some()
+}
+
+pub(in crate::owner) fn ray_segment_fraction(
     [origin, direction]: [[f64; 3]; 2],
     [start, end]: [[f64; 3]; 2],
     tolerance: f64,
-) -> bool {
+) -> Option<f64> {
     let dot = |a: [f64; 3], b: [f64; 3]| (0..3).map(|i| a[i] * b[i]).sum::<f64>();
     let direction_squared = dot(direction, direction);
     if direction_squared <= 0. || !direction_squared.is_finite() {
-        return false;
+        return None;
     }
     let screen_vector = |point: [f64; 3]| {
         let offset = std::array::from_fn(|i| point[i] - origin[i]);
@@ -224,5 +232,5 @@ pub(in crate::owner) fn ray_hits_segment(
         0.
     };
     let nearest = std::array::from_fn(|i| base[i] + fraction * segment[i]);
-    dot(nearest, nearest) <= tolerance * tolerance
+    (dot(nearest, nearest) <= tolerance * tolerance).then_some(fraction)
 }

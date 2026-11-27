@@ -7,11 +7,17 @@ use crate::{
     dockable_window::DockableWindow,
 };
 use imgui::{TabItemFlags, Ui};
+#[path = "loft_section_dimensions.rs"]
+mod section_dimensions;
 use oblikovati_model::{
     document_sketch::DocumentSketchId,
-    feature::{FeatureId, sketch_loft::SketchLoftOutput},
+    feature::{
+        FeatureId,
+        sketch_loft::{SketchLoftOutput, SketchLoftPlacedSection},
+    },
     sketch::SketchEntityId,
 };
+use section_dimensions::SectionDimensions;
 
 const TITLE: &str = "Loft";
 const EMPTY_PART: &str = "Loft requires a body or at least two visible sketches.";
@@ -48,8 +54,18 @@ pub struct GuiLoftEditSeed {
     pub path_mode: GuiLoftPathMode,
 }
 
+/// The current intermediate section dimensions and editor state.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct GuiLoftPlacedView {
+    pub section: SketchLoftPlacedSection,
+    pub guide_length_mm: f64,
+    pub area_mm2: f64,
+    pub editing: bool,
+    pub dirty: bool,
+}
+
 /// Lifecycle requests for the active Loft draft.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum GuiLoftAction {
     Open,
     OpenEdit(FeatureId),
@@ -66,6 +82,12 @@ pub enum GuiLoftAction {
         output: SketchLoftOutput,
     },
     ChooseCenterLine(u64),
+    EditPlaced(u64),
+    ApplyPlaced {
+        document: u64,
+        section: SketchLoftPlacedSection,
+    },
+    CancelPlaced(u64),
     Commit(u64),
     Clear,
 }
@@ -95,7 +117,10 @@ impl GuiLoftAction {
             Self::SetPath { document, .. } | Self::SetOutput { document, .. } => {
                 available && state.document == Some(document)
             }
-            Self::ChooseCenterLine(document) => available && state.document == Some(document),
+            Self::ChooseCenterLine(document)
+            | Self::EditPlaced(document)
+            | Self::CancelPlaced(document)
+            | Self::ApplyPlaced { document, .. } => available && state.document == Some(document),
             Self::Commit(document) => {
                 available
                     && state.document == Some(document)
@@ -112,6 +137,7 @@ pub(crate) struct LoftDialog {
     document: Option<(u64, u64)>,
     show_help: bool,
     editing: bool,
+    dimensions: SectionDimensions,
     path_mode: GuiLoftPathMode,
     output: SketchLoftOutput,
     closed_loop: bool,
@@ -144,6 +170,7 @@ impl LoftDialog {
         };
         self.document = Some((document, generation));
         self.show_help = false;
+        self.dimensions = SectionDimensions::default();
         self.editing = feature.is_some();
         let seed = state
             .browser
@@ -195,7 +222,7 @@ impl LoftDialog {
             return;
         }
         let tip = state.browser.as_ref().is_none_or(empty_part);
-        let height = if tip { 175. } else { 325. };
+        let height = if tip { 175. } else { 340. };
         crate::widget_abi::fit_viewport_properties(ui, TITLE, area, [300., height]);
         let _border = crate::theme::property_window_border(ui);
         let mut open = true;
@@ -207,6 +234,10 @@ impl LoftDialog {
         });
         if !open {
             self.close(actions);
+        }
+        if let Some((document, _)) = self.document {
+            self.dimensions
+                .draw(ui, state.loft_placed, document, actions);
         }
     }
 
@@ -234,14 +265,17 @@ impl LoftDialog {
             .map(|(document, _)| GuiLoftAction::Commit(document))
             .filter(|action| {
                 (self.path_mode == GuiLoftPathMode::Rails || state.loft_center_line.is_some())
+                    && state.loft_placed.is_none_or(|placed| !placed.editing)
                     && !self.manual_mapping
                     && !self.closed_loop
                     && !self.merge_tangent_faces
                     && action.enabled(state)
             });
         let accepted = crate::theme::property_accept(ui, tip || commit.is_some());
+        let saves_edit = self.path_mode == GuiLoftPathMode::PlacedSections
+            && state.loft_placed.is_some_and(|placed| placed.dirty);
         if accepted
-            && !self.editing
+            && (!self.editing || saves_edit)
             && let Some(commit) = commit
         {
             actions.push(GuiShellAction::Loft(commit));
@@ -254,9 +288,10 @@ impl LoftDialog {
         if crate::widget_abi::button(ui, "Help", [58., 28.]) {
             self.show_help = !self.show_help;
         }
-        (accepted && (tip || self.editing))
+        (accepted && (tip || (self.editing && !saves_edit)))
             || cancelled
-            || ui.is_key_pressed_no_repeat(imgui::Key::Escape)
+            || (state.loft_placed.is_none_or(|placed| !placed.editing)
+                && ui.is_key_pressed_no_repeat(imgui::Key::Escape))
     }
     fn tabs(&mut self, ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
         let Some(_tabs) = ui.tab_bar("##loft-pages") else {
@@ -335,11 +370,19 @@ impl LoftDialog {
                     });
             }
             GuiLoftPathMode::CenterLine => self.center_line_selector(ui, state, actions),
-            GuiLoftPathMode::PlacedSections => {
-                self.center_line_selector(ui, state, actions);
-                let _disabled = ui.begin_disabled(true);
-                crate::widget_abi::button(ui, "Placed Sections", [0., 0.]);
+            GuiLoftPathMode::PlacedSections => self.placed_controls(ui, state, actions),
+        }
+    }
+
+    fn placed_controls(&self, ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
+        self.center_line_selector(ui, state, actions);
+        ui.text("Placed Sections");
+        if let Some((document, _)) = self.document.filter(|_| state.loft_placed.is_some()) {
+            if crate::widget_abi::button(ui, "Point1", [0., 0.]) {
+                actions.push(GuiShellAction::Loft(GuiLoftAction::EditPlaced(document)));
             }
+        } else if state.loft_center_line.is_some() {
+            ui.text_disabled("Click the Center Line to place a section");
         }
     }
 

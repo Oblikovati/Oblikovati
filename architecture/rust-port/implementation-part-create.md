@@ -273,3 +273,13 @@ section centers. The authored line and its sketch participate in replay and
 stable body naming. Part recipe version 37 stores the guide identity. The
 [center-line receipt](receipts/2026-11-27-loft-center-line-3917/README.md)
 covers native picking, preview, commit, and package reopening.
+
+### Loft intermediate section
+
+A private edit projects the viewport pick along the saved Center Line.
+The released through-sections builder constructs a checked three-section
+solid from the saved profile circles and the intermediate circle. The
+intermediate position is normalized along the guide and its size multiplies
+the area of the interpolated section. Part recipe version 38 preserves both
+values. The [native receipt](receipts/2026-11-27-loft-placed-3917/README.md)
+covers the viewport pick, annotations, two acceptance steps, and package replay.

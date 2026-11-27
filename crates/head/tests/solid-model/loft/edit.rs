@@ -16,7 +16,7 @@ fn create_loft_to_edit(world: &mut ApplicationWorld) {
 
 #[when("Loft1 is double-clicked in the browser")]
 #[when("Loft1 is reopened")]
-fn double_click_loft(world: &mut ApplicationWorld) {
+pub(super) fn double_click_loft(world: &mut ApplicationWorld) {
     let pixel = diagnostics::pointer_pixels(world.run("Loft1").center());
     world.pump(crate::native::gui_loop_tests::pointer_click_events(
         pixel, 2,

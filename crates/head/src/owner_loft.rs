@@ -9,7 +9,9 @@ use oblikovati_model::{
     feature::{
         FeatureId,
         part::PartFeatureDefinition,
-        sketch_loft::{SketchLoftCenterLine, SketchLoftOutput, SketchLoftSection},
+        sketch_loft::{
+            SketchLoftCenterLine, SketchLoftOutput, SketchLoftPlacedSection, SketchLoftSection,
+        },
     },
     history::{DocumentSnapshot, ResolvedDocumentSketch},
 };
@@ -19,6 +21,10 @@ mod center_line;
 pub(super) use center_line::loft_edits;
 use center_line::{CenterLinePick, loft_sources};
 
+#[path = "owner_loft_placed.rs"]
+mod placed;
+use placed::LoftPlacement;
+
 pub(super) struct LoftSelection {
     document: u64,
     generation: u64,
@@ -27,6 +33,7 @@ pub(super) struct LoftSelection {
     output: SketchLoftOutput,
     center_line: Option<CenterLinePick>,
     pick_center_line: bool,
+    placement: LoftPlacement,
     sections: Vec<GuiLoftSection>,
     preview: Option<Result<(), String>>,
 }
@@ -36,6 +43,9 @@ impl LoftSelection {
         match self.path_mode {
             GuiLoftPathMode::Rails => Some(None),
             GuiLoftPathMode::CenterLine => {
+                self.center_line.as_ref().map(|picked| Some(picked.source))
+            }
+            GuiLoftPathMode::PlacedSections if self.placement.current.is_some() => {
                 self.center_line.as_ref().map(|picked| Some(picked.source))
             }
             GuiLoftPathMode::PlacedSections => None,
@@ -68,6 +78,11 @@ impl<
                 self.choose_loft_output(document, output)
             }
             GuiLoftAction::ChooseCenterLine(document) => self.arm_center_line(document),
+            GuiLoftAction::EditPlaced(document) => self.edit_placed(document),
+            GuiLoftAction::ApplyPlaced { document, section } => {
+                self.apply_placed(document, section)
+            }
+            GuiLoftAction::CancelPlaced(document) => self.cancel_placed(document),
             GuiLoftAction::Commit(document) => self.commit_loft(document),
             GuiLoftAction::Begin { document, feature } => self.begin_loft(document, feature),
         }
@@ -81,10 +96,16 @@ impl<
             .session(document)
             .map_err(|cause| cause.to_string())?;
         let generation = session.generation();
-        let (sections, output, center_line) = feature
+        let sources = feature
             .map(|id| loft_sources(session.snapshot(), id))
             .transpose()?
             .unwrap_or_default();
+        let placement = match feature.zip(sources.placed) {
+            Some((id, section)) => {
+                LoftPlacement::saved(self.resolve_placed_view(document, id, section)?)
+            }
+            None => LoftPlacement::default(),
+        };
         self.clear_extrusion_preview();
         let preview = feature.map(|id| {
             self.preview_selected_blend(document, |_, _| Ok(id))
@@ -94,15 +115,12 @@ impl<
             document,
             generation,
             feature,
-            path_mode: if center_line.is_some() {
-                GuiLoftPathMode::CenterLine
-            } else {
-                GuiLoftPathMode::Rails
-            },
-            output,
-            center_line,
+            path_mode: sources.mode(),
+            output: sources.output,
+            center_line: sources.center_line,
             pick_center_line: false,
-            sections,
+            placement,
+            sections: sources.sections,
             preview,
         });
         Ok(true)
@@ -121,9 +139,20 @@ impl<
             return Ok(false);
         };
         let feature = draft.feature;
+        let guide = if mode == GuiLoftPathMode::PlacedSections && draft.center_line.is_some() {
+            feature
+                .map(|id| self.resolve_placed_guide(document, id))
+                .transpose()?
+        } else {
+            None
+        };
+        let Some(draft) = self.loft_selection.as_ref() else {
+            return Ok(false);
+        };
         let output = draft.output;
         let center_line = draft.center_line.as_ref().map(|picked| picked.source);
         let sections = circle_sections(&draft.sections);
+        let placed = draft.placement.section();
         self.clear_loft_preview();
         let preview = match (mode, feature, sections) {
             (GuiLoftPathMode::Rails, Some(id), _) => Some(
@@ -134,6 +163,9 @@ impl<
                 self.preview_selected_blend(document, |_, _| Ok(id))
                     .map(|_| ()),
             ),
+            (GuiLoftPathMode::PlacedSections, Some(id), _) if center_line.is_some() => {
+                placed.map(|section| self.preview_placed(document, id, section))
+            }
             (GuiLoftPathMode::Rails, None, Some(sections)) => {
                 Some(self.preview_loft(document, sections, output, None))
             }
@@ -144,6 +176,7 @@ impl<
         };
         if let Some(draft) = &mut self.loft_selection {
             draft.path_mode = mode;
+            draft.placement.guide = guide;
             draft.pick_center_line = false;
             draft.preview = preview;
         }
@@ -180,25 +213,6 @@ impl<
         Ok(true)
     }
 
-    pub(super) fn gui_loft_sections(&self, document: u64, generation: u64) -> Vec<GuiLoftSection> {
-        self.loft_selection
-            .as_ref()
-            .filter(|draft| draft.document == document && draft.generation == generation)
-            .map_or_else(Vec::new, |draft| draft.sections.clone())
-    }
-
-    pub(super) fn gui_loft_preview(
-        &self,
-        document: u64,
-        generation: u64,
-    ) -> Option<Result<(), String>> {
-        let draft = self.loft_selection.as_ref()?;
-        if draft.document != document || draft.generation != generation {
-            return None;
-        }
-        draft.preview.clone()
-    }
-
     fn clear_loft_preview(&mut self) {
         if self
             .loft_selection
@@ -211,6 +225,19 @@ impl<
     }
 
     fn commit_loft(&mut self, document: u64) -> Result<bool, String> {
+        if let Some(draft) = self.loft_selection.as_ref().filter(|draft| {
+            draft.document == document
+                && draft.path_mode == GuiLoftPathMode::PlacedSections
+                && !draft.placement.editing
+                && draft.preview.as_ref().is_some_and(Result::is_ok)
+        }) && let Some((feature, section)) = draft.feature.zip(draft.placement.section())
+        {
+            return self.commit_placed(document, draft.generation, feature, section);
+        }
+        self.commit_new_loft(document)
+    }
+
+    fn commit_new_loft(&mut self, document: u64) -> Result<bool, String> {
         self.require_browser_document(document)?;
         let session = self
             .files
@@ -288,6 +315,13 @@ impl<
             .is_some_and(|draft| draft.pick_center_line)
         {
             return self.pick_center_line_at(document, ray, tolerance).map(Some);
+        }
+        if self
+            .loft_selection
+            .as_ref()
+            .is_some_and(|draft| draft.path_mode == GuiLoftPathMode::PlacedSections)
+        {
+            return self.pick_placed_section(document, ray, tolerance).map(Some);
         }
         if self.loft_selection.as_ref().is_some_and(|draft| {
             draft.feature.is_some() || draft.path_mode != GuiLoftPathMode::Rails

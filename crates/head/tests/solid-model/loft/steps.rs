@@ -9,6 +9,7 @@ use oblikovati_viewport::ViewportNavigation;
 mod center_line;
 mod edit;
 mod fixtures;
+mod placed;
 use fixtures::parallel_sections_if_needed;
 mod surface;
 

@@ -25,7 +25,7 @@ use std::collections::BTreeMap;
 
 #[path = "owner_sweep/picking.rs"]
 mod picking;
-pub(in crate::owner) use picking::ray_hits_segment;
+pub(in crate::owner) use picking::{ray_hits_segment, ray_segment_fraction};
 
 #[derive(Clone)]
 enum SweepCommit {

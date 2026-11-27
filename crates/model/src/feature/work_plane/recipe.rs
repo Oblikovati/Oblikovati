@@ -206,6 +206,7 @@ impl WorkPlaneDefinitionRecipe {
             Self::Hole(_) => 17,
             Self::MoveBody(_) => 18,
             Self::Shell(_) => 19,
+            Self::SketchLoft(recipe) if recipe.placed.is_some() => 33,
             Self::SketchLoft(recipe) if recipe.center_line.is_some() => 32,
             Self::SketchLoft(recipe) => match recipe.output {
                 crate::feature::sketch_loft::SketchLoftOutput::Solid => 30,
@@ -250,6 +251,7 @@ impl WorkPlaneDefinitionRecipe {
             Self::Hole(_) => 22,
             Self::MoveBody(_) => 23,
             Self::Shell(_) => 24,
+            Self::SketchLoft(recipe) if recipe.placed.is_some() => 38,
             Self::SketchLoft(recipe) if recipe.center_line.is_some() => 37,
             Self::SketchLoft(recipe) => match recipe.output {
                 crate::feature::sketch_loft::SketchLoftOutput::Solid => 35,

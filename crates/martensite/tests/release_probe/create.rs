@@ -115,6 +115,38 @@ fn loft_between_the_fixture_sections_retains_both_open_trims() -> Result<(), Fai
     verify_surface_area(&shell, 1.5 * PI * 9.25_f64.sqrt())
 }
 
+#[test]
+fn loft_through_a_placed_section_preserves_the_caps_and_changes_volume() -> Result<(), Failure> {
+    let baseline = placed_loft_volume(0.75)?;
+    let expanded = placed_loft_volume(0.75 * 2_f64.sqrt())?;
+    assert!(
+        (baseline - 7. * PI / 6.).abs() < 1e-8,
+        "baseline {baseline}"
+    );
+    assert!(expanded > baseline * 1.4, "{expanded} <= {baseline}");
+    Ok(())
+}
+
+fn placed_loft_volume(mid_radius: f64) -> Result<f64, Failure> {
+    let mut loft = BRepOffsetAPIThruSections::new(true, false, 1e-6);
+    loft.set_mutable_input(false);
+    let sections = [circle(0., 1.)?, circle(1., mid_radius)?, circle(2., 0.5)?];
+    for section in &sections {
+        loft.add_wire(&BRepBuilderAPIMakeWire::from_edge(section)?.wire()?);
+    }
+    let solid = loft.shape()?.clone();
+    let wall = loft_wall(&mut loft, &sections[0])?;
+    for section in &sections[1..] {
+        assert!(loft_wall(&mut loft, section)?.is_same(&wall));
+    }
+    let boundaries = [
+        loft.first_shape().as_ref().clone(),
+        loft.last_shape().as_ref().clone(),
+        wall,
+    ];
+    verify_solid_boundaries(&solid, &boundaries)
+}
+
 fn verify_loft(ruled: bool) -> Result<(), Failure> {
     let mut loft = BRepOffsetAPIThruSections::new(true, ruled, 1e-6);
     loft.set_mutable_input(false);
@@ -145,6 +177,12 @@ fn circle(z: f64, radius: f64) -> Result<Edge, Failure> {
 }
 
 fn verify_solid(shape: &Shape, volume: f64, boundaries: &[Shape; 3]) -> Result<(), Failure> {
+    let actual = verify_solid_boundaries(shape, boundaries)?;
+    assert!((actual - volume).abs() < 1e-8, "{actual}");
+    Ok(())
+}
+
+fn verify_solid_boundaries(shape: &Shape, boundaries: &[Shape]) -> Result<f64, Failure> {
     assert_eq!(shape.shape_type()?, ShapeEnum::Solid);
     assert!(BRepCheckAnalyzer::new(shape, true, false, true)?.is_valid()?);
     let faces: Vec<_> = Explorer::new(shape, ShapeEnum::Face, ShapeEnum::Shape)?.collect();
@@ -161,6 +199,5 @@ fn verify_solid(shape: &Shape, volume: f64, boundaries: &[Shape; 3]) -> Result<(
     let mut properties = GProps::default();
     let achieved = BRepGProp::volume_properties_eps(shape, &mut properties, 1e-9, false, false)?;
     assert!(achieved.is_finite() && achieved.abs() <= 1e-9, "{achieved}");
-    assert!((properties.mass() - volume).abs() < 1e-8, "{properties:?}");
-    Ok(())
+    Ok(properties.mass())
 }

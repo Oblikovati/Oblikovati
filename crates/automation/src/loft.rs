@@ -5,7 +5,8 @@ use oblikovati_model::{
     feature::{
         FeatureId,
         sketch_loft::{
-            SketchLoftCenterLine, SketchLoftDefinition, SketchLoftOutput, SketchLoftSection,
+            SketchLoftCenterLine, SketchLoftDefinition, SketchLoftOutput, SketchLoftPlacedSection,
+            SketchLoftSection,
         },
     },
     history::{DocumentSnapshot, RecipeReservations},
@@ -52,4 +53,45 @@ impl PreparedLoft {
             .create_sketch_loft(&self.name, self.definition, ids)
             .map_err(|cause| Error(cause.to_string()))
     }
+}
+
+/// Resolve the current Loft definition by identity. Example: `loft_definition(snapshot, feature)?`.
+pub fn loft_definition(
+    snapshot: &DocumentSnapshot,
+    feature: FeatureId,
+) -> Result<&SketchLoftDefinition, Error> {
+    let authored = snapshot
+        .work_geometry
+        .get(feature)
+        .map_err(|cause| Error(cause.to_string()))?;
+    let oblikovati_model::feature::part::PartFeatureDefinition::SketchLoft(definition) =
+        authored.definition()
+    else {
+        return Err(Error(format!("feature {feature:?}: expected a Loft")));
+    };
+    Ok(definition)
+}
+
+/// Replace the intermediate section in a private candidate. Example: `replace_loft_section(snapshot, feature, section)?`.
+pub fn replace_loft_section(
+    snapshot: &mut DocumentSnapshot,
+    feature: FeatureId,
+    placed: SketchLoftPlacedSection,
+) -> Result<FeatureId, Error> {
+    let definition = loft_definition(snapshot, feature)?
+        .clone()
+        .with_placed_section(Some(placed))
+        .map_err(Error)?;
+    let reads = definition.reads(snapshot).map_err(Error)?;
+    snapshot
+        .work_geometry
+        .replace(
+            feature,
+            oblikovati_model::feature::part::PartFeatureDefinition::SketchLoft(Box::new(
+                definition,
+            )),
+            reads,
+        )
+        .map_err(|cause| Error(cause.to_string()))?;
+    Ok(feature)
 }

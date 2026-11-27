@@ -52,13 +52,29 @@ pub(crate) fn build_loft(
         )
     })?;
     require_center_line(input, resolution.weld)?;
-    let edges = [circle(first)?, circle(last)?];
+    let first_edge = circle(first)?;
+    let last_edge = circle(last)?;
+    let placed_edge = input
+        .placed_circle()
+        .map(|section| {
+            native_circle(
+                section.center,
+                section.normal,
+                section.x_direction,
+                section.radius,
+            )
+            .map_err(|cause| native(Phase::Profile, "placed section circle", cause))
+        })
+        .transpose()?;
+    let edges = std::iter::once(&first_edge)
+        .chain(placed_edge.as_ref())
+        .chain([&last_edge]);
     let solid = input.output == SketchLoftOutput::Solid;
     let mut maker = BRepOffsetAPIThruSections::new(solid, false, resolution.maximum_tolerance);
     // Surface sections are newly created inside this evaluation. Retaining
     // their native edges gives both open trims exact section identities.
     maker.set_mutable_input(!solid);
-    for edge in &edges {
+    for edge in edges.clone() {
         let wire = BRepBuilderAPIMakeWire::from_edge(edge)
             .and_then(|maker| maker.wire())
             .map_err(|cause| native(Phase::Profile, "section wire", cause))?;
@@ -72,10 +88,11 @@ pub(crate) fn build_loft(
     crate::checked_shape::require_geometry(&shape, "loft result")?;
     let achieved =
         crate::checked_shape::measured_tolerances(&shape, resolution.maximum_tolerance, "loft")?;
-    let first_wall = wall(&mut maker, &edges[0])?;
-    let last_wall = wall(&mut maker, &edges[1])?;
-    if !first_wall.is_same(&last_wall) {
-        return Err(history_failure("both sections must generate the same wall"));
+    let first_wall = wall(&mut maker, &first_edge)?;
+    for edge in edges.skip(1) {
+        if !first_wall.is_same(&wall(&mut maker, edge)?) {
+            return Err(history_failure("each section must generate the same wall"));
+        }
     }
     let history = if solid {
         let caps = [
@@ -89,7 +106,7 @@ pub(crate) fn build_loft(
         }
     } else {
         verify_faces(&shape, &[&first_wall])?;
-        let trims = surface_trims(&shape, edges)?;
+        let trims = surface_trims(&shape, [&first_edge, &last_edge])?;
         LoftTopology::Surface {
             trims,
             wall: first_wall,
@@ -176,7 +193,7 @@ fn verify_faces(shape: &Shape, sources: &[&Shape]) -> Result<(), EvaluationFailu
     Ok(())
 }
 
-fn surface_trims(shell: &Shape, original: [Edge; 2]) -> Result<[Shape; 2], EvaluationFailure> {
+fn surface_trims(shell: &Shape, original: [&Edge; 2]) -> Result<[Shape; 2], EvaluationFailure> {
     let edges = Explorer::new(shell, ShapeEnum::Edge, ShapeEnum::Shape)
         .map_err(|cause| native(Phase::History, "shell edges", cause))?
         .collect::<Vec<_>>();
@@ -194,24 +211,33 @@ fn surface_trims(shell: &Shape, original: [Edge; 2]) -> Result<[Shape; 2], Evalu
 }
 
 fn circle(section: &ResolvedLoftCircle) -> Result<Edge, EvaluationFailure> {
-    let [x, y, z] = section.center;
-    let [nx, ny, nz] = section.normal;
-    let [xx, xy, xz] = section.x_direction;
-    let create = || -> Result<Edge, Failure> {
-        let frame = Axis2::with_x_direction(
-            Point3::new(x, y, z),
-            Direction3::new(nx, ny, nz)?,
-            Direction3::new(xx, xy, xz)?,
-        )?;
-        BRepBuilderAPIMakeEdge::from_circ(Circle3::new(frame, section.radius)?)?.edge()
-    };
-    create().map_err(|cause| {
+    native_circle(
+        section.center,
+        section.normal,
+        section.x_direction,
+        section.radius,
+    )
+    .map_err(|cause| {
         Phase::Profile.native(
             Entity::SketchEntity(section.source.circle.0),
             "loft section circle".into(),
             cause,
         )
     })
+}
+
+fn native_circle(
+    [x, y, z]: [f64; 3],
+    [nx, ny, nz]: [f64; 3],
+    [xx, xy, xz]: [f64; 3],
+    radius: f64,
+) -> Result<Edge, Failure> {
+    let frame = Axis2::with_x_direction(
+        Point3::new(x, y, z),
+        Direction3::new(nx, ny, nz)?,
+        Direction3::new(xx, xy, xz)?,
+    )?;
+    BRepBuilderAPIMakeEdge::from_circ(Circle3::new(frame, radius)?)?.edge()
 }
 
 fn wall(maker: &mut BRepOffsetAPIThruSections, section: &Edge) -> Result<Shape, EvaluationFailure> {
