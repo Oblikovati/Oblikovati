@@ -24,6 +24,9 @@ mod apply_next;
 #[path = "apply_reuse_sketch.rs"]
 mod apply_reuse_sketch;
 
+#[path = "clear_profile.rs"]
+mod clear_profile;
+
 #[path = "enter_preference.rs"]
 mod enter_preference;
 

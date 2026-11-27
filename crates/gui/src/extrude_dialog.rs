@@ -39,6 +39,7 @@ pub(crate) struct ExtrudeDialog {
     sketch: Option<DocumentSketchId>,
     profile: i32,
     profile_pick_sketch: Option<DocumentSketchId>,
+    profile_pick_request: u64,
     source_edit: bool,
     release_sketch_on_apply: bool,
     enter_applies_value_only: bool,

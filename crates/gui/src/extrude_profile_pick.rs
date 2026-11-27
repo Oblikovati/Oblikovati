@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//! Keep the applied sketch available as the source for a fresh profile selection.
+//! Pick a certified profile after clearing or applying an extrusion draft.
 use super::{ExtrudeDialog, GuiCommandState, GuiShellAction};
 use crate::GuiExtrudeProfilePick;
 
@@ -22,13 +22,24 @@ impl ExtrudeDialog {
         if let Some(draft) = carried {
             self.sketch = None;
             if !self.release_sketch_on_apply {
-                self.profile_pick_sketch = Some(draft.sketch);
+                self.await_profile_pick(draft.sketch);
             }
             self.operation = draft.operation;
             self.reference.clear_picks();
         } else {
             self.initialize_fresh_draft(state);
         }
+    }
+
+    pub(super) fn await_profile_pick(
+        &mut self,
+        sketch: oblikovati_model::document_sketch::DocumentSketchId,
+    ) {
+        self.sketch = None;
+        self.profile = 0;
+        self.profile_pick_sketch = Some(sketch);
+        // A previous viewport response may still be in the owner snapshot at this generation.
+        self.profile_pick_request = self.profile_pick_request.wrapping_add(1);
     }
 
     fn profile_pick_target(&self, state: &GuiCommandState) -> Option<GuiExtrudeProfilePick> {
@@ -42,6 +53,7 @@ impl ExtrudeDialog {
             .any(|row| row.id == sketch && row.visible);
         (state.document == Some(document) && self.sketch.is_none() && visible).then_some(
             GuiExtrudeProfilePick {
+                request: self.profile_pick_request,
                 document,
                 generation: state.document_generation?,
                 sketch,

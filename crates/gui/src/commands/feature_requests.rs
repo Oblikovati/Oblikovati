@@ -24,6 +24,7 @@ pub struct GuiExtrudePreview {
 /// A viewport selection scoped to the current sketch and document generation.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct GuiExtrudeProfilePick {
+    pub request: u64,
     pub document: u64,
     pub generation: u64,
     pub sketch: oblikovati_model::document_sketch::DocumentSketchId,

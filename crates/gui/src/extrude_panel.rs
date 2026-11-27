@@ -5,6 +5,7 @@ use crate::icons::{GuiRibbonIcons, IconGlyph, IconSize};
 use imgui::{Key, StyleColor, Ui};
 
 const WIDTH: f32 = 280.;
+const CLEAR_WIDTH: f32 = 44.;
 pub(super) const FOOTER_HEIGHT: f32 = 44.;
 const DEFAULT_HEIGHT: f32 = 340.;
 
@@ -56,18 +57,39 @@ impl ExtrudeDialog {
         } else {
             format!("Profile {}", self.profile.saturating_add(1))
         };
+        let clear = self.sketch.filter(|_| self.edit_feature.is_none());
+        let changed_profile = self.profile_combo(ui, &label, clear.is_some());
+        let cleared = clear.is_some_and(|sketch| {
+            ui.same_line();
+            if !crate::widget_abi::button(
+                ui,
+                "Clear##extrude-profile-clear",
+                [CLEAR_WIDTH, ui.frame_height()],
+            ) {
+                return false;
+            }
+            self.await_profile_pick(sketch);
+            true
+        });
+        changed_sketch || changed_profile || cleared
+    }
+
+    fn profile_combo(&mut self, ui: &Ui, label: &str, can_clear: bool) -> bool {
+        if can_clear {
+            let spacing = ui.clone_style().item_spacing[0];
+            ui.set_next_item_width((ui.content_region_avail()[0] - CLEAR_WIDTH - spacing).max(1.));
+        }
         let _profile_disabled = ui.begin_disabled(self.sketch.is_none());
         let rounding = ui.push_style_var(imgui::StyleVar::FrameRounding(11.));
         let tint = ui.push_style_color(StyleColor::FrameBg, [0.05, 0.58, 0.53, 0.22]);
-        let choices = ui.begin_combo("##profile", &label);
+        let choices = ui.begin_combo("##profile", label);
         drop(tint);
         drop(rounding);
-        let changed_profile = choices.is_some_and(|_choices| {
+        choices.is_some_and(|_choices| {
             let _numeric = crate::ui_scale::numeric_font(ui);
             ui.text("Profile index");
             ui.input_int("##profile-index", &mut self.profile).build()
-        });
-        changed_sketch || changed_profile
+        })
     }
 
     pub(super) fn controls(
