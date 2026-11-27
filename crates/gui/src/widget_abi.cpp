@@ -359,6 +359,15 @@ void oblikovati_gui_dummy(float width, float height) {
 void oblikovati_gui_image(std::uintptr_t texture, float width, float height) {
     ImGui::Image(reinterpret_cast<ImTextureID>(texture), ImVec2(width, height));
 }
+
+void oblikovati_gui_foreground_dimension(float x1, float y1, float x2, float y2, ImU32 color,
+                                        const unsigned char* label, std::size_t length) {
+    ImDrawList* draw = ImGui::GetForegroundDrawList();
+    draw->AddLine(ImVec2(x1, y1), ImVec2(x2, y2), color, 2.0f);
+    draw->AddCircleFilled(ImVec2(x2, y2), 5.0f, color);
+    const char* begin = reinterpret_cast<const char*>(label);
+    draw->AddText(ImVec2(x2 + 10.0f, y2 - 8.0f), color, begin, begin + length);
+}
 bool oblikovati_gui_selectable(const unsigned char* label, bool selected, int flags) {
     return ImGui::Selectable(reinterpret_cast<const char*>(label), selected, flags, ImVec2(0, 0));
 }

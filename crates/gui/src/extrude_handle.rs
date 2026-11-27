@@ -70,9 +70,10 @@ impl DistanceHandle {
             .as_ref()
             .map_or("", |units| units.length_unit.as_str());
         let caption = format!("A {label} {unit}");
-        draw_dimension(
+        widget_abi::foreground_dimension(
             ui,
             projection.as_ref().map_or(points, |(p, _, _)| *p),
+            [0.22, 0.72, 1., 1.],
             &caption,
         );
         handle_window(ui, tip, || {
@@ -191,14 +192,6 @@ fn handle_window<T>(ui: &imgui::Ui, tip: [f32; 2], draw: impl FnOnce() -> T) -> 
                 | WindowFlags::NO_BRING_TO_FRONT_ON_FOCUS,
         )
         .build(draw)
-}
-
-fn draw_dimension(ui: &imgui::Ui, [start, end]: [[f32; 2]; 2], label: &str) {
-    let draw = ui.get_foreground_draw_list();
-    let ink = [0.22, 0.72, 1., 1.];
-    draw.add_line(start, end, ink).thickness(2.).build();
-    draw.add_circle(end, 5., ink).filled(true).build();
-    draw.add_text([end[0] + 10., end[1] - 8.], ink, label);
 }
 
 fn in_workspace([x, y]: [f32; 2], area: WorkspaceArea) -> bool {
