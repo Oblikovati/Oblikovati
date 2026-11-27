@@ -201,21 +201,18 @@ fn row_background(world: &mut ApplicationWorld, name: &str) -> [u8; 4] {
     let offset = (point[1] as usize * capture.extent[0] as usize + point[0] as usize) * 4;
     std::array::from_fn(|channel| capture.rgba[offset + channel])
 }
-fn assert_green_row(world: &mut ApplicationWorld, name: &str) {
+fn assert_row_highlight(world: &mut ApplicationWorld, name: &str, active: bool) {
     let pixel = row_background(world, name);
-    assert!(
-        pixel[1] > pixel[0] && pixel[1] > pixel[2],
-        "expected pale green active row, got {pixel:?}"
+    let green = pixel[1] > pixel[0].max(pixel[2]).saturating_add(16);
+    assert_eq!(
+        green, active,
+        "row {name:?}: expected green highlight {active}, got {pixel:?}"
     );
 }
 #[then("the Primary row is highlighted pale green as the active member")]
 fn active_member_green(world: &mut ApplicationWorld) {
-    assert_green_row(world, "Primary");
-    let inactive = row_background(world, "Copy State");
-    assert!(
-        inactive[1] <= inactive[0],
-        "expected inactive row without green highlight, got {inactive:?}"
-    );
+    assert_row_highlight(world, "Primary", true);
+    assert_row_highlight(world, "Copy State", false);
 }
 #[then("the parameter tree shows d0 at 1 in and d1 at 0 degrees")]
 fn primary_values(world: &mut ApplicationWorld) {
@@ -241,11 +238,7 @@ fn active_row_highlight_follows_model_state_switch() {
     super::super::x11_input::click(point);
     world.pump(Vec::new());
     open(&mut world);
-    assert_green_row(&mut world, "Copy State");
-    let inactive = row_background(&mut world, "Primary");
-    assert!(
-        inactive[1] <= inactive[0],
-        "expected inactive row without green highlight, got {inactive:?}"
-    );
+    assert_row_highlight(&mut world, "Copy State", true);
+    assert_row_highlight(&mut world, "Primary", false);
     world.close();
 }
