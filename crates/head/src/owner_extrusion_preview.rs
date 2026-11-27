@@ -157,7 +157,10 @@ impl<
             return Ok(true);
         }
         let presentation = self.preview_extrusion_from_gui(document, &request)?;
-        let handle_axis = if preview.reference_extent.is_none() {
+        let handle_axis = if matches!(
+            preview.reference_extent,
+            None | Some(oblikovati_gui::GuiExtrudeReferenceExtent::DistanceFromPlane { .. })
+        ) {
             let snapshot = self
                 .files
                 .workspace()

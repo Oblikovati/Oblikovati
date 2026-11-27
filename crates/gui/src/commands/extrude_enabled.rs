@@ -43,8 +43,12 @@ pub(super) fn preview(state: &GuiCommandState, request: &GuiExtrudePreview) -> b
     {
         return false;
     }
+    let two_bounds = matches!(
+        request.reference_extent,
+        Some(GuiExtrudeReferenceExtent::ToFace { .. } | GuiExtrudeReferenceExtent::FromTo { .. })
+    );
     if request.operation.is_some()
-        && ((request.reference_extent.is_some() && !through_all)
+        && (two_bounds
             || request.generation.is_none()
             || request.generation != state.document_generation
             || !crate::extrude_dialog::single_body(state))

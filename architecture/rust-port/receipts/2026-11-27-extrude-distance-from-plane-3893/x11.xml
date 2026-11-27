@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Extrude a profile in a part document: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature" package="testsuite/Feature: Extrude a profile in a part document: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-27T04:56:31.843544461Z" time="8.396223643"><testcase name="Scenario: Start a fixed-distance extrusion from a different plane: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature:298:3" time="8.396223643"><system-out><![CDATA[  Scenario: Start a fixed-distance extrusion from a different plane
+   ✔> Given the MCAD Software is displaying a part in the solid modeling workspace
+   ✔> And the viewport pointer is idle
+   ✔  Given a fresh copy of `fixtures/cad/extrusion/profile-from-plane-3mm.opd` is open
+   ✔  And the user makes Sketch1 and Work Plane1 visible and selects the sketch's rectangular profile
+   ✔  And Work Plane1 is parallel to and 3 mm from the sketch plane in the default direction
+   ✔  When the user selects that work plane as From and specifies a distance of 8 mm
+   ✔  Then a valid extrusion starts at the work plane
+   ✔  And the other cap is 8 mm farther in the default direction
+]]></system-out></testcase></testsuite></testsuites>

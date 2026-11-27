@@ -148,6 +148,11 @@ checks the resulting cap and verifies that the saved recipe references
 the authored plane by identity. On fractional-scale Wayland, the dock
 layout keeps the Extrude panel clear of browser rows.
 
+An Extrude can start on a parallel reference plane with a numeric
+distance. The published fixture previews caps at 3 mm and 11 mm with
+8 mm of depth. Commit and reopen retain the start plane by identity.
+[Native receipt](receipts/2026-11-27-extrude-distance-from-plane-3893/README.md).
+
 ## Sweep, Loft, and Revolve
 
 The [release probes](../../crates/martensite/tests/release_probe/create.rs)

@@ -119,8 +119,13 @@ impl<
         &self,
         draft: &oblikovati_gui::GuiExtrudePreview,
     ) -> Result<oblikovati_api::wire::featureargs::Extrude, String> {
-        use oblikovati_gui::GuiExtrudeReferenceExtent::{FromTo, ThroughAll, ToFace};
-        if matches!(draft.reference_extent, None | Some(ThroughAll)) {
+        use oblikovati_gui::GuiExtrudeReferenceExtent::{
+            DistanceFromPlane, FromTo, ThroughAll, ToFace,
+        };
+        if matches!(
+            draft.reference_extent,
+            None | Some(ThroughAll | DistanceFromPlane { .. })
+        ) {
             let mut request = self.extrusion_request(
                 draft.document,
                 draft.sketch,
@@ -132,8 +137,13 @@ impl<
             if let Some(operation) = draft.operation {
                 request.operation = operation.to_string().to_ascii_lowercase();
             }
-            if draft.reference_extent.is_some() {
-                request.extent = "through-all".into();
+            match &draft.reference_extent {
+                Some(ThroughAll) => request.extent = "through-all".into(),
+                Some(DistanceFromPlane { from }) => {
+                    request.extent = "distance-from-face".into();
+                    request.to_face.clone_from(from);
+                }
+                _ => {}
             }
             return Ok(request);
         }

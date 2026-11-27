@@ -9,7 +9,8 @@ use oblikovati_model::{
     feature::{
         FeatureId,
         sketch_prism::{
-            PrismBoolean, SketchPrismDefinition, SketchPrismDirection, SketchPrismSelection,
+            PrismBoolean, SketchPrismDefinition, SketchPrismDirection, SketchPrismExtent,
+            SketchPrismSelection,
         },
         work_geometry::{DatumLength, WorkGeometryEvaluation},
     },
@@ -233,6 +234,14 @@ fn prepare_prism(
         }
         .map_err(Error)
     };
+    if let Some(SketchPrismExtent::DistanceFromPlane { from }) = extent {
+        let mut prepared = prepare_distance_prism(snapshot, input, sketch, resolve_profile)?;
+        prepared.definition = prepared
+            .definition
+            .with_start_plane(from)
+            .map_err(api_error)?;
+        return Ok(prepared);
+    }
     if let Some(extent) = extent {
         if !input.taper.trim().is_empty() {
             return Err(Error("Extrude Taper A requires a distance extent.".into()));

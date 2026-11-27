@@ -391,6 +391,7 @@ fn extended_feature_name(
             SketchPrismExtent::ThroughAll { .. } => "Through All",
             SketchPrismExtent::ToFace { .. } => "To Face",
             SketchPrismExtent::FromTo { .. } => "From–To",
+            SketchPrismExtent::DistanceFromPlane { .. } => "Distance from Plane",
         };
         return Some(format!("{operation}, {label}"));
     }

@@ -25,6 +25,7 @@ pub struct GuiExtrudePreview {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum GuiExtrudeReferenceExtent {
     ThroughAll,
+    DistanceFromPlane { from: String },
     ToFace { to: String },
     FromTo { from: String, to: String },
 }

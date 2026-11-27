@@ -6,6 +6,7 @@ use imgui::{StyleColor, Ui};
 enum ExtentMode {
     #[default]
     Distance,
+    DistanceFromPlane,
     ThroughAll,
     ToFace,
     FromTo,
@@ -28,7 +29,14 @@ pub(super) struct ReferenceDraft {
 
 impl ReferenceDraft {
     pub(super) fn numeric(&self) -> bool {
-        self.mode == ExtentMode::Distance
+        matches!(
+            self.mode,
+            ExtentMode::Distance | ExtentMode::DistanceFromPlane
+        )
+    }
+
+    pub(super) fn needs_start_plane(&self) -> bool {
+        self.mode == ExtentMode::DistanceFromPlane
     }
 
     pub(super) fn through_all(&self) -> bool {
@@ -38,6 +46,9 @@ impl ReferenceDraft {
     pub(super) fn request(&self) -> Option<GuiExtrudeReferenceExtent> {
         match self.mode {
             ExtentMode::Distance => None,
+            ExtentMode::DistanceFromPlane => Some(GuiExtrudeReferenceExtent::DistanceFromPlane {
+                from: self.from.clone()?,
+            }),
             ExtentMode::ThroughAll => Some(GuiExtrudeReferenceExtent::ThroughAll),
             ExtentMode::ToFace => Some(GuiExtrudeReferenceExtent::ToFace {
                 to: self.to.clone()?,
@@ -68,7 +79,10 @@ impl ReferenceDraft {
     pub(super) fn draw(&mut self, ui: &Ui, through_all_available: bool) -> bool {
         let before = self.mode;
         self.draw_extent_modes(ui, through_all_available);
-        if self.mode == ExtentMode::FromTo {
+        if matches!(
+            self.mode,
+            ExtentMode::DistanceFromPlane | ExtentMode::FromTo
+        ) {
             self.draw_target(ui, Slot::From);
         }
         if matches!(self.mode, ExtentMode::ToFace | ExtentMode::FromTo) {
@@ -79,22 +93,27 @@ impl ReferenceDraft {
 
     fn draw_extent_modes(&mut self, ui: &Ui, through_all_available: bool) {
         crate::theme::property_label(ui, "From");
-        let from = usize::from(self.mode == ExtentMode::FromTo);
+        let from = match self.mode {
+            ExtentMode::DistanceFromPlane => 1,
+            ExtentMode::FromTo => 2,
+            _ => 0,
+        };
         match extent_combo(
             ui,
             "##extrude-start",
             from,
-            ["Sketch Plane", "From / To"],
-            [true; 2],
+            ["Sketch Plane", "Reference Plane", "From / To"],
+            [true; 3],
         ) {
             Some(0) => self.set_mode(ExtentMode::Distance),
-            Some(1) => self.set_mode(ExtentMode::FromTo),
+            Some(1) => self.set_mode(ExtentMode::DistanceFromPlane),
+            Some(2) => self.set_mode(ExtentMode::FromTo),
             _ => {}
         }
 
         crate::theme::property_label(ui, "Termination");
         let to = match self.mode {
-            ExtentMode::Distance => 0,
+            ExtentMode::Distance | ExtentMode::DistanceFromPlane => 0,
             ExtentMode::ThroughAll => 2,
             _ => 1,
         };
@@ -105,7 +124,13 @@ impl ReferenceDraft {
             ["Distance", "To Face", "Through All"],
             [true, true, through_all_available],
         ) {
+            Some(0) if self.mode == ExtentMode::FromTo => {
+                self.set_mode(ExtentMode::DistanceFromPlane)
+            }
             Some(0) => self.set_mode(ExtentMode::Distance),
+            Some(1) if self.mode == ExtentMode::DistanceFromPlane => {
+                self.set_mode(ExtentMode::FromTo)
+            }
             Some(1) => self.set_mode(ExtentMode::ToFace),
             Some(2) => self.set_mode(ExtentMode::ThroughAll),
             _ => {}

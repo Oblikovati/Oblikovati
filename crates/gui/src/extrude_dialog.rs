@@ -351,7 +351,10 @@ impl ExtrudeDialog {
             return None;
         }
         let validation = self.current_distance_validation(state, document)?;
-        if validation.error.is_some() {
+        let reference_extent = self.reference.request();
+        if validation.error.is_some()
+            || (self.reference.needs_start_plane() && reference_extent.is_none())
+        {
             return None;
         }
         Some(crate::GuiExtrudePreview {
@@ -363,7 +366,7 @@ impl ExtrudeDialog {
             second_distance: self.active_second_distance().map(str::to_owned),
             direction: self.direction,
             operation: self.operation,
-            reference_extent: None,
+            reference_extent,
         })
     }
     fn sketch_choice(&mut self, ui: &Ui, state: &GuiCommandState) -> bool {
