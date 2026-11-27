@@ -5,8 +5,8 @@ use oblikovati_model::{
     feature::{
         FeatureId,
         sketch_loft::{
-            SketchLoftCenterLine, SketchLoftDefinition, SketchLoftOutput, SketchLoftPlacedSection,
-            SketchLoftSection,
+            LoftTakeoffCondition, SketchLoftCenterLine, SketchLoftDefinition, SketchLoftOutput,
+            SketchLoftPlacedSection, SketchLoftSection,
         },
     },
     history::{DocumentSnapshot, RecipeReservations},
@@ -82,6 +82,27 @@ pub fn replace_loft_section(
         .clone()
         .with_placed_section(Some(placed))
         .map_err(Error)?;
+    replace_loft_definition(snapshot, feature, definition)
+}
+
+/// Replace the first section condition. Example: `replace_loft_takeoff(snapshot, feature, Some(condition))?`.
+pub fn replace_loft_takeoff(
+    snapshot: &mut DocumentSnapshot,
+    feature: FeatureId,
+    condition: Option<LoftTakeoffCondition>,
+) -> Result<FeatureId, Error> {
+    let definition = loft_definition(snapshot, feature)?
+        .clone()
+        .with_takeoff(condition)
+        .map_err(Error)?;
+    replace_loft_definition(snapshot, feature, definition)
+}
+
+fn replace_loft_definition(
+    snapshot: &mut DocumentSnapshot,
+    feature: FeatureId,
+    definition: SketchLoftDefinition,
+) -> Result<FeatureId, Error> {
     let reads = definition.reads(snapshot).map_err(Error)?;
     snapshot
         .work_geometry

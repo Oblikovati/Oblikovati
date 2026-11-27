@@ -10,7 +10,8 @@ use oblikovati_model::{
         FeatureId,
         part::PartFeatureDefinition,
         sketch_loft::{
-            SketchLoftCenterLine, SketchLoftOutput, SketchLoftPlacedSection, SketchLoftSection,
+            LoftTakeoffCondition, SketchLoftCenterLine, SketchLoftOutput, SketchLoftPlacedSection,
+            SketchLoftSection,
         },
     },
     history::{DocumentSnapshot, ResolvedDocumentSketch},
@@ -25,6 +26,9 @@ use center_line::{CenterLinePick, loft_sources};
 mod placed;
 use placed::LoftPlacement;
 
+#[path = "owner_loft_takeoff.rs"]
+mod takeoff;
+
 pub(super) struct LoftSelection {
     document: u64,
     generation: u64,
@@ -35,6 +39,8 @@ pub(super) struct LoftSelection {
     pick_center_line: bool,
     placement: LoftPlacement,
     edit_warning: Option<String>,
+    takeoff: Option<LoftTakeoffCondition>,
+    saved_takeoff: Option<LoftTakeoffCondition>,
     sections: Vec<GuiLoftSection>,
     preview: Option<Result<(), String>>,
 }
@@ -78,6 +84,10 @@ impl<
             GuiLoftAction::SetOutput { document, output } => {
                 self.choose_loft_output(document, output)
             }
+            GuiLoftAction::SetTakeoff {
+                document,
+                condition,
+            } => self.change_loft_takeoff(document, condition),
             GuiLoftAction::ChooseCenterLine(document) => self.arm_center_line(document),
             GuiLoftAction::EditPlaced(document) => self.edit_placed(document),
             GuiLoftAction::ApplyPlaced { document, section } => {
@@ -124,6 +134,8 @@ impl<
             pick_center_line: false,
             placement,
             edit_warning: None,
+            takeoff: sources.takeoff,
+            saved_takeoff: sources.takeoff,
             sections: sources.sections,
             preview,
         });
@@ -157,12 +169,15 @@ impl<
         let center_line = draft.center_line.as_ref().map(|picked| picked.source);
         let sections = circle_sections(&draft.sections);
         let placed = draft.placement.section();
+        let takeoff_change = (draft.takeoff != draft.saved_takeoff).then_some(draft.takeoff);
         self.clear_loft_preview();
         let preview = match (mode, feature, sections) {
-            (GuiLoftPathMode::Rails, Some(id), _) => Some(
-                self.preview_selected_blend(document, |_, _| Ok(id))
+            (GuiLoftPathMode::Rails, Some(id), _) => Some(match takeoff_change {
+                Some(condition) => self.preview_loft_takeoff(document, id, condition),
+                None => self
+                    .preview_selected_blend(document, |_, _| Ok(id))
                     .map(|_| ()),
-            ),
+            }),
             (GuiLoftPathMode::CenterLine, Some(id), _) if center_line.is_some() => Some(
                 self.preview_selected_blend(document, |_, _| Ok(id))
                     .map(|_| ()),

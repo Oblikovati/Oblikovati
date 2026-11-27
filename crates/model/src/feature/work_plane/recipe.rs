@@ -251,6 +251,7 @@ impl WorkPlaneDefinitionRecipe {
             Self::Hole(_) => 22,
             Self::MoveBody(_) => 23,
             Self::Shell(_) => 24,
+            Self::SketchLoft(recipe) if recipe.takeoff.is_some() => 39,
             Self::SketchLoft(recipe) if recipe.placed.is_some() => 38,
             Self::SketchLoft(recipe) if recipe.center_line.is_some() => 37,
             Self::SketchLoft(recipe) => match recipe.output {

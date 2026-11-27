@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Loft: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/loft/loft.feature" package="testsuite/Feature: Loft: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/loft/loft.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-27T01:01:39.756814698Z" time="62.77935463"><testcase name="Scenario: loft-11 Change and retain the first section angle: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/loft/loft.feature:109:3" time="62.77935463"><system-out><![CDATA[  Scenario: loft-11 Change and retain the first section angle
+   ✔  Given a disposable copy of the native fixture "fixtures/cad/loft/parallel-circles.opd" is open
+   ✔  And the user creates LoftSrf1 with surface output by selecting both circular sketches as sections
+   ✔  And the user edits LoftSrf1, selects the alternate first-section condition, sets its weight to 2 and accepts
+   ✔  When its first-section angle is changed from 90 to 45 degrees and OK is clicked
+   ✔  Then the resulting surface is visibly reshaped
+   ✔  When the feature is reopened on Conditions
+   ✔  Then Sketch1 shows 45.00 degrees and weight 2.000 ul
+]]></system-out></testcase></testsuite></testsuites>

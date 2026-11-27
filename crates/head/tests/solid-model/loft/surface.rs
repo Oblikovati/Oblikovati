@@ -58,7 +58,7 @@ fn surface_loft_is_committed_and_reopened(world: &mut ApplicationWorld) {
     assert_eq!(loft_surface_key(world), key);
 }
 
-fn loft_surface_key(world: &mut ApplicationWorld) -> String {
+pub(super) fn loft_surface_key(world: &mut ApplicationWorld) -> String {
     let browser = world.state().browser.unwrap();
     assert!(browser.bodies.is_empty());
     let [surface] = browser.surface_bodies.as_slice() else {
@@ -82,7 +82,7 @@ fn loft_surface_key(world: &mut ApplicationWorld) -> String {
 #[given(
     "the user creates LoftSrf1 with surface output by selecting both circular sketches as sections"
 )]
-fn create_loft_surface_for_edit(world: &mut ApplicationWorld) {
+pub(super) fn create_loft_surface_for_edit(world: &mut ApplicationWorld) {
     parallel_sections_if_needed(world);
     open_loft_for_surface(world);
     pick_surface_sections(world);

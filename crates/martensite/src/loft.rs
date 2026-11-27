@@ -20,6 +20,9 @@ use oblikovati_model::feature::sketch_loft::{
     ResolvedLoftCircle, ResolvedSketchLoft, SketchLoftOutput,
 };
 
+#[path = "loft_conditioned.rs"]
+mod conditioned;
+
 pub(crate) struct LoftCandidate {
     pub(crate) shape: Shape,
     pub(crate) history: LoftTopology,
@@ -52,6 +55,19 @@ pub(crate) fn build_loft(
         )
     })?;
     require_center_line(input, resolution.weld)?;
+    if let Some(condition) = input.takeoff {
+        if input.output != SketchLoftOutput::Surface
+            || input.center_line.is_some()
+            || input.placed.is_some()
+        {
+            return Err(Phase::Profile.refused(
+                Kind::Unsupported,
+                Entity::Body,
+                "A weighted takeoff requires a two-section Loft surface without a guide.".into(),
+            ));
+        }
+        return conditioned::build(first, last, condition, separation, resolution);
+    }
     let first_edge = circle(first)?;
     let last_edge = circle(last)?;
     let placed_edge = input
@@ -106,7 +122,7 @@ pub(crate) fn build_loft(
         }
     } else {
         verify_faces(&shape, &[&first_wall])?;
-        let trims = surface_trims(&shape, [&first_edge, &last_edge])?;
+        let trims = surface_trims(&shape, [first_edge.as_ref(), last_edge.as_ref()])?;
         LoftTopology::Surface {
             trims,
             wall: first_wall,
@@ -222,11 +238,11 @@ fn verify_faces(shape: &Shape, sources: &[&Shape]) -> Result<(), EvaluationFailu
     Ok(())
 }
 
-fn surface_trims(shell: &Shape, original: [&Edge; 2]) -> Result<[Shape; 2], EvaluationFailure> {
+fn surface_trims(shell: &Shape, original: [&Shape; 2]) -> Result<[Shape; 2], EvaluationFailure> {
     let edges = Explorer::new(shell, ShapeEnum::Edge, ShapeEnum::Shape)
         .map_err(|cause| native(Phase::History, "shell edges", cause))?
         .collect::<Vec<_>>();
-    let [first, last] = original.map(|edge| edge.as_ref().clone());
+    let [first, last] = original.map(Shape::clone);
     if first.is_same(&last)
         || [&first, &last]
             .into_iter()

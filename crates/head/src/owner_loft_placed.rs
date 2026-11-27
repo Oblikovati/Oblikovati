@@ -65,6 +65,14 @@ impl<
         {
             return self.commit_placed(document, draft.generation, feature, section);
         }
+        if let Some(draft) = self.loft_selection.as_ref().filter(|draft| {
+            draft.document == document
+                && draft.takeoff_dirty()
+                && draft.preview.as_ref().is_some_and(Result::is_ok)
+        }) && let Some(feature) = draft.feature
+        {
+            return self.commit_loft_takeoff(document, draft.generation, feature, draft.takeoff);
+        }
         self.commit_new_loft(document)
     }
 
@@ -269,6 +277,20 @@ impl<
         feature: FeatureId,
         section: SketchLoftPlacedSection,
     ) -> Result<bool, String> {
+        self.commit_loft_edit(document, generation, |candidate, _| {
+            replace_loft_section(candidate, feature, section)
+        })
+    }
+
+    pub(super) fn commit_loft_edit(
+        &mut self,
+        document: u64,
+        generation: u64,
+        edit: impl FnOnce(
+            &mut DocumentSnapshot,
+            &mut oblikovati_model::history::RecipeReservations<'_>,
+        ) -> Result<FeatureId, oblikovati_api::Error>,
+    ) -> Result<bool, String> {
         self.require_browser_document(document)?;
         let current = self
             .files
@@ -284,7 +306,7 @@ impl<
             &mut self.part_scenes,
             document,
             "Edit Loft",
-            |candidate, _| replace_loft_section(candidate, feature, section),
+            edit,
         )
         .map_err(|cause| cause.to_string())?;
         self.clear_loft_preview();

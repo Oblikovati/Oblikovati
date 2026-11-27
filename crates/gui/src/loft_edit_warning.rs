@@ -14,6 +14,7 @@ impl LoftDialog {
         let (document, _) = self.document?;
         let ready = GuiLoftAction::Commit(document);
         if !ready.enabled(state)
+            || !self.conditions.valid()
             || self.manual_mapping
             || self.merge_tangent_faces
             || state.loft_edit_warning.is_some()

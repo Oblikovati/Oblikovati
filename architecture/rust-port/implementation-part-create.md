@@ -292,3 +292,16 @@ A Closed Loop edit on the straight center line checks the native guide wire,
 reports the periodicity requirement, and restores the previously saved Loft
 when canceled. The [closed edit receipt](receipts/2026-11-27-loft-closed-edit-3917/README.md)
 records the dialog and viewport checks on Wayland and X11.
+
+### Circular surface section conditions
+
+The first section of a coaxial circular surface Loft can change from Free
+to Angle in the Conditions tab. The default 90° angle and unit weight
+change the takeoff tangent. Editing either value rebuilds the private
+preview. The native adapter revolves a cubic meridian and binds the two
+generated trims to the authored section IDs. Program recipe version 39
+saves the condition with the existing Loft identity.
+
+The [native receipt](receipts/2026-11-27-loft-conditions-3917/README.md)
+covers 09 and 11 on Wayland and X11, including package reopen and the
+published and pinned scenario variants.

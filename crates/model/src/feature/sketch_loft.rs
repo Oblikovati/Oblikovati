@@ -38,6 +38,33 @@ impl SketchLoftOutput {
     }
 }
 
+/// The first section's takeoff tangent and dimensionless influence on a Loft surface.
+#[derive(Clone, Copy, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct LoftTakeoffCondition {
+    pub angle_degrees: f64,
+    pub weight: f64,
+}
+
+impl LoftTakeoffCondition {
+    /// Validate a weighted tangent. Example: `LoftTakeoffCondition::new(90., 1.)?`.
+    pub fn new(angle_degrees: f64, weight: f64) -> Result<Self, String> {
+        if !angle_degrees.is_finite()
+            || !(0. ..=180.).contains(&angle_degrees)
+            || !weight.is_finite()
+            || weight <= 0.
+        {
+            return Err(format!(
+                "Loft takeoff ({angle_degrees}, {weight}): expected 0 to 180 degrees and a finite positive weight"
+            ));
+        }
+        Ok(Self {
+            angle_degrees,
+            weight,
+        })
+    }
+}
+
 /// An intermediate section's normalized position and area multiplier.
 #[derive(Clone, Copy, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -85,6 +112,8 @@ pub struct SketchLoftRecipe {
     pub center_line: Option<SketchLoftCenterLine>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub placed: Option<SketchLoftPlacedSection>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub takeoff: Option<LoftTakeoffCondition>,
 }
 
 /// A Loft whose sources are structurally valid and can be resolved for the current Part.
@@ -112,6 +141,7 @@ pub struct ResolvedSketchLoft {
     pub output: SketchLoftOutput,
     pub center_line: Option<ResolvedLoftCenterLine>,
     pub placed: Option<SketchLoftPlacedSection>,
+    pub takeoff: Option<LoftTakeoffCondition>,
 }
 
 impl ResolvedSketchLoft {
@@ -150,6 +180,7 @@ impl SketchLoftDefinition {
             output: SketchLoftOutput::Solid,
             center_line: None,
             placed: None,
+            takeoff: None,
         }))
     }
 
@@ -159,7 +190,8 @@ impl SketchLoftDefinition {
         if let Some(path) = recipe.center_line {
             loft = loft.with_center_line(path)?;
         }
-        loft.with_placed_section(recipe.placed)
+        loft.with_placed_section(recipe.placed)?
+            .with_takeoff(recipe.takeoff)
     }
 
     /// Choose the result kind over the same sections. Example: `loft.with_output(SketchLoftOutput::Surface)`.
@@ -198,6 +230,21 @@ impl SketchLoftDefinition {
             SketchLoftPlacedSection::new(section.position, section.area_scale)?;
         }
         self.0.placed = placed;
+        Ok(self)
+    }
+
+    /// Set the first section condition. Example: `loft.with_takeoff(Some(condition))?`.
+    pub fn with_takeoff(mut self, takeoff: Option<LoftTakeoffCondition>) -> Result<Self, String> {
+        if let Some(condition) = takeoff {
+            if self.0.output != SketchLoftOutput::Surface || self.0.center_line.is_some() {
+                return Err(
+                    "A weighted takeoff requires a two-section Loft surface without a guide."
+                        .into(),
+                );
+            }
+            LoftTakeoffCondition::new(condition.angle_degrees, condition.weight)?;
+        }
+        self.0.takeoff = takeoff;
         Ok(self)
     }
 
@@ -266,6 +313,7 @@ impl SketchLoftDefinition {
             output: self.0.output,
             center_line,
             placed: self.0.placed,
+            takeoff: self.0.takeoff,
         })
     }
 }

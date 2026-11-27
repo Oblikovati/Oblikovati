@@ -51,5 +51,6 @@ fn input_with_guide(endpoints: [[f64; 3]; 2]) -> ResolvedSketchLoft {
             endpoints,
         }),
         placed: None,
+        takeoff: None,
     }
 }

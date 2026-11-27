@@ -38,7 +38,9 @@ pub use fillet::{
     PreparedFillet, prepare_fillet,
 };
 pub use hole::{PreparedHole, prepare_hole};
-pub use loft::{PreparedLoft, loft_definition, prepare_loft, replace_loft_section};
+pub use loft::{
+    PreparedLoft, loft_definition, prepare_loft, replace_loft_section, replace_loft_takeoff,
+};
 pub use shell::{PreparedShell, prepare_shell};
 pub use sweep::{
     PreparedSweep, automatic_sweep, prepare_surface_sweep, prepare_sweep, prepare_sweep_for_target,

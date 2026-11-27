@@ -49855,8 +49855,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/app/loft_tool.go",
-      "mapping_reason": "Part feature or work geometry; kernel readiness remains a separate dependency."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a model/feature/loft_conditions_test.go.",
+      "mapping_reason": "Part feature or work geometry; kernel readiness remains a separate dependency.",
+      "go_test_premise": "TestLoftConditionImpactScalesBulge checks that a larger takeoff weight curves the surface more.",
+      "api_revision": "c8200b2da97c9a7dde43afb25debc977ff23b2fd",
+      "kernel_revision": "d463526642b7bf950ba33c7ab4a4c9bc97caffaf",
+      "kernel_capabilities": "Validated single-face shell from a revolved native Bézier meridian and two attributed section trims.",
+      "platforms": "Linux COSMIC Wayland and X11 under Xvfb with Openbox.",
+      "kernel_integration": "Replay the first section's weighted tangent from the persisted recipe while retaining the named edge and surface identities.",
+      "rust_tests": "crates/head/tests/solid-model/loft/conditions.rs; crates/martensite/tests/release_probe/loft_tangent.rs",
+      "oracle": "Select the first section's Angle condition and confirm the weight changes from zero to one before accepting two. Reopen the browser item and compare the saved setting. See receipts/2026-11-27-loft-conditions-3917/README.md.",
+      "expected_result": "Sketch1 reopens on Conditions as Angle with weight 2.000 ul and the same surface key.",
+      "baseline_source_sha256": "b207a6437cbe2927fdfb6c6ab136497ad41ceb59365a43113d70351738d15874"
     },
     {
       "id": "scenario:52a7169c0e59851bb1dc1edfc8c5c0bc82dc335929f8e1ebc32caec240185e14",
@@ -49899,8 +49909,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/app/loft_tool.go",
-      "mapping_reason": "Part feature or work geometry; kernel readiness remains a separate dependency."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a model/feature/loft_conditions_test.go.",
+      "mapping_reason": "Part feature or work geometry; kernel readiness remains a separate dependency.",
+      "go_test_premise": "TestLoftConditionAngleBulges compares the angled shape against the free baseline.",
+      "api_revision": "c8200b2da97c9a7dde43afb25debc977ff23b2fd",
+      "kernel_revision": "d463526642b7bf950ba33c7ab4a4c9bc97caffaf",
+      "kernel_capabilities": "Validated single-face shell from a revolved native Bézier meridian and two attributed section trims.",
+      "platforms": "Linux COSMIC Wayland and X11 under Xvfb with Openbox.",
+      "kernel_integration": "Replay the first section's weighted tangent from the persisted recipe while retaining the named edge and surface identities.",
+      "rust_tests": "crates/head/tests/solid-model/loft/conditions.rs; crates/martensite/tests/release_probe/loft_tangent.rs",
+      "oracle": "Change 90 to 45 degrees, check the increased viewport radius and shaded preview, then accept, save, reopen and compare the surface and its settings. See receipts/2026-11-27-loft-conditions-3917/README.md.",
+      "expected_result": "The reshaped surface retains its key, weight 2.000 ul, and angle 45.00 degrees.",
+      "baseline_source_sha256": "b207a6437cbe2927fdfb6c6ab136497ad41ceb59365a43113d70351738d15874"
     },
     {
       "id": "scenario:7ce73f3306ba731da55b72df7a2cc627b1ec7d8a23f7b92d7f38c0734474222c",

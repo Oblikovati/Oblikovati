@@ -12,11 +12,14 @@ mod edit_warning;
 #[path = "loft_section_dimensions.rs"]
 mod section_dimensions;
 use edit_warning::LoftEditWarning;
+#[path = "loft_conditions.rs"]
+mod conditions;
+use conditions::LoftConditions;
 use oblikovati_model::{
     document_sketch::DocumentSketchId,
     feature::{
         FeatureId,
-        sketch_loft::{SketchLoftOutput, SketchLoftPlacedSection},
+        sketch_loft::{LoftTakeoffCondition, SketchLoftOutput, SketchLoftPlacedSection},
     },
     sketch::SketchEntityId,
 };
@@ -52,10 +55,11 @@ pub enum GuiLoftPathMode {
 }
 
 /// The authored output and path of a saved Loft.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct GuiLoftEditSeed {
     pub output: SketchLoftOutput,
     pub path_mode: GuiLoftPathMode,
+    pub takeoff: Option<LoftTakeoffCondition>,
 }
 
 /// The current intermediate section dimensions and editor state.
@@ -84,6 +88,10 @@ pub enum GuiLoftAction {
     SetOutput {
         document: u64,
         output: SketchLoftOutput,
+    },
+    SetTakeoff {
+        document: u64,
+        condition: Option<LoftTakeoffCondition>,
     },
     ChooseCenterLine(u64),
     EditPlaced(u64),
@@ -120,10 +128,10 @@ impl GuiLoftAction {
                     && state.document == Some(document)
                     && feature.is_none_or(|id| Self::OpenEdit(id).enabled(state))
             }
-            Self::SetPath { document, .. } | Self::SetOutput { document, .. } => {
-                available && state.document == Some(document)
-            }
-            Self::ChooseCenterLine(document)
+            Self::SetPath { document, .. }
+            | Self::SetOutput { document, .. }
+            | Self::SetTakeoff { document, .. }
+            | Self::ChooseCenterLine(document)
             | Self::EditPlaced(document)
             | Self::CancelPlaced(document)
             | Self::AttemptClosedEdit(document)
@@ -146,6 +154,7 @@ pub(crate) struct LoftDialog {
     show_help: bool,
     editing: bool,
     dimensions: SectionDimensions,
+    conditions: LoftConditions,
     warning: LoftEditWarning,
     path_mode: GuiLoftPathMode,
     output: SketchLoftOutput,
@@ -188,6 +197,7 @@ impl LoftDialog {
             .and_then(|browser| browser.loft_edits.get(&feature?))
             .copied()
             .unwrap_or_default();
+        self.conditions = LoftConditions::new(seed.takeoff);
         self.path_mode = seed.path_mode;
         self.output = seed.output;
         self.closed_loop = false;
@@ -278,8 +288,9 @@ impl LoftDialog {
         ui.separator();
         let commit = self.accept_request(state);
         let accepted = crate::theme::property_accept(ui, tip || commit.is_some());
-        let saves_edit = self.path_mode == GuiLoftPathMode::PlacedSections
-            && (self.closed_loop || state.loft_placed.is_some_and(|placed| placed.dirty));
+        let saves_edit = state.loft_takeoff_dirty
+            || self.path_mode == GuiLoftPathMode::PlacedSections
+                && (self.closed_loop || state.loft_placed.is_some_and(|placed| placed.dirty));
         if accepted
             && (!self.editing || saves_edit)
             && let Some(commit) = commit
@@ -319,6 +330,7 @@ impl LoftDialog {
             ui.checkbox("Closed Loop", &mut self.closed_loop);
             ui.checkbox("Merge Tangent Faces", &mut self.merge_tangent_faces);
         }
+        self.conditions_tab(ui, state, actions);
         if let Some(_transition) = ui.tab_item("Transition") {
             self.transition(ui, &state.loft_sections);
         }

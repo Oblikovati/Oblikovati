@@ -180,6 +180,7 @@ pub(in crate::owner) fn loft_edits(
                     GuiLoftEditSeed {
                         output: recipe.output,
                         path_mode,
+                        takeoff: recipe.takeoff,
                     },
                 ))
             }
@@ -194,6 +195,7 @@ pub(super) struct LoftDraftSources {
     pub(super) output: SketchLoftOutput,
     pub(super) center_line: Option<CenterLinePick>,
     pub(super) placed: Option<SketchLoftPlacedSection>,
+    pub(super) takeoff: Option<LoftTakeoffCondition>,
 }
 
 impl LoftDraftSources {
@@ -254,5 +256,6 @@ pub(super) fn loft_sources(
         output: recipe.output,
         center_line,
         placed: recipe.placed,
+        takeoff: recipe.takeoff,
     })
 }

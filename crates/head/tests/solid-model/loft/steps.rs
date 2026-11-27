@@ -7,6 +7,7 @@ use oblikovati_model::{document_sketch::DocumentSketchId, sketch::SketchEntityId
 use oblikovati_viewport::ViewportNavigation;
 
 mod center_line;
+mod conditions;
 mod edit;
 mod fixtures;
 mod placed;
