@@ -119,6 +119,12 @@ Extrude accepts length expressions that reference part parameters. The
 checks that `Depth * 2` previews at 8 mm and rebuilds the same solid to
 10 mm after `Depth` changes to 5 mm in the Parameters panel.
 
+Measure in the Distance A menu can reference a visible sketch dimension.
+The [native dimension-pick scenario](receipts/2026-11-27-extrude-dimension-pick-3870/README.md)
+checks that clicking the 3 mm annotation inserts `d2` and keeps the
+rectangular profile selected. A repeat pick is validated as `d2d2` and
+Cancel leaves the source sketch intact.
+
 The [shared profile scenario](receipts/2026-11-27-extrude-reused-profile-3870/README.md)
 exercises selecting the visible sketch under Extrusion1 in the Model Browser.
 After the second extrusion, the browser shows two solids and one shared

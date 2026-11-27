@@ -1,0 +1,244 @@
+schemaVersion: 3
+documentType: 1
+displayName: Extrusion dimension pick
+partModelStates:
+  members:
+  - id: 1
+    name: Primary
+  active: 1
+  scope: SingleMember
+model:
+  planarSketches:
+    recipe:
+      version: 13
+      sketches:
+      - id: 1
+        name: Sketch1
+        plane_origin: XY
+        point_projections:
+        - anchor: 1
+          reference: Origin
+        geometry:
+          version: 12
+          points:
+          - id: 1
+            position:
+            - 0.0
+            - 0.0
+          - id: 2
+            position:
+            - -1.5
+            - -1.0
+          - id: 3
+            position:
+            - 1.5
+            - -1.0
+          - id: 4
+            position:
+            - 1.5
+            - 1.0
+          - id: 5
+            position:
+            - -1.5
+            - 1.0
+          - id: 10
+            position:
+            - 3.0
+            - 0.0
+          lines:
+          - id: 6
+            endpoints:
+            - 2
+            - 3
+          - id: 7
+            endpoints:
+            - 3
+            - 4
+          - id: 8
+            endpoints:
+            - 4
+            - 5
+          - id: 9
+            endpoints:
+            - 5
+            - 2
+          circles:
+          - id: 11
+            center: 10
+            radius: 0.15000000000000002
+          arcs: []
+          ellipses: []
+          splines: []
+          offset_splines: []
+          defining_points:
+          - 2
+          - 3
+          - 4
+          - 5
+          - 10
+          constraints:
+          - id: 1
+            relation: !diameter
+              curve: 11
+              parameter: 1
+          entity_order:
+          - 1
+          - 6
+          - 7
+          - 8
+          - 9
+          - 11
+          construction_curves: []
+          centerlines: []
+          dimension_placements:
+          - constraint: 1
+            position:
+            - 3.24
+            - 0.18
+          reference_dimensions: []
+          dimension_limits: []
+    sketchHighWater: 1
+    entityHighWater: 11
+    constraintHighWater:
+      1: 1
+    dimensionNameOrdinals:
+      1: 1
+  properties: []
+  units:
+    angle: deg
+    angleFormat: decimal
+    anglePrecision: '2'
+    area: mm^2
+    length: mm
+    lengthFormat: decimal
+    lengthPrecision: '3'
+    mass: kg
+    time: s
+    volume: mm^3
+  parameters:
+  - name: d2
+    kind: model
+    expressionContext:
+      version: 1
+      category: length
+      bare_unit: mm
+    valueType: ''
+    expression: 3 mm
+    text: ''
+    bool: false
+    value: 0.0
+    unit: ''
+    comment: ''
+    key: false
+    export: false
+    precision: 0
+    hidden: false
+    displayFormat: decimal
+    renamed: true
+    disabledActions: []
+    expressionList: []
+    allowCustomValue: false
+    sortedValueList: false
+    customProperty:
+      propertyType: text
+      units: ''
+      precision: threeDecimalPlaces
+      showLeadingZeros: true
+      showTrailingZeros: false
+      showUnitsString: true
+    tolerance: null
+    modelValueType: ''
+  parameterGroups: []
+  parameterSettings:
+    linearStandardTolerance: ''
+    angularStandardTolerance: ''
+    useStandardTolerances: false
+    exportStandardTolerances: false
+    linearDimensionPrecision: 3
+    angularDimensionPrecision: 2
+    dimensionDisplayType: value
+    displayParameterAsExpression: false
+  derivedParameterTables: []
+  parameterIds:
+    d2: 1
+  parameterHighWater: 1
+partDesignViews:
+  views:
+  - id: 1
+    name: Primary
+    built_in: true
+    active: true
+    locked: false
+    published: true
+    autosave_camera: true
+    annotation_scale:
+      mode: auto
+      numerator: 0
+      denominator: 0
+    standard_orientation: 0
+    camera: null
+    hidden_body_keys: []
+  - id: 2
+    name: Isometric
+    built_in: true
+    active: false
+    locked: false
+    published: true
+    autosave_camera: true
+    annotation_scale:
+      mode: auto
+      numerator: 0
+      denominator: 0
+    standard_orientation: 10759
+    camera: null
+    hidden_body_keys: []
+  - id: 3
+    name: Front
+    built_in: true
+    active: false
+    locked: false
+    published: true
+    autosave_camera: true
+    annotation_scale:
+      mode: auto
+      numerator: 0
+      denominator: 0
+    standard_orientation: 10764
+    camera: null
+    hidden_body_keys: []
+  - id: 4
+    name: Top
+    built_in: true
+    active: false
+    locked: false
+    published: true
+    autosave_camera: true
+    annotation_scale:
+      mode: auto
+      numerator: 0
+      denominator: 0
+    standard_orientation: 10754
+    camera: null
+    hidden_body_keys: []
+  - id: 5
+    name: Right
+    built_in: true
+    active: false
+    locked: false
+    published: true
+    autosave_camera: true
+    annotation_scale:
+      mode: auto
+      numerator: 0
+      denominator: 0
+    standard_orientation: 10755
+    camera: null
+    hidden_body_keys: []
+identity:
+  internalName: e5bb4d48-5913-45c1-a41c-5e6b8aa49af2
+  revisionId: cdd93344-2988-464e-a4c8-8fe062ba9221
+  databaseRevisionId: d8c9bc08-4dfa-4b91-90ba-38d76ee3b1dd
+  saveCounter: 1
+  versionCreated: 0.1.0-dev
+  versionSaved: 0.1.0-dev
+  modelDigest: 23b5a7b6176ee4ea649635d9f2b11439c6066adf9915ff5411148bdc042f9cea

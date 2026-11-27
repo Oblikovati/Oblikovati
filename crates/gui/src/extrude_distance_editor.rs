@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use crate::{
-    GuiCommandState, GuiExtrudeDirection, GuiInspectAction, GuiParameterRow, GuiShellAction,
+    GuiCommandState, GuiExtrudeDirection, GuiParameterRow, dimension_labels::LabelPosition,
     parameters::GuiParameterEditor,
 };
 use imgui::Ui;
@@ -9,6 +9,7 @@ use oblikovati_model::feature::FeatureId;
 const MENU: &str = "extrude-distance-editor";
 const PARAMETERS: &str = "Available Parameters";
 const FEATURE_PROMPT: &str = "Select a feature and then one of its dimensions.";
+const MEASURE_PROMPT: &str = "Select a dimension to reference the parameter.";
 const EDIT_BUTTON: &str = "Edit Distance A";
 const EDIT_BUTTON_WIDTH: f32 = 24.;
 
@@ -48,7 +49,7 @@ fn draw_unit_suffix(ui: &Ui, value: &str, unit: &str) {
 #[derive(Default)]
 pub(super) struct DistanceEditor {
     needs_parameters: bool,
-    picking_dimension: bool,
+    pick: Option<DistancePick>,
     issue: Option<String>,
 }
 
@@ -61,13 +62,21 @@ enum DistanceTool {
     List,
 }
 
+enum DistancePick {
+    Feature,
+    Measure { inserted: bool },
+}
+
 impl DistanceEditor {
     pub(super) fn uses_parameters(&self) -> bool {
         self.needs_parameters
     }
 
     pub(super) fn prompt(&self) -> Option<&'static str> {
-        self.picking_dimension.then_some(FEATURE_PROMPT)
+        Some(match self.pick.as_ref()? {
+            DistancePick::Feature => FEATURE_PROMPT,
+            DistancePick::Measure { .. } => MEASURE_PROMPT,
+        })
     }
 
     pub(super) fn draw(
@@ -77,7 +86,6 @@ impl DistanceEditor {
         edited_feature: Option<FeatureId>,
         state: &GuiCommandState,
         parameters: &mut GuiParameterEditor,
-        actions: &mut Vec<GuiShellAction>,
     ) -> bool {
         let Some(document) = state.document else {
             return false;
@@ -104,7 +112,7 @@ impl DistanceEditor {
             } else {
                 parameters.close_tolerance_inspection();
             }
-            self.apply_tool(ui, tool, parameters, document, actions);
+            self.apply_tool(ui, tool, parameters, document);
         }
         if let Some(issue) = &self.issue {
             ui.text_wrapped(issue);
@@ -144,20 +152,20 @@ impl DistanceEditor {
         tool: DistanceTool,
         parameters: &mut GuiParameterEditor,
         document: u64,
-        actions: &mut Vec<GuiShellAction>,
     ) {
-        self.picking_dimension = matches!(tool, DistanceTool::Dimension);
+        self.pick = match tool {
+            DistanceTool::Measure => Some(DistancePick::Measure { inserted: false }),
+            DistanceTool::Dimension => Some(DistancePick::Feature),
+            _ => None,
+        };
         self.issue = None;
         match tool {
-            DistanceTool::Measure => {
-                actions.push(GuiShellAction::Inspect(GuiInspectAction::StartMeasure))
-            }
             DistanceTool::Parameters => parameters.open(Some(document)),
             DistanceTool::Tolerance(Some(parameter)) => {
                 self.issue = parameters.open_tolerance(document, parameter).err();
             }
             DistanceTool::List => ui.open_popup(PARAMETERS),
-            DistanceTool::Dimension | DistanceTool::Tolerance(None) => {}
+            DistanceTool::Measure | DistanceTool::Dimension | DistanceTool::Tolerance(None) => {}
         }
     }
 
@@ -173,11 +181,11 @@ impl DistanceEditor {
             return choose_parameter(ui, rows.iter());
         }
         let selected = state.browser.as_ref()?.selected_feature?;
-        if !self.picking_dimension || Some(selected) == edited_feature {
+        if !matches!(self.pick, Some(DistancePick::Feature)) || Some(selected) == edited_feature {
             return None;
         }
         let picked = feature_dimension(ui, rows, selected)?;
-        self.picking_dimension = false;
+        self.pick = None;
         Some(picked)
     }
 }
@@ -260,6 +268,41 @@ pub(crate) struct ExtrudePanelControls<'a> {
 }
 
 impl super::ExtrudeDialog {
+    pub(crate) fn measure_distance_at_pointer(
+        &mut self,
+        ui: &Ui,
+        state: &GuiCommandState,
+        positions: &[Option<LabelPosition>],
+        parameters: &mut GuiParameterEditor,
+    ) -> bool {
+        let Some(document) = self.document.filter(|id| Some(*id) == state.document) else {
+            return false;
+        };
+        let Some(DistancePick::Measure { inserted }) = &mut self.distance_editor.pick else {
+            return false;
+        };
+        let panels = crate::widget_abi::over_any_panel()
+            | imgui::WindowHoveredFlags::ALLOW_WHEN_BLOCKED_BY_ACTIVE_ITEM;
+        if !self.reference.numeric() || ui.is_window_hovered_with_flags(panels) {
+            return false;
+        }
+        let Some(name) =
+            measured_parameter(ui.io().mouse_pos, state, positions, parameters, document)
+        else {
+            return false;
+        };
+        if ui.is_mouse_clicked(imgui::MouseButton::Left) {
+            if !*inserted {
+                self.distance.clear();
+                *inserted = true;
+            }
+            self.distance.push_str(name);
+            self.commit_error = None;
+            parameters.close_tolerance_inspection();
+        }
+        true
+    }
+
     pub(super) fn breadcrumb(&self, ui: &Ui, state: &GuiCommandState) {
         let Some(browser) = &state.browser else {
             return;
@@ -298,7 +341,6 @@ impl super::ExtrudeDialog {
         state: &GuiCommandState,
         icons: &crate::icons::GuiRibbonIcons,
         parameters: &mut crate::parameters::GuiParameterEditor,
-        actions: &mut Vec<GuiShellAction>,
     ) -> bool {
         let mut edited = false;
         if self.reference.numeric() {
@@ -318,7 +360,6 @@ impl super::ExtrudeDialog {
                 self.edit_feature,
                 state,
                 parameters,
-                actions,
             );
             edited |= self.direction_style.draw_direction(
                 ui,
@@ -372,4 +413,27 @@ impl super::ExtrudeDialog {
     pub(crate) fn uses_parameter_metadata(&self) -> bool {
         self.distance_editor.uses_parameters()
     }
+}
+
+fn measured_parameter<'a>(
+    mouse: [f32; 2],
+    state: &'a GuiCommandState,
+    positions: &[Option<LabelPosition>],
+    parameters: &GuiParameterEditor,
+    document: u64,
+) -> Option<&'a str> {
+    let rows = parameter_rows(parameters, document);
+    state
+        .dimension_labels
+        .iter()
+        .zip(positions)
+        .rev()
+        .find_map(|(label, position)| {
+            let name = label.edit.as_ref()?.name.as_str();
+            (position.as_ref()?.contains(mouse)
+                && rows
+                    .iter()
+                    .any(|row| row.is_length && row.detail.parameter_info.name == name))
+            .then_some(name)
+        })
 }

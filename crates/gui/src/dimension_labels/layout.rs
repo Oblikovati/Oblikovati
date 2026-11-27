@@ -18,6 +18,12 @@ pub(crate) struct LabelPosition {
     pub anchor: [f32; 2],
 }
 
+impl LabelPosition {
+    pub(crate) fn contains(&self, point: [f32; 2]) -> bool {
+        (0..2).all(|axis| (point[axis] - self.center[axis]).abs() <= self.size[axis] / 2. + 2.)
+    }
+}
+
 #[derive(Clone, Copy, Debug)]
 struct Box2 {
     min: [f32; 2],

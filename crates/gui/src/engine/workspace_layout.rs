@@ -40,6 +40,22 @@ impl GuiFrameEngine {
         };
     }
 
+    pub(super) fn workspace_needs_frame(&self, home_was_active: bool) -> bool {
+        self.extrude_dialog.needs_frame()
+            || self.orientation.needs_frame()
+            || self.ribbon.panels.pending_layout
+            || self.ribbon.needs_frame()
+            || self.ribbon.customization.needs_frame()
+            || self.workspace.pending_layout
+            || self.home.active != home_was_active
+            || self.home.hover_changed
+            || self.document_files.needs_frame()
+            || self.document_tabs.needs_frame()
+            || self.workspaces.needs_frame()
+            || self.workspace.switcher.needs_frame()
+            || self.document_tabs.menu.properties.needs_frame()
+    }
+
     /// Restore workspace docking before the first frame.
     /// Example: `engine.load_workspace_layout(&saved_bytes)?` at desktop startup.
     pub fn load_workspace_layout(&mut self, bytes: &[u8]) -> Result<(), String> {

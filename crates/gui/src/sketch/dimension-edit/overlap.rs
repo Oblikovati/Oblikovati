@@ -32,10 +32,11 @@ fn text_hits(
         .zip(positions)
         .filter_map(|(label, position)| {
             let position = position.as_ref()?;
-            let hit = (0..2).all(|axis| {
-                (mouse[axis] - position.center[axis]).abs() <= position.size[axis] / 2. + 2.
-            });
-            if hit { label.edit.clone() } else { None }
+            if position.contains(mouse) {
+                label.edit.clone()
+            } else {
+                None
+            }
         })
         .collect()
 }

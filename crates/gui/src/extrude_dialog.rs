@@ -253,7 +253,7 @@ impl ExtrudeDialog {
         let mut edited =
             ui.collapsing_header("Input Geometry", expanded) && self.geometry_controls(ui, state);
         if ui.collapsing_header("Behavior", expanded) {
-            edited |= self.draw_extent(ui, state, controls.icons, controls.parameters, actions);
+            edited |= self.draw_extent(ui, state, controls.icons, controls.parameters);
             if self.reference.numeric()
                 && let Some(taper) = &mut self.taper
             {
