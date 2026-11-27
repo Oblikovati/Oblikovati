@@ -16,7 +16,7 @@ impl ViewTarget {
     }
     pub fn window(&self) -> Handle<dyn AspectWindow> {
         match self {
-            #[cfg(target_os = "linux")]
+            #[cfg(any(target_os = "linux", target_arch = "wasm32"))]
             Self::Native(native) => native.window(),
             #[cfg(target_os = "windows")]
             Self::Native(native) => native.window.cast(),

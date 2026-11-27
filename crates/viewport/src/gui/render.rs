@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use crate::{GuiAtlas, GuiBatch, GuiFrame, GuiTextureKey, GuiTextureResources, GuiTextureSource};
-use martensite_vulkan::{
+use martensite_render_core::{
     PrimitiveDraw, RasterImage, RenderClipping, RenderFrame, RenderLayer, RenderVertex,
     TexturedStyle, identity_clip,
 };

@@ -128,6 +128,21 @@ pub(crate) fn wait_for_native_sources<W: crate::linux::LinuxEventSource>(
     }
 }
 
+#[cfg(target_arch = "wasm32")]
+fn wait_for_native_sources(
+    main: &NativeWindow,
+    additional: &[&NativeWindow],
+    wake: &ViewportWake,
+    _timeout: Option<Duration>,
+) -> Result<ViewportReady, String> {
+    let native_events =
+        main.has_pending_input() || additional.iter().any(|window| window.has_pending_input());
+    Ok(ViewportReady {
+        native_events,
+        worker_wake: wake.consume()?,
+    })
+}
+
 #[cfg(target_os = "windows")]
 fn wait_for_native_sources(
     main: &NativeWindow,

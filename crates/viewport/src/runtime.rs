@@ -3,8 +3,8 @@ use crate::{
     ViewportCamera, ViewportCapture, ViewportEvent, ViewportOptions, ViewportPresentation,
     ViewportScene, native::NativeWindow, renderer::RenderView, target::ViewTarget,
 };
+use martensite_render_core::Graphic3dRenderDriver;
 use martensite_tkernel::standard::Handle;
-use martensite_vulkan::Graphic3dRenderDriver;
 use std::{
     cell::{Cell, RefCell},
     collections::VecDeque,
@@ -85,11 +85,19 @@ impl Viewport {
     /// Physical pixels per logical UI unit reported by the window system.
     /// Example: `let density = viewport.backing_scale();`.
     pub fn backing_scale(&self) -> f32 {
-        #[cfg(any(target_os = "linux", target_os = "windows"))]
+        #[cfg(any(target_os = "linux", target_os = "windows", target_arch = "wasm32"))]
         if let Some(ViewTarget::Native(native)) = self.target.as_ref() {
             return native.backing_scale();
         }
         1.0
+    }
+    /// Enqueue a translated browser DOM event for the next `poll_events` call.
+    /// Example: `viewport.push_event(ViewportEvent::Expose);`.
+    #[cfg(target_arch = "wasm32")]
+    pub fn push_event(&self, event: ViewportEvent) {
+        if let Some(ViewTarget::Native(native)) = self.target.as_ref() {
+            native.push_event(event);
+        }
     }
     /// Read this runtime's view identity; example: `viewport.id()` tags captures.
     pub fn id(&self) -> u64 {
@@ -292,11 +300,7 @@ impl Viewport {
     /// Example: `view.present_without_capture()?` returns false when the surface changed.
     #[cfg(target_os = "linux")]
     pub fn present_without_capture(&mut self) -> Result<bool, String> {
-        if !self.draw_current_frame()? {
-            return Ok(false);
-        }
-        self.completed = Some(self.generations());
-        Ok(true)
+        self.present_frame()
     }
     fn draw_current_frame(&mut self) -> Result<bool, String> {
         Ok(self.draw_current_surface()? && self.observe_draw_extent()?.is_none())
@@ -360,7 +364,7 @@ impl Viewport {
         self.require_frame_extent([frame.width, frame.height])?;
         Ok(self.capture_from(frame))
     }
-    fn capture_from(&self, frame: martensite_vulkan::FrameCapture) -> ViewportCapture {
+    fn capture_from(&self, frame: martensite_render_core::FrameCapture) -> ViewportCapture {
         ViewportCapture {
             view_id: self.id,
             scene_generation: self.scene,
@@ -477,3 +481,4 @@ pub(crate) mod event_sources;
 mod gui_composition;
 
 mod gui_outcomes;
+mod webgpu_present;
