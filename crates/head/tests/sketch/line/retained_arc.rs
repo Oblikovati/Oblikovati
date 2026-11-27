@@ -31,6 +31,8 @@ fn arc_end() -> [f64; 2] {
 fn arc_source(world: &mut ApplicationWorld) {
     let start = arc_start();
     world.select_line_tool();
+    world.pump(Vec::new());
+    world.open_precise_input();
     world.precise_point([start[0], start[1] + SOURCE_LENGTH]);
     world.precise_point(start);
     world.escape();
@@ -66,7 +68,6 @@ fn following_line(world: &mut ApplicationWorld) {
 fn build_arc_fixture(world: &mut ApplicationWorld) {
     world.start_sketch_on("YZ Plane");
     world.seed_dimensions_needed(SEEDED_BEFORE_ARC_FIXTURE);
-    world.open_precise_input();
     arc_source(world);
     add_tangent_arc(world);
     following_line(world);
@@ -117,14 +118,34 @@ fn retained_chain(world: &mut ApplicationWorld) {
     world.expect_annotation("V");
 }
 #[when("Undo first hides constraint glyphs")]
+#[when("the user press Undo once")]
 fn undo_hides_glyphs(world: &mut ApplicationWorld) {
     world.undo();
 }
 #[then("geometry and the 28-dimension count remain")]
+#[then("constraint glyphs disappear while geometry and the 28-dimension count remain")]
 fn count_stays(world: &mut ApplicationWorld) {
     world.expect_no_annotation("V");
     world.expect_dimensions_needed(28);
     assert_eq!(world.edited_geometry().arcs().len(), 1, "expected the arc");
+}
+#[when("the user press Undo again")]
+#[when("the user press Undo once more")]
+fn undo_step(world: &mut ApplicationWorld) {
+    world.undo();
+}
+#[then("the following line disappears and the count becomes 26")]
+fn following_line_undone(world: &mut ApplicationWorld) {
+    world.expect_dimensions_needed(26);
+    assert_eq!(world.edited_geometry().arcs().len(), 1, "expected the arc");
+}
+#[then("the arc disappears and the count becomes 24")]
+fn arc_undone(world: &mut ApplicationWorld) {
+    world.expect_dimensions_needed(24);
+    assert!(
+        world.edited_geometry().arcs().is_empty(),
+        "expected the arc gone"
+    );
 }
 #[when("further Undo removes the following line then the arc")]
 fn undo_twice(world: &mut ApplicationWorld) {

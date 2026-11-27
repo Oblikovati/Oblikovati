@@ -27,7 +27,7 @@ fn press_m_and_select_last_line(world: &mut ApplicationWorld) {
 // line-04 and line-08
 #[when("I open Measure and select the segment")]
 #[when("the user open Measure and select the segment")]
-#[when("I measure the visible upper segment")]
+#[when("the user measure the visible upper segment")]
 fn measure_upper(world: &mut ApplicationWorld) {
     press_m_and_select_last_line(world);
 }
@@ -46,7 +46,7 @@ fn retained_four(world: &mut ApplicationWorld) {
     world.start_empty_sketch();
     line_with_values(world, "4", "30");
 }
-#[when("I press M and select the segment")]
+#[when("the user press M and select the segment")]
 fn press_m(world: &mut ApplicationWorld) {
     press_m_and_select_last_line(world);
 }
@@ -104,7 +104,7 @@ fn stores_four(world: &mut ApplicationWorld) {
     assert!(text.contains("4mm"), "expected 4 mm in the editor {text:?}");
     world.escape();
 }
-#[when("I open the length dimension and type 5 then press Escape")]
+#[when("the user open the length dimension and type 5 then press Escape")]
 fn type_five_escape(world: &mut ApplicationWorld) {
     world.open_dimension_label("4");
     world.type_text("5");
@@ -139,7 +139,7 @@ fn reopened_selected(world: &mut ApplicationWorld) {
     world.open_dimension_label("4");
     assert!(world.text_is_selected("4mm"), "expected the value selected");
 }
-#[when("I type 5 and press Enter then Escape")]
+#[when("the user type 5 and press Enter then Escape")]
 fn type_five_enter(world: &mut ApplicationWorld) {
     world.type_text("5");
     world.key(ViewportPhysicalKey::Enter, false);

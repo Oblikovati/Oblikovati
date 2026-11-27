@@ -20,7 +20,7 @@ const ROW_START: [i32; 2] = [560, 500];
 const ROW_END: [i32; 2] = [760, 500];
 const ROW_BETWEEN: [i32; 2] = [660, 500];
 const BELOW_ROW: [i32; 2] = [660, 600];
-const SURROUNDING_LINE: [[i32; 2]; 2] = [[900, 300], [1100, 300]];
+const SURROUNDING_LINE: [[i32; 2]; 2] = [[780, 300], [980, 300]];
 fn require_recorded_fixture(case: &str) {
     super::super::gap_runner::block_fixture(&format!(
         "{case}: recorded sketch, view, and pointer inputs are unavailable; see arc-three-point/BLOCKERS.md"
@@ -85,7 +85,6 @@ fn expect_rows(world: &ApplicationWorld, rows: &[&str]) {
     }
 }
 // arc-three-point-01
-#[when("I select Three Point Arc and select a start, end, and noncollinear point on the arc")]
 #[when(
     "the user select Three Point Arc and select a start, end, and noncollinear point on the arc"
 )]
@@ -131,11 +130,11 @@ fn on_arc_stays(world: &mut ApplicationWorld) {
 fn same_row(_: &mut ApplicationWorld) {
     require_recorded_fixture("recorded same-screen-row boundary");
 }
-#[when("I click between them on that row for the third point")]
+#[when("the user click between them on that row for the third point")]
 fn between(world: &mut ApplicationWorld) {
     world.sketch_click(ROW_BETWEEN);
 }
-#[when("I select a point below that row")]
+#[when("the user select a point below that row")]
 fn below_row(world: &mut ApplicationWorld) {
     world.sketch_click(BELOW_ROW);
 }
@@ -164,7 +163,7 @@ fn ready_empty(world: &mut ApplicationWorld) {
     assert_eq!(arcs(world), 0, "arcs");
 }
 // arc-three-point-04
-#[given("I have committed one valid change through this feature")]
+#[given("the user have committed one valid change through this feature")]
 #[given("the user has committed one valid arc through this feature")]
 fn committed(world: &mut ApplicationWorld) {
     world.select_line_tool();
@@ -177,7 +176,7 @@ fn committed(world: &mut ApplicationWorld) {
     assert_eq!(arcs(world), 1, "arcs");
     world.record_initial_sketch();
 }
-#[given("I have exited the creation or edit command")]
+#[given("the user have exited the creation or edit command")]
 #[given("the user has exited the creation or edit command")]
 fn exited(world: &mut ApplicationWorld) {
     #[cfg(target_os = "linux")]
@@ -188,10 +187,6 @@ fn exited(world: &mut ApplicationWorld) {
         return;
     }
     exit_tool(world);
-}
-#[when("I press Ctrl+Z once")]
-fn undo_once(world: &mut ApplicationWorld) {
-    world.undo();
 }
 #[then("the last feature transaction is undone")]
 fn undone(world: &mut ApplicationWorld) {
@@ -251,8 +246,8 @@ fn visible_again(world: &mut ApplicationWorld) {
 fn restored_by_redo(world: &mut ApplicationWorld) {
     major_arc_restored(world);
 }
-#[when("I open Measure and select its curve")]
-#[when("I open Measure and select its upper curve")]
+#[when("the user open Measure and select its curve")]
+#[when("the user open Measure and select its upper curve")]
 fn measure_curve(world: &mut ApplicationWorld) {
     measure_arc(world);
 }
@@ -286,7 +281,7 @@ fn comma_center(world: &mut ApplicationWorld) {
 fn ready_156(world: &mut ApplicationWorld) {
     seeded_ready(world, 156);
 }
-#[when("I choose Arc Three Point and click start 350,250")]
+#[when("the user choose Arc Three Point and click start 350,250")]
 fn tool_and_start(world: &mut ApplicationWorld) {
     select_tool(world);
     world.sketch_click(START);
@@ -299,11 +294,11 @@ fn asks_end(world: &mut ApplicationWorld) {
 fn still_156(world: &mut ApplicationWorld) {
     world.expect_dimensions_needed(156);
 }
-#[when("I invoke Three Point Arc")]
+#[when("the user invoke Three Point Arc")]
 fn invoke(world: &mut ApplicationWorld) {
     select_tool(world);
 }
-#[when("I click start 350,250 and end 350,350")]
+#[when("the user click start 350,250 and end 350,350")]
 fn start_and_end(world: &mut ApplicationWorld) {
     world.sketch_click(START);
     world.sketch_click(END);
@@ -312,11 +307,11 @@ fn start_and_end(world: &mut ApplicationWorld) {
 fn asks_point(world: &mut ApplicationWorld) {
     world.expect_status("Select point on arc");
 }
-#[when("I press Escape before selecting the third point")]
+#[when("the user press Escape before selecting the third point")]
 fn escape_before_third(world: &mut ApplicationWorld) {
     exit_tool(world);
 }
-#[when("I click start 350,250, end 350,350, and point on arc 300,300")]
+#[when("the user click start 350,250, end 350,350, and point on arc 300,300")]
 fn all_three(world: &mut ApplicationWorld) {
     world.sketch_click(START);
     world.sketch_click(END);
@@ -347,12 +342,12 @@ fn gone_156(world: &mut ApplicationWorld) {
 fn ready_161(world: &mut ApplicationWorld) {
     seeded_ready(world, 161);
 }
-#[when("I invoke Three Point Arc and click start 1530,600")]
+#[when("the user invoke Three Point Arc and click start 1530,600")]
 fn tool_repeated_start(world: &mut ApplicationWorld) {
     select_tool(world);
     world.sketch_click(REPEATED_START);
 }
-#[when("I click 1530,600 again for the end")]
+#[when("the user click 1530,600 again for the end")]
 fn repeated_end(world: &mut ApplicationWorld) {
     world.sketch_click(REPEATED_START);
 }
@@ -360,7 +355,7 @@ fn repeated_end(world: &mut ApplicationWorld) {
 fn end_stays(world: &mut ApplicationWorld) {
     world.expect_status("Select end of arc");
 }
-#[when("I click the distinct endpoint 1530,660")]
+#[when("the user click the distinct endpoint 1530,660")]
 fn distinct_end(world: &mut ApplicationWorld) {
     world.sketch_click(DISTINCT_END);
 }

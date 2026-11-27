@@ -148,6 +148,7 @@ impl<
             .tag_sketch_creation(sketch)
             .map_err(|cause| cause.to_string())?;
         self.watch_sketch_edit(document, sketch)?;
+        self.command_notice = Some(DesktopCommandNotice::Ready);
         Ok(sketch)
     }
     fn sketch_creation_datums(

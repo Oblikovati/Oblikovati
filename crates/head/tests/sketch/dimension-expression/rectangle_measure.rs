@@ -33,7 +33,7 @@ fn model_height(world: &mut ApplicationWorld) -> usize {
     let (min, max) = heights.fold((first, first), |(min, max), y| (min.min(y), max.max(y)));
     ((max - min) * 1_000_000.).round() as usize
 }
-#[when("I enter incomplete 2* and attempt acceptance")]
+#[when("the user enter incomplete 2* and attempt acceptance")]
 fn reject_incomplete(world: &mut ApplicationWorld) {
     world.key(ViewportPhysicalKey::D, false);
     world.click(world.exact_run_center("10"));
@@ -45,7 +45,7 @@ fn reject_incomplete(world: &mut ApplicationWorld) {
 fn warning_shown(world: &mut ApplicationWorld) {
     world.expect_text("The expression cannot be evaluated.");
 }
-#[when("I acknowledge it and complete 2*6 and accept")]
+#[when("the user acknowledge it and complete 2*6 and accept")]
 fn recover_expression(world: &mut ApplicationWorld) {
     world.click_text("OK");
     world.key(ViewportPhysicalKey::End, false);
@@ -57,7 +57,7 @@ fn changed_height(world: &mut ApplicationWorld) {
     world.expect_annotation("12");
     assert!(model_height(world) > world.observed_counts[0]);
 }
-#[when("I exit General Dimension and measure its top and bottom curves")]
+#[when("the user exit General Dimension and measure its top and bottom curves")]
 fn measure_opposite_sides(world: &mut ApplicationWorld) {
     world.escape();
     world.key(ViewportPhysicalKey::M, false);

@@ -34,6 +34,9 @@ impl ApplicationWorld {
     }
     /// Type both of the toolbar's values and accept them, whatever its fields are named.
     pub fn precise_values(&mut self, first: &str, second: &str) {
+        if diagnostics::window_draw_list("Precise Input").is_none() {
+            self.pump(Vec::new());
+        }
         let labels = self.precise_field_labels();
         self.click_precise_field(labels[0]);
         self.type_text(first);

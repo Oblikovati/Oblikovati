@@ -290,7 +290,7 @@ fn regular_retained(world: &mut ApplicationWorld) {
     }
 }
 // point-10
-#[when("I click the same canvas location twice and press Escape")]
+#[when("the user click the same canvas location twice and press Escape")]
 fn click_twice(world: &mut ApplicationWorld) {
     world.sketch_click(FIRST);
     world.sketch_click(FIRST);
@@ -306,8 +306,8 @@ fn no_dialog(world: &mut ApplicationWorld) {
 fn shows_210(world: &mut ApplicationWorld) {
     world.expect_dimensions_needed(210);
 }
-#[when("I undo the most recent placement")]
-#[when("I undo the earlier placement")]
+#[when("the user undo the most recent placement")]
+#[when("the user undo the earlier placement")]
 fn undo_placement(world: &mut ApplicationWorld) {
     world.undo();
 }
@@ -315,7 +315,7 @@ fn undo_placement(world: &mut ApplicationWorld) {
 fn shows_208(world: &mut ApplicationWorld) {
     world.expect_dimensions_needed(208);
 }
-#[when("I redo each placement separately")]
+#[when("the user redo each placement separately")]
 fn redo_each(world: &mut ApplicationWorld) {
     world.observed_counts.clear();
     for _ in 0..2 {
@@ -327,7 +327,7 @@ fn redo_each(world: &mut ApplicationWorld) {
 fn count_210(world: &mut ApplicationWorld) {
     assert_eq!(world.observed_counts, [210, 210], "counts after each redo");
 }
-#[when("I open Select Other at the overlapping location and expand its candidate list")]
+#[when("the user open Select Other at the overlapping location and expand its candidate list")]
 fn open_select_other(world: &mut ApplicationWorld) {
     open_context_menu(world, FIRST);
     world.click_text("Select Other");

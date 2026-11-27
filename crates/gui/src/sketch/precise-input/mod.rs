@@ -221,7 +221,7 @@ impl PreciseInputBar {
             if expanded {
                 if !crate::widget_abi::window_is_docked(ui) || ui.content_region_avail()[0] >= 540.
                 {
-                    ui.same_line();
+                    ui.same_line_with_spacing(0., 12.);
                 }
                 self.expanded_controls(ui, target, actions);
             }
@@ -275,7 +275,7 @@ impl PreciseInputBar {
         self.second.follow(pointer.map(|values| &values[1]));
         let [first_label, second_label] = self.mode.field_labels();
         let first = coordinate_field(ui, first_label, &mut self.first);
-        ui.same_line();
+        ui.same_line_with_spacing(0., 12.);
         let second = coordinate_field(ui, second_label, &mut self.second);
         if (first || second) && valid_number(&self.first.text) && valid_number(&self.second.text) {
             actions.push(GuiShellAction::PrecisePoint(GuiPrecisePoint {

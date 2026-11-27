@@ -40,7 +40,7 @@ fn ten_millimetre_height(world: &mut ApplicationWorld) {
     world.pump(Vec::new());
     world.expect_annotation("10");
 }
-#[when("I edit d50 and enter 2 followed by multiplication")]
+#[when("the user edit d50 and enter 2 followed by multiplication")]
 fn enter_incomplete(world: &mut ApplicationWorld) {
     world.open_dimension_label("10");
     world.expect_text("d50");
@@ -56,11 +56,16 @@ fn incomplete_red(world: &mut ApplicationWorld) {
 fn evaluation_warning(world: &mut ApplicationWorld) {
     world.expect_text("The expression cannot be evaluated.");
 }
+#[when("the user acknowledge the message")]
+fn acknowledge_evaluation_warning(world: &mut ApplicationWorld) {
+    world.click_text("OK");
+    world.pump(Vec::new());
+}
 #[then("the editor remains open with the invalid expression selected")]
 fn invalid_selected(world: &mut ApplicationWorld) {
     assert!(world.text_is_selected("2*"));
 }
-#[when("I press End and type 6")]
+#[when("the user press End and type 6")]
 fn complete_expression(world: &mut ApplicationWorld) {
     world.key(ViewportPhysicalKey::End, false);
     world.type_text("6");
@@ -89,7 +94,7 @@ fn accepted_arithmetic(world: &mut ApplicationWorld) {
     world.expect_annotation("12");
     world.observed_counts = vec![rectangle_height(world)];
 }
-#[when("I enter d50 into d50 and press Return")]
+#[when("the user enter d50 into d50 and press Return")]
 fn accept_self_reference(world: &mut ApplicationWorld) {
     enter_self_reference(world);
     world.key(ViewportPhysicalKey::Enter, false);
@@ -104,7 +109,7 @@ fn accepted_expression_open(world: &mut ApplicationWorld) {
     accepted_arithmetic(world);
     world.open_dimension_label("12");
 }
-#[when("I replace the selected expression with 9 and press Escape")]
+#[when("the user replace the selected expression with 9 and press Escape")]
 fn cancel_proposed_expression(world: &mut ApplicationWorld) {
     world.type_text("9");
     world.escape();
@@ -124,8 +129,8 @@ fn rectangle_height(world: &mut ApplicationWorld) -> usize {
         .collect();
     (points.iter().max().unwrap() - points.iter().min().unwrap()) as usize
 }
-#[when("I invoke General Dimension with d and single-click the existing annotation")]
-#[when("I invoke General Dimension and single-click d50")]
+#[when("the user invoke General Dimension with d and single-click the existing annotation")]
+#[when("the user invoke General Dimension and single-click d50")]
 fn open_d50_from_dimension_tool(world: &mut ApplicationWorld) {
     world.key(ViewportPhysicalKey::D, false);
     assert!(world.state().dimension_tool_active);
@@ -151,7 +156,7 @@ fn redo_taller(world: &mut ApplicationWorld) {
     world.expect_annotation("12");
     assert_eq!(rectangle_height(world), world.observed_counts[0]);
 }
-#[when("I replace its selected expression with 9")]
+#[when("the user replace its selected expression with 9")]
 fn propose_nine(world: &mut ApplicationWorld) {
     world.type_text("9");
     world.pump(Vec::new());
@@ -161,12 +166,12 @@ fn proposal_normal(world: &mut ApplicationWorld) {
     let [_, green, blue] = world.run_in_window("Edit Dimension", "9").color;
     assert!(green > 100 && blue > 100);
 }
-#[when("I press Escape and reopen d50")]
+#[when("the user press Escape and reopen d50")]
 fn discard_and_reopen(world: &mut ApplicationWorld) {
     world.escape();
     world.click(world.exact_run_center("12"));
 }
-#[when("I replace it with d50 using individual d, 5 and 0 keys")]
+#[when("the user replace it with d50 using individual d, 5 and 0 keys")]
 fn enter_self_reference(world: &mut ApplicationWorld) {
     world.key(ViewportPhysicalKey::D, false);
     assert!(world.state().dimension_tool_active);
@@ -185,7 +190,7 @@ fn self_reference_normal(world: &mut ApplicationWorld) {
 fn self_reference_rejected(world: &mut ApplicationWorld) {
     world.expect_text("Failed to edit dimension value.");
 }
-#[when("I cancel the failed edit and reopen d50")]
+#[when("the user cancel the failed edit and reopen d50")]
 fn cancel_and_reopen(world: &mut ApplicationWorld) {
     world.click_text("OK");
     world.escape();
@@ -199,7 +204,7 @@ fn previous_expression(world: &mut ApplicationWorld) {
 fn height_remains(world: &mut ApplicationWorld) {
     world.expect_annotation("12");
 }
-#[when("I press Escape twice")]
+#[when("the user press Escape twice")]
 fn escape_twice(world: &mut ApplicationWorld) {
     world.escape();
     world.escape();
@@ -218,7 +223,7 @@ fn component_dimensions(world: &mut ApplicationWorld) {
     world.expect_annotation("50");
     world.observed_view = Some(world.line_point(0, 1.));
 }
-#[when("I enter d63*2 in d64 and accept")]
+#[when("the user enter d63*2 in d64 and accept")]
 fn enter_dependent_and_accept(world: &mut ApplicationWorld) {
     world.open_dimension_label("50");
     world.type_text("d63*2");
@@ -229,7 +234,7 @@ fn dependent_and_reference(world: &mut ApplicationWorld) {
     world.expect_annotation("fx:40");
     world.expect_annotation("(44.721)");
 }
-#[when("I edit d64 using individual d, 6, 3 and multiplication keys")]
+#[when("the user edit d64 using individual d, 6, 3 and multiplication keys")]
 fn enter_dependent_prefix(world: &mut ApplicationWorld) {
     world.open_dimension_label("50");
     world.expect_text("d64");
@@ -243,7 +248,7 @@ fn dependent_prefix_red(world: &mut ApplicationWorld) {
     let [red, green, blue] = world.run_in_window("Edit Dimension", "d63*").color;
     assert!(red > 200 && green < 100 && blue < 100);
 }
-#[when("I type 2")]
+#[when("the user type 2")]
 fn finish_dependent(world: &mut ApplicationWorld) {
     world.type_text("2");
     world.pump(Vec::new());
@@ -270,8 +275,8 @@ fn dependent_line(world: &mut ApplicationWorld) {
     world.key(ViewportPhysicalKey::Enter, false);
     world.expect_annotation("fx:40");
 }
-#[when("I open source d63 and type 3 then 0 and press Return")]
-#[when("I change d63 to 30")]
+#[when("the user open source d63 and type 3 then 0 and press Return")]
+#[when("the user change d63 to 30")]
 fn change_source(world: &mut ApplicationWorld) {
     world.open_dimension_label("20");
     world.type_text("3");
@@ -291,8 +296,8 @@ fn propagated_annotations(world: &mut ApplicationWorld) {
 fn aligned_length_sixty(world: &mut ApplicationWorld) {
     world.expect_annotation("(67.082)");
 }
-#[when("I reopen d64 by targeting its component dimension line")]
-#[when("I reopen d64 through its component dimension line")]
+#[when("the user reopen d64 by targeting its component dimension line")]
+#[when("the user reopen d64 through its component dimension line")]
 fn reopen_by_line(world: &mut ApplicationWorld) {
     world.key(ViewportPhysicalKey::D, false);
     let point = world.sketch_pixel_of([5., 2.5]);
@@ -318,12 +323,12 @@ fn propagated_line(world: &mut ApplicationWorld) {
     world.key(ViewportPhysicalKey::Enter, false);
     world.expect_annotation("fx:60");
 }
-#[when("I undo the source edit and measure both endpoints")]
+#[when("the user undo the source edit and measure both endpoints")]
 fn undo_and_measure(world: &mut ApplicationWorld) {
     world.undo();
     measure_endpoints(world);
 }
-#[when("I open d63 and type d,6,4 as separate keys and press Return")]
+#[when("the user open d63 and type d,6,4 as separate keys and press Return")]
 fn indirect_reference(world: &mut ApplicationWorld) {
     world.open_dimension_label("30");
     for character in ["d", "6", "4"] {
@@ -331,7 +336,7 @@ fn indirect_reference(world: &mut ApplicationWorld) {
     }
     world.key(ViewportPhysicalKey::Enter, false);
 }
-#[when("I click Cancel and reopen d63")]
+#[when("the user click Cancel and reopen d63")]
 fn cancel_indirect_reference(world: &mut ApplicationWorld) {
     world.click_text("Cancel");
     world.open_dimension_label("30");
@@ -345,7 +350,7 @@ fn dependent_geometry_retained(world: &mut ApplicationWorld) {
     world.expect_annotation("fx:60");
     world.expect_annotation("(67.082)");
 }
-#[when("I select both line endpoints in Measure")]
+#[when("the user select both line endpoints in Measure")]
 fn measure_endpoints(world: &mut ApplicationWorld) {
     world.key(ViewportPhysicalKey::M, false);
     for fraction in [0., 1.] {
@@ -367,7 +372,7 @@ fn expect_measurement(world: &mut ApplicationWorld, y: &str, z: &str, distance: 
 fn measure_thirty_sixty(world: &mut ApplicationWorld) {
     expect_measurement(world, "30.000", "60.000", "67.082");
 }
-#[when("I close Measure, undo the source edit and measure both endpoints again")]
+#[when("the user close Measure, undo the source edit and measure both endpoints again")]
 fn measure_after_undo(world: &mut ApplicationWorld) {
     world.click_text("Done");
     world.undo();
@@ -377,8 +382,8 @@ fn measure_after_undo(world: &mut ApplicationWorld) {
 fn measure_twenty_forty(world: &mut ApplicationWorld) {
     expect_measurement(world, "20.000", "40.000", "44.721");
 }
-#[when("I close Measure, redo the source edit and measure both endpoints again")]
-#[when("I close Measure and redo the source edit and measure the endpoints again")]
+#[when("the user close Measure, redo the source edit and measure both endpoints again")]
+#[when("the user close Measure and redo the source edit and measure the endpoints again")]
 fn measure_after_redo(world: &mut ApplicationWorld) {
     world.click_text("Done");
     world.redo();

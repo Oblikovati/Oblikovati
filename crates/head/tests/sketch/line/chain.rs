@@ -129,7 +129,7 @@ fn both_remain(world: &mut ApplicationWorld) {
     world.expect_segment_drawn(END, HORIZONTAL_END);
     world.expect_status("Select end of line");
 }
-#[when("I move the pointer to display a nonzero pending segment and press Ctrl+Z again")]
+#[when("the user move the pointer to display a nonzero pending segment and press Ctrl+Z again")]
 fn move_and_ctrl_z(world: &mut ApplicationWorld) {
     world.hover([900, 300]);
     world.undo();
@@ -139,7 +139,7 @@ fn accepted_and_preview(world: &mut ApplicationWorld) {
     world.expect_segment_drawn(START, END);
     world.expect_segment_drawn(HORIZONTAL_END, [900, 300]);
 }
-#[when("I terminate Line through marking-menu OK and press Ctrl+Z at Ready")]
+#[when("the user terminate Line through marking-menu OK and press Ctrl+Z at Ready")]
 fn terminate_and_undo(world: &mut ApplicationWorld) {
     choose_ok(world);
     world.undo();
@@ -163,7 +163,7 @@ fn second_back(world: &mut ApplicationWorld) {
 fn ctrl_y(world: &mut ApplicationWorld) {
     world.redo();
 }
-#[when("I choose OK in the marking menu")]
+#[when("the user choose OK in the marking menu")]
 fn ok_in_menu(world: &mut ApplicationWorld) {
     choose_ok(world);
 }
@@ -266,11 +266,11 @@ fn source_with_line_active(world: &mut ApplicationWorld) {
     world.sketch_click(SOURCE[0]);
     world.sketch_click(SOURCE[1]);
 }
-#[when("I drag from (1550,190) to (1590,260) and release")]
+#[when("the user drag from (1550,190) to (1590,260) and release")]
 fn drag_from_source(world: &mut ApplicationWorld) {
     world.drag(SOURCE[1], DRAG_END);
 }
-#[when("I click (1590,300)")]
+#[when("the user click (1590,300)")]
 fn click_after_drag(world: &mut ApplicationWorld) {
     world.sketch_click(CLICK_END);
 }
@@ -278,7 +278,7 @@ fn click_after_drag(world: &mut ApplicationWorld) {
 fn connected_descending(world: &mut ApplicationWorld) {
     world.expect_segment_drawn(SOURCE[1], CLICK_END);
 }
-#[when("I drag from (1590,300) to (1530,350) and release")]
+#[when("the user drag from (1590,300) to (1530,350) and release")]
 fn second_drag(world: &mut ApplicationWorld) {
     world.drag(CLICK_END, LATER_DRAG);
 }
@@ -307,7 +307,7 @@ fn retained_source(world: &mut ApplicationWorld) {
     world.escape();
     world.seed_dimensions_needed(58);
 }
-#[when("I restart Line and drag from that endpoint to (1510,370) and release")]
+#[when("the user restart Line and drag from that endpoint to (1510,370) and release")]
 fn restart_and_drag(world: &mut ApplicationWorld) {
     world.select_line_tool();
     world.drag(CLICK_END, LATER_DRAG);
@@ -317,7 +317,7 @@ fn preview_and_hud(world: &mut ApplicationWorld) {
     world.expect_segment_drawn(CLICK_END, LATER_DRAG);
     world.expect_hud_shows_length_and_angle();
 }
-#[when("I right-click at (1510,370)")]
+#[when("the user right-click at (1510,370)")]
 fn right_click_pending(world: &mut ApplicationWorld) {
     world.right_click(LATER_DRAG);
     world.pump(Vec::new());
@@ -333,7 +333,7 @@ fn line_autoproject_checked(world: &mut ApplicationWorld) {
     assert!(world.menu_row_checked("Line"), "expected Line checked");
     assert!(!world.run_is_enabled("Close"), "expected a disabled Close");
 }
-#[when("I click Cancel (ESC)")]
+#[when("the user click Cancel (ESC)")]
 fn click_cancel(world: &mut ApplicationWorld) {
     world.click_text("Cancel (ESC)");
 }

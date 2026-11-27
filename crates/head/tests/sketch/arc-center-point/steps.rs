@@ -126,7 +126,7 @@ fn fixture_ready(world: &mut ApplicationWorld) {
     world.start_empty_sketch();
     world.expect_ready();
 }
-#[when("I choose Center Point Arc and select a center")]
+#[when("the user choose Center Point Arc and select a center")]
 fn tool_and_center(world: &mut ApplicationWorld) {
     select_tool(world);
     world.sketch_click(CENTER);
@@ -140,11 +140,11 @@ fn ready_without(world: &mut ApplicationWorld) {
     world.expect_ready();
     expect_no_arc(world);
 }
-#[when("I invoke Center Point Arc")]
+#[when("the user invoke Center Point Arc")]
 fn invoke(world: &mut ApplicationWorld) {
     select_tool(world);
 }
-#[when("I select a center and a start point")]
+#[when("the user select a center and a start point")]
 fn center_and_start(world: &mut ApplicationWorld) {
     world.sketch_click(CENTER);
     world.sketch_click(START);
@@ -155,7 +155,7 @@ fn asks_end(world: &mut ApplicationWorld) {
     world.expect_status("Select end point");
 }
 // arc-center-point-08
-#[when("I select the recorded center, a start to its right, and an end direction below it")]
+#[when("the user select the recorded center, a start to its right, and an end direction below it")]
 fn center_right_below(world: &mut ApplicationWorld) {
     world.sketch_click(CENTER);
     world.sketch_click(START);
@@ -224,7 +224,7 @@ fn asks_start_after_center(world: &mut ApplicationWorld) {
     world.sketch_click(CENTER);
     world.expect_status("Select start point");
 }
-#[when("I click the same requested center position")]
+#[when("the user click the same requested center position")]
 fn same_center(world: &mut ApplicationWorld) {
     world.sketch_click(CENTER);
 }
@@ -234,7 +234,7 @@ fn start_with_zero(world: &mut ApplicationWorld) {
     let text = world.window_text("##sketch-hud");
     assert!(text.contains("0.000mm"), "expected radius zero in {text:?}");
 }
-#[when("I press 4 in this captured state")]
+#[when("the user press 4 in this captured state")]
 fn press_four(world: &mut ApplicationWorld) {
     world.type_text("4");
 }
@@ -266,7 +266,7 @@ fn fresh_with_center(world: &mut ApplicationWorld) {
     world.precise_point(RECORDED_NUMERIC_CENTER);
     world.hover(START);
 }
-#[when("I enter 4 for radius")]
+#[when("the user enter 4 for radius")]
 fn type_radius(world: &mut ApplicationWorld) {
     world.type_text("4");
 }
@@ -277,11 +277,11 @@ fn radius_locked_and_angle_active(world: &mut ApplicationWorld) {
     assert!(hud.fields[0].locked && hud.fields[0].text.contains("4.000"));
     assert!(hud.fields[1].active && hud.fields[1].text.contains("deg"));
 }
-#[when("I click the recorded start location")]
+#[when("the user click the recorded start location")]
 fn click_recorded_start(world: &mut ApplicationWorld) {
     world.sketch_click(START);
 }
-#[when("I press 9 and then 0 for the sweep")]
+#[when("the user press 9 and then 0 for the sweep")]
 fn type_sweep(world: &mut ApplicationWorld) {
     world.type_text("9");
     world.type_text("0");
@@ -292,26 +292,26 @@ fn sweep_locked(world: &mut ApplicationWorld) {
     assert_eq!(hud.fields.len(), 1);
     assert!(hud.fields[0].locked && hud.fields[0].text.contains("90.00"));
 }
-#[when("I click the recorded endpoint location")]
+#[when("the user click the recorded endpoint location")]
 fn click_recorded_end(world: &mut ApplicationWorld) {
     world.sketch_click(ABOVE);
 }
-#[when("I enter 4 mm for radius and press Tab")]
+#[when("the user enter 4 mm for radius and press Tab")]
 fn radius_four(world: &mut ApplicationWorld) {
     world.type_text("4");
     world.key(ViewportPhysicalKey::Tab, false);
 }
-#[when("I select the start direction")]
+#[when("the user select the start direction")]
 fn start_direction(world: &mut ApplicationWorld) {
     world.sketch_click(START);
 }
-#[when("I enter 90 degrees, press Tab and select the endpoint")]
+#[when("the user enter 90 degrees, press Tab and select the endpoint")]
 fn sweep_ninety(world: &mut ApplicationWorld) {
     world.type_text("90");
     world.key(ViewportPhysicalKey::Tab, false);
     world.sketch_click(ABOVE);
 }
-#[when("I press Escape and measure the arc")]
+#[when("the user press Escape and measure the arc")]
 fn escape_and_measure(world: &mut ApplicationWorld) {
     world.escape();
     world.pump(Vec::new());
@@ -341,13 +341,13 @@ fn radius_editor(world: &mut ApplicationWorld) {
     world.open_dimension_label("4");
     assert!(world.text_is_selected("4mm"), "expected the value selected");
 }
-#[when("I replace its expression with 5 and press Escape")]
+#[when("the user replace its expression with 5 and press Escape")]
 fn replace_and_escape(world: &mut ApplicationWorld) {
     world.type_text("5");
     world.escape();
     world.pump(Vec::new());
 }
-#[when("I reopen the radius annotation")]
+#[when("the user reopen the radius annotation")]
 fn reopen_radius(world: &mut ApplicationWorld) {
     world.open_dimension_label("4");
 }
@@ -372,12 +372,12 @@ fn measure_numeric_center(world: &mut ApplicationWorld) {
     world.expect_measure("Center X 0.000 Y 4.914 Z 17.623 mm");
     close_measure(world);
 }
-#[when("I open the radius dimension and change it to 5 mm")]
+#[when("the user open the radius dimension and change it to 5 mm")]
 fn change_radius(world: &mut ApplicationWorld) {
     world.open_dimension_label("4");
     accept_value(world, "5");
 }
-#[when("I exit dimension editing and measure the arc")]
+#[when("the user exit dimension editing and measure the arc")]
 fn exit_and_measure(world: &mut ApplicationWorld) {
     measure_arc(world);
 }
@@ -394,7 +394,7 @@ fn five_rows(world: &mut ApplicationWorld) {
         "center"
     );
 }
-#[when("I close Measure and undo")]
+#[when("the user close Measure and undo")]
 fn close_and_undo(world: &mut ApplicationWorld) {
     close_measure(world);
     world.undo();
@@ -412,22 +412,22 @@ fn radius_five_back(world: &mut ApplicationWorld) {
 fn recorded_numeric_arc(world: &mut ApplicationWorld) {
     created_numeric_arc(world, "5");
 }
-#[when("I open the sweep dimension")]
+#[when("the user open the sweep dimension")]
 fn open_sweep(world: &mut ApplicationWorld) {
     world.open_dimension_label("90.00");
 }
-#[when("I press 1, then 2, then 0")]
+#[when("the user press 1, then 2, then 0")]
 fn type_sweep_digits(world: &mut ApplicationWorld) {
     for digit in ["1", "2", "0"] {
         world.type_text(digit);
     }
 }
-#[when("I open the sweep dimension and enter 120 degrees")]
+#[when("the user open the sweep dimension and enter 120 degrees")]
 fn enter_sweep(world: &mut ApplicationWorld) {
     world.open_dimension_label("90.00");
     world.type_text("120");
 }
-#[when("I accept the edit, exit dimension editing and measure the arc")]
+#[when("the user accept the edit, exit dimension editing and measure the arc")]
 fn accept_and_measure(world: &mut ApplicationWorld) {
     world.key(ViewportPhysicalKey::Enter, false);
     world.pump(Vec::new());

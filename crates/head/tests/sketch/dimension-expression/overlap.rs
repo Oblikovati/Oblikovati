@@ -20,7 +20,7 @@ fn click_component_line(world: &mut ApplicationWorld) {
     let point = world.sketch_pixel_of([5., 2.5]);
     world.sketch_click(point);
 }
-#[when("I click the overlapping annotation while General Dimension is active")]
+#[when("the user click the overlapping annotation while General Dimension is active")]
 fn click_overlapping_annotation(world: &mut ApplicationWorld) {
     world.key(ViewportPhysicalKey::D, false);
     world.click(world.exact_run_center("(67.082)"));
@@ -33,7 +33,7 @@ fn reference_viewer(world: &mut ApplicationWorld) {
         "{shown:?}"
     );
 }
-#[when("I press Escape and select the component dimension line away from the overlap")]
+#[when("the user press Escape and select the component dimension line away from the overlap")]
 fn select_separate_line(world: &mut ApplicationWorld) {
     world.escape();
     click_component_line(world);

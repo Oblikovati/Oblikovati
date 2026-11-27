@@ -19,7 +19,7 @@ fn separate_points(world: &mut ApplicationWorld) {
     world.key(ViewportPhysicalKey::F8, false);
     world.record_initial_sketch();
 }
-#[when("I invoke Coincident and select the upper-left point")]
+#[when("the user invoke Coincident and select the upper-left point")]
 #[when("the user invokes Coincident and selects the upper-left point")]
 fn first_pick(world: &mut ApplicationWorld) {
     super::coincident_segments::invoke_coincident(world);
@@ -30,7 +30,7 @@ fn second_prompt(world: &mut ApplicationWorld) {
     world.expect_status("Coincident: Select second curve or point");
     assert_eq!(world.state().sketch_selection.entities.len(), 1);
 }
-#[when("I select the lower-right point")]
+#[when("the user select the lower-right point")]
 #[when("the user selects the lower-right point")]
 fn second_pick(world: &mut ApplicationWorld) {
     world.sketch_click(SECOND);
@@ -68,12 +68,12 @@ fn placement_remains(world: &mut ApplicationWorld) {
     assert!(world.state().sketch_at_ready);
     points_joined(world);
 }
-#[when("I undo the relation")]
+#[when("the user undo the relation")]
 #[when("the user undoes the relation")]
 fn undo_relation(world: &mut ApplicationWorld) {
     world.undo();
 }
-#[when("I redo the relation")]
+#[when("the user redo the relation")]
 #[when("the user redoes the relation")]
 fn redo_relation(world: &mut ApplicationWorld) {
     world.redo();

@@ -57,7 +57,7 @@ fn coordinate_modes(world: &mut ApplicationWorld) {
     }
 }
 
-#[when("I choose Distance and X axis angle")]
+#[when("the user choose Distance and X axis angle")]
 #[when("the user chooses Distance and X axis angle")]
 fn distance_angle(world: &mut ApplicationWorld) {
     world.click_text("Distance and X axis angle");
@@ -77,7 +77,7 @@ fn reference_base_point(world: &mut ApplicationWorld) {
     select_ellipse(world);
 }
 
-#[when("I open the left toolbar dropdown")]
+#[when("the user open the left toolbar dropdown")]
 #[when("the user opens the left toolbar dropdown")]
 fn reference_menu(world: &mut ApplicationWorld) {
     let current = if world.window_text("Precise Input").contains("Rel") {
@@ -95,7 +95,7 @@ fn reference_choices(world: &mut ApplicationWorld) {
     world.expect_text("Absolute");
 }
 
-#[when("I choose Absolute")]
+#[when("the user choose Absolute")]
 #[when("the user chooses Absolute")]
 fn choose_absolute(world: &mut ApplicationWorld) {
     world.click_text("Absolute");
@@ -117,7 +117,7 @@ fn reference_retains_ellipse(world: &mut ApplicationWorld) {
     original_only(world);
 }
 
-#[when("I reopen the dropdown and choose Relative")]
+#[when("the user reopen the dropdown and choose Relative")]
 #[when("the user reopens the dropdown and chooses Relative")]
 fn choose_relative(world: &mut ApplicationWorld) {
     reference_menu(world);
@@ -129,7 +129,7 @@ fn relative_icon(world: &mut ApplicationWorld) {
     world.run_in_window("Precise Input", "Rel");
 }
 
-#[when("I choose Base Point and click its center")]
+#[when("the user choose Base Point and click its center")]
 #[when("the user chooses Base Point and clicks its center")]
 fn choose_base(world: &mut ApplicationWorld) {
     world.sketch_click(CENTER);
@@ -141,7 +141,7 @@ fn endpoint_requested(world: &mut ApplicationWorld) {
     world.expect_status("Move: Select end point");
 }
 
-#[when("I type 1 then 0 into X and Tab to Y")]
+#[when("the user type 1 then 0 into X and Tab to Y")]
 #[when("the user types 1 then 0 into X and presses Tab to Y")]
 fn type_x(world: &mut ApplicationWorld) {
     world.click_precise_field("X");
@@ -149,7 +149,7 @@ fn type_x(world: &mut ApplicationWorld) {
     world.key(ViewportPhysicalKey::Tab, false);
 }
 
-#[when("I type 0 and press Enter")]
+#[when("the user type 0 and press Enter")]
 #[when("the user types 0 and presses Enter")]
 fn type_y(world: &mut ApplicationWorld) {
     world.type_text("0");
@@ -202,7 +202,7 @@ fn select_copy(world: &mut ApplicationWorld) {
     enable_copy_and_select(world);
 }
 
-#[when("I enable Copy and select the original ellipse")]
+#[when("the user enable Copy and select the original ellipse")]
 #[when("the user enables Copy and selects the original ellipse")]
 fn enable_copy_and_select(world: &mut ApplicationWorld) {
     let check = world.run_in_window("Move", "Copy").center();
@@ -225,7 +225,7 @@ fn reopened_move(world: &mut ApplicationWorld) {
     assert!(!world.state().sketch_move.unwrap().copy);
 }
 
-#[when("I choose its center as Base Point and click the displaced endpoint")]
+#[when("the user choose its center as Base Point and click the displaced endpoint")]
 #[when("the user chooses its center as Base Point and clicks the displaced endpoint")]
 fn copy_from_center(world: &mut ApplicationWorld) {
     place_copy(world);
