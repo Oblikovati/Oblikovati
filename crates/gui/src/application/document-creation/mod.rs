@@ -241,21 +241,23 @@ impl TemplateChooser {
         }
     }
     fn details_header(&mut self, ui: &Ui, layout: DetailsLayout) {
-        let name = ui
-            .selectable_config(self.sort.name_heading())
-            .flags(imgui::SelectableFlags::DONT_CLOSE_POPUPS)
-            .size([ui.calc_text_size("Name v")[0], 0.])
-            .build();
-        if name {
+        if crate::widget_abi::gallery_selectable(
+            ui,
+            self.sort.name_heading(),
+            false,
+            ui.calc_text_size("Name v")[0],
+            false,
+        ) {
             self.sort = self.sort.toggle_name();
         }
         ui.same_line_with_pos(layout.size);
-        let clicked = ui
-            .selectable_config(size_heading(self.sort))
-            .flags(imgui::SelectableFlags::DONT_CLOSE_POPUPS)
-            .size([ui.calc_text_size("Size v")[0], 0.])
-            .build();
-        if clicked {
+        if crate::widget_abi::gallery_selectable(
+            ui,
+            size_heading(self.sort),
+            false,
+            ui.calc_text_size("Size v")[0],
+            false,
+        ) {
             self.sort = self.sort.toggle_size();
         }
         ui.same_line_with_pos(layout.type_column);
@@ -316,20 +318,7 @@ impl TemplateChooser {
         let chosen = if self.view.is_icon_view() {
             self.icon_tile(ui, icons, template, width, selected)
         } else {
-            let _selected_color = selected.then(|| {
-                ui.push_style_color(
-                    imgui::StyleColor::Header,
-                    ui.style_color(imgui::StyleColor::HeaderActive),
-                )
-            });
-            ui.selectable_config(template.title())
-                .flags(
-                    imgui::SelectableFlags::DONT_CLOSE_POPUPS
-                        | imgui::SelectableFlags::ALLOW_DOUBLE_CLICK,
-                )
-                .selected(selected)
-                .size([0., 0.])
-                .build()
+            crate::widget_abi::gallery_selectable(ui, &template.title(), selected, 0., true)
         };
         let secondary = ui.is_item_clicked_with_button(imgui::MouseButton::Right);
         self.remember_selected_tile_y(ui, template);

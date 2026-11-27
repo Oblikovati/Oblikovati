@@ -32,6 +32,12 @@ pub(crate) use scroll_region::{scroll_region, scroll_region_with_content_width};
 #[path = "widget_text_line_advance_tests.rs"]
 mod text_line_advance_tests;
 unsafe extern "C" {
+    fn oblikovati_gui_gallery_selectable(
+        label: *const std::ffi::c_char,
+        selected: bool,
+        width: f32,
+        double_click: bool,
+    ) -> bool;
     fn oblikovati_gui_push_text_line_advance(factor: f32) -> f32;
     fn oblikovati_gui_pop_text_line_advance(original: f32);
     fn oblikovati_gui_shade_linked_field(
@@ -250,6 +256,18 @@ pub(crate) fn dialog_selectable(_: &Ui, label: &str, selected: bool) -> bool {
     let label = ImString::new(label);
     // The label owner and Ui remain live; no C++ vector class crosses the ABI.
     unsafe { oblikovati_gui_selectable(label.as_ptr().cast(), selected, flags as i32) }
+}
+/// Draw a gallery header or row with its supplied width and keep the chooser open when pressed.
+pub(crate) fn gallery_selectable(
+    _: &Ui,
+    label: &str,
+    selected: bool,
+    width: f32,
+    double_click: bool,
+) -> bool {
+    let label = ImString::new(label);
+    // SAFETY: the UI owns the context, and C++ consumes the label and constructs the vector size and color (#3803).
+    unsafe { oblikovati_gui_gallery_selectable(label.as_ptr(), selected, width, double_click) }
 }
 /// A button naming its choice, and the list it opens; returns the row chosen this frame.
 /// Example: `popup_choice(ui, "Design View: Primary", "##view", &rows)`.

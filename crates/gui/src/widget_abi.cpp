@@ -348,6 +348,14 @@ void oblikovati_gui_dummy(float width, float height) {
 bool oblikovati_gui_selectable(const unsigned char* label, bool selected, int flags) {
     return ImGui::Selectable(reinterpret_cast<const char*>(label), selected, flags, ImVec2(0, 0));
 }
+bool oblikovati_gui_gallery_selectable(const char* label, bool selected, float width, bool double_click) {
+    const ImGuiSelectableFlags flags = ImGuiSelectableFlags_DontClosePopups |
+        (double_click ? ImGuiSelectableFlags_AllowDoubleClick : 0);
+    if (selected) ImGui::PushStyleColor(ImGuiCol_Header, ImGui::GetStyleColorVec4(ImGuiCol_HeaderActive));
+    const bool clicked = ImGui::Selectable(label, selected, flags, ImVec2(width, 0.0f));
+    if (selected) ImGui::PopStyleColor();
+    return clicked;
+}
 void oblikovati_gui_literal_text(const unsigned char* text, std::size_t length,
                                 float x, float y, unsigned int color, bool background) {
     const char* begin = reinterpret_cast<const char*>(text);
