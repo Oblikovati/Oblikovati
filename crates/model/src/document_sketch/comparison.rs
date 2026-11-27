@@ -15,6 +15,7 @@ impl PartialEq for PlacedSketch {
             && self.orientation == other.orientation
             && self.point_projections == other.point_projections
             && self.block_instances == other.block_instances
+            && self.images == other.images
             && self.geometry == other.geometry
     }
 }

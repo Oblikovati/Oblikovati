@@ -21,6 +21,7 @@ impl WorkPlaneDefinition {
             (SketchCoil(first), SketchCoil(second)) => first.same_recipe(second),
             (SketchEmboss(first), SketchEmboss(second)) => first.same_recipe(second),
             (SketchRib(first), SketchRib(second)) => first.same_recipe(second),
+            (SketchDecal(first), SketchDecal(second)) => first.same_recipe(second),
             (DerivedPart(first), DerivedPart(second)) => first.same_recipe(second),
             (SketchSweep(first), SketchSweep(second)) => first.same_recipe(second),
             (SketchPrism(first), SketchPrism(second)) => first.same_recipe(second),

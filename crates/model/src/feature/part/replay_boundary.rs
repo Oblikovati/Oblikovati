@@ -114,6 +114,7 @@ fn feature_reads_changed(
             definition.reads(snapshot).ok()?
         }
         super::PartFeatureDefinition::SketchRib(definition) => definition.reads(snapshot).ok()?,
+        super::PartFeatureDefinition::SketchDecal(definition) => definition.reads(snapshot).ok()?,
         super::PartFeatureDefinition::SketchSweep(definition) => definition.reads(snapshot).ok()?,
         definition => definition.reads(),
     };

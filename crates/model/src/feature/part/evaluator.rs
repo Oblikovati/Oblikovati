@@ -189,6 +189,17 @@ pub trait PartFeatureEvaluator {
             "rib: expected an available rib evaluator".into(),
         ))
     }
+    /// Apply a solved Decal (sketch image on a target face) to a target body.
+    fn evaluate_decal(
+        &mut self,
+        _feature: FeatureId,
+        _body: &Self::Body,
+        _input: crate::feature::sketch_decal::ResolvedSketchDecal<'_>,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        Err(PartFeatureFailure::Unsupported(
+            "decal: expected an available decal evaluator".into(),
+        ))
+    }
     /// Construct a named solid from a solved profile and path. Example: `backend.evaluate_sweep(feature, input)?`.
     fn evaluate_sweep(
         &mut self,

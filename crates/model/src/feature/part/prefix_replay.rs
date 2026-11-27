@@ -195,6 +195,16 @@ where
             .evaluate_rib(feature, body.get(), input)
             .map(PrefixBody::Created)
     }
+    fn evaluate_decal(
+        &mut self,
+        feature: FeatureId,
+        body: &Self::Body,
+        input: crate::feature::sketch_decal::ResolvedSketchDecal<'_>,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        self.0
+            .evaluate_decal(feature, body.get(), input)
+            .map(PrefixBody::Created)
+    }
     fn evaluate_sweep(
         &mut self,
         feature: FeatureId,

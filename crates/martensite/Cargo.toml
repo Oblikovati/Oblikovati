@@ -117,3 +117,7 @@ path = "tests/derive.rs"
 [[test]]
 name = "rib"
 path = "tests/rib.rs"
+
+[[test]]
+name = "decal"
+path = "tests/decal.rs"

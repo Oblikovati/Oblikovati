@@ -22,6 +22,7 @@ pub mod rectangular_pattern;
 mod replay;
 pub mod shell;
 pub mod sketch_coil;
+pub mod sketch_decal;
 pub mod sketch_emboss;
 pub mod sketch_loft;
 pub mod sketch_prism;

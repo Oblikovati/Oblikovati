@@ -46,6 +46,7 @@ pub enum PartFeatureFailure<Failure> {
     CoilInput(String),
     EmbossInput(String),
     RibInput(String),
+    DecalInput(String),
     DerivedPartInput(String),
     LoftInput(String),
     Kernel(Failure),
@@ -365,6 +366,7 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
                 | PartFeatureDefinition::SketchCoil(_)
                 | PartFeatureDefinition::SketchEmboss(_)
                 | PartFeatureDefinition::SketchRib(_)
+                | PartFeatureDefinition::SketchDecal(_)
                 | PartFeatureDefinition::DerivedPart(_)
                 | PartFeatureDefinition::DeleteBody(_)
                 | PartFeatureDefinition::Fillet(_)
@@ -398,6 +400,9 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
             }
             PartFeatureDefinition::SketchRib(definition) => {
                 self.evaluate_rib(snapshot, backend, id, definition)
+            }
+            PartFeatureDefinition::SketchDecal(definition) => {
+                self.evaluate_decal(snapshot, backend, id, definition)
             }
             PartFeatureDefinition::DerivedPart(definition) => {
                 self.evaluate_derived_part(backend, id, definition)

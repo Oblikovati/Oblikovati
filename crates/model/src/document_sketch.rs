@@ -15,9 +15,11 @@ mod dimension_placement;
 mod dimension_settings;
 mod entity_format;
 mod health;
+mod images;
 mod spatial;
 pub use block_definitions::{SketchBlockDefinition, SketchBlockDefinitionRecipe};
 pub use block_instances::SketchBlockInstance;
+pub use images::SketchImage;
 mod translation;
 mod version;
 mod visibility;
@@ -80,6 +82,7 @@ pub struct PlacedSketch {
     frame_edit: Option<SketchFrameEditDefinition>,
     point_projections: Vec<SketchPointProjection>,
     block_instances: Vec<SketchBlockInstance>,
+    images: Vec<SketchImage>,
     geometry: Sketch2D,
     evaluation: Option<health::SketchEvaluationStamp>,
 }
@@ -130,6 +133,9 @@ pub struct PlacedSketchRecipe {
     /// Version 11 stores each instance number; version 10 assigns numbers in document order.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub block_instances: Vec<SketchBlockInstance>,
+    /// Version 18 stores inserted raster images in authored order.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub images: Vec<SketchImage>,
     pub geometry: SketchRecipe,
 }
 /// Collection schema and records; the enclosing document owns reservation marks.
@@ -162,6 +168,7 @@ impl PlacedSketch {
             frame_edit: None,
             point_projections: Vec::new(),
             block_instances: Vec::new(),
+            images: Vec::new(),
             geometry,
             evaluation: None,
         }
@@ -209,6 +216,7 @@ impl PlacedSketch {
             frame_edit: self.frame_edit.clone(),
             point_projections: self.point_projections.clone(),
             block_instances: self.block_instances.clone(),
+            images: self.images.clone(),
             geometry: self.geometry.recipe(),
         }
     }
@@ -243,6 +251,7 @@ impl DocumentSketches {
                             &first.block_instances,
                             &second.block_instances,
                         )
+                        && first.images == second.images
                         && first.geometry.same_recipe(&second.geometry)
                 })
     }
@@ -352,9 +361,9 @@ impl DocumentSketches {
     }
     /// Restore a complete collection before replacing a document owner; example: `DocumentSketches::from_recipe(&recipe)?`.
     pub fn from_recipe(recipe: &DocumentSketchRecipe) -> Result<Self, SketchError> {
-        if !matches!(recipe.version, 1..=17) {
+        if !matches!(recipe.version, 1..=18) {
             return Err(SketchError::Definition(format!(
-                "document sketch recipe version {}: expected 1 through 17",
+                "document sketch recipe version {}: expected 1 through 18",
                 recipe.version
             )));
         }
@@ -378,6 +387,7 @@ impl DocumentSketches {
             visibility::restore_hidden_glyphs(&mut restored, sketch, recipe.version)?;
             visibility::restore_line_style(&mut restored, sketch, recipe.version)?;
             restored.restore_block_instances(sketch, recipe.version)?;
+            restored.restore_images(sketch, recipe.version)?;
         }
         restored.restore_spatial_sketches(&recipe.spatial_sketches)?;
         Ok(restored)
@@ -396,12 +406,15 @@ impl DocumentSketches {
         self.sketches
             .iter()
             .flat_map(|sketch| {
-                geometry_ids(&sketch.geometry).into_iter().chain(
-                    sketch
-                        .block_instances
-                        .iter()
-                        .map(|instance| instance.id().0),
-                )
+                geometry_ids(&sketch.geometry)
+                    .into_iter()
+                    .chain(
+                        sketch
+                            .block_instances
+                            .iter()
+                            .map(|instance| instance.id().0),
+                    )
+                    .chain(sketch.images.iter().map(|image| image.id.0))
             })
             .chain(self.spatial_entity_ids())
             .collect()

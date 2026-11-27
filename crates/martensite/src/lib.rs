@@ -121,6 +121,7 @@ pub use prism::{
 mod loft;
 pub use loft::check_loft_guide_closure;
 pub mod coil;
+mod decal;
 mod derive;
 mod emboss;
 mod revolve;

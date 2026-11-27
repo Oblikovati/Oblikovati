@@ -36,6 +36,10 @@ pub enum PartFeatureProgramError {
         feature: FeatureId,
         cause: String,
     },
+    Decal {
+        feature: FeatureId,
+        cause: String,
+    },
     Sequence(FeatureSequenceError),
     Reads(FeatureReplayError),
 }
@@ -55,6 +59,7 @@ impl fmt::Display for PartFeatureProgramError {
             Self::Coil { feature, cause } => write!(output, "part Coil {feature:?}: {cause}"),
             Self::Emboss { feature, cause } => write!(output, "part Emboss {feature:?}: {cause}"),
             Self::Rib { feature, cause } => write!(output, "part Rib {feature:?}: {cause}"),
+            Self::Decal { feature, cause } => write!(output, "part Decal {feature:?}: {cause}"),
             Self::Sequence(cause) => cause.fmt(output),
             Self::Reads(cause) => cause.fmt(output),
         }
@@ -67,7 +72,8 @@ impl Error for PartFeatureProgramError {
             | Self::Loft { .. }
             | Self::Coil { .. }
             | Self::Emboss { .. }
-            | Self::Rib { .. } => None,
+            | Self::Rib { .. }
+            | Self::Decal { .. } => None,
             Self::Prism { cause, .. } => Some(cause),
             Self::Sweep { cause, .. } => Some(cause.as_ref()),
             Self::Revolve { cause, .. } => Some(cause.as_ref()),

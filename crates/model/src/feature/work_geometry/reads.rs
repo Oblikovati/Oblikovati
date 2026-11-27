@@ -21,6 +21,7 @@ impl WorkGeometryDefinition {
             Self::SketchCoil(definition) => return definition.source_reads(),
             Self::SketchEmboss(definition) => return definition.source_reads(),
             Self::SketchRib(definition) => return definition.source_reads(),
+            Self::SketchDecal(definition) => return definition.source_reads(),
             Self::DerivedPart(definition) => return definition.source_reads(),
             Self::SketchSweep(definition) => return definition.source_reads(),
             Self::SketchPrism(definition) => {

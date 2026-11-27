@@ -273,6 +273,14 @@ impl PartFeatureEvaluator for CertifiedNamedSolidEvaluator<'_> {
     ) -> Result<NamedSolid, PartFeatureFailure<EvaluationFailure>> {
         self.evaluate_named_rib(feature, body, input)
     }
+    fn evaluate_decal(
+        &mut self,
+        feature: FeatureId,
+        body: &NamedSolid,
+        input: oblikovati_model::feature::sketch_decal::ResolvedSketchDecal<'_>,
+    ) -> Result<NamedSolid, PartFeatureFailure<EvaluationFailure>> {
+        self.evaluate_named_decal(feature, body, input)
+    }
     fn evaluate_sweep(
         &mut self,
         feature: FeatureId,

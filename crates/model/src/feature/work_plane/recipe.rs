@@ -30,6 +30,7 @@ pub enum WorkPlaneDefinitionRecipe {
     SketchCoil(crate::feature::sketch_coil::SketchCoilRecipe),
     SketchEmboss(crate::feature::sketch_emboss::SketchEmbossRecipe),
     SketchRib(crate::feature::sketch_rib::SketchRibRecipe),
+    SketchDecal(crate::feature::sketch_decal::SketchDecalRecipe),
     DerivedPart(crate::feature::derived_part::DerivedPartRecipe),
     SketchSweep(crate::feature::sketch_sweep::SketchSweepRecipe),
     AtAngleAboutAxis(crate::feature::work_geometry::WorkPlaneLineAngle),
@@ -81,6 +82,7 @@ impl WorkPlaneDefinition {
             Self::SketchCoil(definition) => Source::SketchCoil(definition.recipe()),
             Self::SketchEmboss(definition) => Source::SketchEmboss(definition.recipe()),
             Self::SketchRib(definition) => Source::SketchRib(definition.recipe()),
+            Self::SketchDecal(definition) => Source::SketchDecal(definition.recipe()),
             Self::DerivedPart(definition) => Source::DerivedPart(definition.recipe()),
             Self::SketchSweep(definition) => Source::SketchSweep(definition.recipe().clone()),
             Self::SketchPrism(definition) => Source::SketchPrism(definition.recipe()),
@@ -168,6 +170,11 @@ fn restore_definition(
         SketchRib(recipe) => crate::feature::sketch_rib::SketchRibDefinition::from_recipe(&recipe)
             .map(|definition| WorkPlaneDefinition::SketchRib(Box::new(definition)))
             .map_err(WorkPlaneError::BodyReference),
+        SketchDecal(recipe) => {
+            crate::feature::sketch_decal::SketchDecalDefinition::from_recipe(&recipe)
+                .map(|definition| WorkPlaneDefinition::SketchDecal(Box::new(definition)))
+                .map_err(WorkPlaneError::BodyReference)
+        }
         DerivedPart(recipe) => {
             crate::feature::derived_part::DerivedPartDefinition::from_recipe(&recipe)
                 .map(|definition| WorkPlaneDefinition::DerivedPart(Box::new(definition)))
@@ -250,6 +257,7 @@ impl WorkPlaneDefinitionRecipe {
             Self::SketchEmboss(_) => 40,
             Self::DerivedPart(_) => 41,
             Self::SketchRib(_) => 42,
+            Self::SketchDecal(_) => 43,
             Self::SketchSweep(recipe) => match recipe.version {
                 7 => 29,
                 6 => 28,
@@ -305,6 +313,7 @@ impl WorkPlaneDefinitionRecipe {
             Self::SketchEmboss(_) => 46,
             Self::DerivedPart(_) => 47,
             Self::SketchRib(_) => 48,
+            Self::SketchDecal(_) => 49,
             Self::SketchSweep(recipe) => match recipe.version {
                 7 => 34,
                 6 => 33,
