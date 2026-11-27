@@ -28,6 +28,10 @@ pub enum PartFeatureProgramError {
         feature: FeatureId,
         cause: String,
     },
+    Emboss {
+        feature: FeatureId,
+        cause: String,
+    },
     Sequence(FeatureSequenceError),
     Reads(FeatureReplayError),
 }
@@ -45,6 +49,7 @@ impl fmt::Display for PartFeatureProgramError {
                 write!(output, "part Revolve {feature:?}: {cause}")
             }
             Self::Coil { feature, cause } => write!(output, "part Coil {feature:?}: {cause}"),
+            Self::Emboss { feature, cause } => write!(output, "part Emboss {feature:?}: {cause}"),
             Self::Sequence(cause) => cause.fmt(output),
             Self::Reads(cause) => cause.fmt(output),
         }
@@ -53,7 +58,10 @@ impl fmt::Display for PartFeatureProgramError {
 impl Error for PartFeatureProgramError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self {
-            Self::Cancelled { .. } | Self::Loft { .. } | Self::Coil { .. } => None,
+            Self::Cancelled { .. }
+            | Self::Loft { .. }
+            | Self::Coil { .. }
+            | Self::Emboss { .. } => None,
             Self::Prism { cause, .. } => Some(cause),
             Self::Sweep { cause, .. } => Some(cause.as_ref()),
             Self::Revolve { cause, .. } => Some(cause.as_ref()),

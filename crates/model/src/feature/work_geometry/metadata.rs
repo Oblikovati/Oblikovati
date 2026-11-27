@@ -10,6 +10,7 @@ impl AuthoredFeature<WorkGeometryDefinition> {
                     | WorkGeometryDefinition::SketchLoft(_)
                     | WorkGeometryDefinition::SketchRevolve(_)
                     | WorkGeometryDefinition::SketchCoil(_)
+                    | WorkGeometryDefinition::SketchEmboss(_)
                     | WorkGeometryDefinition::DeleteBody(_)
                     | WorkGeometryDefinition::Fillet(_)
                     | WorkGeometryDefinition::Chamfer(_)

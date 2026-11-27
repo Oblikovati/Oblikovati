@@ -7,6 +7,7 @@ use crate::{
 };
 mod checkpoints;
 mod coil_create;
+mod emboss_create;
 mod evaluation;
 pub use evaluation::{
     EvaluationScope, EvaluationTransition, HistoryEvaluationSnapshot, PartCandidateGuard,
@@ -465,25 +466,21 @@ impl DocumentEditHistory {
     }
 }
 
-#[cfg(test)]
-mod tests;
-
 mod metadata_recipe;
 mod model_state_ids;
 mod model_state_parameter_validation;
 mod model_state_suppression;
-
 mod sketch_endpoint;
 mod sketch_polyline;
 mod sketch_split;
 mod sketch_text;
+#[cfg(test)]
+mod tests;
 pub use sketch_polyline::{SketchPolylineCreation, SketchPolylineCreationReport};
-
 mod sketch_polygon;
 pub use sketch_polygon::{
     SketchPolygonCreation, SketchPolygonCreationError, SketchPolygonCreationReport,
 };
-
 mod sketch_slot;
 pub use sketch_slot::{SketchSlotCreation, SketchSlotCreationReport};
 mod sketch_placement_recipe;
@@ -491,7 +488,6 @@ pub use sketch_placement_recipe::{
     SketchPlacementContext, SketchPlacementCreationError, SketchPlacementCreationReport,
     SketchPlacementFieldLock,
 };
-
 mod conditional_projection;
 pub use conditional_projection::{
     ConditionalFrameSource, ConditionalOriginProjection, ConditionalPointDisplacement,

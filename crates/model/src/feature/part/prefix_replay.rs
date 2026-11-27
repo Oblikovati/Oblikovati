@@ -166,6 +166,16 @@ where
             .evaluate_coil_boolean(feature, body.get(), input, operation)
             .map(PrefixBody::Created)
     }
+    fn evaluate_emboss(
+        &mut self,
+        feature: FeatureId,
+        body: &Self::Body,
+        input: crate::feature::sketch_emboss::ResolvedSketchEmboss<'_>,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        self.0
+            .evaluate_emboss(feature, body.get(), input)
+            .map(PrefixBody::Created)
+    }
     fn evaluate_sweep(
         &mut self,
         feature: FeatureId,

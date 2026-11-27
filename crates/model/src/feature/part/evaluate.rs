@@ -44,6 +44,7 @@ pub enum PartFeatureFailure<Failure> {
     SweepInput(Box<crate::feature::sketch_sweep::SketchSweepError>),
     RevolveInput(Box<crate::feature::sketch_revolve::SketchRevolveError>),
     CoilInput(String),
+    EmbossInput(String),
     LoftInput(String),
     Kernel(Failure),
     BodyReference(String),
@@ -360,6 +361,7 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
                 | PartFeatureDefinition::SketchLoft(_)
                 | PartFeatureDefinition::SketchRevolve(_)
                 | PartFeatureDefinition::SketchCoil(_)
+                | PartFeatureDefinition::SketchEmboss(_)
                 | PartFeatureDefinition::DeleteBody(_)
                 | PartFeatureDefinition::Fillet(_)
                 | PartFeatureDefinition::Chamfer(_)
@@ -386,6 +388,9 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
             }
             PartFeatureDefinition::SketchCoil(definition) => {
                 self.evaluate_coil(snapshot, backend, id, definition)
+            }
+            PartFeatureDefinition::SketchEmboss(definition) => {
+                self.evaluate_emboss(snapshot, backend, id, definition)
             }
             PartFeatureDefinition::SketchSweep(definition) => {
                 self.evaluate_sweep(snapshot, backend, id, definition)

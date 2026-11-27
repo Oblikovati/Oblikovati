@@ -42,6 +42,18 @@ impl NamedSolid {
         }
     }
 
+    /// Resolve the supporting plane of a named planar face; example: `body.face_plane(&history, document, key)?`.
+    pub fn face_plane(
+        &self,
+        history: &DocumentEditHistory,
+        document: DocumentGuid,
+        key: &[u8],
+    ) -> Result<oblikovati_model::sketch::SketchPlane, String> {
+        match self {
+            Self::Prism(body) => body.face_plane(history, document, key),
+            Self::Derived(body) => body.face_plane(history, document, key),
+        }
+    }
     /// List the primary body and exact face keys; example: `body.reference_keys(&history, document)?`.
     pub fn reference_keys(
         &self,

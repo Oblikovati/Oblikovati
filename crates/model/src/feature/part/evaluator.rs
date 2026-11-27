@@ -157,6 +157,17 @@ pub trait PartFeatureEvaluator {
             "coil {operation}: expected a named Boolean evaluator"
         )))
     }
+    /// Apply a solved Emboss (raise, engrave, or level-to-plane) to a target body.
+    fn evaluate_emboss(
+        &mut self,
+        _feature: FeatureId,
+        _body: &Self::Body,
+        _input: crate::feature::sketch_emboss::ResolvedSketchEmboss<'_>,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        Err(PartFeatureFailure::Unsupported(
+            "emboss: expected an available emboss evaluator".into(),
+        ))
+    }
     /// Construct a named solid from a solved profile and path. Example: `backend.evaluate_sweep(feature, input)?`.
     fn evaluate_sweep(
         &mut self,

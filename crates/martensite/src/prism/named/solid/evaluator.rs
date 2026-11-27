@@ -250,6 +250,14 @@ impl PartFeatureEvaluator for CertifiedNamedSolidEvaluator<'_> {
             .map_err(PartFeatureFailure::BodyReference)?;
         Ok(result)
     }
+    fn evaluate_emboss(
+        &mut self,
+        feature: FeatureId,
+        body: &NamedSolid,
+        input: oblikovati_model::feature::sketch_emboss::ResolvedSketchEmboss<'_>,
+    ) -> Result<NamedSolid, PartFeatureFailure<EvaluationFailure>> {
+        self.evaluate_named_emboss(feature, body, input)
+    }
     fn evaluate_sweep(
         &mut self,
         feature: FeatureId,
