@@ -9,9 +9,9 @@ use super::{
 };
 use crate::{
     feature::{
-        AuthoredFeature, FeatureId, sketch_loft::SketchLoftDefinition,
-        sketch_prism::SketchPrismDefinition, sketch_revolve::SketchRevolveDefinition,
-        sketch_sweep::SketchSweepDefinition,
+        AuthoredFeature, FeatureId, sketch_coil::SketchCoilDefinition,
+        sketch_loft::SketchLoftDefinition, sketch_prism::SketchPrismDefinition,
+        sketch_revolve::SketchRevolveDefinition, sketch_sweep::SketchSweepDefinition,
     },
     history::DocumentSnapshot,
 };
@@ -34,6 +34,9 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
                 [Some(definition.sketch()), None, None]
             }
             PartFeatureDefinition::SketchRevolve(definition) => {
+                [Some(definition.sketch()), None, None]
+            }
+            PartFeatureDefinition::SketchCoil(definition) => {
                 [Some(definition.sketch()), None, None]
             }
             PartFeatureDefinition::SketchLoft(definition) => {
@@ -157,6 +160,31 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
             return self.accept_body_replacement(backend, feature, slot, key, result);
         }
         let body = backend.evaluate_revolve(feature, input)?;
+        self.body_lineage
+            .register(feature)
+            .map_err(PartFeatureFailure::BodyReference)?;
+        self.bodies.insert(feature.into(), body);
+        Ok(())
+    }
+
+    pub(super) fn evaluate_coil<B: PartFeatureEvaluator<Body = Body, Failure = Failure>>(
+        &mut self,
+        snapshot: &DocumentSnapshot,
+        backend: &mut B,
+        feature: FeatureId,
+        definition: &SketchCoilDefinition,
+    ) -> Result<(), PartFeatureFailure<Failure>> {
+        let input = definition
+            .resolve_for_replay(snapshot, &self.datums)
+            .map_err(PartFeatureFailure::CoilInput)?;
+        if let Some((operation, key, source)) = definition.boolean_target() {
+            let slot = resolve_body_slot(&self.bodies, &self.body_lineage, backend, source, key)
+                .map_err(PartFeatureFailure::BodyReference)?;
+            let result =
+                backend.evaluate_coil_boolean(feature, &self.bodies[&slot], input, operation)?;
+            return self.accept_body_replacement(backend, feature, slot, key, result);
+        }
+        let body = backend.evaluate_coil(feature, input)?;
         self.body_lineage
             .register(feature)
             .map_err(PartFeatureFailure::BodyReference)?;

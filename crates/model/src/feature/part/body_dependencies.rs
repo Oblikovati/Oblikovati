@@ -70,6 +70,13 @@ fn track_replacement(
                 return;
             }
         },
+        PartFeatureDefinition::SketchCoil(coil) => match coil.boolean_target() {
+            Some((_, _, source)) => source,
+            None => {
+                owners.insert(id, id);
+                return;
+            }
+        },
         PartFeatureDefinition::SketchSweep(sweep) => match sweep.boolean_target() {
             Some((_, _, source)) => source,
             None => {

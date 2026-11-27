@@ -19,6 +19,7 @@ mod attachments;
 mod attributes;
 mod chamfer;
 pub use chamfer::{PreparedChamfer, prepare_chamfer};
+mod coil;
 mod command_owner;
 mod edit;
 mod extrusion;
@@ -30,6 +31,7 @@ mod loft;
 mod revolve;
 mod shell;
 mod sweep;
+pub use coil::{CoilInputs, PreparedCoil, build_coil_definition, prepare_coil_definition};
 pub use extrusion::{
     CapturedExtrudeCandidate, ExtrudePrefixReplay, ExtrudeRegionAccess, ExtrudeReplayPrefix,
     PreparedExtrusion, commit_prepared_extrusion, evaluated_extrude_distance, prepare_extrusion,

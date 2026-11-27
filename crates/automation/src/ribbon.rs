@@ -203,7 +203,7 @@ fn part_tabs() -> Vec<RibbonTabInfo> {
                         large("Create.Revolve", "Revolve", "revolve"),
                         large("Create.Sweep", "Sweep", "sweep"),
                         large("Create.Loft", "Loft", "loft"),
-                        unavailable_large("Create.Coil", "Coil", "coil"),
+                        large("Create.Coil", "Coil", "coil"),
                     ],
                 ),
                 panel(

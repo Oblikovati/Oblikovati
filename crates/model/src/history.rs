@@ -6,6 +6,7 @@ use crate::{
     property::DocumentProperties,
 };
 mod checkpoints;
+mod coil_create;
 mod evaluation;
 pub use evaluation::{
     EvaluationScope, EvaluationTransition, HistoryEvaluationSnapshot, PartCandidateGuard,

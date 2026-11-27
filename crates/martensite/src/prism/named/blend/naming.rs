@@ -21,6 +21,7 @@ pub struct BlendNamedTopology {
 }
 
 mod capture;
+mod coil;
 mod extrusion_boolean;
 mod hole;
 mod loft;

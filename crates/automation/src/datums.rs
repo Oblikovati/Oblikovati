@@ -163,6 +163,7 @@ impl DatumCollection {
             | WorkGeometryDefinition::SketchSweep(_)
             | WorkGeometryDefinition::SketchLoft(_)
             | WorkGeometryDefinition::SketchRevolve(_)
+            | WorkGeometryDefinition::SketchCoil(_)
             | WorkGeometryDefinition::DeleteBody(_)
             | WorkGeometryDefinition::Fillet(_)
             | WorkGeometryDefinition::Chamfer(_)

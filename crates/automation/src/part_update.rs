@@ -399,6 +399,7 @@ fn feature_kind(definition: &PartFeatureDefinition) -> &'static str {
         SketchSweep(_) => "sweep",
         SketchLoft(_) => "loft",
         SketchRevolve(_) => "revolve",
+        SketchCoil(_) => "coil",
         DeleteBody(_) => "delete-body",
         Fillet(_) => "fillet",
         Chamfer(_) => "chamfer",

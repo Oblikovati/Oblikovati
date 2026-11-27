@@ -135,6 +135,28 @@ pub trait PartFeatureEvaluator {
             "revolve {operation}: expected a named Boolean evaluator"
         )))
     }
+    /// Construct a named solid from a solved Coil profile and axis. Example: `backend.evaluate_coil(feature, input)?`.
+    fn evaluate_coil(
+        &mut self,
+        _feature: FeatureId,
+        _input: crate::feature::sketch_coil::ResolvedSketchCoil<'_>,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        Err(PartFeatureFailure::Unsupported(
+            "coil: expected an available coil evaluator".into(),
+        ))
+    }
+    /// Replace a named body with a Coil Boolean result. Example: `backend.evaluate_coil_boolean(feature, body, input, op)?`.
+    fn evaluate_coil_boolean(
+        &mut self,
+        _feature: FeatureId,
+        _body: &Self::Body,
+        _input: crate::feature::sketch_coil::ResolvedSketchCoil<'_>,
+        operation: PrismBoolean,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        Err(PartFeatureFailure::Unsupported(format!(
+            "coil {operation}: expected a named Boolean evaluator"
+        )))
+    }
     /// Construct a named solid from a solved profile and path. Example: `backend.evaluate_sweep(feature, input)?`.
     fn evaluate_sweep(
         &mut self,

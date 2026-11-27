@@ -146,6 +146,26 @@ where
             .evaluate_revolve_boolean(feature, body.get(), input, operation)
             .map(PrefixBody::Created)
     }
+    fn evaluate_coil(
+        &mut self,
+        feature: FeatureId,
+        input: crate::feature::sketch_coil::ResolvedSketchCoil<'_>,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        self.0
+            .evaluate_coil(feature, input)
+            .map(PrefixBody::Created)
+    }
+    fn evaluate_coil_boolean(
+        &mut self,
+        feature: FeatureId,
+        body: &Self::Body,
+        input: crate::feature::sketch_coil::ResolvedSketchCoil<'_>,
+        operation: PrismBoolean,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        self.0
+            .evaluate_coil_boolean(feature, body.get(), input, operation)
+            .map(PrefixBody::Created)
+    }
     fn evaluate_sweep(
         &mut self,
         feature: FeatureId,

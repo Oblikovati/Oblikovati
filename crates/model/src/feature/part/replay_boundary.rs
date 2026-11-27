@@ -109,6 +109,7 @@ fn feature_reads_changed(
         super::PartFeatureDefinition::SketchRevolve(definition) => {
             definition.reads(snapshot).ok()?
         }
+        super::PartFeatureDefinition::SketchCoil(definition) => definition.reads(snapshot).ok()?,
         super::PartFeatureDefinition::SketchSweep(definition) => definition.reads(snapshot).ok()?,
         definition => definition.reads(),
     };

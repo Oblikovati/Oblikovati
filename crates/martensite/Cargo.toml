@@ -101,3 +101,7 @@ path = "tests/fillet_history_probe.rs"
 [[test]]
 name = "hole_history_probe"
 path = "tests/hole_history_probe.rs"
+
+[[test]]
+name = "coil"
+path = "tests/coil.rs"

@@ -27,6 +27,7 @@ pub enum WorkPlaneDefinitionRecipe {
     SketchPrism(crate::feature::sketch_prism::SketchPrismRecipe),
     SketchLoft(crate::feature::sketch_loft::SketchLoftRecipe),
     SketchRevolve(crate::feature::sketch_revolve::SketchRevolveRecipe),
+    SketchCoil(crate::feature::sketch_coil::SketchCoilRecipe),
     SketchSweep(crate::feature::sketch_sweep::SketchSweepRecipe),
     AtAngleAboutAxis(crate::feature::work_geometry::WorkPlaneLineAngle),
     ThroughTwoAxes([crate::feature::work_axis::WorkAxisReference; 2]),
@@ -74,6 +75,7 @@ impl WorkPlaneDefinition {
             }
             Self::SketchLoft(definition) => Source::SketchLoft(definition.recipe().clone()),
             Self::SketchRevolve(definition) => Source::SketchRevolve(definition.recipe()),
+            Self::SketchCoil(definition) => Source::SketchCoil(definition.recipe()),
             Self::SketchSweep(definition) => Source::SketchSweep(definition.recipe().clone()),
             Self::SketchPrism(definition) => Source::SketchPrism(definition.recipe()),
             Self::AtAngleAboutAxis(source) => Source::AtAngleAboutAxis(source.clone()),
@@ -146,6 +148,11 @@ fn restore_definition(
             crate::feature::sketch_revolve::SketchRevolveDefinition::from_recipe(&recipe)
                 .map(|definition| WorkPlaneDefinition::SketchRevolve(Box::new(definition)))
                 .map_err(|cause| WorkPlaneError::BodyReference(cause.to_string()))
+        }
+        SketchCoil(recipe) => {
+            crate::feature::sketch_coil::SketchCoilDefinition::from_recipe(&recipe)
+                .map(|definition| WorkPlaneDefinition::SketchCoil(Box::new(definition)))
+                .map_err(WorkPlaneError::BodyReference)
         }
         SketchSweep(recipe) => {
             crate::feature::sketch_sweep::SketchSweepDefinition::from_recipe(recipe)
@@ -220,6 +227,7 @@ impl WorkPlaneDefinitionRecipe {
                 crate::feature::sketch_loft::SketchLoftOutput::Surface => 31,
             },
             Self::SketchRevolve(_) => 38,
+            Self::SketchCoil(_) => 39,
             Self::SketchSweep(recipe) => match recipe.version {
                 7 => 29,
                 6 => 28,
@@ -271,6 +279,7 @@ impl WorkPlaneDefinitionRecipe {
                 crate::feature::sketch_loft::SketchLoftOutput::Surface => 36,
             },
             Self::SketchRevolve(_) => 44,
+            Self::SketchCoil(_) => 45,
             Self::SketchSweep(recipe) => match recipe.version {
                 7 => 34,
                 6 => 33,

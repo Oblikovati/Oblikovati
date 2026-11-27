@@ -120,6 +120,7 @@ pub use prism::{
 };
 mod loft;
 pub use loft::check_loft_guide_closure;
+pub mod coil;
 mod revolve;
 pub mod sweep;
 pub use revolve::{
