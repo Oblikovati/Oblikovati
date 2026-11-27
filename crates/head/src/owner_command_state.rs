@@ -255,6 +255,8 @@ impl<
             emboss_preview: self.gui_emboss_preview(document, session.generation()),
             derive_preview: self.gui_derive_preview(document, session.generation()),
             derive_source: self.gui_derive_source(document),
+            rib_preview: self.gui_rib_preview(document, session.generation()),
+            rib_sketches: self.gui_rib_sketches(document),
             selected_model_face: self
                 .chosen_model_face(document)
                 .map(|face| face.key.clone()),

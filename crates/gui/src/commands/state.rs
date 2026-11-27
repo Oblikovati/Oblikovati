@@ -138,6 +138,8 @@ pub struct GuiCommandState {
     pub emboss_preview: Option<crate::GuiEmbossPreviewState>,
     pub derive_preview: Option<crate::GuiDerivePreviewState>,
     pub derive_source: Option<crate::GuiDeriveSourceSummary>,
+    pub rib_preview: Option<crate::GuiRibPreviewState>,
+    pub rib_sketches: Vec<crate::GuiRibSketchCandidate>,
     /// Selected named solid face reference key when a model face is chosen.
     pub selected_model_face: Option<Vec<u8>>,
     /// The exact extrusion draft accepted for preview at this document generation.

@@ -351,6 +351,7 @@ pub enum GuiShellAction {
     Coil(crate::GuiCoilAction),
     Emboss(crate::GuiEmbossAction),
     Derive(crate::GuiDeriveAction),
+    Rib(crate::GuiRibAction),
     OpenFillet,
     OpenMoveBody,
     PreviewMoveBody(Option<GuiMoveBodyRequest>),
@@ -445,30 +446,8 @@ pub enum GuiShellAction {
     Redo,
     Home,
 }
-/// The current selection used to define an offset plane.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum GuiOffsetPlaneBase {
-    Origin(crate::GuiOriginPlaneKind),
-    WorkPlane(oblikovati_model::feature::FeatureId),
-    SelectedFace,
-}
-/// The owner-validated offset for one document generation.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct GuiOffsetPlaneValidation {
-    pub generation: u64,
-    pub document: u64,
-    pub offset: String,
-    pub error: Option<String>,
-}
-/// The selection categories supported by the viewport's current pickers.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
-pub enum GuiSelectionMode {
-    #[default]
-    All,
-    Faces,
-    Components,
-    Custom,
-}
+mod misc;
+pub use misc::{GuiOffsetPlaneBase, GuiOffsetPlaneValidation, GuiSelectionMode};
 mod feature_requests;
 pub use feature_requests::{
     GuiBaseViewRequest, GuiDrawingLayoutAction, GuiDrawingLine, GuiDrawingProjection,

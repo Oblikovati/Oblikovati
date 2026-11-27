@@ -355,6 +355,7 @@ impl GuiShellAction {
             Self::Coil(action) => action.enabled(state),
             Self::Emboss(action) => action.enabled(state),
             Self::Derive(action) => action.enabled(state),
+            Self::Rib(action) => action.enabled(state),
             Self::PreviewMoveBody(None)
             | Self::PreviewHole(None)
             | Self::PreviewShellFeature(None) => true,

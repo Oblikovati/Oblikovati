@@ -31,6 +31,7 @@ mod fillet;
 mod hole;
 mod loft;
 mod revolve;
+mod rib;
 mod shell;
 mod sweep;
 pub use coil::{CoilInputs, PreparedCoil, build_coil_definition, prepare_coil_definition};
@@ -58,6 +59,10 @@ pub use revolve::{
     PreparedRevolve, REVOLVE_ANGLE_ROLE, REVOLVE_SECOND_ANGLE_ROLE, RevolveInputs,
     automatic_revolve_profile, canonical_angle_expression, parse_positive_turn_angle,
     prepare_revolve_definition,
+};
+pub use rib::{
+    PreparedRib, RibInputs, build_rib_definition, open_profile_lines, prepare_rib_definition,
+    replace_rib,
 };
 pub use shell::{PreparedShell, prepare_shell};
 pub use sweep::{

@@ -65,6 +65,9 @@ macro_rules! desktop_extrusion_work {
         ) -> Result<bool, String> {
             self.derive_command(action)
         }
+        fn rib_from_gui(&mut self, action: oblikovati_gui::GuiRibAction) -> Result<bool, String> {
+            self.rib_command(action)
+        }
         fn sweep_from_gui(
             &mut self,
             action: oblikovati_gui::GuiSweepAction,

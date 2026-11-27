@@ -36,6 +36,10 @@ macro_rules! sweep_work_methods {
         ) -> Result<bool, String> {
             Err("derive: expected an available desktop owner".into())
         }
+        /// Dispatch a Rib command. Example: `work.rib_from_gui(action)?`.
+        fn rib_from_gui(&mut self, _action: oblikovati_gui::GuiRibAction) -> Result<bool, String> {
+            Err("rib: expected an available desktop owner".into())
+        }
         /// Dispatch a Sweep command. Example: `work.sweep_from_gui(action)?`.
         fn sweep_from_gui(
             &mut self,
@@ -70,6 +74,9 @@ macro_rules! forward_sweep_work_methods {
             action: oblikovati_gui::GuiDeriveAction,
         ) -> Result<bool, String> {
             self.$owner.derive_from_gui(action)
+        }
+        fn rib_from_gui(&mut self, action: oblikovati_gui::GuiRibAction) -> Result<bool, String> {
+            self.$owner.rib_from_gui(action)
         }
         fn sweep_from_gui(
             &mut self,

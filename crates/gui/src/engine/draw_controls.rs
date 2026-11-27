@@ -281,19 +281,10 @@ impl GuiFrameEngine {
             &mut selected,
             (&mut self.shell_feature_dialog, &mut self.hole_dialog),
             (&mut self.move_body_dialog, &mut self.blend_dialog),
-            (
-                &mut self.sweep_dialog,
-                &mut self.loft_dialog,
-                &mut self.revolve_dialog,
-                &mut self.coil_dialog,
-                &mut self.emboss_dialog,
-                &mut self.derive_dialog,
-            ),
+            &mut self.create_dialogs,
             &mut self.extrude_dialog,
         );
-        let revolve_needs_plane = self.revolve_dialog.take_sketch_plane_request()
-            || self.coil_dialog.take_sketch_plane_request()
-            || self.emboss_dialog.take_sketch_plane_request();
+        let revolve_needs_plane = self.create_dialogs.take_sketch_plane_request();
         if revolve_needs_plane {
             self.plane_selection.active = true;
         }
@@ -323,15 +314,7 @@ impl GuiFrameEngine {
             self.popup_was_open,
             browser_plane,
         );
-        let create_dialogs = (
-            &mut self.revolve_dialog,
-            &mut self.sweep_dialog,
-            &mut self.loft_dialog,
-            &mut self.coil_dialog,
-            &mut self.emboss_dialog,
-            &mut self.derive_dialog,
-            browser_axis,
-        );
+        let create_dialogs = (&mut self.create_dialogs, browser_axis);
         let modify_dialogs = (
             &mut self.blend_dialog,
             &mut self.hole_dialog,
@@ -476,7 +459,7 @@ impl GuiFrameEngine {
         activity.pending_layout |= dock_lifecycle_changed
             || cancelled_pick
             || revolve_needs_plane
-            || self.derive_dialog.is_opening()
+            || self.create_dialogs.is_opening()
             || self.workspace_needs_frame(home_was_active);
         Ok(GuiFrameOutput {
             window_action,

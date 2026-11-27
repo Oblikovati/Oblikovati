@@ -174,6 +174,11 @@ pub use derive_dialog::{
     GuiDeriveAction, GuiDeriveEditSeed, GuiDerivePreview, GuiDerivePreviewState, GuiDeriveRequest,
     GuiDeriveSourceSummary,
 };
+mod rib_dialog;
+pub use rib_dialog::{
+    GuiRibAction, GuiRibEditSeed, GuiRibPreview, GuiRibPreviewState, GuiRibRequest,
+    GuiRibSketchCandidate,
+};
 mod revolve_dialog;
 pub use revolve_dialog::{
     GuiRevolveAction, GuiRevolveEditSeed, GuiRevolveExtent, GuiRevolvePreview,

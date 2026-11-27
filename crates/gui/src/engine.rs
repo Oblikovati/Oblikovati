@@ -13,6 +13,8 @@ use imgui::{ConfigFlags, Context};
 use std::sync::Arc;
 #[path = "engine/close_prompt_scale.rs"]
 mod close_prompt_scale;
+#[path = "engine/create_dialogs.rs"]
+mod create_dialogs;
 pub(crate) mod dock_registration;
 #[path = "engine/dock_tab_actions.rs"]
 mod dock_tab_actions;
@@ -85,12 +87,7 @@ pub struct GuiFrameEngine {
     icons: crate::icons::GuiIconCache,
     raster_scale: f32,
     preferences: crate::ui_scale::GuiScalePreferences,
-    loft_dialog: crate::loft_dialog::LoftDialog,
-    revolve_dialog: crate::revolve_dialog::RevolveDialog,
-    coil_dialog: crate::coil_dialog::CoilDialog,
-    emboss_dialog: crate::emboss_dialog::EmbossDialog,
-    derive_dialog: crate::derive_dialog::DeriveDialog,
-    sweep_dialog: crate::sweep_dialog::SweepDialog,
+    create_dialogs: create_dialogs::CreateFeatureDialogs,
     extrude_dialog: crate::extrude_dialog::ExtrudeDialog,
     blend_dialog: crate::blend_dialog::BlendDialog,
     hole_dialog: crate::hole_dialog::HoleDialog,
@@ -183,12 +180,7 @@ impl GuiFrameEngine {
             icons,
             raster_scale: 1.,
             preferences: Default::default(),
-            loft_dialog: Default::default(),
-            revolve_dialog: Default::default(),
-            coil_dialog: Default::default(),
-            emboss_dialog: Default::default(),
-            derive_dialog: Default::default(),
-            sweep_dialog: Default::default(),
+            create_dialogs: Default::default(),
             extrude_dialog: Default::default(),
             blend_dialog: Default::default(),
             hole_dialog: Default::default(),
@@ -327,7 +319,7 @@ impl GuiFrameEngine {
         let restyled = self.refresh_chrome(request);
         self.external_docks.synchronize(&request.commands);
         let mut frame = self.draw_controls(request)?;
-        frame.activity.pending_layout |= restyled || self.sweep_dialog.needs_frame();
+        frame.activity.pending_layout |= restyled || self.create_dialogs.sweep.needs_frame();
         Ok(frame)
     }
     /// Focus an accessible control; example: `engine.focus_accessible(GuiAccessibleFocus::Frame(0))`.

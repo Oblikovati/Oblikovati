@@ -6,6 +6,8 @@ mod solid_coil;
 mod solid_derive;
 #[path = "../emboss/steps.rs"]
 mod solid_emboss;
+#[path = "../rib/steps.rs"]
+mod solid_rib;
 
 use super::*;
 use cucumber::{given, then, when};

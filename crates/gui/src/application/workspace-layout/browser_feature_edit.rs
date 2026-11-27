@@ -23,6 +23,9 @@ pub(super) fn feature_edit_action(
     if browser.derive_edits.contains_key(&feature.id) {
         return GuiShellAction::Derive(crate::GuiDeriveAction::OpenEdit(feature.id));
     }
+    if browser.rib_edits.contains_key(&feature.id) {
+        return GuiShellAction::Rib(crate::GuiRibAction::OpenEdit(feature.id));
+    }
     if browser.chamfer_edits.contains_key(&feature.id) {
         return GuiShellAction::OpenChamferEdit(feature.id);
     }

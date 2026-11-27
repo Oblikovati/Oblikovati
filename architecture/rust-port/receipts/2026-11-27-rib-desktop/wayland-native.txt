@@ -1,0 +1,51 @@
+running 1 test
+Feature: Rib
+  Scenario: rib-01 Require a visible sketch
+   ✔  Given a disposable copy of the native fixture "fixtures/cad/body-properties-start.opd" is open
+   ✔  And the part has no visible unadaptive sketch
+   ✔  When Rib is opened
+   ✔  Then the MCAD Software displays a tip requesting a visible unadaptive sketch or a new sketch
+  Scenario: rib-02 Report a failed Rib creation for the profile
+   ✔  Given a disposable copy of `fixtures/cad/rib/origin-profile-candidate.opd` is open
+   ✔  And the user shells the block by removing its top face
+   ✔  And the single-line Sketch2 on the XZ origin plane is visible
+   ✔  When Rib is opened and acceptance is attempted with the displayed 1 mm thickness
+   ✔  Then the MCAD Software reports Create rib feature failed and offers Edit and Cancel
+   ✔  When Edit is chosen and the other orientation is selected before acceptance is attempted
+   ✔  Then the MCAD Software again reports Create rib feature failed
+   ✔  When the user cancels
+   ✔  Then the dialog closes without a Rib feature in the browser
+  Scenario: rib-03 Inspect draft and boss settings before selecting a profile
+   ✔  Given a disposable copy of the native fixture "fixtures/cad/emboss/open-profile.opd" is open
+   ✔  And the open-line sketch is visible and the Rib dialog is open without a selected profile
+   ✔  When the user opens the Boss tab
+   ✔  Then Centers, Select All, Diameter, Offset and Draft Angle controls are shown
+   ✔  When the user opens the Draft tab
+   ✔  Then Hold Thickness offers At Top and At Root and a Draft Angle field is shown
+   ✔  When the user selects At Root
+   ✔  Then the diagram changes to illustrate thickness held at the root
+   ✔  And OK remains disabled without a profile
+  Scenario: rib-04 A side-face profile fails to produce a rib
+   ✔  Given a disposable copy of `fixtures/cad/rib/side-face-profile-unique-candidate.opd` is open
+   ✔  And Sketch3 is visible and attached to the block side face on Y=0
+   ✔  And its open line runs from (20, 0, 10) mm on the face to (50, 0, 10) mm beyond its edge
+   ✔  When the user starts Rib and selects the Sketch3 line and the block as the solid
+   ✔  And the user accepts with 1 mm thickness and Extend Profile enabled
+   ✔  Then the MCAD Software reports "Create rib feature failed"
+   ✔  And cancelling the error returns to the model with the sketch visible
+  Scenario: rib-05 Recover from a zero thickness entry
+   ✔  Given a disposable copy of the native fixture "fixtures/cad/emboss/open-profile.opd" is open
+   ✔  And the second sketch containing an open line is visible and the Rib dialog is open
+   ✔  When the user replaces Thickness with zero
+   ✔  Then zero is displayed in red
+   ✔  When the user clicks OK and then cancels while the dialog remains open
+   ✔  Then the MCAD Software displays an out-of-range expression warning
+   ✔  When the user dismisses the warning, replaces zero with 1, and clicks Cancel
+   ✔  Then the Rib dialog closes
+[Summary]
+1 feature
+5 scenarios (5 passed)
+37 steps (37 passed)
+test native::gui_loop_tests::application_bdd::application_scenarios_use_the_native_window ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1794 filtered out; finished in 37.50s

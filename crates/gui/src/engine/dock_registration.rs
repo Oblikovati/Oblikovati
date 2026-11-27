@@ -45,12 +45,7 @@ fn register_model_windows(engine: &mut GuiFrameEngine) -> Result<(), String> {
     engine.blend_dialog.register_dockables(registry)?;
     engine.hole_dialog.register_dockable(registry)?;
     engine.shell_feature_dialog.register_dockable(registry)?;
-    engine.sweep_dialog.register_dockable(registry)?;
-    engine.revolve_dialog.register_dockable(registry)?;
-    engine.coil_dialog.register_dockable(registry)?;
-    engine.emboss_dialog.register_dockable(registry)?;
-    engine.derive_dialog.register_dockable(registry)?;
-    engine.loft_dialog.register_dockable(registry)?;
+    engine.create_dialogs.register_dockables(registry)?;
     engine.move_body_dialog.register_dockable(registry)?;
     engine.history_browser.register_dockable(registry)?;
     engine.selection_filter.register_dockable(registry)
@@ -116,12 +111,7 @@ impl GuiFrameEngine {
         self.workspaces.sync_before_docking(state, actions);
     }
     fn prepare_model_docks(&mut self, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
-        self.revolve_dialog.synchronize(state, actions);
-        self.coil_dialog.synchronize(state, actions);
-        self.emboss_dialog.synchronize(state, actions);
-        self.derive_dialog.synchronize(state, actions);
-        self.sweep_dialog.synchronize(state, actions);
-        self.loft_dialog.synchronize(state, actions);
+        self.create_dialogs.synchronize(state, actions);
         self.blend_dialog.sync_before_docking(state, actions);
         self.hole_dialog.sync_before_docking(state, actions);
         self.shell_feature_dialog

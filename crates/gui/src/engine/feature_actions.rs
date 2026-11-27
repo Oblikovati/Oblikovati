@@ -9,14 +9,14 @@ impl GuiFrameEngine {
         &mut self,
         store: Box<dyn crate::GuiSweepPresetStore>,
     ) -> Result<(), String> {
-        self.sweep_dialog.set_preset_store(store)
+        self.create_dialogs.sweep.set_preset_store(store)
     }
 }
 
 impl crate::GuiFrameEngine {
     /// Open a revolution draft for the active part. Example: `engine.request_revolve()`.
     pub fn request_revolve(&mut self) {
-        self.revolve_dialog.request_open();
+        self.create_dialogs.revolve.request_open();
     }
 }
 
@@ -34,13 +34,8 @@ pub(super) fn draw_feature_dialogs(
         bool,
         Option<String>,
     ),
-    (revolve, sweep, loft, coil, emboss, derive, picked_axis): (
-        &mut crate::revolve_dialog::RevolveDialog,
-        &mut crate::sweep_dialog::SweepDialog,
-        &mut crate::loft_dialog::LoftDialog,
-        &mut crate::coil_dialog::CoilDialog,
-        &mut crate::emboss_dialog::EmbossDialog,
-        &mut crate::derive_dialog::DeriveDialog,
+    (create, picked_axis): (
+        &mut super::create_dialogs::CreateFeatureDialogs,
         Option<oblikovati_model::feature::work_axis::WorkAxisReference>,
     ),
     (blend, hole, shell, motion, offset): (
@@ -65,12 +60,12 @@ pub(super) fn draw_feature_dialogs(
             area,
         },
     );
-    revolve.panel(ui, commands, (area, icons, parameters), selected);
-    sweep.panel(ui, commands, (area, icons), selected);
-    loft.panel(ui, commands, area, selected);
-    coil.panel(ui, commands, (area, icons, picked_axis), selected);
-    emboss.panel(ui, commands, (area, icons), selected);
-    derive.panel(ui, commands, (area, icons), selected);
+    create.draw(
+        ui,
+        commands,
+        (area, icons, parameters, picked_axis),
+        selected,
+    );
     blend.panel(ui, commands, selected, area);
     hole.panel(ui, commands, area, selected);
     shell.panel(ui, commands, area, selected);
@@ -139,6 +134,7 @@ enum Draft {
     Coil,
     Emboss,
     Derive,
+    Rib,
     Sweep,
     Loft,
     Blend,
@@ -161,6 +157,9 @@ fn requested_draft(action: &GuiShellAction) -> Option<Draft> {
         GuiShellAction::Derive(
             crate::GuiDeriveAction::Open | crate::GuiDeriveAction::OpenEdit(_),
         ) => Draft::Derive,
+        GuiShellAction::Rib(crate::GuiRibAction::Open | crate::GuiRibAction::OpenEdit(_)) => {
+            Draft::Rib
+        }
         GuiShellAction::Sweep(crate::GuiSweepAction::Open | crate::GuiSweepAction::OpenEdit(_)) => {
             Draft::Sweep
         }
@@ -190,14 +189,7 @@ pub(super) fn open_drafts(
         &mut crate::move_body_dialog::MoveBodyDialog,
         &mut crate::blend_dialog::BlendDialog,
     ),
-    (sweep, loft, revolve, coil, emboss, derive): (
-        &mut crate::sweep_dialog::SweepDialog,
-        &mut crate::loft_dialog::LoftDialog,
-        &mut crate::revolve_dialog::RevolveDialog,
-        &mut crate::coil_dialog::CoilDialog,
-        &mut crate::emboss_dialog::EmbossDialog,
-        &mut crate::derive_dialog::DeriveDialog,
-    ),
+    create: &mut super::create_dialogs::CreateFeatureDialogs,
     extrude: &mut crate::extrude_dialog::ExtrudeDialog,
 ) {
     let requested = actions
@@ -218,22 +210,25 @@ pub(super) fn open_drafts(
         extrude.close(actions);
     }
     if draft != Draft::Revolve {
-        revolve.close(actions);
+        create.revolve.close(actions);
     }
     if draft != Draft::Coil {
-        coil.close(actions);
+        create.coil.close(actions);
     }
     if draft != Draft::Emboss {
-        emboss.close(actions);
+        create.emboss.close(actions);
     }
     if draft != Draft::Derive {
-        derive.close(actions);
+        create.derive.close(actions);
+    }
+    if draft != Draft::Rib {
+        create.rib.close(actions);
     }
     if draft != Draft::Sweep {
-        sweep.close(actions);
+        create.sweep.close(actions);
     }
     if draft != Draft::Loft {
-        loft.close(actions);
+        create.loft.close(actions);
     }
     if draft != Draft::Shell {
         shell.close(actions);
@@ -248,29 +243,35 @@ pub(super) fn open_drafts(
         blend.close(actions);
     }
     match action {
-        GuiShellAction::Revolve(crate::GuiRevolveAction::Open) => revolve.open(state, None),
+        GuiShellAction::Revolve(crate::GuiRevolveAction::Open) => create.revolve.open(state, None),
         GuiShellAction::Revolve(crate::GuiRevolveAction::OpenEdit(feature)) => {
-            revolve.open(state, Some(feature))
+            create.revolve.open(state, Some(feature))
         }
-        GuiShellAction::Coil(crate::GuiCoilAction::Open) => coil.open(state, None),
+        GuiShellAction::Coil(crate::GuiCoilAction::Open) => create.coil.open(state, None),
         GuiShellAction::Coil(crate::GuiCoilAction::OpenEdit(feature)) => {
-            coil.open(state, Some(feature))
+            create.coil.open(state, Some(feature))
         }
-        GuiShellAction::Emboss(crate::GuiEmbossAction::Open) => emboss.open(state, None),
+        GuiShellAction::Emboss(crate::GuiEmbossAction::Open) => create.emboss.open(state, None),
         GuiShellAction::Emboss(crate::GuiEmbossAction::OpenEdit(feature)) => {
-            emboss.open(state, Some(feature))
+            create.emboss.open(state, Some(feature))
         }
-        GuiShellAction::Derive(crate::GuiDeriveAction::Open) => derive.open(state, None, actions),
+        GuiShellAction::Derive(crate::GuiDeriveAction::Open) => {
+            create.derive.open(state, None, actions)
+        }
         GuiShellAction::Derive(crate::GuiDeriveAction::OpenEdit(feature)) => {
-            derive.open(state, Some(feature), actions)
+            create.derive.open(state, Some(feature), actions)
         }
-        GuiShellAction::Sweep(crate::GuiSweepAction::Open) => sweep.open(state, None),
+        GuiShellAction::Rib(crate::GuiRibAction::Open) => create.rib.open(state, None),
+        GuiShellAction::Rib(crate::GuiRibAction::OpenEdit(feature)) => {
+            create.rib.open(state, Some(feature))
+        }
+        GuiShellAction::Sweep(crate::GuiSweepAction::Open) => create.sweep.open(state, None),
         GuiShellAction::Sweep(crate::GuiSweepAction::OpenEdit(feature)) => {
-            sweep.open(state, Some(feature))
+            create.sweep.open(state, Some(feature))
         }
-        GuiShellAction::Loft(crate::GuiLoftAction::Open) => loft.open(state, None, actions),
+        GuiShellAction::Loft(crate::GuiLoftAction::Open) => create.loft.open(state, None, actions),
         GuiShellAction::Loft(crate::GuiLoftAction::OpenEdit(feature)) => {
-            loft.open(state, Some(feature), actions)
+            create.loft.open(state, Some(feature), actions)
         }
         GuiShellAction::OpenExtrude if state.authoring == crate::GuiAuthoringContext::Sketch => {
             extrude.close(actions);

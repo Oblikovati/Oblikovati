@@ -186,4 +186,7 @@ pub(super) const INFRASTRUCTURE: &[(&str, &str)] = &[
     ("emboss_dialog/modals.rs", "modal:SKETCH_DOCTOR_TITLE"),
     ("emboss_dialog/modals.rs", "modal:EDIT_FAILED_TITLE"),
     ("emboss_dialog/modals.rs", "modal:RANGE_WARNING_TITLE"),
+    ("rib_dialog/modals.rs", "modal:SKETCH_TIP_TITLE"),
+    ("rib_dialog/modals.rs", "modal:CREATE_FAILED_TITLE"),
+    ("rib_dialog/modals.rs", "modal:RANGE_WARNING_TITLE"),
 ];
