@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::{ExtrudeDialog, GuiCommandState, GuiShellAction};
+use crate::GuiExtrudeDirection;
 use imgui::Ui;
 use oblikovati_model::feature::sketch_prism::PrismBoolean;
 
@@ -19,8 +20,8 @@ impl ExtrudeDialog {
             return false;
         };
         let previous = self.operation;
-        let join_available = single_body(state);
-        if !join_available {
+        let boolean_available = single_body(state);
+        if !boolean_available {
             self.operation = None;
         }
         if !ui.collapsing_header("Output", imgui::TreeNodeFlags::DEFAULT_OPEN) {
@@ -38,13 +39,15 @@ impl ExtrudeDialog {
             {
                 self.operation = None;
             }
-            if ui
-                .selectable_config("Join")
-                .disabled(!join_available)
-                .selected(self.operation == Some(PrismBoolean::Join))
-                .build()
-            {
-                self.operation = Some(PrismBoolean::Join);
+            for operation in [PrismBoolean::Join, PrismBoolean::Cut] {
+                if ui
+                    .selectable_config(operation.to_string())
+                    .disabled(!boolean_available)
+                    .selected(self.operation == Some(operation))
+                    .build()
+                {
+                    self.choose_boolean_operation(operation);
+                }
             }
         }
         if self.operation.is_none() {
@@ -54,6 +57,16 @@ impl ExtrudeDialog {
                 .build();
         }
         self.operation != previous
+    }
+
+    fn choose_boolean_operation(&mut self, operation: PrismBoolean) {
+        if operation == PrismBoolean::Cut
+            && self.operation != Some(operation)
+            && self.direction == GuiExtrudeDirection::Positive
+        {
+            self.direction = GuiExtrudeDirection::Negative;
+        }
+        self.operation = Some(operation);
     }
 
     pub(super) fn creation_action(&self, request: &crate::GuiExtrudePreview) -> GuiShellAction {

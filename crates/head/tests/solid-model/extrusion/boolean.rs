@@ -13,6 +13,9 @@ const BOSS_TOP: f32 = 1.6;
 #[given(
     "a copy of `fixtures/cad/extrusion/extrusion-base-circle.opd` is open with its circular sketch on the top plane and one existing solid"
 )]
+#[given(
+    "a copy of `fixtures/cad/extrusion/extrusion-base-circle.opd` is open with its diameter-3 mm circle sketch on the base top face"
+)]
 fn published_circle_part(world: &mut ApplicationWorld) {
     let source = super::super::scenario_root().join(FIXTURE);
     open_circle_part(world, &std::fs::read(source).unwrap());
@@ -20,6 +23,7 @@ fn published_circle_part(world: &mut ApplicationWorld) {
 
 #[given("a diameter-3 circular sketch on the top face of the existing solid")]
 #[given("the restored circular Sketch2 and existing Solid1")]
+#[given("the diameter-3 circle on the base top face")]
 fn pinned_circle_part(world: &mut ApplicationWorld) {
     open_circle_part(
         world,
@@ -217,4 +221,103 @@ fn assert_solid_names(world: &mut ApplicationWorld) {
         .map(|body| body.name.as_str())
         .collect();
     assert_eq!(names, ["Solid1", "b"]);
+}
+
+#[when("Extrude opens in Default direction and Cut is selected")]
+fn choose_cut(world: &mut ApplicationWorld) {
+    world.click_text("Sketch1");
+    world.click_text("Extrude");
+    world.pump(Vec::new());
+    assert_eq!(
+        world.state().extrude_draft_preview.unwrap().direction,
+        oblikovati_gui::GuiExtrudeDirection::Positive
+    );
+    let generation = world.state().document_generation;
+    click_panel(world, "NewSolid");
+    world.click_text("Cut");
+    world.pump(Vec::new());
+    assert_eq!(world.state().document_generation, generation);
+}
+
+#[then("Direction changes to Flipped and the preview shows an opening")]
+fn flipped_cut_preview(world: &mut ApplicationWorld) {
+    let draft = world
+        .state()
+        .extrude_draft_preview
+        .expect("certified Cut preview");
+    assert_eq!(
+        draft.operation,
+        Some(oblikovati_model::feature::sketch_prism::PrismBoolean::Cut)
+    );
+    assert_eq!(
+        draft.direction,
+        oblikovati_gui::GuiExtrudeDirection::Negative
+    );
+    assert!(world.run_is_enabled("OK"));
+    let frame = capture_framebuffer(&mut world.app().window.native);
+    assert!(solid_visibility::visible_replacement_preview_fill(
+        &frame,
+        &diagnostics::window_occlusions()
+    ));
+    assert_top_opening(world, true);
+}
+
+#[when("OK is clicked with Distance A 8 mm and zero taper")]
+fn accept_eight_millimeter_draft(world: &mut ApplicationWorld) {
+    super::replace_extrusion_distance(world, "8");
+    world.pump(Vec::new());
+    assert!(world.run_is_enabled("OK"));
+    click_panel(world, "OK");
+    world.pump(Vec::new());
+    assert!(diagnostics::window_geometry("Extrude").is_none());
+}
+
+#[then("Extrusion2 and the opening are retained in one solid body")]
+#[then("the opening disappears then returns")]
+fn cut_result(world: &mut ApplicationWorld) {
+    still_one_body(world);
+    world.expect_text("Extrusion2");
+    assert_eq!(world.state().browser.unwrap().bodies[0].faces, 7);
+    assert_top_opening(world, true);
+}
+
+#[when("Undo then Redo are invoked")]
+fn undo_redo_opening(world: &mut ApplicationWorld) {
+    world.key(ViewportPhysicalKey::Z, true);
+    world.pump(Vec::new());
+    assert_original_shape(world);
+    assert_top_opening(world, false);
+    world.key(ViewportPhysicalKey::Y, true);
+    world.pump(Vec::new());
+}
+
+fn assert_top_opening(world: &mut ApplicationWorld, opening: bool) {
+    let triangles = &world.app().window.scene_triangles;
+    let top_faces = triangles.iter().filter(|triangle| {
+        triangle
+            .positions
+            .iter()
+            .all(|point| (point[2] - BASE_TOP).abs() < 1e-5)
+    });
+    let covered = top_faces
+        .clone()
+        .any(|triangle| contains_xy(triangle.positions, [2., 1.5]));
+    assert_eq!(
+        !covered, opening,
+        "expected top opening {opening} along the circle axis"
+    );
+    assert!(
+        top_faces
+            .clone()
+            .any(|triangle| contains_xy(triangle.positions, [2.3, 1.5]))
+    );
+}
+
+fn contains_xy(triangle: [[f32; 3]; 3], point: [f32; 2]) -> bool {
+    let signs: [f32; 3] = std::array::from_fn(|index| {
+        let a = triangle[index];
+        let b = triangle[(index + 1) % 3];
+        (b[0] - a[0]) * (point[1] - a[1]) - (b[1] - a[1]) * (point[0] - a[0])
+    });
+    signs.iter().all(|sign| *sign >= -1e-6) || signs.iter().all(|sign| *sign <= 1e-6)
 }

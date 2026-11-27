@@ -73,6 +73,12 @@ feature and name together. See the
 [native Body Name receipt](receipts/2026-11-27-extrude-body-name-3870/README.md)
 for scenario 14 on Wayland and X11.
 
+Selecting Cut from Default flips the extrusion inward. The preview shows
+the opening on the named target before OK. Acceptance retains one solid,
+Undo closes the opening, and Redo restores it. See the
+[native Cut receipt](receipts/2026-11-27-extrude-cut-3870/README.md)
+for scenario 15 on Wayland and X11.
+
 ## Sweep, Loft, and Revolve
 
 The [release probes](../../crates/martensite/tests/release_probe/create.rs)
