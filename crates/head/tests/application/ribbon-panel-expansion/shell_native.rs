@@ -51,16 +51,19 @@ fn x11_shell_opens_on_a_selected_face_reports_refusal_and_cancels() {
     let shell = diagnostics::pointer_pixels(world.run("Shell").center());
     super::super::x11_input::click(shell);
     world.pump(Vec::new());
+    world.pump(Vec::new());
     assert!(diagnostics::window_geometry("Shell").is_some());
     world.expect_text("Thickness");
     assert!(
-        world.text().to_lowercase().contains("tolerance"),
-        "expected the kernel refusal, got {}",
-        world.text()
+        world.state().extrude_preview_active,
+        "expected certified Shell preview for default thickness"
     );
+    assert!(world.run_is_enabled("OK"));
     super::super::x11_input::press_escape();
     world.pump(Vec::new());
+    world.pump(Vec::new());
     assert!(diagnostics::window_geometry("Shell").is_none());
+    assert!(!world.state().extrude_preview_active);
     assert!(world.state().model_face_chosen);
     world.close();
 }
@@ -115,15 +118,18 @@ fn x11_shell_from_expanded_panel_reports_kernel_refusal_and_cancels() {
     let shell = diagnostics::pointer_pixels(world.run_in_window(expanded, "Shell").center());
     super::super::x11_input::click(shell);
     world.pump(Vec::new());
+    world.pump(Vec::new());
     assert!(diagnostics::window_geometry("Shell").is_some());
     assert!(
-        world.text().to_lowercase().contains("tolerance"),
-        "expected the kernel refusal, got {}",
-        world.text()
+        world.state().extrude_preview_active,
+        "expected certified Shell preview from expanded Modify panel"
     );
+    assert!(world.run_is_enabled("OK"));
     super::super::x11_input::press_escape();
     world.pump(Vec::new());
+    world.pump(Vec::new());
     assert!(diagnostics::window_geometry("Shell").is_none());
+    assert!(!world.state().extrude_preview_active);
     assert!(world.state().model_face_chosen);
     world.close();
 }

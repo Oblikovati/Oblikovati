@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//! A typed Shell refusal must not change the live document (#4106, Martensite #554).
+//! A typed Shell refusal must not change the live document (#4106).
 use super::*;
 use oblikovati_api::wire::featureargs::Shell;
 use oblikovati_automation::{FileHost, PartReplayService, PartUpdateAccess};
@@ -8,7 +8,7 @@ use oblikovati_automation::{FileHost, PartReplayService, PartUpdateAccess};
 fn typed_shell_refusal_preserves_recipe_history_and_dirty_state() {
     let (mut owner, _) = owner();
     let document = open_prism(&mut owner, false);
-    let policy = crate::part_scene::resolution_policy::desktop_policy();
+    let policy = super::shell_preview::strict_shell_policy();
     let mut replay = PartReplayService::with_policy(policy).unwrap();
     replay.update_part(&mut owner.files, document).unwrap();
     let face = named_face(&owner, &replay, document);
