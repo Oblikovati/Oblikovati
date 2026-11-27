@@ -13709,8 +13709,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/chrome_ribbon.go; ../Oblikovati/head/ui/ribbon_collapse.go",
-      "mapping_reason": "Desktop ribbon panel expansion, pinning, and command interaction."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a head/ui/chrome_ribbon.go and head/ui/ribbon_collapse_test.go.",
+      "mapping_reason": "Desktop ribbon panel expansion, pinning, and command interaction.",
+      "go_test_premise": "TestPanelsThatFitCollapsesFromTheRight checks ribbon width allocation. The pinned native steps specify the Explore visibility changes from the expanded Modify title.",
+      "api_revision": "c8200b2da97c9a7dde43afb25debc977ff23b2fd",
+      "kernel_revision": "d463526642b7bf950ba33c7ab4a4c9bc97caffaf",
+      "kernel_capabilities": "Vulkan desktop presentation while ribbon geometry changes.",
+      "platforms": "Linux Wayland under Weston and X11 under Openbox and Xvfb, both with Vulkan Lavapipe.",
+      "kernel_integration": "The desktop redraws the native Part workspace and ribbon while toggling a panel in the main strip.",
+      "rust_tests": "crates/head/tests/application/ribbon-panel-expansion/explore.rs; application_scenarios_use_the_native_window.",
+      "oracle": "The native test reads the Explore menu check state, rendered Explore caption, Work Features position and Modify expansion visibility. See receipts/2026-11-27-pinned-ribbon-explore-4184/{x11,wayland}.json.",
+      "expected_result": "Hiding Explore closes Modify and moves Work Features left. Reopening Show Panels shows Explore unchecked. Showing Explore returns Work Features to its original position.",
+      "baseline_source_sha256": "645576c3b62e89cdb6c668d5579123e6880a33f9e4a8020f922f1b08e0502ca2"
     },
     {
       "id": "scenario:bd384ee9d5372ae6dd470216869d5c7eca725d3ec9662fdc67e2a7010ba4fb72",
