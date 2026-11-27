@@ -54,3 +54,15 @@ pub(super) fn preview(state: &GuiCommandState, request: &GuiExtrudePreview) -> b
         )
     }
 }
+
+pub(super) fn commit_draft(
+    state: &GuiCommandState,
+    draft: &GuiExtrudePreview,
+    name: Option<&str>,
+) -> bool {
+    preview(state, draft)
+        && state.extrude_draft_preview.as_ref() == Some(draft)
+        && name.is_none_or(|name| {
+            draft.operation.is_none() && !name.is_empty() && !name.contains('\0')
+        })
+}

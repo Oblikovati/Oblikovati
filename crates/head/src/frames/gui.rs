@@ -396,7 +396,7 @@ pub(super) fn dispatch_action(
     {
         window.reject_extrusion_edit(request, cause);
     }
-    if let (Err(cause), GuiShellAction::CommitExtrudeDraft(draft)) = (&result, action) {
+    if let (Err(cause), GuiShellAction::CommitExtrudeDraft(draft, _)) = (&result, action) {
         let mut submitted = draft.clone();
         submitted.generation = None;
         window.reject_extrusion(&submitted, cause);

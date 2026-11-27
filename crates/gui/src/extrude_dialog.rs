@@ -39,6 +39,7 @@ pub(crate) struct ExtrudeDialog {
     direction_style: direction::SelectorStyle,
     reference: reference::ReferenceDraft,
     operation: Option<oblikovati_model::feature::sketch_prism::PrismBoolean>,
+    body_name: String,
     previewed: bool,
     preview_hidden: bool,
     size: panel::PropertiesSize,
@@ -115,6 +116,7 @@ impl ExtrudeDialog {
         if self.requested {
             self.requested = false;
             self.submitted = None;
+            self.body_name.clear();
             self.commit_error = None;
             self.attempted = None;
             self.set_document(state.document);
@@ -162,6 +164,7 @@ impl ExtrudeDialog {
         if let Some(sketch) = self.pending.observe(state, plane_active, actions) {
             self.set_document(state.document);
             self.sketch = Some(sketch);
+            self.body_name.clear();
             self.profile = 0;
             self.distance = DEFAULT_DISTANCE.into();
             self.second_distance = "5 mm".into();
@@ -384,19 +387,6 @@ impl ExtrudeDialog {
         }
         self.sketch != previous
     }
-    fn creation_action(&self, request: &crate::GuiExtrudePreview) -> GuiShellAction {
-        if request.reference_extent.is_some() || request.operation.is_some() {
-            return GuiShellAction::CommitExtrudeDraft(request.clone());
-        }
-        GuiShellAction::Extrude {
-            document: request.document,
-            sketch: request.sketch,
-            profile: request.profile,
-            distance: request.distance.clone(),
-            second_distance: request.second_distance.clone(),
-            direction: request.direction,
-        }
-    }
     fn edit_request(
         &self,
         request: &crate::GuiExtrudePreview,
@@ -472,6 +462,7 @@ impl ExtrudeDialog {
         self.requested = false;
         self.set_document(Some(request.document));
         self.operation = request.operation;
+        self.attempted = None;
         self.commit_error = Some(cause.into());
     }
     pub(crate) fn reject_edit(&mut self, request: &crate::GuiExtrudeEditRequest, cause: &str) {

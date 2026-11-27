@@ -10,12 +10,16 @@ const BOSS_TOP: f32 = 1.6;
 #[given(
     "a copy of `fixtures/cad/extrusion/extrusion-base-circle.opd` is open with its diameter-3 mm circle sketch on the top face"
 )]
+#[given(
+    "a copy of `fixtures/cad/extrusion/extrusion-base-circle.opd` is open with its circular sketch on the top plane and one existing solid"
+)]
 fn published_circle_part(world: &mut ApplicationWorld) {
     let source = super::super::scenario_root().join(FIXTURE);
     open_circle_part(world, &std::fs::read(source).unwrap());
 }
 
 #[given("a diameter-3 circular sketch on the top face of the existing solid")]
+#[given("the restored circular Sketch2 and existing Solid1")]
 fn pinned_circle_part(world: &mut ApplicationWorld) {
     open_circle_part(
         world,
@@ -42,9 +46,7 @@ fn open_circle_part(world: &mut ApplicationWorld, package: &[u8]) {
 fn preview_joined_boss(world: &mut ApplicationWorld) {
     let generation = world.state().document_generation;
     let original = world.state().browser.unwrap().bodies[0].key.clone();
-    world.click_text("Sketch1");
-    world.click_text("Extrude");
-    super::replace_extrusion_distance(world, "8");
+    start_circle_extrude(world);
     click_panel(world, "NewSolid");
     world.click_text("Join");
     world.pump(Vec::new());
@@ -147,4 +149,72 @@ fn assert_circular_cap(world: &mut ApplicationWorld) {
             "boss cap {axis} span is {span} cm at {BOSS_TOP} cm"
         );
     }
+}
+
+#[when("Extrude uses New Solid with Distance A 8 mm and zero taper")]
+fn preview_separate_boss(world: &mut ApplicationWorld) {
+    start_circle_extrude(world);
+    let state = world.state();
+    assert!(state.extrude_draft_preview.unwrap().operation.is_none());
+    assert_eq!(state.browser.unwrap().bodies.len(), 1);
+    assert_circular_cap(world);
+}
+
+fn start_circle_extrude(world: &mut ApplicationWorld) {
+    world.click_text("Sketch1");
+    world.click_text("Extrude");
+    super::replace_extrusion_distance(world, "8");
+    world.pump(Vec::new());
+}
+
+#[when("Body Name is replaced with b and OK is clicked")]
+fn accept_named_solid(world: &mut ApplicationWorld) {
+    let original = world.state().browser.unwrap().bodies[0].key.clone();
+    click_panel(world, "Solid2");
+    world.type_text("b");
+    world.pump(Vec::new());
+    world.run_in_window("Extrude", "b");
+    assert!(world.run_is_enabled("OK"));
+    click_panel(world, "OK");
+    world.pump(Vec::new());
+    assert!(diagnostics::window_geometry("Extrude").is_none());
+    let browser = world.state().browser.unwrap();
+    assert_eq!(browser.bodies[0].key, original);
+    assert_eq!(browser.bodies[0].faces, 6);
+    assert_eq!(browser.bodies[1].faces, 3);
+    assert_circular_cap(world);
+}
+
+#[then("the browser shows Solid Bodies(2)")]
+fn two_solid_bodies(world: &mut ApplicationWorld) {
+    world.expect_text("Solid Bodies");
+    assert_eq!(world.state().browser.unwrap().bodies.len(), 2);
+}
+
+#[then("expanding it shows the original body and b")]
+#[then("expanding it shows Solid1 and b")]
+fn solid_names_and_history(world: &mut ApplicationWorld) {
+    if !world.text().contains("Solid1") {
+        world.click_text("Solid Bodies");
+    }
+    world.expect_text("Solid1");
+    world.expect_text("b");
+    assert_solid_names(world);
+    world.key(ViewportPhysicalKey::Z, true);
+    world.pump(Vec::new());
+    assert_original_shape(world);
+    world.key(ViewportPhysicalKey::Y, true);
+    world.pump(Vec::new());
+    assert_solid_names(world);
+    assert_circular_cap(world);
+}
+
+fn assert_solid_names(world: &mut ApplicationWorld) {
+    let browser = world.state().browser.unwrap();
+    let names: Vec<_> = browser
+        .bodies
+        .iter()
+        .map(|body| body.name.as_str())
+        .collect();
+    assert_eq!(names, ["Solid1", "b"]);
 }

@@ -169,7 +169,7 @@ impl<
             .map_err(|cause| cause.to_string())?
             .generation();
         self.extrusion_preview = Some((document, generation, scene, PreviewKind::Additive));
-        self.extrusion_draft_preview = preview.reference_extent.as_ref().map(|_| preview.clone());
+        self.extrusion_draft_preview = Some(preview.clone());
         self.part_scenes.invalidate_presentation();
         Ok(true)
     }

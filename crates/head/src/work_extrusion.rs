@@ -18,9 +18,9 @@ macro_rules! work_extrusion {
         }
 
         /// Commit an extrusion draft after its certified preview.
-        /// Example: `work.commit_extrusion_draft(&draft)?`.
+        /// Example: `work.commit_extrusion_draft(&draft, None)?`.
         fn commit_extrusion_draft(
-            &mut self, draft: &oblikovati_gui::GuiExtrudePreview,
+            &mut self, draft: &oblikovati_gui::GuiExtrudePreview, _body_name: Option<&str>,
         ) -> Result<bool, String> {
             Err(format!("extrusion {:?}: expected a certified draft owner", draft.reference_extent))
         }

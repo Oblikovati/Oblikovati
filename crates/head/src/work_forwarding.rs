@@ -225,8 +225,9 @@ macro_rules! forward_owner_view_work {
         fn commit_extrusion_draft(
             &mut self,
             draft: &oblikovati_gui::GuiExtrudePreview,
+            body_name: Option<&str>,
         ) -> Result<bool, String> {
-            self.$owner.commit_extrusion_draft(draft)
+            self.$owner.commit_extrusion_draft(draft, body_name)
         }
         fn extrusion_preview_from_gui(
             &mut self,

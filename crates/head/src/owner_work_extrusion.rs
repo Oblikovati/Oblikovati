@@ -150,8 +150,9 @@ macro_rules! desktop_extrusion_work {
         fn commit_extrusion_draft(
             &mut self,
             draft: &oblikovati_gui::GuiExtrudePreview,
+            body_name: Option<&str>,
         ) -> Result<bool, String> {
-            self.commit_extrusion_draft(draft)
+            self.commit_extrusion_draft(draft, body_name)
         }
         fn extrusion_preview_from_gui(
             &mut self,

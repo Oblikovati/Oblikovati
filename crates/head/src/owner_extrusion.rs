@@ -150,6 +150,7 @@ impl<
     pub(super) fn commit_extrusion_draft(
         &mut self,
         draft: &oblikovati_gui::GuiExtrudePreview,
+        body_name: Option<&str>,
     ) -> Result<bool, String> {
         let session = self
             .files
@@ -163,10 +164,12 @@ impl<
         }
         let request = self.extrusion_draft_request(draft)?;
         self.clear_extrusion_preview();
-        oblikovati_api::client::Client::new(self.document_host())
-            .features()
-            .add_feature(&request)
-            .map_err(|cause| cause.to_string())?;
+        let client = oblikovati_api::client::Client::new(self.document_host());
+        match body_name {
+            Some(name) => create_named_solid(&client, &request, name),
+            None => client.features().add_feature(&request).map(|_| ()),
+        }
+        .map_err(|cause| cause.to_string())?;
         Ok(true)
     }
     fn extrusion_sketch_index(
@@ -195,4 +198,60 @@ impl<
         i64::try_from(index)
             .map_err(|_| format!("sketch index {index}: expected a signed API index"))
     }
+}
+
+fn create_named_solid<T: oblikovati_api::client::Caller>(
+    client: &oblikovati_api::client::Client<T>,
+    request: &oblikovati_api::wire::featureargs::Extrude,
+    name: &str,
+) -> Result<(), oblikovati_api::Error> {
+    use oblikovati_api::wire::TransactionBeginArgs;
+    let before = current_solid_bodies(client)?;
+    let transactions = client.transactions();
+    transactions.begin(&TransactionBeginArgs {
+        label: "Create extrusion".into(),
+    })?;
+    match extrude_and_name(client, request, name, &before) {
+        Ok(()) => transactions.end().map(|_| ()),
+        Err(cause) => match transactions.abort() {
+            Ok(_) => Err(cause),
+            Err(abort) => Err(oblikovati_api::Error(format!(
+                "{cause}. Aborting the extrusion also failed: {abort}"
+            ))),
+        },
+    }
+}
+
+fn current_solid_bodies<T: oblikovati_api::client::Caller>(
+    client: &oblikovati_api::client::Client<T>,
+) -> Result<Vec<oblikovati_api::wire::BodyInfo>, oblikovati_api::Error> {
+    client
+        .body()
+        .list(&oblikovati_api::json::EmptyObject {})
+        .map(|result| result.bodies.unwrap_or_default())
+}
+
+fn extrude_and_name<T: oblikovati_api::client::Caller>(
+    client: &oblikovati_api::client::Client<T>,
+    request: &oblikovati_api::wire::featureargs::Extrude,
+    name: &str,
+    before: &[oblikovati_api::wire::BodyInfo],
+) -> Result<(), oblikovati_api::Error> {
+    client.features().add_feature(request)?;
+    let after = current_solid_bodies(client)?;
+    let mut added = after
+        .iter()
+        .filter(|body| before.iter().all(|original| original.key != body.key));
+    let (Some(body), None) = (added.next(), added.next()) else {
+        return Err(oblikovati_api::Error(format!(
+            "extrude Body Name {name:?}: expected one new solid"
+        )));
+    };
+    client
+        .body()
+        .rename(&oblikovati_api::wire::BodyRenameArgs {
+            body_index: body.index,
+            name: name.into(),
+        })?;
+    Ok(())
 }

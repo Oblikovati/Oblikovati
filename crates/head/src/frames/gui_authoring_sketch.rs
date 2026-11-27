@@ -127,7 +127,9 @@ pub(super) fn apply(owner: &mut dyn HeadWork, action: &GuiShellAction) -> Result
         GuiShellAction::PreviewExtrude(request) => {
             owner.extrusion_preview_from_gui(request.as_ref())
         }
-        GuiShellAction::CommitExtrudeDraft(draft) => owner.commit_extrusion_draft(draft),
+        GuiShellAction::CommitExtrudeDraft(draft, body_name) => {
+            owner.commit_extrusion_draft(draft, body_name.as_deref())
+        }
         GuiShellAction::ValidateExtrudeDistance {
             document,
             distance,

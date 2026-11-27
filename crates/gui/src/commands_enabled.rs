@@ -389,9 +389,8 @@ impl GuiShellAction {
                 distance,
                 ..
             } => extrude_enabled::numeric(state, *document, *sketch, *profile, distance),
-            Self::CommitExtrudeDraft(request) => {
-                extrude_enabled::preview(state, request)
-                    && state.extrude_draft_preview.as_ref() == Some(request)
+            Self::CommitExtrudeDraft(draft, name) => {
+                extrude_enabled::commit_draft(state, draft, name.as_deref())
             }
             Self::PreviewExtrude(None) => true,
             Self::OpenExtrudeEdit(feature) => {

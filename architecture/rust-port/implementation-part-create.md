@@ -66,6 +66,13 @@ solid and Undo restores the original solid and visible circle. See the
 [native Join receipt](receipts/2026-11-27-extrude-join-3870/README.md)
 for scenario 13 on Wayland and X11.
 
+New Solid accepts a custom Body Name in the Extrude Output section. The
+desktop identifies the new body by its exact key and renames it in the
+same document transaction as the extrusion. Undo and Redo move the
+feature and name together. See the
+[native Body Name receipt](receipts/2026-11-27-extrude-body-name-3870/README.md)
+for scenario 14 on Wayland and X11.
+
 ## Sweep, Loft, and Revolve
 
 The [release probes](../../crates/martensite/tests/release_probe/create.rs)
