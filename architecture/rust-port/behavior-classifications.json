@@ -3871,8 +3871,19 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
       "state": "inventoried",
-      "baseline_source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
-      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
+      "baseline_source_sha256": "ccb973b10334aa2f8f31a189392ad8049212caaa2938db03b034bc9f49008821",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json",
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a app/measure_tool_test.go.",
+      "go_test_premise": "TestMeasureToolPick verifies that selecting a solid face in Measure reports its analytic area.",
+      "api_revision": "c8200b2da97c9a7dde43afb25debc977ff23b2fd",
+      "kernel_revision": "d463526642b7bf950ba33c7ab4a4c9bc97caffaf",
+      "kernel_capabilities": "The exact named face supplies integrated surface area and the analytic radius of a cylinder.",
+      "platforms": "Linux COSMIC Wayland and X11 under Xvfb with Openbox.",
+      "kernel_integration": "Resolve each picked face on the accepted generation and display its analytic area plus the radius and diameter for cylindrical faces.",
+      "rust_tests": "crates/head/tests/solid-model/extrusion/boolean.rs.",
+      "oracle": "Redo the accepted Intersect, pick its cap and cylinder in Measure, and compare the rendered readouts. See receipts/2026-11-27-extrude-intersect-measure-3870/README.md.",
+      "expected_result": "Measure shows cap area 7.069 mm², side diameter 3.000 mm, and side radius 1.500 mm.",
+      "last_receipt": "architecture/rust-port/receipts/2026-11-27-extrude-intersect-measure-3870/README.md"
     },
     {
       "id": "scenario:6db87975918b15f8995ea494c1986c6c0bc993d3799ab0bf68048a4e504cbf09",

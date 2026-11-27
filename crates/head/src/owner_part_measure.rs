@@ -149,10 +149,15 @@ impl<
         let area = self
             .part_scenes
             .face_area_mm2(&self.files, document, feature, face)?;
-        Ok(vec![
-            "Selection 1: Face".into(),
-            format!("Area {area:.3} mm²"),
-        ])
+        let mut rows = vec!["Selection 1: Face".into(), format!("Area {area:.3} mm²")];
+        if let Some(radius) =
+            self.part_scenes
+                .face_cylinder_radius_mm(&self.files, document, feature, face)?
+        {
+            rows.push(format!("Diameter {:.3} mm", radius * 2.));
+            rows.push(format!("Radius {radius:.3} mm"));
+        }
+        Ok(rows)
     }
     fn part_measure_edge_rows(&self, document: u64) -> Result<Vec<String>, String> {
         let edges = self.chosen_model_edges(document);

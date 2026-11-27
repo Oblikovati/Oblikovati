@@ -409,3 +409,72 @@ fn assert_visible_replacement(world: &mut ApplicationWorld) {
         &diagnostics::window_occlusions()
     ));
 }
+
+#[given(
+    "a copy of `fixtures/cad/extrusion/extrusion-base-circle.opd` is open and the circle has been intersected with the base solid, then restored by Redo"
+)]
+fn published_intersection_for_measure(world: &mut ApplicationWorld) {
+    published_circle_part(world);
+    intersect_for_measure(world);
+}
+
+#[given("the accepted Intersect result after Redo")]
+fn pinned_intersection_for_measure(world: &mut ApplicationWorld) {
+    pinned_circle_part(world);
+    intersect_for_measure(world);
+}
+
+fn intersect_for_measure(world: &mut ApplicationWorld) {
+    choose_intersect(world);
+    accept_eight_millimeter_draft(world);
+    undo_redo_boolean(world);
+    retained_cylinder(world);
+}
+
+#[when("its top face and cylindrical face are selected in Measure")]
+fn measure_intersection_faces(world: &mut ApplicationWorld) {
+    world.click_text("Tools");
+    world.click_text("Measure");
+    let mut camera = oblikovati_viewport::ViewportCamera {
+        eye: [2., 1.5, 20.4],
+        target: [2., 1.5, 0.4],
+        scale: 1.1,
+        ..Default::default()
+    };
+    pick_face_in_measure(world, camera, [2., 1.5, 0.8]);
+    world.observed_rows = Some(world.window_text("Measure"));
+    camera.eye = [2., -18.5, 0.4];
+    camera.up = [0., 0., 1.];
+    pick_face_in_measure(world, camera, [2., 1.35, 0.4]);
+}
+
+fn pick_face_in_measure(
+    world: &mut ApplicationWorld,
+    camera: oblikovati_viewport::ViewportCamera,
+    point: [f64; 3],
+) {
+    crate::HeadWindow::set_view_camera(&mut world.app().window, camera).unwrap();
+    world.pump(Vec::new());
+    let pixel = world.app().window.native.view.model_pixel(point).unwrap();
+    super::viewport_interaction::click_at(world, pixel);
+    world.pump(Vec::new());
+    world.expect_text("Selection 1: Face");
+}
+
+#[then("the top face area is 7.069 square mm")]
+fn circular_cap_area(world: &mut ApplicationWorld) {
+    let text = world.observed_rows.as_deref().unwrap();
+    assert!(
+        text.contains("Area7.069mm²"),
+        "expected the measured cap area, found {text:?}"
+    );
+}
+
+#[then("the cylindrical face diameter is 3.000 mm and radius 1.500 mm")]
+fn cylindrical_face_dimensions(world: &mut ApplicationWorld) {
+    let text = world.window_text("Measure");
+    assert!(
+        text.contains("Diameter3.000mm") && text.contains("Radius1.500mm"),
+        "expected both cylindrical face dimensions, found {text:?}"
+    );
+}

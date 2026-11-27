@@ -86,6 +86,12 @@ intersection key uses prism recipe version 3 and Part program version
 [native Intersect receipt](receipts/2026-11-27-extrude-intersect-3870/README.md)
 for scenario 16, history, and package reopen.
 
+Measure reads the selected cylinder's radius from its analytic surface
+and reports the diameter and radius alongside its face area. The
+[native Measure receipt](receipts/2026-11-27-extrude-intersect-measure-3870/README.md)
+records the accepted Intersect's 7.069 mm² cap area, 3.000 mm diameter,
+and 1.500 mm radius in scenario 17.
+
 ## Sweep, Loft, and Revolve
 
 The [release probes](../../crates/martensite/tests/release_probe/create.rs)

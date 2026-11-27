@@ -98,10 +98,22 @@ fn open_measurable_part_without_browser(world: &mut ApplicationWorld) {
     world.expect_no_text("Origin");
 }
 fn select_visible_solid_face(world: &mut ApplicationWorld) {
-    let capture = super::super::super::capture_framebuffer(&mut world.app().window.native);
-    let windows = diagnostics::window_occlusions();
-    let at = super::super::super::solid_visibility::visible_fixture_point(&capture, &windows)
-        .expect("expected a visible face outside the UI");
+    // The shaded silhouette can place the first visible pixel inside an edge pick radius.
+    let camera = oblikovati_viewport::ViewportCamera {
+        eye: [2., 1.5, 22.],
+        target: [2., 1.5, 2.],
+        scale: 7.,
+        ..Default::default()
+    };
+    crate::HeadWindow::set_view_camera(&mut world.app().window, camera).unwrap();
+    world.pump(Vec::new());
+    let at = world
+        .app()
+        .window
+        .native
+        .view
+        .model_pixel([2., 1.5, 2.])
+        .unwrap();
     world.click(at);
     world.expect_text("Selection 1: Face");
 }

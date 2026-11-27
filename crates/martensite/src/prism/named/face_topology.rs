@@ -54,6 +54,19 @@ impl NamedPrismSnapshot {
         let face = unique_face(&self.snapshot, role)?;
         face_topology_from_shape(face)
     }
+    /// Read an analytic cylindrical face radius in model units. Example: `body.face_cylinder_radius(history, guid, key)?`.
+    pub fn face_cylinder_radius(
+        &self,
+        history: &DocumentEditHistory,
+        document: DocumentGuid,
+        key: &[u8],
+    ) -> Result<Option<f64>, String> {
+        let role = self
+            .bindings
+            .bind(history, document, key, 1)?
+            .ok_or_else(|| "face reference: expected a face construction role".to_string())?;
+        cylindrical_face_radius(unique_face(&self.snapshot, role)?)
+    }
 }
 pub(super) fn face_topology_from_shape(face: &Shape) -> Result<PrismFaceTopology, String> {
     let point = super::super::provenance::representative(face, "named face")
@@ -66,6 +79,16 @@ pub(super) fn face_topology_from_shape(face: &Shape) -> Result<PrismFaceTopology
         point,
         surface: surface_kind(surface)?,
     })
+}
+pub(super) fn cylindrical_face_radius(face: &Shape) -> Result<Option<f64>, String> {
+    let native = topods::face(face).map_err(|cause| cause.to_string())?;
+    let surface =
+        BRepAdaptorSurface::with_face(&native, false).map_err(|cause| cause.to_string())?;
+    if surface.get_type().map_err(|cause| cause.to_string())? != SurfaceType::Cylinder {
+        return Ok(None);
+    }
+    let cylinder = surface.cylinder().map_err(|cause| cause.to_string())?;
+    Ok(Some(cylinder.radius()))
 }
 pub(super) fn planar_shape_frame(
     body: &Shape,

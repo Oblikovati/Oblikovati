@@ -37,6 +37,17 @@ impl BlendNamedTopology {
         super::super::face_topology::face_topology_from_shape(face)
     }
 
+    /// Read an analytic cylindrical face radius in model units. Example: `body.face_cylinder_radius(history, guid, key)?`.
+    pub fn face_cylinder_radius(
+        &self,
+        history: &DocumentEditHistory,
+        document: DocumentGuid,
+        key: &[u8],
+    ) -> Result<Option<f64>, String> {
+        let face = self.bindings.bind(history, document, key, 1)?;
+        super::super::face_topology::cylindrical_face_radius(face)
+    }
+
     /// Count exact loops on a named face; example: `body.face_loop_count(&history, document, key)?`.
     pub fn face_loop_count(
         &self,

@@ -144,6 +144,19 @@ impl NamedSolid {
         }
     }
 
+    /// Read an analytic cylindrical face radius in model units. Example: `body.face_cylinder_radius(history, guid, key)?`.
+    pub fn face_cylinder_radius(
+        &self,
+        history: &DocumentEditHistory,
+        document: DocumentGuid,
+        key: &[u8],
+    ) -> Result<Option<f64>, String> {
+        match self {
+            Self::Prism(body) => body.face_cylinder_radius(history, document, key),
+            Self::Derived(body) => body.face_cylinder_radius(history, document, key),
+        }
+    }
+
     /// Count a named face's loops; example: `body.face_loop_count(&history, document, key)?`.
     pub fn face_loop_count(
         &self,
