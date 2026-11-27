@@ -119,6 +119,11 @@ Extrude accepts length expressions that reference part parameters. The
 checks that `Depth * 2` previews at 8 mm and rebuilds the same solid to
 10 mm after `Depth` changes to 5 mm in the Parameters panel.
 
+The [shared profile scenario](receipts/2026-11-27-extrude-reused-profile-3870/README.md)
+exercises selecting the visible sketch under Extrusion1 in the Model Browser.
+After the second extrusion, the browser shows two solids and one shared
+sketch. Both feature definitions reference that sketch.
+
 ## Sweep, Loft, and Revolve
 
 The [release probes](../../crates/martensite/tests/release_probe/create.rs)

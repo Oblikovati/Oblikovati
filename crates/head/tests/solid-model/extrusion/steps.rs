@@ -7,6 +7,8 @@ pub(super) mod acceptance;
 #[cfg(target_os = "linux")]
 mod boolean;
 #[cfg(target_os = "linux")]
+mod consumed_profile;
+#[cfg(target_os = "linux")]
 mod direction;
 #[cfg(target_os = "linux")]
 mod direction_selector;

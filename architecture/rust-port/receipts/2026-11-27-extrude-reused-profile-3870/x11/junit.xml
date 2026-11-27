@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Extrude a profile in a part document: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature" package="testsuite/Feature: Extrude a profile in a part document: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-27T03:38:28.100765747Z" time="7.758846519"><testcase name="Scenario: Reuse a visible consumed sketch profile: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature:291:3" time="7.758846519"><system-out><![CDATA[  Scenario: Reuse a visible consumed sketch profile
+   ✔> Given the MCAD Software is displaying a part in the solid modeling workspace
+   ✔> And the viewport pointer is idle
+   ✔  Given a fresh copy of `fixtures/cad/extrusion/extrusion-rect-20mm.opd` is open with the source sketch for Extrusion1 made visible
+   ✔  When the user starts Extrude and selects its closed region
+   ✔  And the user confirms a valid second extrusion from the region
+   ✔  Then the source sketch is shared by both features
+]]></system-out></testcase></testsuite></testsuites>
