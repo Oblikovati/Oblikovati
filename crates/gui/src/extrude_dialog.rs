@@ -18,9 +18,10 @@ mod panel;
 mod pending;
 #[path = "extrude_reference.rs"]
 mod reference;
+#[path = "extrude_selector.rs"]
+mod selector;
 #[path = "extrude_taper.rs"]
 mod taper;
-
 const DEFAULT_DISTANCE: &str = "10.00 mm";
 
 #[derive(Default)]
@@ -36,7 +37,8 @@ pub(crate) struct ExtrudeDialog {
     second_distance: String,
     taper: Option<taper::TaperDraft>,
     direction: GuiExtrudeDirection,
-    direction_style: direction::SelectorStyle,
+    direction_style: selector::SelectorStyle,
+    operation_style: selector::SelectorStyle,
     reference: reference::ReferenceDraft,
     operation: Option<oblikovati_model::feature::sketch_prism::PrismBoolean>,
     body_name: String,
@@ -258,7 +260,7 @@ impl ExtrudeDialog {
                 edited |= taper.draw(ui);
             }
         }
-        edited |= self.draw_output(ui, state);
+        edited |= self.draw_output(ui, state, controls.icons);
         if edited {
             self.commit_error = None;
             if self.previewed {

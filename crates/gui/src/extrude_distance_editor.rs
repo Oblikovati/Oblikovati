@@ -320,7 +320,7 @@ impl super::ExtrudeDialog {
                 parameters,
                 actions,
             );
-            edited |= self.direction_style.draw(
+            edited |= self.direction_style.draw_direction(
                 ui,
                 &mut self.direction,
                 self.edit_feature.is_some(),
@@ -353,7 +353,7 @@ impl super::ExtrudeDialog {
             }
         }
         if self.reference.through_all() {
-            edited |= self.direction_style.draw(
+            edited |= self.direction_style.draw_direction(
                 ui,
                 &mut self.direction,
                 self.edit_feature.is_some(),

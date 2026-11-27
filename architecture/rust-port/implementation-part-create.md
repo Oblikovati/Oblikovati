@@ -124,6 +124,11 @@ exercises selecting the visible sketch under Extrusion1 in the Model Browser.
 After the second extrusion, the browser shows two solids and one shared
 sketch. Both feature definitions reference that sketch.
 
+For a single solid, Extrude's Operation selector offers icons and a
+named dropdown. The [native selector scenario](receipts/2026-11-27-extrude-boolean-selector-3870/README.md)
+checks Join, Cut, Intersect, and New Solid and verifies that changing the
+presentation preserves the selected Join operation and its preview.
+
 Extrude refreshes the preview as soon as the final reference face is
 selected. A [native From/To control](receipts/2026-11-27-extrude-between-faces-3870/README.md)
 verifies caps on opposite faces of a block and an independent midplane

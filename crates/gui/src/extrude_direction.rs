@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
+use super::selector::SelectorStyle;
 use crate::GuiExtrudeDirection;
-use crate::icons::{GuiRibbonIcons, IconGlyph, IconSize};
-use crate::widget_abi::{self, IconButtonPresentation};
-use imgui::{StyleColor, Ui};
+use crate::icons::{GuiRibbonIcons, IconGlyph};
+use imgui::Ui;
 
 const DIRECTIONS: [(GuiExtrudeDirection, &str, IconGlyph); 4] = [
     (
@@ -27,15 +27,8 @@ const DIRECTIONS: [(GuiExtrudeDirection, &str, IconGlyph); 4] = [
     ),
 ];
 
-#[derive(Clone, Copy, Default, PartialEq, Eq)]
-pub(super) enum SelectorStyle {
-    #[default]
-    Icons,
-    Dropdown,
-}
-
 impl SelectorStyle {
-    pub(super) fn draw(
+    pub(super) fn draw_direction(
         &mut self,
         ui: &Ui,
         direction: &mut GuiExtrudeDirection,
@@ -43,97 +36,27 @@ impl SelectorStyle {
         icons: &GuiRibbonIcons,
         asymmetric: bool,
     ) -> bool {
-        self.draw_style_menu(ui);
+        self.draw_style_menu(ui, "Direction", "extrude-direction-style");
         let _disabled = ui.begin_disabled(read_only);
-        let previous = *direction;
         let choices = if asymmetric {
             &DIRECTIONS[..]
         } else {
             &DIRECTIONS[..3]
         };
-        let selected = match self {
-            Self::Icons => draw_icons(ui, previous, icons, choices),
-            Self::Dropdown => draw_dropdown(ui, previous, choices),
-        };
-        *direction = selected.unwrap_or(previous);
-        *direction != previous
-    }
-
-    fn draw_style_menu(&mut self, ui: &Ui) {
-        const POPUP: &str = "extrude-direction-style";
-        if ui.button("Direction") {
-            ui.open_popup(POPUP);
-        }
-        let Some(_popup) = ui.begin_popup(POPUP) else {
-            return;
-        };
-        ui.text("Selector Style");
-        for (style, label) in [(Self::Icons, "Icons"), (Self::Dropdown, "Dropdown")] {
-            if ui.menu_item_config(label).selected(*self == style).build() {
-                *self = style;
-            }
-        }
-    }
-}
-
-fn draw_icons(
-    ui: &Ui,
-    direction: GuiExtrudeDirection,
-    icons: &GuiRibbonIcons,
-    choices: &[(GuiExtrudeDirection, &str, IconGlyph)],
-) -> Option<GuiExtrudeDirection> {
-    let mut selected = None;
-    let width = ui.content_region_avail()[0];
-    let spacing = 4.;
-    let cell = ((width - spacing * (choices.len() - 1) as f32) / DIRECTIONS.len() as f32).max(1.);
-    let show_caption = choices
-        .iter()
-        .all(|(_, label, _)| ui.calc_text_size(label)[0] + 2. <= cell);
-    for (index, (choice, label, glyph)) in choices.iter().copied().enumerate() {
-        if index > 0 {
-            ui.same_line_with_spacing(0., spacing);
-        }
-        let icon = icons.logical[IconSize::Small.index()].map(|axis| axis.min(cell));
-        if draw_direction_icon(
+        let Some(selected) = self.choose(
             ui,
-            label,
-            choice == direction,
-            IconButtonPresentation {
-                texture: icons.key(glyph, IconSize::Small),
-                size: [cell, icon[1] + ui.text_line_height() + 6.],
-                icon,
-                large: true,
-                show_caption,
-            },
-        ) {
-            selected = Some(choice);
-        }
-        if !show_caption && ui.is_item_hovered() {
-            ui.tooltip_text(label);
-        }
+            icons,
+            "##extrude-direction",
+            *direction,
+            choices,
+            |_| true,
+        ) else {
+            return false;
+        };
+        let changed = selected != *direction;
+        *direction = selected;
+        changed
     }
-    selected
-}
-
-fn draw_direction_icon(ui: &Ui, label: &str, selected: bool, icon: IconButtonPresentation) -> bool {
-    let active = ui.style_color(StyleColor::ButtonActive);
-    let _highlight = selected.then(|| ui.push_style_color(StyleColor::Button, active));
-    widget_abi::icon_button(ui, label, icon)
-}
-
-fn draw_dropdown(
-    ui: &Ui,
-    direction: GuiExtrudeDirection,
-    choices: &[(GuiExtrudeDirection, &str, IconGlyph)],
-) -> Option<GuiExtrudeDirection> {
-    let (_, label, _) = choices.iter().find(|(choice, _, _)| *choice == direction)?;
-    let _combo = ui.begin_combo("##extrude-direction", label)?;
-    choices.iter().find_map(|&(choice, label, _)| {
-        ui.selectable_config(label)
-            .selected(choice == direction)
-            .build()
-            .then_some(choice)
-    })
 }
 
 pub(super) fn draw_second_distance(ui: &Ui, first: &mut String, second: &mut String) -> bool {

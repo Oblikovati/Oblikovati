@@ -1,8 +1,20 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::{ExtrudeDialog, GuiCommandState, GuiShellAction};
 use crate::GuiExtrudeDirection;
+use crate::icons::{GuiRibbonIcons, IconGlyph};
 use imgui::Ui;
 use oblikovati_model::feature::sketch_prism::PrismBoolean;
+
+const OPERATIONS: [(Option<PrismBoolean>, &str, IconGlyph); 4] = [
+    (Some(PrismBoolean::Join), "Join", IconGlyph::ExtrudeJoin),
+    (Some(PrismBoolean::Cut), "Cut", IconGlyph::ExtrudeCut),
+    (
+        Some(PrismBoolean::Intersect),
+        "Intersect",
+        IconGlyph::ExtrudeIntersect,
+    ),
+    (None, "New Solid", IconGlyph::ExtrudeNewSolid),
+];
 
 pub(crate) fn single_body(state: &GuiCommandState) -> bool {
     state
@@ -42,7 +54,12 @@ impl ExtrudeDialog {
         true
     }
 
-    pub(super) fn draw_output(&mut self, ui: &Ui, state: &GuiCommandState) -> bool {
+    pub(super) fn draw_output(
+        &mut self,
+        ui: &Ui,
+        state: &GuiCommandState,
+        icons: &GuiRibbonIcons,
+    ) -> bool {
         if let Some(feature) = self.edit_feature {
             self.draw_edit_output(ui, state, feature);
             return false;
@@ -64,34 +81,7 @@ impl ExtrudeDialog {
         if !ui.collapsing_header("Output", imgui::TreeNodeFlags::DEFAULT_OPEN) {
             return self.operation != previous;
         }
-        crate::theme::property_label(ui, "Operation");
-        let label = self
-            .operation
-            .map_or("New Solid".into(), |operation| operation.to_string());
-        if let Some(_choices) = ui.begin_combo("##extrude-operation", label) {
-            if ui
-                .selectable_config("New Solid")
-                .selected(self.operation.is_none())
-                .disabled(through_all)
-                .build()
-            {
-                self.operation = None;
-            }
-            for operation in [
-                PrismBoolean::Join,
-                PrismBoolean::Cut,
-                PrismBoolean::Intersect,
-            ] {
-                if ui
-                    .selectable_config(operation.to_string())
-                    .disabled(!boolean_available || (through_all && operation != PrismBoolean::Cut))
-                    .selected(self.operation == Some(operation))
-                    .build()
-                {
-                    self.choose_boolean_operation(operation);
-                }
-            }
-        }
+        self.draw_operation(ui, icons, boolean_available, through_all);
         if self.operation.is_none() {
             crate::theme::property_label(ui, "Body Name");
             ui.input_text("##extrude-body-name", &mut self.body_name)
@@ -99,6 +89,39 @@ impl ExtrudeDialog {
                 .build();
         }
         self.operation != previous
+    }
+
+    fn draw_operation(
+        &mut self,
+        ui: &Ui,
+        icons: &GuiRibbonIcons,
+        available: bool,
+        through_all: bool,
+    ) {
+        let style = if available && !through_all {
+            self.operation_style
+                .draw_style_menu(ui, "Operation", "extrude-operation-style");
+            self.operation_style
+        } else {
+            crate::theme::property_label(ui, "Operation");
+            super::selector::SelectorStyle::Dropdown
+        };
+        let enabled = |operation| match operation {
+            Some(operation) => available && (!through_all || operation == PrismBoolean::Cut),
+            None => !through_all,
+        };
+        match style.choose(
+            ui,
+            icons,
+            "##extrude-operation",
+            self.operation,
+            &OPERATIONS,
+            enabled,
+        ) {
+            Some(Some(operation)) => self.choose_boolean_operation(operation),
+            Some(None) => self.operation = None,
+            None => {}
+        }
     }
 
     fn draw_edit_output(
