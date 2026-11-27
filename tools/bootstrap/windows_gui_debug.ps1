@@ -8,10 +8,13 @@ $ErrorActionPreference = 'Stop'
 $test = 'application::document_creation::tests::opening_the_chooser_does_not_create_a_document_and_escape_cancels'
 $binary = 'oblikovati_gui'
 $exception = 'c0000409'
+$exceptionMode = 'sxe'
 if ($Architecture -eq 'x64') {
     $test = 'native::gui_composition_tests::native_owned_imgui_packet_composes_with_the_document_after_context_destruction'
     $binary = 'oblikovati_head'
     $exception = 'c000001d'
+    # Let the application handle first-chance exceptions before recording an unhandled fault.
+    $exceptionMode = 'sxd'
 }
 $testPattern = '^test ' + [regex]::Escape($test) + ' \.\.\.(?!\s*(?:ok|FAILED|ignored)\b)'
 $abortPattern = '(?<executable>[A-Z]:[^\x60]+[\\/]' + $binary + '-[a-f0-9]+\.exe)[^\x60]*\x60 \(exit code: 0x' + $exception
@@ -50,7 +53,7 @@ $breakpoints = @()
 if ($Architecture -eq 'arm64') { $breakpoints += 'bu ucrtbase!abort "kv 40; q"' }
 ($breakpoints + @(
     # Record the failing thread even when the exception arrives only at second chance.
-    "sxe -c2 `"kv 40; q`" $exception"
+    "$exceptionMode -c2 `"kv 40; q`" $exception"
     'g'
 )) | Set-Content -LiteralPath $commands -Encoding ascii
 $symbols = Split-Path -Parent $executable
