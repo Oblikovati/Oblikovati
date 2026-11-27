@@ -7,6 +7,7 @@ unsafe extern "C" {
     fn oblikovati_gui_push_style_color(index: i32, r: f32, g: f32, b: f32, a: f32);
     fn oblikovati_gui_filled_circle(x: f32, y: f32, radius: f32, color: u32);
     fn oblikovati_gui_line(x1: f32, y1: f32, x2: f32, y2: f32, color: u32);
+    fn oblikovati_gui_image(texture: usize, width: f32, height: f32);
 }
 
 pub(crate) struct StyleVector<'ui> {
@@ -67,4 +68,10 @@ pub(crate) fn filled_circle(_: &Ui, [x, y]: [f32; 2], radius: f32, color: [f32; 
 pub(crate) fn line(_: &Ui, [x1, y1]: [f32; 2], [x2, y2]: [f32; 2], color: [f32; 4]) {
     // SAFETY: the borrowed UI owns the active window draw list for this call.
     unsafe { oblikovati_gui_line(x1, y1, x2, y2, ImColor32::from(color).to_bits()) };
+}
+
+/// Draw a texture with default UVs, tint and border without passing ImGui vectors across the ABI.
+pub(crate) fn image(_: &Ui, texture: usize, size: [f32; 2]) {
+    // The UI frame owns the draw list and retains the texture ID in its draw commands.
+    unsafe { oblikovati_gui_image(texture, size[0], size[1]) };
 }
