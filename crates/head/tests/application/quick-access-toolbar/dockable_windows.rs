@@ -114,7 +114,7 @@ fn dockable_material_browser_closes_and_reopens_from_the_title_bar() {
 
 #[test]
 fn dockable_tool_windows_can_be_docked_together() {
-    let mut world = ApplicationWorld::new();
+    let mut world = ApplicationWorld::with_asset_tools_closed();
     part_active(&mut world);
     world.click_text("Tools");
     world.click_text("Application Options");
@@ -187,11 +187,15 @@ fn has_motor_title(world: &mut ApplicationWorld) -> bool {
         .iter()
         .any(|p| p.name == "Title" && p.value.value == VariantValue::String("Motor".into()))
 }
-fn create_motor_title(world: &mut ApplicationWorld) {
+fn add_iproperties_shortcut(world: &mut ApplicationWorld) {
     open_customization(world);
-    world.click_text("iProperties");
-    world.pump(Vec::new());
+    let choice = menu_choices::menu_choice(world, "iProperties");
+    world.click(super::super::diagnostics::pointer_pixels(choice.center()));
     assert!(on_row(world, "iProperties"));
+}
+
+fn create_motor_title(world: &mut ApplicationWorld) {
+    add_iproperties_shortcut(world);
     world.click(row_center(world, "iProperties"));
     assert!(window_geometry("iProperties").is_some());
     enter_parameter_field(world, "Name", "Title");
@@ -222,8 +226,7 @@ fn iproperties_closes_when_the_active_document_changes() {
     let part = world.parts[0];
     world.click_tab(part);
     world.pump(Vec::new());
-    open_customization(&mut world);
-    world.click_text("iProperties");
+    add_iproperties_shortcut(&mut world);
     world.click(row_center(&world, "iProperties"));
     assert!(window_geometry("iProperties").is_some());
     world.click_tab(world.other_document.unwrap());
@@ -275,8 +278,7 @@ fn iproperties_typed_values_undo_redo_and_reopen() {
     use oblikovati_api::{json::Bytes, types::VariantValue};
     let mut world = ApplicationWorld::new();
     part_active(&mut world);
-    open_customization(&mut world);
-    world.click_text("iProperties");
+    add_iproperties_shortcut(&mut world);
     for (name, kind, text, value) in [
         ("Count", "Integer", "-12", VariantValue::Integer(-12)),
         ("Factor", "Number", "1.25", VariantValue::Double(1.25)),
@@ -340,8 +342,7 @@ fn iproperties_typed_values_undo_redo_and_reopen() {
 fn iproperties_refuses_invalid_numeric_input_without_an_edit() {
     let mut world = ApplicationWorld::new();
     part_active(&mut world);
-    open_customization(&mut world);
-    world.click_text("iProperties");
+    add_iproperties_shortcut(&mut world);
     world.click(row_center(&world, "iProperties"));
     enter_parameter_field(&mut world, "Name", "Invalid");
     world.click_text("Text");
