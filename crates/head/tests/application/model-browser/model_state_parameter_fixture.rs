@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//! Author the untapered extrusion required by the published parameter-table cases.
+//! Prepare real extrusions for the model-state parameter scenarios.
 use super::model_state_fixture::has_named_states;
 use super::model_state_new_feature::prepare_rectangle_extrusion;
 use super::model_state_table::open_property_table;
@@ -10,7 +10,7 @@ use super::model_state_table_parameter_steps::{
 };
 use super::*;
 use cucumber::given;
-use oblikovati_api::client::Client;
+use oblikovati_api::{client::Client, wire::CreateModelStateArgs};
 
 #[given(
     "the user creates an undimensioned rectangular sketch and extrudes it 1 in with zero taper"
@@ -75,4 +75,80 @@ pub(super) fn expect_native_extrusion_centroid(world: &mut ApplicationWorld, exp
         (mass.centroid_z_mm - expected_mm).abs() < 1e-6,
         "expected the extrusion centroid at {expected_mm} mm, got {mass:?}"
     );
+}
+
+pub(super) fn three_state_prism(world: &mut ApplicationWorld) {
+    prepare_prism(world, None);
+}
+
+pub(super) fn tapered_three_state_prism(world: &mut ApplicationWorld) {
+    prepare_prism(world, Some(4));
+}
+
+fn prepare_prism(world: &mut ApplicationWorld, taper_parameter: Option<u64>) {
+    use oblikovati_model::feature::{AuthoredFeature, FeatureId, work_geometry::DatumAngle};
+    use oblikovati_persistence::package::DocumentPackage;
+    let mut snapshot = crate::scene_fixture::selected_sketch_document();
+    snapshot
+        .parameters
+        .insert_expression(3, "d0", oblikovati_api::types::MODEL_PARAM, "1 in")
+        .unwrap();
+    if let Some(taper) = taper_parameter {
+        snapshot
+            .parameters
+            .insert_expression(taper, "d1", oblikovati_api::types::MODEL_PARAM, "0 deg")
+            .unwrap();
+    }
+    let definition = crate::scene_fixture::selected_prism_definition()
+        .with_taper(taper_parameter.map(DatumAngle::parameter))
+        .unwrap();
+    let mut feature =
+        AuthoredFeature::sketch_prism(FeatureId(1), "Extrusion", definition, &snapshot)
+            .unwrap()
+            .with_owned_scalar("distance", 3)
+            .unwrap();
+    if let Some(taper) = taper_parameter {
+        feature = feature.with_owned_scalar("taper", taper).unwrap();
+    }
+    snapshot.work_geometry.append(feature).unwrap();
+    let package = DocumentPackage::decode(b"schemaVersion: 2\ndocumentType: 1\n")
+        .unwrap()
+        .with_parameters(&snapshot.parameters, Default::default())
+        .unwrap()
+        .with_sketches(&snapshot.sketches, 1, 104)
+        .unwrap()
+        .with_work_geometry(&snapshot.work_geometry, 1)
+        .unwrap();
+    let path = world.scratch_folder().join("state-parameter.opd");
+    std::fs::write(&path, package.encode().unwrap()).unwrap();
+    let client = Client::new(world.app().owner.document_host());
+    client
+        .documents()
+        .open(&oblikovati_api::wire::OpenDocumentArgs {
+            full_document_name: path.to_str().unwrap().into(),
+            visible: true,
+            ..Default::default()
+        })
+        .unwrap();
+    client
+        .model_states()
+        .create(&CreateModelStateArgs {
+            name: "Capture State".into(),
+            ..Default::default()
+        })
+        .unwrap();
+    let copy = client
+        .model_states()
+        .create(&CreateModelStateArgs {
+            name: "Copy State".into(),
+            ..Default::default()
+        })
+        .unwrap()
+        .model_state
+        .id;
+    client
+        .model_states()
+        .activate(&oblikovati_api::wire::RepRef { id: copy })
+        .unwrap();
+    world.pump(Vec::new());
 }

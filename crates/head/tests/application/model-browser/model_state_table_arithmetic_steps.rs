@@ -3,11 +3,14 @@
 use super::model_state_table_extra::{click, open};
 use super::model_state_table_parameter_steps::{
     accept_parameter_table, grid_cell_text, persist_parameter_column, reopen_parameter_table,
-    set_parameter_cell, three_state_prism, tree_expression,
+    set_parameter_cell, tapered_three_state_prism, three_state_prism, tree_expression,
 };
 use super::*;
 use crate::HeadWork;
 use oblikovati_api::{client::Client, wire::SetDocumentUnitsArgs};
+
+#[path = "model_state_taper_parameter.rs"]
+mod taper;
 
 #[given("The MCAD Software has a model-state table containing length parameter d0")]
 fn table_with_inch_parameter(world: &mut ApplicationWorld) {
@@ -15,7 +18,7 @@ fn table_with_inch_parameter(world: &mut ApplicationWorld) {
         super::model_state_parameter_fixture::expect_prepared_distance_table(world);
         return;
     }
-    three_state_prism(world);
+    tapered_three_state_prism(world);
     let client = Client::new(world.app().owner.document_host());
     client
         .documents()
@@ -39,6 +42,7 @@ fn set_expression(world: &mut ApplicationWorld) {
     set_parameter_cell(world, "Copy State", "1 in + 0.5 in");
 }
 #[when("accepts and reopens the model-state table")]
+#[when("accepts and reopens the table")]
 fn accept_and_reopen(world: &mut ApplicationWorld) {
     accept_parameter_table(world);
     reopen_parameter_table(world);

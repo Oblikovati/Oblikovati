@@ -1,69 +1,13 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Native steps for model-state parameter columns (#4119).
+pub(super) use super::model_state_parameter_fixture::{
+    tapered_three_state_prism, three_state_prism,
+};
 use super::model_state_suppression::activate_state_row;
 use super::model_state_table_extra::{click, grid_run, open, row_run};
 use super::*;
-use oblikovati_api::{client::Client, wire::CreateModelStateArgs};
+use oblikovati_api::client::Client;
 
-pub(super) fn three_state_prism(world: &mut ApplicationWorld) {
-    use oblikovati_model::feature::{AuthoredFeature, FeatureId};
-    use oblikovati_persistence::package::DocumentPackage;
-    let mut snapshot = crate::scene_fixture::selected_sketch_document();
-    snapshot
-        .parameters
-        .insert_expression(3, "d0", oblikovati_api::types::MODEL_PARAM, "1 in")
-        .unwrap();
-    let feature = AuthoredFeature::sketch_prism(
-        FeatureId(1),
-        "Extrusion",
-        crate::scene_fixture::selected_prism_definition(),
-        &snapshot,
-    )
-    .unwrap()
-    .with_owned_scalar("distance", 3)
-    .unwrap();
-    snapshot.work_geometry.append(feature).unwrap();
-    let package = DocumentPackage::decode(b"schemaVersion: 2\ndocumentType: 1\n")
-        .unwrap()
-        .with_parameters(&snapshot.parameters, Default::default())
-        .unwrap()
-        .with_sketches(&snapshot.sketches, 1, 104)
-        .unwrap()
-        .with_work_geometry(&snapshot.work_geometry, 1)
-        .unwrap();
-    let path = world.scratch_folder().join("state-parameter.opd");
-    std::fs::write(&path, package.encode().unwrap()).unwrap();
-    let client = Client::new(world.app().owner.document_host());
-    client
-        .documents()
-        .open(&oblikovati_api::wire::OpenDocumentArgs {
-            full_document_name: path.to_str().unwrap().into(),
-            visible: true,
-            ..Default::default()
-        })
-        .unwrap();
-    client
-        .model_states()
-        .create(&CreateModelStateArgs {
-            name: "Capture State".into(),
-            ..Default::default()
-        })
-        .unwrap();
-    let copy = client
-        .model_states()
-        .create(&CreateModelStateArgs {
-            name: "Copy State".into(),
-            ..Default::default()
-        })
-        .unwrap()
-        .model_state
-        .id;
-    client
-        .model_states()
-        .activate(&oblikovati_api::wire::RepRef { id: copy })
-        .unwrap();
-    world.pump(Vec::new());
-}
 pub(super) fn grid_cell_text(world: &ApplicationWorld, column: &str, row: &str) -> String {
     let x = grid_run(world, column)[0];
     let y = row_run(world, row)[1];
@@ -84,7 +28,16 @@ pub(super) fn grid_cell_text(world: &ApplicationWorld, column: &str, row: &str) 
         .unwrap_or_default()
 }
 pub(super) fn set_parameter_cell(world: &mut ApplicationWorld, row: &str, value: &str) {
-    let point = [grid_run(world, "d0")[0], row_run(world, row)[1]];
+    set_parameter_cell_value(world, "d0", row, value);
+}
+
+pub(super) fn set_parameter_cell_value(
+    world: &mut ApplicationWorld,
+    column: &str,
+    row: &str,
+    value: &str,
+) {
+    let point = [grid_run(world, column)[0], row_run(world, row)[1]];
     world.desktop_click(diagnostics::pointer_pixels(point));
     world.pump(Vec::new());
     if world.app().window.native.view.uses_wayland() {
@@ -171,15 +124,19 @@ fn transfer_parameter(world: &mut ApplicationWorld) {
 #[then("the chosen parameters include d0")]
 #[then("d0 is listed among the chosen parameters")]
 fn chosen_parameter(world: &mut ApplicationWorld) {
+    assert_chosen_parameter(world, "d0");
+}
+
+pub(super) fn assert_chosen_parameter(world: &ApplicationWorld, parameter: &str) {
     world.expect_text("Chosen parameters");
     let heading = world.run("Chosen parameters");
     assert!(
         world.frame.runs.iter().any(|run| {
-            run.text.trim() == "d0"
+            run.text.trim() == parameter
                 && run.center()[1] > heading.center()[1]
                 && (run.minimum[0] - heading.minimum[0]).abs() < 15.
         }),
-        "expected d0 in chosen parameters; visible runs: {:?}",
+        "expected {parameter} in chosen parameters; visible runs: {:?}",
         world.frame.runs
     );
 }
@@ -274,8 +231,12 @@ fn tree_displays_one_inch(world: &mut ApplicationWorld) {
     super::model_state_parameter_fixture::expect_native_extrusion_centroid(world, 12.7);
 }
 pub(super) fn tree_expression(world: &ApplicationWorld, expression: &str) {
+    assert_tree_expression(world, "d0", expression);
+}
+
+pub(super) fn assert_tree_expression(world: &ApplicationWorld, name: &str, expression: &str) {
     let expected = format!(
-        "d0={}",
+        "{name}={}",
         expression
             .chars()
             .filter(|character| !character.is_whitespace())
