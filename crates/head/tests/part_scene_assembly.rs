@@ -24,7 +24,7 @@ fn workspace() -> (TestFiles, u64, u64, OwnerThreadGuids) {
         .unwrap()
         .with_work_geometry(&fixture.work_geometry, 1)
         .unwrap();
-    let path = std::path::Path::new("/fixture/part.opd");
+    let path = std::path::Path::new(document_fixture_path!("/fixture/part.opd"));
     files
         .files()
         .saved

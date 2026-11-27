@@ -16,7 +16,12 @@ fn gui_file_operations_save_close_and_reopen_the_same_sketch_recipe() {
         .unwrap();
     assert!(
         owner
-            .complete_save_path(document, Some(std::path::Path::new("/memory/part.opd")))
+            .complete_save_path(
+                document,
+                Some(std::path::Path::new(document_fixture_path!(
+                    "/memory/part.opd"
+                )))
+            )
             .unwrap()
     );
     assert!(matches!(
@@ -37,7 +42,7 @@ fn gui_file_operations_save_close_and_reopen_the_same_sketch_recipe() {
     assert!(
         owner
             .open_document_from_gui(&OpenDocumentArgs {
-                full_document_name: "/memory/part.opd".into(),
+                full_document_name: document_fixture_path!("/memory/part.opd").into(),
                 visible: true,
                 defer_content: false,
                 express: false,
@@ -49,7 +54,11 @@ fn gui_file_operations_save_close_and_reopen_the_same_sketch_recipe() {
         opened,
         DesktopCommandNotice::DocumentOpened { .. }
     ));
-    assert!(opened.message().contains("/memory/part.opd"));
+    assert!(
+        opened
+            .message()
+            .contains(document_fixture_path!("/memory/part.opd"))
+    );
     assert_ne!(
         owner.documents().workspace().active_document(),
         Some(document)
@@ -80,17 +89,17 @@ fn gui_close_refuses_a_dirty_document_without_discarding_it() {
 fn failed_gui_open_preserves_the_active_document_and_its_history() {
     let (mut owner, awake) = owner();
     create(&mut owner, &awake);
-    verify_failed_open(&mut owner, "/memory/missing.opd");
+    verify_failed_open(&mut owner, document_fixture_path!("/memory/missing.opd"));
 }
 #[test]
 fn unsupported_package_version_keeps_the_previous_document_live() {
     let (mut owner, awake) = owner();
     create(&mut owner, &awake);
     owner.documents().files().saved.borrow_mut().insert(
-        "/memory/future.opd".into(),
+        document_fixture_path!("/memory/future.opd").into(),
         b"schemaVersion: 999\ndocumentType: 1\n".to_vec(),
     );
-    verify_failed_open(&mut owner, "/memory/future.opd");
+    verify_failed_open(&mut owner, document_fixture_path!("/memory/future.opd"));
 }
 fn verify_failed_open(owner: &mut TestOwner, path: &str) {
     let document = owner.documents().workspace().active_document();

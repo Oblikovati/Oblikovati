@@ -132,7 +132,7 @@ fn stamp(client: &Client<impl Caller>, name: &str, format: &str) -> SheetInfo {
 }
 
 fn reopen(client: &Client<impl Caller>, drawing: u64) -> u64 {
-    let path = "/memory/reusable-format.odd";
+    let path = document_fixture_path!("/memory/reusable-format.odd");
     client
         .documents()
         .save_as(&SaveDocumentAsArgs {

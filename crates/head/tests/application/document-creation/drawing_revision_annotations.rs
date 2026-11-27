@@ -21,8 +21,11 @@ fn drawing_revision_table_and_tag_have_independent_history_and_persist() {
     assert_eq!(listed(&client).as_slice(), std::slice::from_ref(&table));
     client.transactions().redo().unwrap();
     assert_eq!(listed(&client), [table.clone(), tag.clone()]);
-    let reopened =
-        super::drawing_custom_table::reopen(&client, drawing, "/memory/revision-annotations.odd");
+    let reopened = super::drawing_custom_table::reopen(
+        &client,
+        drawing,
+        document_fixture_path!("/memory/revision-annotations.odd"),
+    );
     assert_eq!(listed(&client), [table, tag]);
     drop(client);
     let state = owner.gui_command_state().unwrap();
@@ -51,8 +54,11 @@ fn drawing_feature_control_frames_keep_characteristics_and_ordered_cells() {
     client.transactions().undo().unwrap();
     assert_eq!(listed(&client).as_slice(), std::slice::from_ref(&position));
     client.transactions().redo().unwrap();
-    let reopened =
-        super::drawing_custom_table::reopen(&client, drawing, "/memory/control-frames.odd");
+    let reopened = super::drawing_custom_table::reopen(
+        &client,
+        drawing,
+        document_fixture_path!("/memory/control-frames.odd"),
+    );
     assert_eq!(listed(&client), [position.clone(), profile.clone()]);
     drop(client);
     let state = owner.gui_command_state().unwrap();
@@ -138,8 +144,11 @@ fn drawing_surface_texture_retains_all_material_removal_variants() {
     assert_eq!(listed(&client), added[..2]);
     client.transactions().redo().unwrap();
     assert_eq!(listed(&client), added);
-    let reopened =
-        super::drawing_custom_table::reopen(&client, drawing, "/memory/surface-texture.odd");
+    let reopened = super::drawing_custom_table::reopen(
+        &client,
+        drawing,
+        document_fixture_path!("/memory/surface-texture.odd"),
+    );
     assert_eq!(listed(&client), added);
     drop(client);
     let state = owner.gui_command_state().unwrap();
@@ -221,8 +230,11 @@ fn drawing_datum_feature_round_trips_box_stem_and_filled_triangle() {
     assert!(listed(&client).is_empty());
     client.transactions().redo().unwrap();
     assert_eq!(listed(&client).as_slice(), std::slice::from_ref(&datum));
-    let reopened =
-        super::drawing_custom_table::reopen(&client, drawing, "/memory/datum-feature.odd");
+    let reopened = super::drawing_custom_table::reopen(
+        &client,
+        drawing,
+        document_fixture_path!("/memory/datum-feature.odd"),
+    );
     assert_eq!(listed(&client).as_slice(), std::slice::from_ref(&datum));
     drop(client);
     let state = owner.gui_command_state().unwrap();
@@ -287,8 +299,11 @@ fn drawing_revision_cloud_has_outward_scallops_and_round_trips() {
     assert!(listed(&client).is_empty());
     client.transactions().redo().unwrap();
     assert_eq!(listed(&client).as_slice(), std::slice::from_ref(&cloud));
-    let reopened =
-        super::drawing_custom_table::reopen(&client, drawing, "/memory/revision-cloud.odd");
+    let reopened = super::drawing_custom_table::reopen(
+        &client,
+        drawing,
+        document_fixture_path!("/memory/revision-cloud.odd"),
+    );
     assert_eq!(listed(&client).as_slice(), std::slice::from_ref(&cloud));
     drop(client);
     let state = owner.gui_command_state().unwrap();

@@ -110,7 +110,7 @@ fn model_state_switch_replays_its_own_extrusion_suppression() {
         owner.take_scene().unwrap().unwrap().status.visible_bodies,
         1
     );
-    let path = "/memory/state-suppression.opd";
+    let path = document_fixture_path!("/memory/state-suppression.opd");
     Client::new(owner.document_host())
         .documents()
         .save_as(&SaveDocumentAsArgs {
@@ -290,7 +290,7 @@ fn suppression_requires_replay_and_persists_after_reopen() {
         .features()
         .set_suppressed(&args)
         .unwrap();
-    let path = "/memory/suppressed-extrusion.opd";
+    let path = document_fixture_path!("/memory/suppressed-extrusion.opd");
     Client::new(owner.document_host())
         .documents()
         .save_as(&SaveDocumentAsArgs {

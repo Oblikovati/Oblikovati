@@ -85,7 +85,7 @@ fn named_edge_lengths_survive_edit_history_and_reopen() {
     assert_eq!(lengths(&mut owner, &keys)[0], 20_000_000);
     owner.files.commands(document).unwrap().redo().unwrap();
     assert_eq!(lengths(&mut owner, &keys), edited);
-    let path = "/memory/edge-length.opd";
+    let path = document_fixture_path!("/memory/edge-length.opd");
     Client::new(owner.document_host())
         .documents()
         .save_as(&SaveDocumentAsArgs {
@@ -182,7 +182,7 @@ fn named_face_area_tracks_parameter_edit_and_reopen() {
             1_200_000_000
         ]
     );
-    let path = "/memory/face-area.opd";
+    let path = document_fixture_path!("/memory/face-area.opd");
     Client::new(owner.document_host())
         .documents()
         .save_as(&SaveDocumentAsArgs {

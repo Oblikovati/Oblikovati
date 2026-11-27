@@ -24,7 +24,7 @@ fn drawing_drafting_style_edits_are_undoable_and_persist() {
     let document = owner.documents().workspace().active_document().unwrap();
     let client = Client::new(owner.document_host());
     verify_standard_history(&client);
-    let path = "/memory/drafting-standard.odd";
+    let path = document_fixture_path!("/memory/drafting-standard.odd");
     client
         .documents()
         .save_as(&SaveDocumentAsArgs {

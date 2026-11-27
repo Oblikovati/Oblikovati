@@ -119,7 +119,7 @@ fn listed(client: &Client<impl Caller>) -> Option<Vec<DrawingAnnotationInfo>> {
 }
 
 fn verify_deferred_and_reopen(owner: &mut TestOwner, drawing: u64, note: &str) -> u64 {
-    let path = "/memory/sheet-notes.odd";
+    let path = document_fixture_path!("/memory/sheet-notes.odd");
     let client = Client::new(owner.document_host());
     client
         .documents()

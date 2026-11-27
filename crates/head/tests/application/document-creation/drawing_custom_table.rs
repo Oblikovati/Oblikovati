@@ -53,7 +53,11 @@ fn drawing_custom_table_round_trips_ragged_rows() {
             .as_deref(),
         Some(std::slice::from_ref(&table))
     );
-    let reopened = reopen(&client, drawing, "/memory/custom-table.odd");
+    let reopened = reopen(
+        &client,
+        drawing,
+        document_fixture_path!("/memory/custom-table.odd"),
+    );
     assert_eq!(
         annotations
             .list(&EmptyObject {})

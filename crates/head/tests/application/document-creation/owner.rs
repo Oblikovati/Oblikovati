@@ -256,7 +256,7 @@ fn drawing_model_reference_api_uses_history_and_rejects_other_documents() {
     assert_eq!(reference(&owner), "");
     owner.files.commands(drawing).unwrap().redo().unwrap();
     assert_eq!(reference(&owner), request.full_document_name);
-    let path = "/memory/model-reference.odd";
+    let path = document_fixture_path!("/memory/model-reference.odd");
     Client::new(owner.document_host())
         .documents()
         .save_as(&SaveDocumentAsArgs {
@@ -385,7 +385,7 @@ fn drawing_base_view_api_validates_current_geometry_and_replays() {
         1
     );
     owner.files.commands(part).unwrap().undo().unwrap();
-    let path = "/memory/base-view.odd";
+    let path = document_fixture_path!("/memory/base-view.odd");
     Client::new(owner.document_host())
         .documents()
         .save_as(&SaveDocumentAsArgs {

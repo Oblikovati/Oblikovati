@@ -79,7 +79,7 @@ fn typed_workers_create_save_reopen_and_close_through_the_document_owner() {
             .documents()
             .save_as(&SaveDocumentAsArgs {
                 document: id,
-                new_full_document_name: "/memory/part.opd".into(),
+                new_full_document_name: document_fixture_path!("/memory/part.opd").into(),
             })
             .unwrap()
     });
@@ -102,7 +102,7 @@ fn verify_reopened_owner(owner: &mut TestOwner, awake: &Receiver<()>) {
         client
             .documents()
             .open(&OpenDocumentArgs {
-                full_document_name: "/memory/part.opd".into(),
+                full_document_name: document_fixture_path!("/memory/part.opd").into(),
                 ..Default::default()
             })
             .unwrap()

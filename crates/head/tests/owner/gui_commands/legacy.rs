@@ -56,7 +56,7 @@ fn gui_document_tab_close_uses_the_typed_document_route() {
         .documents()
         .save_as(&SaveDocumentAsArgs {
             document,
-            new_full_document_name: "/memory/closable.opd".into(),
+            new_full_document_name: document_fixture_path!("/memory/closable.opd").into(),
         })
         .unwrap();
     assert!(

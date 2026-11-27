@@ -82,7 +82,7 @@ fn typed_topology_keys_survive_edit_undo_redo_and_reopen() {
             appearance_id: "default".into(),
         })
         .unwrap();
-    let path = "/memory/topology-cube.opd";
+    let path = document_fixture_path!("/memory/topology-cube.opd");
     Client::new(owner.document_host())
         .documents()
         .save_as(&SaveDocumentAsArgs {

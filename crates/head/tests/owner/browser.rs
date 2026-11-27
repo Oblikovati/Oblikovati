@@ -69,7 +69,7 @@ fn selection_mode_respects_the_measure_owner_document() {
 #[test]
 fn occurrence_selection_rejects_stale_paths_without_editing_history() {
     let (mut owner, _) = owner();
-    let path = std::path::PathBuf::from("/fixtures/browser-assembly.oad");
+    let path = std::path::PathBuf::from(document_fixture_path!("/fixtures/browser-assembly.oad"));
     owner.documents().files().saved.borrow_mut().insert(path.clone(),
         b"schemaVersion: 2\ndocumentType: 2\nmodel: {occurrences: [{name: Same, virtual: true}, {name: Same, virtual: true, virtualPartNumber: '2'}]}\n".to_vec());
     let document = Client::new(owner.document_host())
@@ -156,7 +156,7 @@ fn occurrence_selection_rejects_stale_paths_without_editing_history() {
 fn an_unpickable_assembly_placement_reports_a_selection_failure() {
     let (mut owner, _) = owner();
     super::part_scene::open_prism(&mut owner, false);
-    let path = std::path::PathBuf::from("/fixtures/singular-assembly.oad");
+    let path = std::path::PathBuf::from(document_fixture_path!("/fixtures/singular-assembly.oad"));
     let component = std::env::temp_dir().join("head-scene.opd");
     let package = format!(
         "schemaVersion: 2\ndocumentType: 2\nmodel:\n  occurrences:\n    - name: Part:1\n      component: {}\n      transform: [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]\n",

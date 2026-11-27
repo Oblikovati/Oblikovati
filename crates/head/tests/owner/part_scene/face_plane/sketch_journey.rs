@@ -96,7 +96,7 @@ fn sketch_on_face_plane_tracks_the_part_and_history() {
     assert_scene_height(&mut owner, sketch_id, 2.5);
     owner.files.commands(document).unwrap().redo().unwrap();
     assert_scene_height(&mut owner, sketch_id, 3.5);
-    let path = "/memory/face-sketch.opd";
+    let path = document_fixture_path!("/memory/face-sketch.opd");
     Client::new(owner.document_host())
         .documents()
         .save_as(&SaveDocumentAsArgs {

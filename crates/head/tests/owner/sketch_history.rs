@@ -13,7 +13,7 @@ fn finishing_a_saved_sketch_is_clean_and_undo_reopens_it_for_typed_queries() {
         .documents()
         .save_as(&SaveDocumentAsArgs {
             document,
-            new_full_document_name: "/memory/history-sketch.opd".into(),
+            new_full_document_name: document_fixture_path!("/memory/history-sketch.opd").into(),
         })
         .unwrap();
     assert!(!owner.files.workspace().needs_save(document).unwrap());

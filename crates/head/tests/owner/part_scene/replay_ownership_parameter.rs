@@ -111,7 +111,8 @@ fn parameter_edit_adopts_a_checkpointed_named_fillet_and_keeps_undo() {
         .documents()
         .save_as(&SaveDocumentAsArgs {
             document,
-            new_full_document_name: "/memory/checkpoint-parameter.opd".into(),
+            new_full_document_name: document_fixture_path!("/memory/checkpoint-parameter.opd")
+                .into(),
         })
         .unwrap();
     Client::new(owner.document_host())
@@ -124,7 +125,7 @@ fn parameter_edit_adopts_a_checkpointed_named_fillet_and_keeps_undo() {
     let reopened = Client::new(owner.document_host())
         .documents()
         .open(&OpenDocumentArgs {
-            full_document_name: "/memory/checkpoint-parameter.opd".into(),
+            full_document_name: document_fixture_path!("/memory/checkpoint-parameter.opd").into(),
             ..Default::default()
         })
         .unwrap()

@@ -71,7 +71,7 @@ fn asymmetric_extrusion_keeps_each_side_independently_driven() {
         2
     );
     let client = Client::new(owner.document_host());
-    let path = "/memory/asymmetric-extrusion.opd";
+    let path = document_fixture_path!("/memory/asymmetric-extrusion.opd");
     client
         .documents()
         .save_as(&SaveDocumentAsArgs {
@@ -137,7 +137,7 @@ fn typed_symmetric_extrusion_remains_centered_when_its_driver_changes() {
     assert_centered_volume(&mut owner, 1_000.);
     let client = Client::new(owner.document_host());
     client.transactions().redo().unwrap();
-    let path = "/memory/symmetric-extrusion.opd";
+    let path = document_fixture_path!("/memory/symmetric-extrusion.opd");
     client
         .documents()
         .save_as(&SaveDocumentAsArgs {
@@ -212,7 +212,7 @@ fn typed_flipped_extrusion_keeps_positive_distance_through_edit_and_reopen() {
             ..Default::default()
         })
         .unwrap();
-    let path = "/memory/flipped-extrusion.opd";
+    let path = document_fixture_path!("/memory/flipped-extrusion.opd");
     client
         .documents()
         .save_as(&SaveDocumentAsArgs {

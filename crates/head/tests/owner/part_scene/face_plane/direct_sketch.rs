@@ -138,7 +138,7 @@ fn picked_face_creates_a_direct_associative_sketch_without_a_work_plane() {
     assert_direct_sketch_height(&mut owner, sketch, 2.);
     owner.files.commands(document).unwrap().redo().unwrap();
     assert_direct_sketch_height(&mut owner, sketch, 3.);
-    let path = "/memory/direct-face-sketch.opd";
+    let path = document_fixture_path!("/memory/direct-face-sketch.opd");
     Client::new(owner.document_host())
         .documents()
         .save_as(&SaveDocumentAsArgs {

@@ -68,7 +68,7 @@ fn drawing_centerlines_track_view_bounds_and_restore_with_history() {
     let client = Client::new(owner.document_host());
     client.transactions().redo().unwrap();
     verify_view_delete(&client, rotated.len() as i64);
-    let path = "/memory/centerlines.odd";
+    let path = document_fixture_path!("/memory/centerlines.odd");
     let reopened = super::drawing_custom_table::reopen(&client, drawing, path);
     assert_eq!(listed_centerline(&client).curve_count, rotated.len() as i64);
     drop(client);
@@ -227,7 +227,7 @@ fn verify_history_and_reopen(
         .unwrap();
     assert_eq!(lines(owner, drawing), rotated);
     let client = Client::new(owner.document_host());
-    let path = "/memory/rotated-view.odd";
+    let path = document_fixture_path!("/memory/rotated-view.odd");
     client
         .documents()
         .save_as(&SaveDocumentAsArgs {

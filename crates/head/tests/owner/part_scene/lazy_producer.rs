@@ -23,7 +23,7 @@ fn express_open_requests_the_injected_assembly_producer() {
     let error = Client::new(owner.document_host())
         .documents()
         .open(&OpenDocumentArgs {
-            full_document_name: "/memory/missing.oad".into(),
+            full_document_name: document_fixture_path!("/memory/missing.oad").into(),
             express: true,
             ..Default::default()
         })

@@ -124,7 +124,7 @@ fn typed_extrude_creates_a_certified_scene_and_tracks_parameter_edits() {
     assert_cube(&owner, document, 2.);
     let face_key = cube_face_key(&owner, document);
     let keys = cube_keys(&owner, document);
-    let path = "/memory/certified-cube.opd";
+    let path = document_fixture_path!("/memory/certified-cube.opd");
     Client::new(owner.document_host())
         .documents()
         .save_as(&SaveDocumentAsArgs {

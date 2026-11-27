@@ -111,7 +111,7 @@ fn assert_current_projection(headless: bool, matching_policy: bool, injected: bo
             .documents()
             .save_as(&SaveDocumentAsArgs {
                 document: drawing,
-                new_full_document_name: "/memory/current-replay.odd".into(),
+                new_full_document_name: document_fixture_path!("/memory/current-replay.odd").into(),
             })
             .unwrap();
         let batch = client
@@ -120,7 +120,8 @@ fn assert_current_projection(headless: bool, matching_policy: bool, injected: bo
                 operation: "saveCopyAs".into(),
                 items: Some(vec![BatchSaveItem {
                     document: drawing,
-                    target_file_name: "/memory/current-replay-copy.odd".into(),
+                    target_file_name: document_fixture_path!("/memory/current-replay-copy.odd")
+                        .into(),
                 }]),
             })
             .unwrap();
@@ -133,7 +134,9 @@ fn assert_current_projection(headless: bool, matching_policy: bool, injected: bo
             .files()
             .saved
             .borrow()
-            .get(std::path::Path::new("/memory/current-replay.odd"))
+            .get(std::path::Path::new(document_fixture_path!(
+                "/memory/current-replay.odd"
+            )))
             .cloned()
             .unwrap();
         let saved = oblikovati_persistence::package::DocumentPackage::decode(&bytes)
@@ -168,7 +171,7 @@ fn assert_current_projection(headless: bool, matching_policy: bool, injected: bo
             .documents()
             .save_as(&SaveDocumentAsArgs {
                 document: drawing,
-                new_full_document_name: "/memory/stale-replay.odd".into(),
+                new_full_document_name: document_fixture_path!("/memory/stale-replay.odd").into(),
             })
             .unwrap();
         assert!(
@@ -177,7 +180,9 @@ fn assert_current_projection(headless: bool, matching_policy: bool, injected: bo
                 .files()
                 .saved
                 .borrow()
-                .contains_key(std::path::Path::new("/memory/stale-replay.odd"))
+                .contains_key(std::path::Path::new(document_fixture_path!(
+                    "/memory/stale-replay.odd"
+                )))
         );
         let session = owner.files.workspace().session(part).unwrap();
         let retained = session
@@ -203,7 +208,8 @@ fn assert_current_projection(headless: bool, matching_policy: bool, injected: bo
                 .documents()
                 .save_as(&SaveDocumentAsArgs {
                     document: drawing,
-                    new_full_document_name: "/memory/invalid-replay.odd".into(),
+                    new_full_document_name: document_fixture_path!("/memory/invalid-replay.odd")
+                        .into(),
                 })
                 .is_err()
         );
@@ -213,7 +219,9 @@ fn assert_current_projection(headless: bool, matching_policy: bool, injected: bo
                 .files()
                 .saved
                 .borrow()
-                .contains_key(std::path::Path::new("/memory/invalid-replay.odd"))
+                .contains_key(std::path::Path::new(document_fixture_path!(
+                    "/memory/invalid-replay.odd"
+                )))
         );
     }
 }
