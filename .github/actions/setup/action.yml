@@ -46,14 +46,20 @@ runs:
     - if: runner.os == 'Linux'
       shell: bash
       run: |
-        sudo apt-get update
-        sudo apt-get install -y libglfw3-dev libvulkan-dev libxkbcommon-dev pkg-config xvfb openbox x11-utils mesa-vulkan-drivers vulkan-validationlayers glslc libfreetype6 fonts-dejavu-core
+        # These packages all come from Ubuntu. Runner-provided vendor feeds are unrelated.
+        ubuntu_sources=(-o Dir::Etc::sourcelist=/etc/apt/sources.list.d/ubuntu.sources -o Dir::Etc::sourceparts=-)
+        packages=(libglfw3-dev libvulkan-dev libxkbcommon-dev pkg-config xvfb openbox x11-utils
+                  mesa-vulkan-drivers vulkan-validationlayers glslc libfreetype6 fonts-dejavu-core)
+        if [ "$RUNNER_ARCH" = X64 ]; then
+          # The pinned lavapipe archive links LLVM 20 and libdisplay-info.so.1.
+          packages+=(libllvm20 libdisplay-info1)
+        fi
+        sudo apt-get "${ubuntu_sources[@]}" update
+        sudo apt-get "${ubuntu_sources[@]}" install -y "${packages[@]}"
         printf '%s\n' 'XMODIFIERS=@im=none' >> "$GITHUB_ENV"
     - if: runner.os == 'Linux' && runner.arch == 'X64'
       shell: bash
       run: |
-        # The pinned lavapipe archive links LLVM 20 and libdisplay-info.so.1.
-        sudo apt-get install -y libllvm20 libdisplay-info1
         cargo xtask native-validation "$RUNNER_TEMP/oblikovati-vulkan" "$GITHUB_ENV"
     - if: runner.os == 'macOS'
       shell: bash
