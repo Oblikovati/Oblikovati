@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Native multi-selection Move, solved preview, and history.
+use super::move_precise::open_move;
 use super::*;
 use oblikovati_gui::GuiSketchMoveStage;
 use oblikovati_model::sketch::SketchPlane;
@@ -13,7 +14,7 @@ fn precise_relative_move_accepts_keyboard_input_and_replays_history() {
     let before = world.edited_geometry();
     let point = before.lines()[0].endpoints[0];
     let origin = before.point(point).unwrap().position;
-    world.click_text("Move");
+    open_move(&mut world);
     let check = world.run_in_window("Move", "PreciseInput").center();
     world.click(diagnostics::pointer_pixels(check));
     world.sketch_click([685, 325]);
@@ -61,7 +62,7 @@ fn invalid_precise_move_can_be_corrected_without_creating_history() {
     let before = world.edited_geometry();
     let point = before.lines()[0].endpoints[0];
     let origin = before.point(point).unwrap().position;
-    world.click_text("Move");
+    open_move(&mut world);
     let check = world.run_in_window("Move", "PreciseInput").center();
     world.click(diagnostics::pointer_pixels(check));
     world.sketch_click([685, 325]);
@@ -98,7 +99,7 @@ fn move_triad_can_be_repositioned_reset_and_cancelled_without_placing_geometry()
     super::coincident_context::draw_oblique_lines(&mut world);
     let before = world.edited_geometry();
     let history = world.state().undo_label;
-    world.click_text("Move");
+    open_move(&mut world);
     let check = world.run_in_window("Move", "PreciseInput").center();
     world.click(diagnostics::pointer_pixels(check));
     world.sketch_click([685, 325]);
@@ -113,7 +114,7 @@ fn move_triad_can_be_repositioned_reset_and_cancelled_without_placing_geometry()
     );
     let done = world.run_in_window("Move", "Done").center();
     world.click(diagnostics::pointer_pixels(done));
-    world.click_text("Move");
+    open_move(&mut world);
     world.sketch_click([685, 325]);
     assert_eq!(world.app().owner.precise_triad_position().unwrap().1, triad);
     world.click_text("Reset to Origin");
@@ -145,7 +146,7 @@ fn move_two_segments_as_one_edit_and_remember_selection_mode() {
         before.lines()[1].endpoints[0],
     ];
     let origins = points.map(|id| before.point(id).unwrap().position);
-    world.click_text("Move");
+    open_move(&mut world);
     let optimize = world
         .run_in_window("Move", "OptimizeforSingleSelection")
         .center();
@@ -194,7 +195,7 @@ fn move_two_segments_as_one_edit_and_remember_selection_mode() {
     assert!(world.edited_geometry().same_recipe(&before));
     world.redo();
     assert!(world.edited_geometry().same_recipe(&after));
-    world.click_text("Move");
+    open_move(&mut world);
     assert!(!world.state().sketch_move.unwrap().optimize_single);
     world.close();
 }

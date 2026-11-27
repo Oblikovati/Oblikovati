@@ -9,25 +9,28 @@ impl ApplicationWorld {
     }
     /// Find a toolbar input for native pointer interaction; example: `world.precise_field_position("Y")`.
     pub fn precise_field_position(&self, label: &str) -> [i32; 2] {
-        let (position, size) = diagnostics::window_geometry("Precise Input")
+        let list = diagnostics::window_draw_list("Precise Input")
             .expect("expected the Precise Input toolbar");
         let run = self
             .frame
             .runs
             .iter()
             .find(|run| {
-                let center = run.center();
-                run.text.ends_with(label)
-                    && (0..2).all(|axis| {
-                        center[axis] >= position[axis]
-                            && center[axis] <= position[axis] + size[axis]
-                    })
+                run.list == list && (run.text.starts_with(label) || run.text.ends_with(label))
             })
-            .unwrap_or_else(|| panic!("expected a field {label} in {:?}", self.text()))
-            .clone();
+            .unwrap_or_else(|| {
+                panic!(
+                    "expected a field {label} in {:?}",
+                    self.window_text("Precise Input")
+                )
+            });
         let label_width = LABEL_GLYPH_WIDTH * label.len() as f32;
-        let x = run.maximum[0] - label_width - FIELD_INSIDE_LABEL;
-        [x as i32, run.center()[1] as i32]
+        let label_left = if run.text.starts_with(label) {
+            run.minimum[0]
+        } else {
+            run.maximum[0] - label_width
+        };
+        diagnostics::pointer_pixels([label_left - FIELD_INSIDE_LABEL, run.center()[1]])
     }
     /// Type both of the toolbar's values and accept them, whatever its fields are named.
     pub fn precise_values(&mut self, first: &str, second: &str) {
