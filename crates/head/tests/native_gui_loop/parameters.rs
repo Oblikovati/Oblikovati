@@ -25,7 +25,7 @@ pub(super) fn create_size_parameter(
     assert_size_expression(owner, "10 mm");
     click_parameter_label(window, owner, "Done");
 }
-fn assert_size_expression(owner: &mut NativeDesktopOwner, expression: &str) {
+pub(super) fn assert_size_expression(owner: &mut NativeDesktopOwner, expression: &str) {
     let state = owner.gui_command_state().unwrap();
     let parameter = state
         .parameters
@@ -138,7 +138,12 @@ pub(super) fn verify_rectangle(
             "size"
         );
         assert!(!geometry.dimension_is_reference(constraint.id).unwrap());
-        assert!((geometry.measure_dimension(constraint.id).unwrap().value - expected).abs() < 1e-9);
+        let measured = geometry.measure_dimension(constraint.id).unwrap().value;
+        assert!(
+            (measured - expected).abs() < 1e-9,
+            "dimension {:?} from size: expected {expected}, measured {measured}",
+            constraint.id
+        );
     }
 }
 

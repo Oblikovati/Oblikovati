@@ -107,9 +107,8 @@ impl GuiDetachedDrawing {
     ) -> Result<(GuiFrame, bool), String> {
         let logical_size = context.io().display_size;
         let ui = context.frame();
+        crate::widget_abi::window_geometry(ui, [0.; 2], logical_size, Condition::Always);
         ui.window("##detached-drawing")
-            .position([0.; 2], Condition::Always)
-            .size(logical_size, Condition::Always)
             .flags(
                 WindowFlags::NO_DECORATION
                     | WindowFlags::NO_MOVE

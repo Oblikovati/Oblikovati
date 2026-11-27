@@ -279,7 +279,7 @@ fn groups_closed(world: &mut ApplicationWorld) {
     assert!(window_geometry("##ribbon-temporary-panel").is_none());
 }
 #[then("the 3D Model tab remains selected")]
-fn model_selected(world: &mut ApplicationWorld) {
+pub(super) fn model_selected(world: &mut ApplicationWorld) {
     let tabs = ["3DModel", "Tools", "View"];
     assert_eq!(
         ribbon_tab_underlines(world, tabs),

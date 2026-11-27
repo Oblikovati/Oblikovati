@@ -52,26 +52,25 @@ impl ParameterCellWidgetFixture {
         }
         let mut actions = Vec::new();
         let ui = self.context.frame();
-        ui.window("Parameter cell probe")
-            .size([300., 160.], Condition::Always)
-            .build(|| {
-                if focus {
-                    ui.set_keyboard_focus_here();
-                }
-                draw_text_editor(
-                    ui,
-                    ("##equation", ""),
-                    self.target,
-                    None,
-                    &mut self.drafts,
-                    &mut actions,
-                );
-                if blur {
-                    ui.set_keyboard_focus_here();
-                }
-                let mut other = String::new();
-                ui.input_text("Other", &mut other).build();
-            });
+        crate::widget_abi::window_size(ui, [300., 160.], Condition::Always);
+        ui.window("Parameter cell probe").build(|| {
+            if focus {
+                ui.set_keyboard_focus_here();
+            }
+            draw_text_editor(
+                ui,
+                ("##equation", ""),
+                self.target,
+                None,
+                &mut self.drafts,
+                &mut actions,
+            );
+            if blur {
+                ui.set_keyboard_focus_here();
+            }
+            let mut other = String::new();
+            ui.input_text("Other", &mut other).build();
+        });
         self.context.render();
         actions
     }
@@ -193,31 +192,29 @@ impl ParameterRowMenuWidgetFixture {
         }
         let ui = self.context.frame();
         let mut actions = Vec::new();
-        ui.window("Row menu probe")
-            .size([350., 180.], Condition::Always)
-            .build(|| {
-                ui.text("width");
-                if open {
-                    ui.open_popup("##parameter-row-menu");
-                }
-                if let Some(_popup) = ui.begin_popup("##parameter-row-menu") {
-                    match &self.value_row {
-                        Some(row) if self.group_menu => {
-                            draw_parameter_group_menu(ui, 7, row, &mut actions)
-                        }
-                        Some(row) if self.tolerance_menu => {
-                            draw_parameter_tolerance_menu(ui, 7, row, editable, &mut actions)
-                        }
-                        Some(row) => draw_parameter_value_menu(ui, 7, row, editable, &mut actions),
-                        None => draw_parameter_row_menu_items(ui, 7, 11, editable, &mut actions),
+        crate::widget_abi::window_size(ui, [350., 180.], Condition::Always);
+        ui.window("Row menu probe").build(|| {
+            ui.text("width");
+            if open {
+                ui.open_popup("##parameter-row-menu");
+            }
+            if let Some(_popup) = ui.begin_popup("##parameter-row-menu") {
+                match &self.value_row {
+                    Some(row) if self.group_menu => {
+                        draw_parameter_group_menu(ui, 7, row, &mut actions)
                     }
-                    self.menu_stride = ui.text_line_height_with_spacing();
-                    let minimum = ui.item_rect_min();
-                    let maximum = ui.item_rect_max();
-                    self.last_item =
-                        std::array::from_fn(|axis| (minimum[axis] + maximum[axis]) / 2.);
+                    Some(row) if self.tolerance_menu => {
+                        draw_parameter_tolerance_menu(ui, 7, row, editable, &mut actions)
+                    }
+                    Some(row) => draw_parameter_value_menu(ui, 7, row, editable, &mut actions),
+                    None => draw_parameter_row_menu_items(ui, 7, 11, editable, &mut actions),
                 }
-            });
+                self.menu_stride = ui.text_line_height_with_spacing();
+                let minimum = ui.item_rect_min();
+                let maximum = ui.item_rect_max();
+                self.last_item = std::array::from_fn(|axis| (minimum[axis] + maximum[axis]) / 2.);
+            }
+        });
         self.context.render();
         actions
     }

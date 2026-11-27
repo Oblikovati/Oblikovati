@@ -1,14 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//! Check tab backgrounds while the active workspace is outside the visible strip.
-use super::super::{ApplicationWorld, capture_framebuffer};
-
-fn tab_background(world: &mut ApplicationWorld, name: &str) -> [u8; 4] {
-    let tab = world.expect_tab(name);
-    let point = [(tab.minimum[0] - 3.) as usize, tab.center()[1] as usize];
-    let image = capture_framebuffer(&mut world.app().window.native);
-    let index = (point[1] * image.extent[0] as usize + point[0]) * 4;
-    image.rgba[index..index + 4].try_into().unwrap()
-}
+//! Check tab selection while the active workspace is outside the visible strip.
+use super::ApplicationWorld;
+use super::narrow_resize::tab_has_active_underline;
 
 #[test]
 fn manual_scroll_does_not_highlight_an_inactive_document() {
@@ -29,14 +22,13 @@ fn manual_scroll_does_not_highlight_an_inactive_document() {
     world.hover([900, 500]);
     world.pump(Vec::new());
     assert!(world.tab_run(&active_name).is_none());
-    let reference = tab_background(&mut world, "Home");
+    assert!(!tab_has_active_underline(&mut world, "Home"));
     for id in world.parts.clone() {
         let name = world.document_name(id);
         if world.tab_run(&name).is_some() {
-            assert_eq!(
-                tab_background(&mut world, &name),
-                reference,
-                "{name}: expected inactive background"
+            assert!(
+                !tab_has_active_underline(&mut world, &name),
+                "{name}: expected an inactive tab"
             );
         }
     }
@@ -51,10 +43,9 @@ fn manual_scroll_does_not_highlight_an_inactive_document() {
     }
     world.hover([900, 500]);
     world.pump(Vec::new());
-    assert_ne!(
-        tab_background(&mut world, &active_name),
-        reference,
-        "active tab must regain its selected background"
+    assert!(
+        tab_has_active_underline(&mut world, &active_name),
+        "active tab must regain its underline"
     );
     assert_eq!(world.active_id(), presentation);
     world.save_capture("tab-active-visible");
@@ -71,17 +62,15 @@ fn manual_scroll_does_not_highlight_an_inactive_document() {
     world.pump(Vec::new());
     assert_eq!(world.active_id(), part);
     let name = world.document_name(part);
-    assert_ne!(
-        tab_background(&mut world, &name),
-        reference,
+    assert!(
+        tab_has_active_underline(&mut world, &name),
         "clicked tab must become active"
     );
     for id in world.parts.clone().into_iter().filter(|id| *id != part) {
         let name = world.document_name(id);
         if world.tab_run(&name).is_some() {
-            assert_eq!(
-                tab_background(&mut world, &name),
-                reference,
+            assert!(
+                !tab_has_active_underline(&mut world, &name),
                 "{name}: expected inactive after click"
             );
         }

@@ -103,8 +103,13 @@ pub(in super::super) fn open_dimension_with_mouse(
     x11_input::click(position);
     world.pump(Vec::new());
     let text = world.window_text("Edit Dimension");
+    let current_value = label
+        .parse::<f64>()
+        .expect("expected a numeric dimension label");
+    let name_and_value = ["mm", "deg"].map(|unit| format!("{expected_name}{current_value}{unit}"));
     assert!(
-        text.split_whitespace().any(|word| word == expected_name),
+        text.split_whitespace()
+            .any(|word| word == expected_name || name_and_value.iter().any(|entry| entry == word)),
         "{label}: expected {expected_name:?} editor, got {text:?}"
     );
 }

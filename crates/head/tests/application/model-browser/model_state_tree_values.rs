@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Native active-member parameter tree checks (#4119).
+use super::model_state_suppression::activate_state_row;
 use super::model_state_table_extra::open;
 use super::model_state_table_parameter_steps::{
     grid_cell_text, persist_parameter_column, three_state_prism, tree_expression,
@@ -174,11 +175,7 @@ fn assert_member_expressions(world: &mut ApplicationWorld, member: &str, d0: &st
 }
 #[when("the user activates Primary and opens the model-state table")]
 fn primary_table(world: &mut ApplicationWorld) {
-    world.click_text("Model State");
-    let point = diagnostics::pointer_pixels(world.run("Primary").center());
-    super::super::x11_input::click(point);
-    super::super::x11_input::click(point);
-    world.pump(Vec::new());
+    activate_state_row(world, "Primary");
     assert_eq!(
         world
             .state()
@@ -225,7 +222,6 @@ fn copy_values(world: &mut ApplicationWorld) {
     assert_eq!(grid_cell_text(world, "d1", "Copy State"), "5deg");
 }
 
-#[cfg(target_os = "linux")]
 #[test]
 fn active_row_highlight_follows_model_state_switch() {
     let mut world = ApplicationWorld::new();
@@ -233,10 +229,7 @@ fn active_row_highlight_follows_model_state_switch() {
     primary_table(&mut world);
     active_member_green(&mut world);
     super::model_state_table_extra::click(&mut world, "Cancel");
-    let point = diagnostics::pointer_pixels(world.run("Copy State").center());
-    super::super::x11_input::click(point);
-    super::super::x11_input::click(point);
-    world.pump(Vec::new());
+    activate_state_row(&mut world, "Copy State");
     open(&mut world);
     assert_row_highlight(&mut world, "Copy State", true);
     assert_row_highlight(&mut world, "Primary", false);

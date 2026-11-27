@@ -97,28 +97,25 @@ impl LinkedTableWidgetFixture {
         }
         let ui = self.context.frame();
         let mut actions = Vec::new();
-        ui.window("Linked-table button probe")
-            .position([8., 8.], Condition::Always)
-            .size([800., 200.], Condition::Always)
-            .build(|| {
-                let Some(_table) = ui.begin_table("##linked-table-probe", 4) else {
-                    return;
-                };
-                for label in ["Source", "Linked", "Health", ""] {
-                    ui.table_setup_column(label);
-                }
-                ui.table_headers_row();
-                let table = DerivedParameterTableInfo {
-                    id: 11,
-                    source_document: "source.opd".into(),
-                    ..Default::default()
-                };
-                draw_linked_table_row(ui, 7, &table, &mut actions);
-                let minimum = ui.item_rect_min();
-                let maximum = ui.item_rect_max();
-                self.delete_position =
-                    std::array::from_fn(|axis| (minimum[axis] + maximum[axis]) / 2.);
-            });
+        crate::widget_abi::window_geometry(ui, [8., 8.], [800., 200.], Condition::Always);
+        ui.window("Linked-table button probe").build(|| {
+            let Some(_table) = ui.begin_table("##linked-table-probe", 4) else {
+                return;
+            };
+            for label in ["Source", "Linked", "Health", ""] {
+                ui.table_setup_column(label);
+            }
+            ui.table_headers_row();
+            let table = DerivedParameterTableInfo {
+                id: 11,
+                source_document: "source.opd".into(),
+                ..Default::default()
+            };
+            draw_linked_table_row(ui, 7, &table, &mut actions);
+            let minimum = ui.item_rect_min();
+            let maximum = ui.item_rect_max();
+            self.delete_position = std::array::from_fn(|axis| (minimum[axis] + maximum[axis]) / 2.);
+        });
         self.context.render();
         actions
     }

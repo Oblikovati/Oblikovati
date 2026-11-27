@@ -39,7 +39,7 @@ fn read_choices(world: &ApplicationWorld, labels: &[&str]) -> Vec<(String, bool)
         .collect()
 }
 
-fn menu_choice<'a>(
+pub(super) fn menu_choice<'a>(
     world: &'a ApplicationWorld,
     label: &str,
 ) -> &'a super::super::diagnostics::RenderedRun {

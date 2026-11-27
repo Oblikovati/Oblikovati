@@ -33,6 +33,24 @@ pub(super) fn source_rows(world: &ApplicationWorld) -> Vec<&diagnostics::Rendere
     rows
 }
 
+pub(super) fn scroll_source_to_line(world: &mut ApplicationWorld) {
+    use oblikovati_viewport::{ViewportEvent, ViewportInput};
+    for _ in 0..12 {
+        let rows = source_rows(world);
+        if rows.iter().any(|row| row.text == "Line") {
+            return;
+        }
+        let row = rows.first().expect("expected visible source commands");
+        let at = diagnostics::pointer_pixels(row.center());
+        world.hover(at);
+        world.pump(vec![ViewportEvent::Input(ViewportInput::Wheel {
+            notches: -1,
+            position: at,
+        })]);
+    }
+    panic!("expected Line in the available commands list");
+}
+
 fn expect_source_prefix(world: &ApplicationWorld, expected: &[&str]) {
     let labels: Vec<_> = source_rows(world)
         .into_iter()

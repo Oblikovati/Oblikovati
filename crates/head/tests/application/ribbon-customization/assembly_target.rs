@@ -89,7 +89,13 @@ fn applied_assembly_design_panel_reloads_on_the_assemble_tab() {
     world.expect_no_text("User Commands");
     world.add_template(oblikovati_gui::GuiTemplateKind::Assembly);
     world.click_text("Assemble");
-    world.run_in_window("##application-ribbon", "UserCommands");
+    let ribbon = world.window_text("##application-ribbon");
+    assert!(
+        ribbon
+            .split_whitespace()
+            .any(|run| diagnostics::panel_caption_matches(run, "User Commands")),
+        "expected User Commands in the assembly ribbon, got {ribbon:?}"
+    );
     world.run_in_window("##application-ribbon", "2DSketches");
     world.close();
 }

@@ -263,9 +263,13 @@ impl HomeWorkspace {
             return;
         }
         let position = [area.right - SIDE_PANEL_WIDTH - 8., area.top + 8.];
+        crate::widget_abi::window_geometry(
+            ui,
+            position,
+            [SIDE_PANEL_WIDTH, 0.],
+            imgui::Condition::Always,
+        );
         ui.window("##home-side-panel")
-            .position(position, imgui::Condition::Always)
-            .size([SIDE_PANEL_WIDTH, 0.], imgui::Condition::Always)
             .flags(
                 imgui::WindowFlags::NO_DECORATION
                     | imgui::WindowFlags::ALWAYS_AUTO_RESIZE

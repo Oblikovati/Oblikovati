@@ -388,9 +388,8 @@ fn selection_toolbar_window(ui: &Ui, corner: [f32; 2], draw: impl FnOnce()) {
     selection_toolbar_at(ui, [corner[0], corner[1] - TOOLBAR_RISE], [0.; 2], draw);
 }
 fn selection_toolbar_at(ui: &Ui, position: [f32; 2], pivot: [f32; 2], draw: impl FnOnce()) {
+    crate::widget_abi::window_position_with_pivot(ui, position, pivot, Condition::Always);
     ui.window(SELECTION_TOOLBAR)
-        .position(position, Condition::Always)
-        .position_pivot(pivot)
         .always_auto_resize(true)
         .no_decoration()
         .focus_on_appearing(false)

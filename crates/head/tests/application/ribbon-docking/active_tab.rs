@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
+use super::super::diagnostics::panel_caption_matches;
 use super::*;
 use cucumber::{given, then, when};
 
@@ -119,7 +120,7 @@ fn parameter_runs(world: &ApplicationWorld) -> usize {
         .frame
         .runs
         .iter()
-        .filter(|run| run.text == "Parameters")
+        .filter(|run| panel_caption_matches(&run.text, "Parameters"))
         .count()
 }
 #[test]

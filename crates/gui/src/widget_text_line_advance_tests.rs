@@ -50,9 +50,8 @@ fn editor_context() -> crate::test_context::TestContext {
 fn render_rows(context: &mut imgui::Context, factor: f32, content: &mut String) -> [f32; 4] {
     let ui = context.frame();
     let mut corners = [[0.; 2]; 2];
+    crate::widget_abi::window_geometry(ui, [10., 10.], [300., 200.], Condition::Always);
     ui.window("Spacing test")
-        .position([10., 10.], Condition::Always)
-        .size([300., 200.], Condition::Always)
         .build(|| corners = draw_input(ui, factor, content));
     let mut ys: Vec<_> = context
         .render()

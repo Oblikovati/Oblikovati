@@ -91,6 +91,13 @@ impl GuiDocumentFiles {
             let open = crate::widget_abi::popup_is_open(ui, c"File");
             let _hovered = open.then(|| ui.push_style_color(StyleColor::HeaderHovered, fill));
             let _text = open.then(|| ui.push_style_color(StyleColor::Text, text));
+            // Reserve the width before ImGui clips the two columns on first open.
+            let padding = ui.clone_style().window_padding[0];
+            crate::widget_abi::window_size(
+                ui,
+                [FILE_MENU_WIDTH + 2. * padding, 0.],
+                imgui::Condition::Always,
+            );
             ui.begin_menu("File")
         };
         if let Some(_menu) = menu {
@@ -111,8 +118,6 @@ impl GuiDocumentFiles {
                     actions.push(GuiShellAction::Exit);
                 }
             });
-            // Columns take their width from the menu, so the menu needs its own.
-            crate::widget_abi::dummy(ui, [FILE_MENU_WIDTH, 0.]);
         }
         if show_key_tip {
             crate::ribbon_key_tips::badge(ui, "F");

@@ -317,8 +317,8 @@ void oblikovati_gui_fit_viewport_properties(const unsigned char* title, float le
     ImGui::SetNextWindowSize(size, ImGuiCond_Always);
 }
 
-void oblikovati_gui_window_position(float x, float y, int condition) {
-    ImGui::SetNextWindowPos(ImVec2(x, y), condition);
+void oblikovati_gui_window_position(float x, float y, float pivot_x, float pivot_y, int condition) {
+    ImGui::SetNextWindowPos(ImVec2(x, y), condition, ImVec2(pivot_x, pivot_y));
 }
 void oblikovati_gui_window_size(float width, float height, int condition) {
     ImGui::SetNextWindowSize(ImVec2(width, height), condition);

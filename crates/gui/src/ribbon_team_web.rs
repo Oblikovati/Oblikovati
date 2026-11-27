@@ -39,14 +39,13 @@ impl TeamWebWindow {
         if !open {
             return;
         }
-        Self::dockable_window(ui, TITLE, &mut open)
-            .size([360., 145.], Condition::FirstUseEver)
-            .build(|| {
-                ui.text(RESOURCE);
-                if crate::widget_abi::button(ui, "Open in Browser", [140., 26.]) {
-                    actions.push(GuiShellAction::OpenTeamWebInBrowser(RESOURCE));
-                }
-            });
+        crate::widget_abi::window_size(ui, [360., 145.], Condition::FirstUseEver);
+        Self::dockable_window(ui, TITLE, &mut open).build(|| {
+            ui.text(RESOURCE);
+            if crate::widget_abi::button(ui, "Open in Browser", [140., 26.]) {
+                actions.push(GuiShellAction::OpenTeamWebInBrowser(RESOURCE));
+            }
+        });
         self.open.set_open(open);
     }
 }

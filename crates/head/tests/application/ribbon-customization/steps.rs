@@ -30,6 +30,7 @@ mod file_exchange;
 mod list_keyboard_steps;
 #[path = "list_steps.rs"]
 mod list_steps;
+use list_steps::scroll_source_to_line;
 #[path = "location_steps.rs"]
 mod location_steps;
 #[path = "macros.rs"]
@@ -410,24 +411,11 @@ fn both_target_rows_selected(world: &mut ApplicationWorld) {
     }
 }
 pub(super) fn click_in_customize(world: &mut ApplicationWorld, label: &str) {
-    if label == "Line" && !world.window_text("Customize").contains("Line") {
+    if label == "Line" {
         scroll_source_to_line(world);
     }
     let center = world.run_in_window("Customize", label).center();
     world.click(diagnostics::pointer_pixels(center));
-    world.pump(Vec::new());
-}
-fn scroll_source_to_line(world: &mut ApplicationWorld) {
-    use oblikovati_viewport::{ViewportEvent, ViewportInput};
-    let at = world
-        .run_in_window("Customize", "<Separator>")
-        .center()
-        .map(|value| value as i32);
-    world.hover(at);
-    world.pump(vec![ViewportEvent::Input(ViewportInput::Wheel {
-        notches: -3,
-        position: at,
-    })]);
     world.pump(Vec::new());
 }
 pub(super) fn open_tools_customization(world: &mut ApplicationWorld) {

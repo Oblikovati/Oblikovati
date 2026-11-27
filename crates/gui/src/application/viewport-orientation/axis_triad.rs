@@ -16,9 +16,8 @@ pub(super) fn draw(ui: &Ui, area: WorkspaceArea, axes: &GuiViewAxes) {
         .min((area.right - area.left).max(1.))
         .min((area.bottom - area.top).max(1.));
     let position = [area.left, area.bottom - side];
+    crate::widget_abi::window_geometry(ui, position, [side, side], imgui::Condition::Always);
     ui.window("##viewport-axis-triad")
-        .position(position, imgui::Condition::Always)
-        .size([side, side], imgui::Condition::Always)
         .flags(flags())
         .build(|| draw_axes(ui, axes, position, side));
 }

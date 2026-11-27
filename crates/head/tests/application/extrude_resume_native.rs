@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 
+#[path = "extrude_resume_rejection.rs"]
+mod rejection;
+
 #[test]
 fn extrusion_requested_free_sketch_shows_and_cancels_preview() {
     let mut world = ApplicationWorld::new();
@@ -258,30 +261,6 @@ fn assert_valid_distance(world: &mut ApplicationWorld, value: &str) {
     );
 }
 
-#[test]
-fn rejected_extrusion_retains_draft_and_success_commits_once() {
-    let (mut world, document) = requested_extrusion_fixture();
-    let generation = document_generation(&mut world, document);
-    set_extrusion_profile(&mut world, "0", "99");
-    world.click_text("OK");
-    world.pump(Vec::new());
-    world.expect_text("Extrusion failed");
-    world.expect_text("Distance A");
-    assert_no_feature(&mut world, document, generation);
-    set_extrusion_profile(&mut world, "99", "0");
-    world.click_text("OK");
-    world.pump(Vec::new());
-    world.expect_no_text("Distance A");
-    let session = world
-        .app()
-        .owner
-        .documents()
-        .workspace()
-        .session(document)
-        .unwrap();
-    assert_eq!(session.snapshot().work_geometry.features().len(), 1);
-    world.close();
-}
 fn document_generation(world: &mut ApplicationWorld, document: u64) -> u64 {
     world
         .app()
@@ -303,14 +282,6 @@ fn assert_no_feature(world: &mut ApplicationWorld, document: u64, generation: u6
     assert_eq!(session.generation(), generation, "draft changed history");
     assert!(session.snapshot().work_geometry.features().is_empty());
 }
-fn set_extrusion_profile(world: &mut ApplicationWorld, old: &str, value: &str) {
-    let at = world.run_in_window("Extrude", old).center();
-    world.click(super::diagnostics::pointer_pixels(at));
-    world.key(oblikovati_viewport::ViewportPhysicalKey::A, true);
-    world.type_text(value);
-    world.pump(Vec::new());
-}
-
 #[test]
 fn extrusion_preview_tracks_distance_and_parameter_changes() {
     let (mut world, document) = requested_extrusion_fixture();

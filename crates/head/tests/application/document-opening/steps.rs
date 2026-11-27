@@ -152,7 +152,7 @@ pub(super) fn file_name_shown(world: &ApplicationWorld) -> String {
         .frame
         .runs
         .iter()
-        .filter(|run| (run.center()[1] - label.center()[1]).abs() < 8.)
+        .filter(|run| run.list == label.list && (run.center()[1] - label.center()[1]).abs() < 8.)
         .map(|run| run.text.as_str())
         .collect();
     line.replace("Filename", "")

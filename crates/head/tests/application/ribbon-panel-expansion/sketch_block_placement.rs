@@ -8,7 +8,7 @@ use oblikovati_viewport::{ViewportKey, ViewportPhysicalKey};
 #[test]
 fn member_color_is_drawn_after_block_explosion() {
     use oblikovati_api::types::{Color, OVERRIDE_COLOR_SOURCE, SketchEntityFormat};
-    let mut world = ApplicationWorld::new();
+    let mut world = ApplicationWorld::with_asset_tools_closed();
     world.start_empty_sketch();
     world.draw_rectangle();
     world.escape();
@@ -195,7 +195,7 @@ fn explode_instance_from_browser_menu_and_undo_redo() {
 
 #[test]
 fn exploded_edges_select_independently_of_a_second_grouped_instance() {
-    let mut world = ApplicationWorld::new();
+    let mut world = ApplicationWorld::with_asset_tools_closed();
     world.start_empty_sketch();
     world.draw_rectangle();
     world.escape();
@@ -364,7 +364,7 @@ fn add_two_test_circles(world: &mut ApplicationWorld, edit: crate::HeadSketchEdi
 
 #[test]
 fn place_block_context_menu_repeats_and_escape_cancels() {
-    let mut world = ApplicationWorld::new();
+    let mut world = ApplicationWorld::with_asset_tools_closed();
     world.start_empty_sketch();
     world.draw_rectangle();
     world.escape();

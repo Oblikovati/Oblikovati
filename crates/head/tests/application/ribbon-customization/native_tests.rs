@@ -156,7 +156,7 @@ fn control_a_transfers_visible_source_rows_only_when_list_has_focus() {
 }
 
 #[test]
-fn exported_draft_can_be_imported_applied_and_used() {
+fn exported_applied_commands_can_be_imported_and_used() {
     let mut world = ApplicationWorld::new();
     world.add_part();
     world.add_finished_sketch();
@@ -164,13 +164,16 @@ fn exported_draft_can_be_imported_applied_and_used() {
     open_tools_customization(&mut world);
     stage_sketch_visibility(&mut world);
     toggle_row_option(&mut world, "2DSketches", "Text");
+    click_in_customize(&mut world, "Apply");
     click_in_customize(&mut world, "Export");
     settings_file_choice(&mut world, "Export Customization Settings", &path, "Save");
     let xml = std::fs::read_to_string(&path).unwrap();
     assert!(xml.contains("ribbon-customization") && xml.contains("sketch-visibility"));
-    assert!(world.window_text("Customize").contains("Part|Tools*"));
-    click_in_customize(&mut world, "Cancel");
-    open_tools_customization(&mut world);
+    assert!(!world.window_text("Customize").contains("Part|Tools*"));
+    click_in_customize(&mut world, "2DSketches");
+    click_in_customize(&mut world, "<");
+    click_in_customize(&mut world, "Apply");
+    world.expect_no_text("User Commands");
     click_in_customize(&mut world, "Import");
     settings_file_choice(&mut world, "Import Customization Settings", &path, "Open");
     sketches_in_target(&mut world);

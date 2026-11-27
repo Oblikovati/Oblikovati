@@ -80,8 +80,8 @@ impl SelectionFilterPanel {
             return;
         }
         let mut open = self.open.is_open();
+        crate::widget_abi::window_size(ui, [300., 360.], imgui::Condition::FirstUseEver);
         Self::dockable_window(ui, "Selection Filter", &mut open)
-            .size([300., 360.], imgui::Condition::FirstUseEver)
             .build(|| draw_filter(ui, state.selection_filter.as_ref(), actions));
         self.open.set_open(open);
     }

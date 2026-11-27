@@ -35,10 +35,11 @@ pub(super) fn open_appearance_part(world: &mut ApplicationWorld) -> u64 {
 }
 
 #[test]
-fn model_ribbon_shows_unavailable_work_and_pattern_commands() {
+fn model_ribbon_distinguishes_plane_from_unavailable_work_and_pattern_commands() {
     let mut world = ApplicationWorld::new();
     world.add_part();
-    for label in ["Plane", "Axis", "Rectangular", "Circular", "Simplify"] {
+    assert!(world.run_is_enabled("Plane"));
+    for label in ["Axis", "Rectangular", "Circular", "Simplify"] {
         world.expect_text(label);
         assert!(!world.run_is_enabled(label), "expected {label} unavailable");
     }
@@ -353,11 +354,12 @@ fn select_tab_appearance(world: &mut ApplicationWorld, label: &str) {
 }
 
 #[test]
-fn part_feature_icons_keep_unavailable_commands_disabled() {
+fn part_feature_icons_distinguish_empty_part_availability() {
     let mut world = ApplicationWorld::new();
     world.add_part();
     world.pump(Vec::new());
-    for label in ["Revolve", "Hole", "Fillet", "Chamfer"] {
+    assert!(world.run_is_enabled("Hole"));
+    for label in ["Revolve", "Fillet", "Chamfer"] {
         world.expect_text(label);
         assert!(
             !world.run_is_enabled(label),

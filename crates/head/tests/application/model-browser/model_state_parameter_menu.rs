@@ -40,8 +40,7 @@ fn angular_parameter_table(world: &mut ApplicationWorld) {
 #[when("the user right-clicks the d1 column header")]
 fn column_menu(world: &mut ApplicationWorld) {
     let point = grid_run(world, "d1");
-    super::super::x11_input::right_click(diagnostics::pointer_pixels(point));
-    world.pump(Vec::new());
+    context_menu_at(world, point);
 }
 #[then("the column context menu offers Delete Column")]
 fn column_delete(world: &mut ApplicationWorld) {
@@ -66,11 +65,10 @@ fn disabled_visual_column_commands(world: &mut ApplicationWorld) {
 }
 #[when("the user presses Escape and right-clicks a d1 member cell")]
 fn cell_menu(world: &mut ApplicationWorld) {
-    super::super::x11_input::press_keysym(0xff1b);
+    world.desktop_escape();
     world.pump(Vec::new());
     let point = [grid_run(world, "d1")[0], row_run(world, "Copy State")[1]];
-    super::super::x11_input::right_click(diagnostics::pointer_pixels(point));
-    world.pump(Vec::new());
+    context_menu_at(world, point);
 }
 #[then("the cell context menu offers Insert Row, Delete Row, and Delete Column")]
 fn cell_actions(world: &mut ApplicationWorld) {
@@ -100,9 +98,8 @@ fn menu_closed(world: &mut ApplicationWorld) {
 
 fn context_menu_at(world: &mut ApplicationWorld, point: [f32; 2]) {
     let target = diagnostics::pointer_pixels(point);
-    super::super::x11_input::move_pointer(target);
-    world.pump(Vec::new());
-    super::super::x11_input::right_click(target);
+    world.hover(target);
+    world.desktop_right_click(target);
     world.pump(Vec::new());
 }
 

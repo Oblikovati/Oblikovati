@@ -51,8 +51,8 @@ pub(crate) fn hud_panel(ui: &Ui, request: &GuiFrameRequest) -> bool {
     let scale = request.layout_scale();
     let position =
         std::array::from_fn(|axis| hud.pixel[axis] as f32 / scale[axis] + HUD_OFFSET[axis]);
+    crate::widget_abi::window_position(ui, position, imgui::Condition::Always);
     ui.window("##sketch-hud")
-        .position(position, imgui::Condition::Always)
         .flags(hud_flags())
         .build(|| {
             for (index, field) in hud.fields.iter().enumerate() {

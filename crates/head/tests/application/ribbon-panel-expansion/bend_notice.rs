@@ -113,6 +113,8 @@ fn x11_visible_sketch_gets_unavailable_notice_not_a_false_prerequisite() {
     let bend = world.run_in_window(EXPANSION, "BendPart").center();
     super::super::x11_input::click(diagnostics::pointer_pixels(bend));
     world.pump(Vec::new());
+    // Read after the modal body has rendered, beyond the opening frame that shows its title.
+    world.pump(Vec::new());
     assert!(diagnostics::window_geometry(NOTICE).is_some());
     world.expect_text("Bend Part is not available in this build.");
     world.expect_no_text("A visible unadaptive sketch is needed to bend the part.");

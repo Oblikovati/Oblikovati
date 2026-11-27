@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
+use imgui::Condition;
 fn probe_context() -> crate::test_context::TestContext {
     let mut context = crate::test_context::create();
     context.set_ini_filename(None);
@@ -42,6 +43,23 @@ fn never_condition_does_not_publish_next_window_settings() {
     // The active owner retains the context through Render; no native pointers escape this test.
     let current = unsafe { imgui::sys::igGetCurrentContext().as_ref() }.unwrap();
     assert_eq!(current.NextWindowData.Flags, 0);
+    context.render();
+}
+
+#[test]
+fn scalar_window_pivot_and_independent_size_keep_their_conditions() {
+    let mut context = probe_context();
+    let ui = context.frame();
+    window_position_with_pivot(ui, [320.5, 200.25], [0.5, 1.], Condition::Always);
+    window_size(ui, [240., 80.], Condition::FirstUseEver);
+    // Read the independent position and size requests before Begin takes them.
+    let current = unsafe { imgui::sys::igGetCurrentContext().as_ref() }.unwrap();
+    let pending = &current.NextWindowData;
+    assert_eq!([pending.PosVal.x, pending.PosVal.y], [320.5, 200.25]);
+    assert_eq!([pending.PosPivotVal.x, pending.PosPivotVal.y], [0.5, 1.]);
+    assert_eq!([pending.SizeVal.x, pending.SizeVal.y], [240., 80.]);
+    assert_eq!(pending.PosCond, Condition::Always as i32);
+    assert_eq!(pending.SizeCond, Condition::FirstUseEver as i32);
     context.render();
 }
 

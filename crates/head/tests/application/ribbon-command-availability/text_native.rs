@@ -179,9 +179,32 @@ fn type_content(world: &mut ApplicationWorld, letter: u8) {
 }
 
 fn click_editor_button(world: &mut ApplicationWorld, label: &str) {
-    let position = world.run_in_window("Format Text", label).center();
+    let position = if label == "Insert" {
+        let list = diagnostics::window_draw_list("Format Text").unwrap();
+        let run = world
+            .frame
+            .runs
+            .iter()
+            .find(|run| {
+                run.list == list && matches!(run.text.as_str(), "Insert" | "PrecisionInsert")
+            })
+            .expect("expected the Insert button beside the Precision control");
+        // Tight spacing can join the two captions. The last glyph is always inside Insert.
+        [run.maximum[0] - 1., run.center()[1]]
+    } else {
+        world.run_in_window("Format Text", label).center()
+    };
     x11_input::click(diagnostics::pointer_pixels(position));
     world.pump(Vec::new());
+}
+
+fn viewport_ink(
+    world: &mut ApplicationWorld,
+    token: &oblikovati_api::types::ThemeToken,
+) -> [u8; 3] {
+    let theme = world.state().theme.unwrap();
+    let ink = &theme.palette()[token];
+    [ink.r, ink.g, ink.b].map(|channel| (channel * 255.).round() as u8)
 }
 
 fn check_history(world: &mut ApplicationWorld, text: &oblikovati_model::sketch::SketchText2D) {

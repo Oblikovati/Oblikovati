@@ -293,6 +293,9 @@ fn context_menu_repeats_the_latest_sketch_constraint() {
     world.sketch_click([850, 400]);
     world.sketch_click([980, 480]);
     world.escape();
+    if !world.shows("Coincident") {
+        world.click_text("Constrain");
+    }
     world.click_text("Coincident");
     world.sketch_click([750, 350]);
     world.sketch_click([850, 400]);

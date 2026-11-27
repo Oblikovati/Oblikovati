@@ -116,25 +116,25 @@ fn capture_committed_text(world: &mut ApplicationWorld) -> oblikovati_viewport::
 }
 
 fn assert_original_glyph_pixels(world: &mut ApplicationWorld) {
+    let rgb = viewport_ink(world, &oblikovati_api::types::TOKEN_SKETCH_GEOMETRY);
     let current = text_format_choices::glyph_pixels(world);
     let original = world.sketch_baseline.as_ref().unwrap();
-    let expected = committed_glyph_pixels(&text_format_choices::glyph_region(original));
-    assert!(!expected.is_empty(), "expected visible committed text");
+    let expected = committed_glyph_pixels(&text_format_choices::glyph_region(original), rgb);
     assert!(
-        committed_glyph_pixels(&current) == expected,
+        !expected.is_empty(),
+        "expected visible committed text in {rgb:?}"
+    );
+    assert!(
+        committed_glyph_pixels(&current, rgb) == expected,
         "expected the same committed glyph outline in the same viewport position"
     );
 }
 
-fn committed_glyph_pixels(crop: &[u8]) -> Vec<usize> {
-    // The glyph is gray. The blue-tinted canvas and the violet anchor accent
-    // can change independently when the editor closes.
+fn committed_glyph_pixels(crop: &[u8], rgb: [u8; 3]) -> Vec<usize> {
     crop.as_chunks::<4>()
         .0
         .iter()
         .enumerate()
-        .filter_map(|(index, &[red, green, blue, _])| {
-            (red >= 128 && red == green && green == blue).then_some(index)
-        })
+        .filter_map(|(index, pixel)| (pixel[..3] == rgb).then_some(index))
         .collect()
 }

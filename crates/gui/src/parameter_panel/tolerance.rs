@@ -186,9 +186,8 @@ impl ParameterToleranceEditor {
             return;
         }
         let mut open = true;
-        Self::dockable_window(ui, "Tolerance", &mut open)
-            .size([440., 320.], Condition::FirstUseEver)
-            .build(|| self.draw_body(ui, actions));
+        crate::widget_abi::window_size(ui, [440., 320.], Condition::FirstUseEver);
+        Self::dockable_window(ui, "Tolerance", &mut open).build(|| self.draw_body(ui, actions));
         if !open {
             self.close();
         }
