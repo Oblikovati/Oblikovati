@@ -43,7 +43,13 @@ fn open_editor(world: &mut ApplicationWorld) {
 fn restored_parameters(world: &mut ApplicationWorld) {
     world.expect_text("Distance A");
     world.expect_text("1 Profile");
-    world.expect_text("1 cm");
+    let browser = world.state().browser.unwrap();
+    let seed = browser
+        .extrusion_edits
+        .values()
+        .next()
+        .expect("expected the saved Extrusion1 distance");
+    world.run_in_window("Extrude", &super::super::world::squeezed(&seed.distance));
     assert_eq!(feature_distance(world), 10.);
 }
 

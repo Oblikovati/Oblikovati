@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use super::super::{diagnostics, x11_input};
+use super::super::diagnostics;
 use super::acceptance::{feature_count, feature_distance, open_extrusion_editor};
 use super::viewport_interaction::{click_text_native, replace_distance_native};
 use super::*;
@@ -59,7 +59,17 @@ fn tolerance_controls_are_visible(world: &mut ApplicationWorld) {
 
 #[when("the Type list is opened")]
 fn open_tolerance_types(world: &mut ApplicationWorld) {
-    click_window_label(world, "Tolerance", "Default");
+    let type_label = world.run_in_window("Tolerance", "Type").center();
+    let preview = world
+        .frame
+        .runs
+        .iter()
+        .find(|row| {
+            let [x, y] = row.center();
+            row.text == "Default" && x < type_label[0] && (y - type_label[1]).abs() < 3.
+        })
+        .expect("expected the Default value beside the tolerance Type label");
+    click_position(world, preview.center());
 }
 
 #[then(
@@ -87,17 +97,33 @@ fn tolerance_types_are_listed(world: &mut ApplicationWorld) {
 
 #[when("the Type list is dismissed and Cancel is clicked")]
 fn cancel_tolerance(world: &mut ApplicationWorld) {
-    x11_input::press_escape();
+    let generation = world.state().document_generation;
+    world.key(oblikovati_viewport::ViewportPhysicalKey::Escape, false);
     world.pump(Vec::new());
-    click_window_label(world, "Tolerance", "Cancel");
+    let [x, y] = world.run_in_window("Tolerance", "EvaluatedSize").center();
+    let (position, size) = diagnostics::window_geometry("Tolerance").unwrap();
+    let cancel = world
+        .frame
+        .runs
+        .iter()
+        .rev()
+        .find(|row| {
+            let [cx, cy] = row.center();
+            row.text == "Cancel"
+                && cx >= position[0]
+                && cx < x
+                && cy > y
+                && cy <= position[1] + size[1]
+        })
+        .expect("expected Cancel below the evaluated size");
+    click_position(world, cancel.center());
+    assert_eq!(world.state().document_generation, generation);
 }
 
 #[then("the extrusion panel remains at Distance A 8 mm")]
 fn original_distance_survives_tolerance_cancel(world: &mut ApplicationWorld) {
     assert!(diagnostics::window_geometry("Tolerance").is_none());
     world.run_in_window("Extrude", "DistanceA");
-    let parameter = current_feature_parameter(world);
-    world.run_in_window("Extrude", &parameter);
     assert_eq!(feature_count(world), 1);
     assert_eq!(feature_distance(world), 8.);
     let document = world.active_id();
@@ -109,17 +135,33 @@ fn original_distance_survives_tolerance_cancel(world: &mut ApplicationWorld) {
         .session(document)
         .unwrap()
         .snapshot();
-    let parameter = snapshot.parameters.find(&parameter).unwrap();
-    assert_eq!(
-        snapshot.parameters.get(parameter).unwrap().tolerance,
-        Default::default()
-    );
+    use oblikovati_model::feature::{part::PartFeatureDefinition, work_geometry::DatumLength};
+    let [feature] = snapshot.work_geometry.features() else {
+        panic!("expected one accepted extrusion");
+    };
+    let PartFeatureDefinition::SketchPrism(prism) = feature.definition() else {
+        panic!("expected an accepted prism");
+    };
+    let value = match prism.displacement()[2] {
+        DatumLength::Constant(value) => {
+            assert_eq!(value, 0.8);
+            assert!(feature.owned_scalars().is_empty());
+            "8mm".to_owned()
+        }
+        DatumLength::Parameter(parameter) => {
+            let scalar = snapshot.parameters.get(parameter).unwrap();
+            assert_eq!(scalar.tolerance, Default::default());
+            scalar.name.clone()
+        }
+    };
+    world.run_in_window("Extrude", &value);
 }
 
 fn create_first_extrusion(world: &mut ApplicationWorld) {
     selected_rectangle_preview(world);
-    replace_distance_native(world, "8");
-    click_text_native(world, "OK");
+    replace_extrusion_distance(world, "8");
+    world.click_text("OK");
+    world.pump(Vec::new());
     assert_eq!(feature_count(world), 1);
     assert_eq!(feature_distance(world), 8.);
 }
@@ -273,10 +315,6 @@ fn table_headers(world: &mut ApplicationWorld) {
 fn distance_draft_remains_open(world: &mut ApplicationWorld) {
     assert!(diagnostics::window_geometry("Parameters").is_none());
     world.run_in_window("Extrude", "DistanceA");
-}
-
-fn current_feature_parameter(world: &mut ApplicationWorld) -> String {
-    feature_parameter(world, 0)
 }
 
 fn feature_parameter(world: &mut ApplicationWorld, index: usize) -> String {

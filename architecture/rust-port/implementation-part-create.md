@@ -42,6 +42,12 @@ cyan preview palette and passes on both desktops. The wider native Extrude
 suite passed all 14 tests under Xvfb.
 See the [history and measurement receipt](receipts/2026-11-26-extrude-history-3857/README.md).
 
+Distance A now opens the shared Tolerance inspector for the literal
+8 mm fixture. The published and pinned cases 12–12c passed 36 native steps
+per variant on Wayland and X11. They cover tolerance controls, cancellation,
+the dimension prompt and the Parameters table.
+See the [distance editor receipt](receipts/2026-11-27-extrude-tolerance-3870/README.md).
+
 ## Sweep, Loft, and Revolve
 
 The [release probes](../../crates/martensite/tests/release_probe/create.rs)

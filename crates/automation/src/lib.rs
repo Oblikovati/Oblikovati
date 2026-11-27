@@ -31,7 +31,7 @@ mod shell;
 mod sweep;
 pub use extrusion::{
     CapturedExtrudeCandidate, ExtrudePrefixReplay, ExtrudeRegionAccess, ExtrudeReplayPrefix,
-    PreparedExtrusion, prepare_extrusion, validate_extrude_distance,
+    PreparedExtrusion, evaluated_extrude_distance, prepare_extrusion, validate_extrude_distance,
 };
 pub use fillet::{
     CertifiedFilletAccess, CertifiedFilletValidation, FilletAccess, FilletValidation,

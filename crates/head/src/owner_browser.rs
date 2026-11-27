@@ -229,7 +229,19 @@ fn prism_distance_expression(
 ) -> Option<String> {
     use oblikovati_model::feature::work_geometry::DatumLength;
     match source {
-        DatumLength::Constant(value) => Some(format!("{value} cm")),
+        DatumLength::Constant(value) => {
+            use oblikovati_model::quantity::{Dimension, Quantity};
+            let units = snapshot.parameters.units();
+            let length = units.to_preferred(Quantity::new(value, Dimension::Length));
+            let unit = units.preferred_name(Dimension::Length);
+            Some(
+                if units.from_preferred(length, Dimension::Length).value == value {
+                    format!("{length} {unit}")
+                } else {
+                    format!("{value} cm")
+                },
+            )
+        }
         DatumLength::Parameter(id) => {
             let parameter = snapshot.parameters.get(id)?;
             // A/B swapping needs their expressions, without turning two owned lengths into a cycle.

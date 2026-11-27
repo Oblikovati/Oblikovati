@@ -58,6 +58,7 @@ impl GuiParameterToleranceEdit {
 #[derive(Default)]
 pub(super) struct ParameterToleranceEditor {
     target: Option<GuiParameterTextTarget>,
+    inspecting: bool,
     dock_state: crate::dockable_lifecycle::DockableState,
     upper: f64,
     lower: f64,
@@ -102,6 +103,7 @@ impl ParameterToleranceEditor {
                 "GUI tolerance bounds {upper}/{lower}: expected finite ordered values"
             ));
         }
+        self.inspecting = false;
         self.target = Some(GuiParameterTextTarget {
             document,
             parameter: row.parameter,
@@ -121,6 +123,9 @@ impl ParameterToleranceEditor {
         Ok(())
     }
     pub(super) fn synchronize(&mut self, snapshot: Option<&GuiParameterSnapshot>) {
+        if self.inspecting {
+            return;
+        }
         let row = self
             .target
             .zip(snapshot)
@@ -137,6 +142,7 @@ impl ParameterToleranceEditor {
     }
     fn close(&mut self) {
         self.target = None;
+        self.inspecting = false;
         self.dock_state.set_open(false);
         self.selection = None;
         self.engineering = None;
@@ -176,7 +182,7 @@ impl ParameterToleranceEditor {
         outcome
     }
     pub(super) fn draw(&mut self, ui: &Ui, actions: &mut Vec<GuiParameterAction>) {
-        if self.target.is_none() {
+        if self.target.is_none() && !self.inspecting {
             return;
         }
         let mut open = true;
@@ -188,12 +194,48 @@ impl ParameterToleranceEditor {
         }
     }
     fn draw_body(&mut self, ui: &Ui, actions: &mut Vec<GuiParameterAction>) {
-        let Some(target) = self.target else {
-            return;
-        };
-        let _identity =
-            parameter_controls_identity(ui, Some(target.document), Some(target.parameter));
+        let _identity = parameter_controls_identity(
+            ui,
+            self.target.map(|target| target.document),
+            self.target.map(|target| target.parameter),
+        );
         let _disabled = ui.begin_disabled(self.request.pending.is_some());
+        self.draw_fields(ui);
+        if !self.inspecting {
+            if crate::widget_abi::button(ui, "OK", [0., 0.]) {
+                self.enqueue(actions);
+            }
+            ui.same_line();
+        }
+        if crate::widget_abi::button(ui, "Cancel", [0., 0.]) {
+            self.close();
+        }
+        if let Some(issue) = &self.request.issue {
+            ui.text_wrapped(issue.replace('\0', "\\0"));
+        }
+    }
+    /// Inspect the engineering values for a draft distance with no parameter target.
+    pub(super) fn open_inspection(&mut self, engineering: crate::GuiParameterEngineering) {
+        self.close();
+        self.inspecting = true;
+        self.dock_state.set_open(true);
+        self.selection = Some(MODEL_VALUE_NOMINAL);
+        self.kind = TOLERANCE_DEFAULT;
+        self.engineering = Some(engineering);
+        self.precision = 0;
+        self.upper = 0.;
+        self.lower = 0.;
+        self.hole.clear();
+        self.shaft.clear();
+    }
+
+    pub(super) fn close_inspection(&mut self) {
+        if self.inspecting {
+            self.close();
+        }
+    }
+
+    fn draw_fields(&mut self, ui: &Ui) {
         let model = self.current_model_label();
         ui.text(format!("Model Value: {model}"));
         self.draw_bounds(ui);
@@ -204,17 +246,8 @@ impl ParameterToleranceEditor {
         }
         self.draw_fits(ui);
         self.draw_selection(ui);
-        if ui.button("OK") {
-            self.enqueue(actions);
-        }
-        ui.same_line();
-        if ui.button("Cancel") {
-            self.close();
-        }
-        if let Some(issue) = &self.request.issue {
-            ui.text_wrapped(issue.replace('\0', "\\0"));
-        }
     }
+
     fn draw_bounds(&mut self, ui: &Ui) {
         let _bounds = ui.begin_disabled(!format::bounds_editable(self.kind));
         ui.input_scalar("Upper", &mut self.upper)
@@ -241,11 +274,7 @@ impl ParameterToleranceEditor {
             return;
         };
         for (kind, label) in format::FORMATS {
-            if ui
-                .selectable_config(label)
-                .selected(self.kind == kind)
-                .build()
-            {
+            if crate::widget_abi::selectable(ui, label, self.kind == kind, false) {
                 self.change_kind(kind);
             }
         }
@@ -306,11 +335,7 @@ impl ParameterToleranceEditor {
             return;
         };
         for (value, _, label) in MODEL_SELECTIONS {
-            if ui
-                .selectable_config(label)
-                .selected(selection == value)
-                .build()
-            {
+            if crate::widget_abi::selectable(ui, label, selection == value, false) {
                 self.selection = Some(value);
             }
         }

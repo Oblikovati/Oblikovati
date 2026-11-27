@@ -338,6 +338,17 @@ impl ParameterPanel {
             false
         });
     }
+    pub(crate) fn open_tolerance_inspection(
+        &mut self,
+        engineering: crate::GuiParameterEngineering,
+    ) {
+        self.tolerance.open_inspection(engineering);
+    }
+
+    pub(crate) fn close_tolerance_inspection(&mut self) {
+        self.tolerance.close_inspection();
+    }
+
     pub(crate) fn open_row_editor(
         &mut self,
         document: u64,

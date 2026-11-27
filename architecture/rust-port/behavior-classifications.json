@@ -3632,8 +3632,18 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
       "state": "inventoried",
-      "baseline_source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
-      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
+      "baseline_source_sha256": "ccb973b10334aa2f8f31a189392ad8049212caaa2938db03b034bc9f49008821",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json",
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a head/ui/parameters_dialogs.go; app/extrude_session_test.go.",
+      "go_test_premise": "The Go tolerance editor offers type and bound controls with Cancel. TestExtrudeDistanceDisplayRoundTripsThroughDocUnit verifies conversion between database and display units.",
+      "api_revision": "c8200b2da97c9a7dde43afb25debc977ff23b2fd",
+      "kernel_revision": "d463526642b7bf950ba33c7ab4a4c9bc97caffaf",
+      "kernel_capabilities": "Replay and retain the original named rectangular prism while the desktop inspects a distance draft.",
+      "platforms": "Linux COSMIC Wayland and X11 under Xvfb with Openbox.",
+      "kernel_integration": "Use the active Part and its current validated distance without changing the saved extrusion or its document generation.",
+      "rust_tests": "crates/head/tests/solid-model/extrusion/distance_editor.rs",
+      "oracle": "Open Tolerance from Distance A. Read the model value, inspect the twelve types and other controls, and compare the saved distance and document generation after Cancel. See receipts/2026-11-27-extrude-tolerance-3870/README.md.",
+      "expected_result": "The dialog displays 8.000 mm with Default tolerance. Cancel leaves one 8 mm Extrusion and returns to its editor."
     },
     {
       "id": "scenario:8fd89d6385b64c81738a8c643464f36706a592bb51a61336a0a9d9760ccab01d",
@@ -3648,8 +3658,18 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
       "state": "inventoried",
-      "baseline_source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
-      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
+      "baseline_source_sha256": "ccb973b10334aa2f8f31a189392ad8049212caaa2938db03b034bc9f49008821",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json",
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a head/ui/extrude_dialog.go; app/extrude_session_test.go.",
+      "go_test_premise": "drawExtrudeDistanceRow uses the common length parameter field. TestExtrudeDistanceDisplayRoundTripsThroughDocUnit supplies the distance baseline.",
+      "api_revision": "c8200b2da97c9a7dde43afb25debc977ff23b2fd",
+      "kernel_revision": "d463526642b7bf950ba33c7ab4a4c9bc97caffaf",
+      "kernel_capabilities": "Replay and retain the original named rectangular prism while the desktop inspects a distance draft.",
+      "platforms": "Linux COSMIC Wayland and X11 under Xvfb with Openbox.",
+      "kernel_integration": "Use the active Part and its current validated distance without changing the saved extrusion or its document generation.",
+      "rust_tests": "crates/head/tests/solid-model/extrusion/distance_editor.rs",
+      "oracle": "Open the native Distance A menu, list the five commands, and compare Available Parameters with the active Part's parameter IDs before Cancel. See receipts/2026-11-27-extrude-tolerance-3870/README.md.",
+      "expected_result": "The native list contains the active Part's parameters and the committed extrusion survives cancellation."
     },
     {
       "id": "scenario:0375c3804f13a87cf4cc5bb400b7f0406cb183a7f2b86a1b19623becb9fa4b63",
@@ -3664,8 +3684,18 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
       "state": "inventoried",
-      "baseline_source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
-      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
+      "baseline_source_sha256": "ccb973b10334aa2f8f31a189392ad8049212caaa2938db03b034bc9f49008821",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json",
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a head/ui/extrude_dialog.go; app/extrude_session_test.go.",
+      "go_test_premise": "drawExtrudeDistanceRow uses the common length parameter field. The pinned case establishes the feature-dimension picker prompt and cancellation.",
+      "api_revision": "c8200b2da97c9a7dde43afb25debc977ff23b2fd",
+      "kernel_revision": "d463526642b7bf950ba33c7ab4a4c9bc97caffaf",
+      "kernel_capabilities": "Replay and retain the original named rectangular prism while the desktop inspects a distance draft.",
+      "platforms": "Linux COSMIC Wayland and X11 under Xvfb with Openbox.",
+      "kernel_integration": "Use the active Part and its current validated distance without changing the saved extrusion or its document generation.",
+      "rust_tests": "crates/head/tests/solid-model/extrusion/distance_editor.rs",
+      "oracle": "Select Feature Dimension from the native menu, inspect the prompt, then cancel and compare the accepted extrusion. See receipts/2026-11-27-extrude-tolerance-3870/README.md.",
+      "expected_result": "The prompt asks for a feature and then one of its dimensions. Cancel preserves the extrusion."
     },
     {
       "id": "scenario:8d6629a37244ba99589ebcba9a4a850878ff5bc8ad42c8a313e895c3f8b166f4",
@@ -3680,8 +3710,18 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
       "state": "inventoried",
-      "baseline_source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
-      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
+      "baseline_source_sha256": "ccb973b10334aa2f8f31a189392ad8049212caaa2938db03b034bc9f49008821",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json",
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a head/ui/extrude_dialog.go; head/ui/parameters_window.go.",
+      "go_test_premise": "The Go distance row uses the common parameter control and the Parameters window presents the active Part's parameters. The pinned case specifies its columns.",
+      "api_revision": "c8200b2da97c9a7dde43afb25debc977ff23b2fd",
+      "kernel_revision": "d463526642b7bf950ba33c7ab4a4c9bc97caffaf",
+      "kernel_capabilities": "Replay and retain the original named rectangular prism while the desktop inspects a distance draft.",
+      "platforms": "Linux COSMIC Wayland and X11 under Xvfb with Openbox.",
+      "kernel_integration": "Use the active Part and its current validated distance without changing the saved extrusion or its document generation.",
+      "rust_tests": "crates/head/tests/solid-model/extrusion/distance_editor.rs",
+      "oracle": "Open Parameters from Distance A, inspect the required columns, click Done, and cancel the still-open Extrude panel. See receipts/2026-11-27-extrude-tolerance-3870/README.md.",
+      "expected_result": "The active Part's table is visible. Done returns to Extrude and Cancel preserves the accepted extrusion."
     },
     {
       "id": "scenario:c886bb6773e2fd0f09435753df021a71b4355805863890f3b44371b433e5df51",

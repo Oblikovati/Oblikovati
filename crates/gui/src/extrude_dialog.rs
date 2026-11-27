@@ -169,6 +169,7 @@ impl ExtrudeDialog {
             self.previewed = false;
         }
         let Some(document) = self.document else {
+            controls.parameters.close_tolerance_inspection();
             return;
         };
         self.size.fit(ui, controls.area);
@@ -206,6 +207,9 @@ impl ExtrudeDialog {
             });
         if !open {
             self.close(actions);
+        }
+        if self.document.is_none() || !self.reference.numeric() {
+            controls.parameters.close_tolerance_inspection();
         }
     }
     fn properties(

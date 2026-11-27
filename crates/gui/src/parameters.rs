@@ -57,10 +57,22 @@ impl GuiParameterEditor {
             crate::GuiParameterRowOperation::EditTolerance,
         )
     }
+    pub(crate) fn open_tolerance_inspection(
+        &mut self,
+        engineering: crate::GuiParameterEngineering,
+    ) {
+        self.panel.open_tolerance_inspection(engineering);
+    }
+
+    pub(crate) fn close_tolerance_inspection(&mut self) {
+        self.panel.close_tolerance_inspection();
+    }
+
     pub(crate) fn synchronize_document(&mut self, document: Option<u64>) -> Result<(), String> {
         if self.document == document {
             return Ok(());
         }
+        self.panel.close_tolerance_inspection();
         self.panel.replace_snapshot(None)?;
         self.document = document;
         if document.is_none() {

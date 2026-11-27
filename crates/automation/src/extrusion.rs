@@ -412,6 +412,12 @@ pub(crate) fn finite_length(
 pub fn validate_extrude_distance(snapshot: &DocumentSnapshot, source: &str) -> Result<(), Error> {
     distance(snapshot, source).map(|_| ())
 }
+/// Evaluate the current distance in database units using the feature's expression rules.
+pub fn evaluated_extrude_distance(snapshot: &DocumentSnapshot, source: &str) -> Result<f64, Error> {
+    distance(snapshot, source)?
+        .resolve(&snapshot.parameters)
+        .map_err(api_error)
+}
 fn require_positive(
     value: f64,
     dimension: Dimension,

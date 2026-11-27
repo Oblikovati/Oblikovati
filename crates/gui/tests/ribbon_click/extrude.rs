@@ -169,6 +169,7 @@ fn valid_distance(distance: &str) -> oblikovati_gui::GuiExtrudeDistanceValidatio
         document: 7,
         distance: distance.into(),
         second_distance: None,
+        engineering: None,
         error: None,
     }
 }

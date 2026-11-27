@@ -57,7 +57,7 @@ enum DistanceTool {
     Measure,
     Dimension,
     Parameters,
-    Tolerance(u64),
+    Tolerance(Option<u64>),
     List,
 }
 
@@ -82,7 +82,28 @@ impl DistanceEditor {
         let Some(document) = state.document else {
             return false;
         };
-        if let Some(tool) = menu_item(ui, parameter_rows(parameters, document), distance) {
+        let engineering = state
+            .extrude_distance_validation
+            .as_ref()
+            .filter(|current| {
+                current.document == document
+                    && Some(current.generation) == state.document_generation
+                    && current.distance == *distance
+            })
+            .and_then(|current| current.engineering.as_ref());
+        if let Some(tool) = menu_item(
+            ui,
+            parameter_rows(parameters, document),
+            distance,
+            engineering.is_some(),
+        ) {
+            if matches!(tool, DistanceTool::Tolerance(None)) {
+                if let Some(engineering) = engineering {
+                    parameters.open_tolerance_inspection(engineering.clone());
+                }
+            } else {
+                parameters.close_tolerance_inspection();
+            }
             self.apply_tool(ui, tool, parameters, document, actions);
         }
         if let Some(issue) = &self.issue {
@@ -97,6 +118,9 @@ impl DistanceEditor {
         .is_some_and(|name| {
             let changed = *distance != name;
             *distance = name;
+            if changed {
+                parameters.close_tolerance_inspection();
+            }
             changed
         })
     }
@@ -129,11 +153,11 @@ impl DistanceEditor {
                 actions.push(GuiShellAction::Inspect(GuiInspectAction::StartMeasure))
             }
             DistanceTool::Parameters => parameters.open(Some(document)),
-            DistanceTool::Tolerance(parameter) => {
+            DistanceTool::Tolerance(Some(parameter)) => {
                 self.issue = parameters.open_tolerance(document, parameter).err();
             }
             DistanceTool::List => ui.open_popup(PARAMETERS),
-            DistanceTool::Dimension => {}
+            DistanceTool::Dimension | DistanceTool::Tolerance(None) => {}
         }
     }
 
@@ -164,7 +188,12 @@ fn parameter_rows(parameters: &GuiParameterEditor, document: u64) -> &[GuiParame
         .map_or(&[], |snapshot| snapshot.rows.as_slice())
 }
 
-fn menu_item(ui: &Ui, rows: &[GuiParameterRow], distance: &str) -> Option<DistanceTool> {
+fn menu_item(
+    ui: &Ui,
+    rows: &[GuiParameterRow],
+    distance: &str,
+    inspectable: bool,
+) -> Option<DistanceTool> {
     let _menu = ui.begin_popup(MENU)?;
     let parameter = rows
         .iter()
@@ -176,7 +205,10 @@ fn menu_item(ui: &Ui, rows: &[GuiParameterRow], distance: &str) -> Option<Distan
         ("Measure", Some(DistanceTool::Measure)),
         ("Select Feature Dimension", Some(DistanceTool::Dimension)),
         ("Parameters", Some(DistanceTool::Parameters)),
-        ("Tolerance", parameter.map(DistanceTool::Tolerance)),
+        (
+            "Tolerance",
+            (parameter.is_some() || inspectable).then_some(DistanceTool::Tolerance(parameter)),
+        ),
         ("List Parameters", Some(DistanceTool::List)),
     ]
     .into_iter()
@@ -276,6 +308,9 @@ impl super::ExtrudeDialog {
                 .as_ref()
                 .map(|units| units.length_unit.as_str());
             edited |= draw_value(ui, &mut self.distance, unit, error);
+            if edited {
+                parameters.close_tolerance_inspection();
+            }
             self.distance_editor.menu_button(ui, icons);
             edited |= self.distance_editor.draw(
                 ui,

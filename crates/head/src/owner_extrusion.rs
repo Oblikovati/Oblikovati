@@ -26,10 +26,22 @@ impl<
             .workspace()
             .session(document)
             .map_err(|cause| cause.to_string())?;
-        let error = oblikovati_automation::validate_extrude_distance(session.snapshot(), distance)
-            .and_then(|()| {
+        let snapshot = session.snapshot();
+        let evaluated = oblikovati_automation::evaluated_extrude_distance(snapshot, distance);
+        let engineering = evaluated.as_ref().ok().map(|&length| {
+            let parameters = &snapshot.parameters;
+            use oblikovati_model::quantity::{Dimension, Quantity};
+            oblikovati_gui::GuiParameterEngineering {
+                nominal: Quantity::new(length, Dimension::Length),
+                units: std::sync::Arc::new(parameters.units().clone()),
+                default_precision: parameters.settings().linear_dimension_precision.clamp(0, 8)
+                    as u8,
+            }
+        });
+        let error = evaluated
+            .and_then(|_| {
                 second_distance.map_or(Ok(()), |distance| {
-                    oblikovati_automation::validate_extrude_distance(session.snapshot(), distance)
+                    oblikovati_automation::validate_extrude_distance(snapshot, distance)
                         .map_err(|cause| oblikovati_api::Error(format!("Distance B: {cause}")))
                 })
             })
@@ -42,6 +54,7 @@ impl<
                 document,
                 distance: distance.into(),
                 second_distance: second_distance.map(str::to_owned),
+                engineering,
                 error,
             },
         ));

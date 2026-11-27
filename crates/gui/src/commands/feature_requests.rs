@@ -94,12 +94,13 @@ pub struct GuiDrawingLine {
 }
 
 /// Owner validation for one extrusion expression and active document.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct GuiExtrudeDistanceValidation {
     pub generation: u64,
     pub document: u64,
     pub distance: String,
     pub second_distance: Option<String>,
+    pub engineering: Option<crate::GuiParameterEngineering>,
     pub error: Option<String>,
 }
 
