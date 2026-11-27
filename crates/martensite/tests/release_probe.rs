@@ -4,6 +4,8 @@ use oblikovati_martensite::probe_box_release;
 
 #[path = "release_probe/create.rs"]
 mod create;
+#[path = "release_probe/extrusion_taper.rs"]
+mod extrusion_taper;
 #[path = "release_probe/loft_tangent.rs"]
 mod loft_tangent;
 #[path = "release_probe/sweep_sources.rs"]

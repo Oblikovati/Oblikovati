@@ -48,6 +48,11 @@ per variant on Wayland and X11. They cover tolerance controls, cancellation,
 the dimension prompt and the Parameters table.
 See the [distance editor receipt](receipts/2026-11-27-extrude-tolerance-3870/README.md).
 
+The [released-kernel taper probe](../../crates/martensite/tests/release_probe/extrusion_taper.rs)
+uses the 40 mm × 30 mm rectangle and 8 mm depth with +5° and −5°. It
+checks the analytic volume, the two cap widths, and a one-to-one native
+history map across all faces, edges and vertices.
+
 ## Sweep, Loft, and Revolve
 
 The [release probes](../../crates/martensite/tests/release_probe/create.rs)
