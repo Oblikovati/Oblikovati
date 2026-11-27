@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Drive the published Object Visibility checklist through the View ribbon.
-use super::{ApplicationWorld, diagnostics, scenario_root, world::squeezed};
+use super::{ApplicationWorld, diagnostics, world::squeezed};
 use cucumber::{given, then, when};
+use oblikovati_persistence::package::DocumentPackage;
 
 const MASTER: &str = "All Workfeatures";
 const ORIGIN_PLANES: &str = "Origin Planes";
@@ -9,8 +10,29 @@ const ORIGIN_PLANES: &str = "Origin Planes";
 #[given("the MCAD Software has a part document open")]
 #[given("the MCAD Software has a solid part document open")]
 fn open_part(world: &mut ApplicationWorld) {
-    let path = scenario_root().join("fixtures/cad/docking-visible-solid-current.opd");
+    let stored = include_bytes!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../test-utilities/fixtures/document-saving/SaveAsFolder/ExistingSolidPart.opd"
+    ));
+    let package = DocumentPackage::decode(stored).unwrap();
+    let mut restored = package.restore_sketches().unwrap();
+    let profile = restored.sketches.sketches()[0].id();
+    restored.sketches.set_visible(profile, true).unwrap();
+    let package = package
+        .with_sketches(
+            &restored.sketches,
+            restored.sketch_ids.high_water(),
+            restored.entity_ids.high_water(),
+        )
+        .unwrap();
+    let path = world.scratch_folder().join("visibility-solid.opd");
+    std::fs::write(&path, package.encode().unwrap()).unwrap();
     world.open_fixture(&path);
+    let state = world.state();
+    assert_eq!(
+        state.document_storage[&world.active_id()].path.as_deref(),
+        path.to_str()
+    );
     super::workspace_layout::browser_feature::expect_solid_visible(world);
 }
 
