@@ -9,6 +9,31 @@ pub(super) fn validate_sources(definition: &SketchPrismDefinition) -> Result<(),
         )));
     }
     validate_selection(&definition.selection)?;
+    if let Some(source) = definition.taper {
+        if definition.extent.is_some()
+            || !matches!(
+                definition.direction,
+                SketchPrismDirection::Positive | SketchPrismDirection::Negative
+            )
+            || definition.displacement[..2] != [DatumLength::Constant(0.); 2]
+        {
+            return Err(SketchPrismCause::Definition(
+                "Extrude Taper A requires a single depth normal to the sketch.".into(),
+            ));
+        }
+        source
+            .validate_source()
+            .map_err(|cause| SketchPrismCause::Definition(cause.to_string()))?;
+        match source.source() {
+            DatumLength::Constant(angle) => require_taper_angle(angle)?,
+            DatumLength::Parameter(0) => {
+                return Err(SketchPrismCause::Definition(
+                    "Extrude Taper A requires a named angle parameter.".into(),
+                ));
+            }
+            DatumLength::Parameter(_) => {}
+        }
+    }
     if definition.extent.is_some() {
         return validate_plane_extent(definition);
     }
@@ -45,6 +70,15 @@ pub(super) fn validate_plane_extent(
     Err(SketchPrismCause::Definition(
         "prism plane extent: expected plane bounds without authored distance or direction".into(),
     ))
+}
+pub(super) fn require_taper_angle(angle: f64) -> Result<(), SketchPrismCause> {
+    if angle.abs() < std::f64::consts::FRAC_PI_2 {
+        return Ok(());
+    }
+    Err(SketchPrismCause::Definition(format!(
+        "Extrude Taper A must be between -90 and 90 degrees (exclusive), got {}.",
+        angle.to_degrees()
+    )))
 }
 pub(super) fn require_second_depth(value: f64) -> Result<(), SketchPrismCause> {
     if value <= 0. || !value.is_finite() {

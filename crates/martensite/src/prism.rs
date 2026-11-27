@@ -4,6 +4,7 @@ use crate::{
     EvaluationPhase as Phase,
 };
 mod certified;
+pub(crate) use certified::retain_certified_tapered_prism;
 pub(crate) mod input;
 pub use certified::{
     CertifiedPrismSnapshot, PrismAchievedTolerance, retain_certified_profile_prism,
@@ -36,12 +37,14 @@ mod snapshot;
 #[cfg(test)]
 #[path = "../tests/unit/prism_snapshot.rs"]
 mod snapshot_tests;
+mod taper;
 mod types;
 use martensite_tkprim::brep_prim_api::BRepPrimAPIMakePrism;
 use martensite_tktopalgo::brep_builder_api::BRepBuilderAPIMakeShape;
 pub use mesh::{PrismFaceMesh, PrismMeshOptions, PrismPresentation};
 use oblikovati_model::sketch::SketchPlane;
 pub use snapshot::{PrismProbeSnapshot, retain_planar_prism, retain_prism_on_plane};
+pub(crate) use taper::PrismTaper;
 pub use types::{
     FaceProbe, PlanarProfileLoop, PrismFaceProbe, PrismFaceRole, PrismProbeDefinition,
     PrismProbeLoop, PrismProbeReport, PrismTopologySummary, TopologySummary,
@@ -51,10 +54,11 @@ pub use types::{
 pub fn probe_planar_prism(definition: &PrismProbeDefinition) -> Result<PrismProbeReport, String> {
     Ok(retain_planar_prism(definition)?.report().clone())
 }
-/// Build the common retained prism and preserve each failure stage; example: `build_prism(definition, plane)?`.
+/// Build the common retained prism and preserve each failure stage; example: `build_prism(definition, plane, 0.)?`.
 pub(crate) fn build_prism(
     definition: &PrismProbeDefinition,
     plane: SketchPlane,
+    taper_radians: f64,
 ) -> Result<PrismProbeSnapshot, EvaluationFailure> {
     input::validate_definition(definition)?;
     let vector = placement::model_displacement(plane, definition.displacement)?;
@@ -63,6 +67,10 @@ pub(crate) fn build_prism(
     let shape = completed_prism(&mut maker)?;
     crate::checked_shape::require_geometry(&shape, "prism result")?;
     let lineage = report::construction_lineage(&mut maker, &profile, &shape)?;
+    if let Some(taper) = PrismTaper::new(plane, vector, taper_radians) {
+        let tapered = taper.apply(&shape, &lineage, &[])?;
+        return snapshot::capture_prism(&tapered.shape, &tapered.faces);
+    }
     snapshot::capture_prism(&shape, &lineage)
 }
 

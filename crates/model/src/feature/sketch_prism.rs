@@ -6,7 +6,7 @@ mod extent;
 mod recipe;
 mod resolve;
 pub(crate) mod validation;
-use super::work_geometry::DatumLength;
+use super::work_geometry::{DatumAngle, DatumLength};
 use crate::{document_sketch::DocumentSketchId, sketch::SketchEntityId};
 pub use boolean::{PrismBoolean, SketchPrismTarget};
 pub use error::{SketchPrismCause, SketchPrismError};
@@ -36,6 +36,7 @@ pub struct SketchPrismDefinition {
     displacement: [DatumLength; 3],
     direction: SketchPrismDirection,
     second_depth: Option<DatumLength>,
+    taper: Option<DatumAngle>,
     extent: Option<SketchPrismExtent>,
     boolean_target: Option<SketchPrismTarget>,
 }
@@ -62,6 +63,7 @@ impl SketchPrismDefinition {
             displacement,
             direction: SketchPrismDirection::Positive,
             second_depth: None,
+            taper: None,
             extent: None,
             boolean_target: None,
         };
@@ -93,6 +95,20 @@ impl SketchPrismDefinition {
     pub fn direction(&self) -> SketchPrismDirection {
         self.direction
     }
+    /// Inspect the authored takeoff angle. Example: `definition.taper()`.
+    pub fn taper(&self) -> Option<DatumAngle> {
+        self.taper
+    }
+
+    /// Set the takeoff angle of a single-sided extrusion. Example: `definition.with_taper(Some(angle))?`.
+    pub fn with_taper(mut self, angle: Option<DatumAngle>) -> Result<Self, SketchPrismError> {
+        self.taper = angle.filter(
+            |source| !matches!(source.source(), DatumLength::Constant(value) if value == 0.),
+        );
+        validation::validate_sources(&self).map_err(|cause| self.decline(cause))?;
+        Ok(self)
+    }
+
     /// Read Distance B when present; example: `definition.second_depth()` for the edit panel.
     pub fn second_depth(&self) -> Option<DatumLength> {
         self.second_depth
@@ -121,6 +137,11 @@ impl SketchPrismDefinition {
             && self.direction == other.direction
             && self.extent == other.extent
             && self.boolean_target == other.boolean_target
+            && match (self.taper, other.taper) {
+                (None, None) => true,
+                (Some(a), Some(b)) => a.same_recipe(b),
+                _ => false,
+            }
             && match (self.second_depth, other.second_depth) {
                 (None, None) => true,
                 (Some(a), Some(b)) => a.same_recipe(b),

@@ -101,6 +101,66 @@ fn certified_cube_retains_analytic_faces_lineage_and_measured_tolerance() {
     }
 }
 #[test]
+fn certified_taper_preserves_roles_and_respects_the_extrusion_direction() {
+    use martensite_tkmath::gp::Vector3;
+    let (profile, selection) = square(3.);
+    let depth = 0.8;
+    let settings = resolution(ToleranceCap::Refuse(1e-5));
+    let untapered =
+        retain_certified_profile_prism(&profile, &selection, [0., 0., depth], settings).unwrap();
+    for direction in [1., -1.] {
+        for degrees in [5.0_f64, -5.] {
+            let angle = degrees.to_radians();
+            let z = direction * depth;
+            let taper = PrismTaper::new(SketchPlane::xy(), Vector3::new(0., 0., z), angle);
+            let result =
+                retain_certified_tapered_prism(&profile, &selection, [0., 0., z], settings, taper)
+                    .unwrap();
+            let report = result.body.report();
+            let slope = angle.tan();
+            let expected =
+                9. * depth + 6. * slope * depth.powi(2) + 4. / 3. * slope.powi(2) * depth.powi(3);
+            assert!((report.properties.volume - expected).abs() < 1e-8);
+            assert_eq!(report.topology, untapered.body.report().topology);
+            let identities = |history: &PrismSubentityHistory| {
+                history
+                    .edges
+                    .iter()
+                    .chain(&history.vertices)
+                    .map(|record| (record.role, record.source, record.relation))
+                    .collect::<Vec<_>>()
+            };
+            assert_eq!(
+                identities(&result.subentities),
+                identities(&untapered.subentities)
+            );
+            let far_corner = result
+                .subentities
+                .vertices
+                .iter()
+                .find(|record| {
+                    record.role == PrismSubentityRole::EndVertex
+                        && record.source == PrismHistorySource::Vertex(1)
+                })
+                .unwrap()
+                .point;
+            assert!((far_corner[0] + depth * slope).abs() < 1e-8);
+            assert!((far_corner[2] - z).abs() < 1e-8);
+            let caps = [PrismFaceRole::Start, PrismFaceRole::End].map(|role| {
+                report
+                    .faces
+                    .iter()
+                    .find(|face| face.role == role)
+                    .unwrap()
+                    .area
+            });
+            assert!((caps[0] - 9.).abs() < 1e-8);
+            assert!((caps[1] - (3. + 2. * depth * slope).powi(2)).abs() < 1e-8);
+        }
+    }
+}
+
+#[test]
 fn certified_prism_declines_an_unmatched_saved_profile() {
     let (profile, mut selection) = square(10.);
     selection.outer[0].curve = SketchEntityId(99);

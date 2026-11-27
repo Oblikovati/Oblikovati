@@ -15,6 +15,8 @@ pub struct SketchPrismRecipe {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub second_depth: Option<DatumLength>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub taper: Option<DatumAngle>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub extent: Option<SketchPrismExtent>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cut_target: Option<Vec<u8>>,
@@ -25,13 +27,14 @@ impl SketchPrismDefinition {
     /// Capture only authored inputs; example: `serde_json::to_string(&definition.recipe())?`.
     pub fn recipe(&self) -> SketchPrismRecipe {
         SketchPrismRecipe {
-            version: 1,
+            version: if self.taper.is_some() { 2 } else { 1 },
             sketch: self.sketch,
             selection: self.selection.clone(),
             displacement: self.displacement,
             reversed_normal: self.direction == SketchPrismDirection::Negative,
             centered_normal: self.direction == SketchPrismDirection::Symmetric,
             second_depth: self.second_depth,
+            taper: self.taper,
             extent: self.extent.clone(),
             cut_target: self.cut_target().map(|target| target.key().to_vec()),
             join_target: self
@@ -42,11 +45,11 @@ impl SketchPrismDefinition {
     }
     /// Validate the saved version and sources before adoption; example: `SketchPrismDefinition::from_recipe(&recipe)?`.
     pub fn from_recipe(recipe: &SketchPrismRecipe) -> Result<Self, SketchPrismError> {
-        if recipe.version != 1 {
+        if !matches!((recipe.version, recipe.taper), (1, None) | (2, Some(_))) {
             return Err(SketchPrismError {
                 sketch: recipe.sketch,
                 cause: Box::new(SketchPrismCause::Definition(format!(
-                    "prism recipe version {}: expected version 1",
+                    "prism recipe version {}: expected version 1 for an untapered prism or version 2 with Taper A",
                     recipe.version
                 ))),
             });
@@ -54,7 +57,8 @@ impl SketchPrismDefinition {
         let definition = match &recipe.extent {
             Some(extent) => Self::from_plane_recipe(recipe, extent),
             None => Self::from_distance_recipe(recipe),
-        }?;
+        }?
+        .with_taper(recipe.taper)?;
         match (&recipe.cut_target, &recipe.join_target) {
             (Some(key), None) => definition.with_cut_target(key.clone()),
             (None, Some(key)) => definition.with_boolean_target(PrismBoolean::Join, key.clone()),

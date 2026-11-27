@@ -33,7 +33,17 @@ pub fn retain_certified_profile_prism(
     vector: [f64; 3],
     resolution: Resolution,
 ) -> Result<CertifiedPrismSnapshot, EvaluationFailure> {
-    if !matches!(resolution.cap, ToleranceCap::Refuse(_)) {
+    retain_certified_tapered_prism(profile, selection, vector, resolution, None)
+}
+
+pub(crate) fn retain_certified_tapered_prism(
+    profile: &SketchProfile,
+    selection: &SketchPrismSelection,
+    vector: [f64; 3],
+    resolution: Resolution,
+    taper: Option<PrismTaper>,
+) -> Result<CertifiedPrismSnapshot, EvaluationFailure> {
+    let ToleranceCap::Refuse(maximum) = resolution.cap else {
         return Err(Phase::Input.refused(
             Kind::InvalidInput,
             Entity::Body,
@@ -42,7 +52,7 @@ pub fn retain_certified_profile_prism(
                 resolution.cap
             ),
         ));
-    }
+    };
     let regions = build_planar_regions(profile, resolution)
         .map_err(|cause| Phase::Profile.operation(Entity::Body, cause))?;
     let region = crate::resolve_region_by_boundary(&regions, selection).map_err(|cause| {
@@ -50,7 +60,7 @@ pub fn retain_certified_profile_prism(
     })?;
     let result = extrude(region, vector, &ExtrudeOptions { resolution })
         .map_err(|cause| Phase::Prism.operation(Entity::Body, cause))?;
-    let mut retained = retain_result(&result)?;
+    let mut retained = retain_result(&result, taper, maximum)?;
     retained.vertex_sources = profile
         .vertices
         .iter()
@@ -59,7 +69,11 @@ pub fn retain_certified_profile_prism(
     Ok(retained)
 }
 
-fn retain_result(result: &OperationResult) -> Result<CertifiedPrismSnapshot, EvaluationFailure> {
+fn retain_result(
+    result: &OperationResult,
+    taper: Option<PrismTaper>,
+    maximum: f64,
+) -> Result<CertifiedPrismSnapshot, EvaluationFailure> {
     if !result.findings().is_empty() {
         return Err(Phase::Validation.refused(
             Kind::InvalidResult,
@@ -76,18 +90,43 @@ fn retain_result(result: &OperationResult) -> Result<CertifiedPrismSnapshot, Eva
         .enumerate()
         .map(|(index, face)| Ok((face_role(result, index)?, face.clone().into())))
         .collect::<Result<Vec<_>, EvaluationFailure>>()?;
-    let subentities = super::provenance::capture(result)?;
+    let mut subentities = super::provenance::capture(result)?;
     let sources = super::provenance::source_shapes(result, &subentities)?;
-    let (body, subentity_shapes) =
-        snapshot::capture_prism_with_subentities(result.solid(), &lineage, &sources)?;
-    let achieved = result.achieved_tolerance();
+    let (body, subentity_shapes, achieved_tolerance) = if let Some(taper) = taper {
+        let tapered = taper.apply(result.solid(), &lineage, &sources)?;
+        for (record, shape) in subentities
+            .edges
+            .iter_mut()
+            .chain(&mut subentities.vertices)
+            .zip(&tapered.subentities)
+        {
+            record.point = super::provenance::representative(shape, "taper topology")?;
+        }
+        let achieved =
+            crate::checked_shape::measured_tolerances(&tapered.shape, maximum, "extrusion taper")?;
+        let (body, subentity_shapes) = snapshot::capture_prism_with_subentities(
+            &tapered.shape,
+            &tapered.faces,
+            &tapered.subentities,
+        )?;
+        (body, subentity_shapes, achieved)
+    } else {
+        let (body, subentity_shapes) =
+            snapshot::capture_prism_with_subentities(result.solid(), &lineage, &sources)?;
+        let achieved = result.achieved_tolerance();
+        (
+            body,
+            subentity_shapes,
+            PrismAchievedTolerance {
+                vertex: achieved.vertex,
+                edge: achieved.edge,
+                face: achieved.face,
+            },
+        )
+    };
     Ok(CertifiedPrismSnapshot {
         body,
-        achieved_tolerance: PrismAchievedTolerance {
-            vertex: achieved.vertex,
-            edge: achieved.edge,
-            face: achieved.face,
-        },
+        achieved_tolerance,
         subentities,
         subentity_shapes,
         vertex_sources: Default::default(),

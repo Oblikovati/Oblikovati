@@ -70,9 +70,9 @@ pub(crate) fn evaluate_resolved_prism(
         resolved.displacement,
     )
     .map_err(|error| error.for_sketch(sketch_id, format!("document sketch {:?}", sketch_id)))?;
-    crate::prism::build_prism(&native, resolved.sweep_start).map_err(|error| {
-        error.for_sketch(sketch_id, format!("document sketch {:?} prism", sketch_id))
-    })
+    crate::prism::build_prism(&native, resolved.sweep_start, resolved.taper_radians).map_err(
+        |error| error.for_sketch(sketch_id, format!("document sketch {:?} prism", sketch_id)),
+    )
 }
 
 fn selected_definition(

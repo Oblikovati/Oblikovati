@@ -43,6 +43,7 @@ impl CertifiedNamedSolidEvaluator<'_> {
                             sweep_start: seed.sweep_start,
                             selection: seed.selection,
                             displacement: seed.displacement,
+                            taper_radians: seed.taper_radians,
                         },
                     )
                     .map_err(|cause| PartFeatureFailure::Kernel(cause.for_feature(feature)))

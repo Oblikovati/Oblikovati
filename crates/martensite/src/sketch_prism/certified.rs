@@ -46,11 +46,13 @@ pub(crate) fn evaluate(
     let plane = input.sweep_start;
     let (profile, sources) = super::regions::input::profile(input.sketch.sketch.geometry(), plane)?;
     let vector = crate::prism::placement::model_displacement(plane, input.displacement)?;
-    let mut result = crate::retain_certified_profile_prism(
+    let taper = crate::prism::PrismTaper::new(plane, vector, input.taper_radians);
+    let mut result = crate::prism::retain_certified_tapered_prism(
         &profile,
         input.selection,
         [vector.x(), vector.y(), vector.z()],
         resolution,
+        taper,
     )?;
     result.vertex_sources = sources;
     Ok(result)

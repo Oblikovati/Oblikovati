@@ -55,6 +55,7 @@ impl SketchPrismDefinition {
             displacement: [DatumLength::Constant(0.); 3],
             direction: SketchPrismDirection::Positive,
             second_depth: None,
+            taper: None,
             extent: Some(extent),
             boolean_target: None,
         };

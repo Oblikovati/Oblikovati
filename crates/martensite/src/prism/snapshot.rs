@@ -39,7 +39,7 @@ pub fn retain_prism_on_plane(
     definition: &PrismProbeDefinition,
     plane: SketchPlane,
 ) -> Result<PrismProbeSnapshot, String> {
-    build_prism(definition, plane).map_err(|cause| cause.to_string())
+    build_prism(definition, plane, 0.).map_err(|cause| cause.to_string())
 }
 pub(super) fn copied_prism(
     shape: &Shape,

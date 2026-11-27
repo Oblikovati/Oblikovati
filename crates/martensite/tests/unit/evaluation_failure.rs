@@ -101,7 +101,7 @@ fn collinear_prism_retains_validation_decline_and_legacy_text() {
         displacement: [0., 0., 1.],
     };
     let failure =
-        crate::prism::build_prism(&definition, oblikovati_model::sketch::SketchPlane::xy())
+        crate::prism::build_prism(&definition, oblikovati_model::sketch::SketchPlane::xy(), 0.)
             .err()
             .unwrap();
     assert_eq!(failure.phase(), EvaluationPhase::Validation);

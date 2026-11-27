@@ -15,6 +15,7 @@ pub struct ResolvedSketchPrism<'a> {
     pub sweep_start: SketchPlane,
     pub selection: &'a SketchPrismSelection,
     pub displacement: [f64; 3],
+    pub taper_radians: f64,
 }
 impl SketchPrismDefinition {
     /// Require current converged geometry, placement and finite length inputs without side effects.
@@ -64,11 +65,19 @@ impl SketchPrismDefinition {
         };
         displacement[2] = depth;
         let sweep_start = self.sweep_start(sketch.plane, offset)?;
+        let taper_radians = self
+            .taper
+            .map(|source| source.resolve(&snapshot.parameters))
+            .transpose()
+            .map_err(|cause| self.decline(SketchPrismCause::Definition(cause.to_string())))?
+            .unwrap_or_default();
+        validation::require_taper_angle(taper_radians).map_err(|cause| self.decline(cause))?;
         Ok(ResolvedSketchPrism {
             sketch,
             sweep_start,
             selection: &self.selection,
             displacement,
+            taper_radians,
         })
     }
     fn normal_span(
@@ -158,6 +167,11 @@ impl SketchPrismDefinition {
                     .into_iter()
                     .chain(self.second_depth)
                     .filter_map(DatumLength::parameter)
+                    .map(FeatureReadKey::Parameter),
+            )
+            .chain(
+                self.taper
+                    .and_then(DatumAngle::parameter_id)
                     .map(FeatureReadKey::Parameter),
             )
             .chain(self.extent.iter().flat_map(SketchPrismExtent::reads))
