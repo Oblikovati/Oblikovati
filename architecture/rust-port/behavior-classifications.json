@@ -11516,8 +11516,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/chrome_ribbon.go; ../Oblikovati/head/ui/ribbon_collapse.go",
-      "mapping_reason": "Desktop ribbon minimization, temporary panels, or overflow."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a head/ui/chrome_ribbon.go and head/ui/ribbon_collapse_test.go.",
+      "mapping_reason": "Desktop ribbon minimization, temporary panels, or overflow.",
+      "go_test_premise": "The Go panel-fit and width tests establish the top ribbon layout. The pinned native steps specify the Options flyout input and dismissal. See receipts/2026-11-14-go-ribbon-baseline/README.md.",
+      "api_revision": "c8200b2da97c9a7dde43afb25debc977ff23b2fd",
+      "kernel_revision": "d463526642b7bf950ba33c7ab4a4c9bc97caffaf",
+      "kernel_capabilities": "Regenerate and present the Part fixture with a shaded solid.",
+      "platforms": "Linux Wayland under Weston and X11 under Openbox and Xvfb, both with Vulkan Lavapipe.",
+      "kernel_integration": "The desktop retains the real rendered Part while handling the compact Options ribbon UI and viewport input.",
+      "rust_tests": "crates/head/tests/application/ribbon-display/compact_options.rs; application_scenarios_use_the_native_window runs Press Escape with a compact Options panel open.",
+      "oracle": "The native runner checks the expanded Options bounds and button color, then clicks a rendered solid face outside those bounds. See receipts/2026-11-27-pinned-compact-options-4184/{x11,wayland}-escape.json.",
+      "expected_result": "Escape keeps Options open and highlighted. Clicking the face closes its temporary panel and leaves the compact Tools buttons.",
+      "baseline_source_sha256": "82542b170cbae71ede004fcb11be64a14bedbb10fdaf9b40df7b2eec462f636e"
     },
     {
       "id": "scenario:8ed3f18eeeb6a25a950d1535aa930e428e36c5c866e1a056b59ce2b1417fca59",
@@ -11560,8 +11570,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/chrome_ribbon.go; ../Oblikovati/head/ui/ribbon_collapse.go",
-      "mapping_reason": "Desktop ribbon minimization, temporary panels, or overflow."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a head/ui/chrome_ribbon.go and head/ui/ribbon_collapse_test.go.",
+      "mapping_reason": "Desktop ribbon minimization, temporary panels, or overflow.",
+      "go_test_premise": "The Go panel-fit and width tests establish the top ribbon layout. The pinned native steps specify the Options flyout input and dismissal. See receipts/2026-11-14-go-ribbon-baseline/README.md.",
+      "api_revision": "c8200b2da97c9a7dde43afb25debc977ff23b2fd",
+      "kernel_revision": "d463526642b7bf950ba33c7ab4a4c9bc97caffaf",
+      "kernel_capabilities": "Regenerate and present the Part fixture with a shaded solid.",
+      "platforms": "Linux Wayland under Weston and X11 under Openbox and Xvfb, both with Vulkan Lavapipe.",
+      "kernel_integration": "The desktop retains the real rendered Part while handling the compact Options ribbon UI and viewport input.",
+      "rust_tests": "crates/head/tests/application/ribbon-display/compact_options.rs; application_scenarios_use_the_native_window runs Dismiss a compact panel using the selected tab.",
+      "oracle": "The native runner opens Options, checks its on-screen bounds and clicks the selected Tools tab. See receipts/2026-11-27-pinned-compact-options-4184/{x11,wayland}-selected.json.",
+      "expected_result": "Clicking the selected Tools tab closes the temporary Options panel and keeps the compact Tools buttons visible.",
+      "baseline_source_sha256": "82542b170cbae71ede004fcb11be64a14bedbb10fdaf9b40df7b2eec462f636e"
     },
     {
       "id": "scenario:be5cd3ee71a1059a43625fa036e8e093a2211060d1fe6503eeec9ea033ef81aa",
