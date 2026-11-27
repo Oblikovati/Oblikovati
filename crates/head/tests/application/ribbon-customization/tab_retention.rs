@@ -51,6 +51,11 @@ fn marking_menu_open(world: &mut ApplicationWorld) {
 }
 
 #[given("the customization dialog is open on the Marking Menu tab in the MCAD Software")]
+fn marking_menu_open_for_part(world: &mut ApplicationWorld) {
+    world.add_part();
+    open_marking_menu_tab(world);
+}
+
 #[when("the user reopens customization on the Marking Menu tab")]
 fn open_marking_menu_tab(world: &mut ApplicationWorld) {
     world.click_text("Tools");
