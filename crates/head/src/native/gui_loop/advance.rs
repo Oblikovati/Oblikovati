@@ -3,6 +3,9 @@
 use super::*;
 
 impl NativeGui {
+    pub(in crate::native) fn clear_document_area(&mut self) {
+        self.document_area = None;
+    }
     pub(in crate::native) fn home_in_front(&self) -> bool {
         self.engine.home_in_front()
     }

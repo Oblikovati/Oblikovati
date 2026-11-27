@@ -146,7 +146,11 @@ impl DockPanels {
 
     /// Toggle the Favorites pane from the interface menu; example: `panels.toggle_favorites()`.
     pub(crate) fn toggle_favorites(&mut self) {
-        self.set_open(DockPanel::Favorites, !self.favorites_open);
+        if self.favorites_open {
+            self.set_open(DockPanel::Favorites, false);
+        } else {
+            self.open_panel(DockPanel::Favorites);
+        }
     }
 
     /// Read the Favorites pane visibility; example: `panels.favorites_visible()`.

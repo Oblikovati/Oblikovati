@@ -68,6 +68,14 @@ impl Viewport {
             Ok(true)
         })?;
         self.gui_surface = None;
+        if self.layout_framing.take().is_some() {
+            let next = super::next_generation(self.camera)?;
+            if self.live()?.clear_layout_projection() {
+                self.camera = next;
+                self.completed = None;
+                self.projection_cache.get_mut().clear();
+            }
+        }
         Ok(())
     }
 }

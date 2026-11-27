@@ -219,7 +219,10 @@ impl PreciseInputBar {
             }
             self.fields(ui, target, actions);
             if expanded {
-                ui.same_line();
+                if !crate::widget_abi::window_is_docked(ui) || ui.content_region_avail()[0] >= 540.
+                {
+                    ui.same_line();
+                }
                 self.expanded_controls(ui, target, actions);
             }
         });

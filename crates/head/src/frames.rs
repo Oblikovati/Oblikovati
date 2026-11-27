@@ -141,7 +141,7 @@ pub(crate) fn run_frames(
             control.pending |= window.wait(activity.wake_after)?;
         }
     }
-    checked_summary(control.summary, options)
+    checked_summary(control.summary, options, control.closed)
 }
 fn run_owner_frame(
     window: &mut dyn HeadWindow,
@@ -262,8 +262,12 @@ fn process_frame_inputs(
     }
     Ok(changed)
 }
-fn checked_summary(summary: HeadSummary, options: HeadOptions) -> Result<HeadSummary, String> {
-    if options.frames.is_some() && summary.completed == 0 {
+fn checked_summary(
+    summary: HeadSummary,
+    options: HeadOptions,
+    closed: bool,
+) -> Result<HeadSummary, String> {
+    if options.frames.is_some() && !closed && summary.completed == 0 {
         return Err(format!(
             "head smoke {:?}: expected at least one completed native frame",
             summary
