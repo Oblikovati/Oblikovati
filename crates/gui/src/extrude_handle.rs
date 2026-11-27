@@ -54,7 +54,10 @@ impl DistanceHandle {
         {
             self.drag = None;
         }
-        let projection = projection(ui, state);
+        let projection = projection(ui, state).and_then(|(points, ratio, engineering)| {
+            let points = clear_properties_panel(points, area, ui.window_pos(), ui.window_size())?;
+            Some((points, ratio, engineering))
+        });
         let points = self
             .drag
             .as_ref()
@@ -199,6 +202,41 @@ fn draw_dimension(ui: &imgui::Ui, [start, end]: [[f32; 2]; 2], label: &str) {
     draw.add_line(start, end, ink).thickness(2.).build();
     draw.add_circle(end, 5., ink).filled(true).build();
     draw.add_text([end[0] + 10., end[1] - 8.], ink, label);
+}
+
+fn clear_properties_panel(
+    points: [[f32; 2]; 2],
+    area: WorkspaceArea,
+    [left, top]: [f32; 2],
+    [width, height]: [f32; 2],
+) -> Option<[[f32; 2]; 2]> {
+    let [x, y] = points[1];
+    let clearance = SIDE / 2. + 4.;
+    let right = left + width;
+    let bottom = top + height;
+    if !(left - clearance..right + clearance).contains(&x)
+        || !(top - clearance..bottom + clearance).contains(&y)
+    {
+        return Some(points);
+    }
+    // Translate the whole projected axis so each pixel still represents the same depth.
+    let target = [
+        [right + clearance, y],
+        [left - clearance, y],
+        [x, bottom + clearance],
+        [x, top - clearance],
+    ]
+    .into_iter()
+    .filter(|point| in_workspace(*point, area))
+    .min_by(|a, b| {
+        let shift = |point| {
+            let along = delta(point, [x, y]);
+            dot(along, along)
+        };
+        shift(*a).total_cmp(&shift(*b))
+    })?;
+    let shift = delta(target, [x, y]);
+    Some(points.map(|point| [point[0] + shift[0], point[1] + shift[1]]))
 }
 
 fn in_workspace([x, y]: [f32; 2], area: WorkspaceArea) -> bool {

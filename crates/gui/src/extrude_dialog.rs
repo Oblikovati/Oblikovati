@@ -213,9 +213,6 @@ impl ExtrudeDialog {
         if let Some(reference) = controls.browser_plane.take() {
             self.reference.pick(reference);
         }
-        if self.update_distance_handle(ui, state, controls.area) {
-            controls.parameters.close_tolerance_inspection();
-        }
         self.size.fit(ui, controls.area);
         let _border = crate::theme::property_window_border(ui);
         let mut open = true;
@@ -223,6 +220,9 @@ impl ExtrudeDialog {
             .scroll_bar(false)
             .scrollable(false)
             .build(|| {
+                if self.update_distance_handle(ui, state, controls.area) {
+                    controls.parameters.close_tolerance_inspection();
+                }
                 crate::theme::floating_property_shadow(ui);
                 let style = ui.clone_style();
                 let chrome = ui.cursor_pos()[1] + style.window_padding[1] + style.item_spacing[1];

@@ -124,6 +124,8 @@ cap. Dragging it updates the distance expression through the same
 validation and preview path as panel input. The
 [native manipulator receipt](receipts/2026-11-27-extrude-manipulator-3870/README.md)
 checks the dimension, field, and preview mesh after both kinds of input.
+The handle moves clear of Properties when their bounds overlap.
+[Pointer input receipt](receipts/2026-11-27-extrude-handle-input-3870/README.md).
 
 Extrude accepts length expressions that reference part parameters. The
 [native driven-distance receipt](receipts/2026-11-27-extrude-driven-distance-3870/README.md)
