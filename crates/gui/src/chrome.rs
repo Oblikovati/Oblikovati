@@ -2,7 +2,7 @@
 use crate::application::ribbon_display::{RibbonDisplay, RibbonPlacement, TemporaryPanel};
 use crate::ribbon::{DocumentRibbon, RibbonFrame};
 use crate::{GuiCommandState, GuiFrameRequest, GuiShellAction};
-use imgui::{Condition, Ui};
+use imgui::{Condition, Ui, WindowFlags};
 /// Vertical space reserved for application controls and the native frame.
 pub(crate) const APPLICATION_BAR_HEIGHT: f32 = 32.;
 /// Right side reserved for the platform window controls (#4063).
@@ -313,30 +313,30 @@ fn application_controls_row(
     crate::widget_abi::cursor_position(ui, [10., 4.]);
     let width = (ui.window_size()[0] - APPLICATION_BAR_TRAILING_RESERVED - 10.).max(1.);
     let _padding = ui.push_style_var(imgui::StyleVar::WindowPadding([0., 0.]));
-    ui.child_window("##application-bar-controls")
-        .size([width, application_bar_height(owners.icons) - 4.])
-        .scroll_bar(false)
-        .scrollable(false)
-        .build(|| {
-            owners
-                .icons
-                .brand_mark(ui, !owners.quick_access.below_ribbon);
-            if !owners.quick_access.below_ribbon {
-                owners.quick_access.row(
-                    ui,
-                    owners.icons,
-                    &request.commands,
-                    actions,
-                    &owners.ribbon.tips,
-                );
-            }
-            application_document_context(
-                ui,
-                &request.commands,
-                owners.home_active,
-                application_bar_height(owners.icons),
-            );
-        });
+    let height = application_bar_height(owners.icons);
+    let region = crate::widget_abi::child_region(
+        ui,
+        "##application-bar-controls",
+        [width, height - 4.],
+        0.,
+        WindowFlags::NO_SCROLLBAR | WindowFlags::NO_SCROLL_WITH_MOUSE,
+    );
+    if !region.visible {
+        return;
+    }
+    owners
+        .icons
+        .brand_mark(ui, !owners.quick_access.below_ribbon);
+    if !owners.quick_access.below_ribbon {
+        owners.quick_access.row(
+            ui,
+            owners.icons,
+            &request.commands,
+            actions,
+            &owners.ribbon.tips,
+        );
+    }
+    application_document_context(ui, &request.commands, owners.home_active, height);
 }
 fn application_document_context(ui: &Ui, state: &GuiCommandState, home: bool, height: f32) {
     let title = if home && state.document.is_some() {
@@ -395,20 +395,24 @@ fn ribbon_menu_row(
         .max(40.);
     let height = tab_row_height(ui);
     let _padding = tab_overflow::tab_item_padding(ui);
-    ui.child_window("##ribbon-menu-row")
-        .size([width, height])
-        .menu_bar(true)
-        .build(|| {
-            ui.menu_bar(|| {
-                owners.files.menu(
-                    ui,
-                    &request.commands,
-                    actions,
-                    owners.ribbon.tips.tabs(),
-                    owners.icons,
-                );
-            });
+    let region = crate::widget_abi::child_region(
+        ui,
+        "##ribbon-menu-row",
+        [width, height],
+        0.,
+        WindowFlags::MENU_BAR,
+    );
+    if region.visible {
+        ui.menu_bar(|| {
+            owners.files.menu(
+                ui,
+                &request.commands,
+                actions,
+                owners.ribbon.tips.tabs(),
+                owners.icons,
+            );
         });
+    }
 }
 fn ribbon_panel_row(
     ui: &Ui,

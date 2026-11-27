@@ -26,14 +26,18 @@ pub(super) fn draw(ui: &Ui, ribbon: &mut DocumentRibbon, frame: &RibbonFrame) {
     let visible = &frame.tabs[..count];
     let changed = ribbon.tabs_changed(visible) || ribbon.tabs_settling();
     let _padding = ui.push_style_var(imgui::StyleVar::WindowPadding([0., 0.]));
-    ui.child_window("##ribbon-tab-region")
-        .size([tabs_width, tab_row_height(ui)])
-        .scroll_bar(false)
-        .scrollable(false)
-        .build(|| {
-            let _padding = tab_item_padding(ui);
-            draw_visible(ui, ribbon, frame, visible, changed);
-        });
+    let region = crate::widget_abi::child_region(
+        ui,
+        "##ribbon-tab-region",
+        [tabs_width, tab_row_height(ui)],
+        0.,
+        WindowFlags::NO_SCROLLBAR | WindowFlags::NO_SCROLL_WITH_MOUSE,
+    );
+    if region.visible {
+        let _padding = tab_item_padding(ui);
+        draw_visible(ui, ribbon, frame, visible, changed);
+    }
+    drop(region);
     if !hidden.is_empty() {
         ui.same_line();
         overflow_menu(ui, ribbon, hidden, overflow_width);

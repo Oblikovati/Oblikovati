@@ -27,7 +27,7 @@ mod text_projection;
 pub(crate) use text_projection::{projected_background_text, projected_text};
 #[path = "widget_scroll_region.rs"]
 mod scroll_region;
-pub(crate) use scroll_region::{scroll_region, scroll_region_with_content_width};
+pub(crate) use scroll_region::{child_region, scroll_region};
 #[cfg(test)]
 #[path = "widget_text_line_advance_tests.rs"]
 mod text_line_advance_tests;

@@ -1,17 +1,17 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use std::ffi::c_char;
 
-use imgui::{ImString, Ui};
+use imgui::{ImString, Ui, WindowFlags};
 
 unsafe extern "C" {
     fn oblikovati_gui_begin_scroll_region(identity: *const c_char, width: f32, height: f32)
     -> bool;
-    fn oblikovati_gui_begin_scroll_region_with_content_width(
+    fn oblikovati_gui_begin_child_region(
         identity: *const c_char,
         width: f32,
         height: f32,
         content_width: f32,
-        horizontal_scrollbar: bool,
+        flags: i32,
     ) -> bool;
 }
 
@@ -42,22 +42,22 @@ pub(crate) fn scroll_region<'ui>(
 }
 
 /// Size a child and its contents independently, preserving the numeric child ID used by `Ui::child_window`.
-pub(crate) fn scroll_region_with_content_width<'ui>(
+pub(crate) fn child_region<'ui>(
     ui: &'ui Ui,
     identity: &str,
     size: [f32; 2],
     content_width: f32,
-    horizontal_scrollbar: bool,
+    flags: WindowFlags,
 ) -> ScrollingRegion<'ui> {
     let identity = ImString::new(identity);
     // SAFETY: the UI owns the context and C++ constructs these vectors without a by-value aggregate ABI (#3803).
     let visible = unsafe {
-        oblikovati_gui_begin_scroll_region_with_content_width(
+        oblikovati_gui_begin_child_region(
             identity.as_ptr(),
             size[0],
             size[1],
             content_width,
-            horizontal_scrollbar,
+            flags.bits() as i32,
         )
     };
     ScrollingRegion { visible, _ui: ui }
