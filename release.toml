@@ -15,8 +15,8 @@ revision = "c8200b2da97c9a7dde43afb25debc977ff23b2fd"
 
 [kernel]
 repository = "Oblikovati/Martensite"
-version = "0.14.2"
-revision = "d463526642b7bf950ba33c7ab4a4c9bc97caffaf"
+version = "0.15.0"
+revision = "db01546bb032659682715c6120e628b95fe5773d"
 
 [linuxdeploy]
 url = ""

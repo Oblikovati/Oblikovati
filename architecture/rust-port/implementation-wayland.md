@@ -6,7 +6,7 @@ opens, errors creating its shell window or renderer surface are reported
 through the desktop startup path.
 
 Oblikovati owns the xdg-shell window, input queue, and text clipboard.
-Martensite v0.14.2 wraps the live surface and presents through Vulkan.
+Martensite v0.15.0 wraps the live surface and presents through Vulkan.
 The desktop loop waits on the compositor connection and the existing worker
 wake source. Pointer positions use drawable pixels. The viewport uses
 fractional-scale and viewporter when the compositor exposes both protocols,

@@ -1,0 +1,37 @@
+$ cargo test --locked --target-dir target/xtask -p oblikovati-build
+test result: ok. 115 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+$ cargo test --locked -p oblikovati-martensite --test planar_pick --test planar_curve_boundary --test release_probe --test sketch_prism -j5 -- --test-threads=1
+     Running tests/planar_curve_boundary.rs
+test rational_spline_and_ellipse_return_analytic_points_with_measured_residuals ... ok
+test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+     Running tests/planar_pick.rs
+test ellipse_and_periodic_circle_have_repeatable_analytic_minima ... ok
+test rotated_ellipse_pick_matches_the_independent_occt_minimum ... ok
+test result: ok. 12 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.00s
+     Running tests/release_probe.rs
+test result: ok. 30 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 4.33s
+     Running tests/sketch_prism.rs
+test result: ok. 140 passed; 0 failed; 2 ignored; 0 measured; 0 filtered out; finished in 24.78s
+
+Cargo audit advisory IDs, identical with the previous and updated lockfiles
+ID:        RUSTSEC-2026-0195
+ID:        RUSTSEC-2026-0194
+ID:        RUSTSEC-2026-0543
+ID:        RUSTSEC-2026-0542
+ID:        RUSTSEC-2024-0449
+ID:        RUSTSEC-2026-0371
+ID:        RUSTSEC-2026-0370
+ID:        RUSTSEC-2026-0372
+
+Release preflight reached application packaging after verifying the published dependency archives.
+Local packaging resources/icons/oblikovati.png is missing.
+
+$ cargo check --locked -p oblikovati-martensite -p oblikovati-viewport -p oblikovati-head --all-targets --all-features -j5
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 2m 59s
+
+$ cargo deny --all-features check
+advisories FAILED, bans ok, licenses FAILED, sources ok

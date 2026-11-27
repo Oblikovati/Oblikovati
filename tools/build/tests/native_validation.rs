@@ -84,7 +84,7 @@ fn a_changed_or_local_sdk_cannot_execute_its_installer() {
 fn a_changed_renderer_pin_is_rejected_before_fetching_the_installer() {
     let fixture = NativeRuntimeFixture::new();
     let lock = include_str!("../../../Cargo.lock")
-        .replace("d463526642b7bf950ba33c7ab4a4c9bc97caffaf", &"0".repeat(40));
+        .replace("db01546bb032659682715c6120e628b95fe5773d", &"0".repeat(40));
     fixture.files.put("Cargo.lock", &lock);
     let runner = fixture.runner();
     let error = prepare(
