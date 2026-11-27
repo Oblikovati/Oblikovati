@@ -279,8 +279,8 @@ fn native_default_filter_selects_and_clears_visible_face() {
         "selected face pixel {color:?}: expected teal"
     );
     assert!(
-        green_pixels(&selected) > green_pixels(&before) + 10,
-        "selected face: expected a bright green boundary"
+        outline_pixels(&selected) > outline_pixels(&before) + 10,
+        "selected face: expected the teal selection boundary"
     );
     let empty = super::super::viewport_pan::EMPTY_VIEW;
     super::super::x11_input::move_pointer(empty);
@@ -305,24 +305,21 @@ fn native_default_filter_selects_and_clears_visible_face() {
         "cleared face must recover its original appearance"
     );
     assert!(
-        green_pixels(&cleared) <= green_pixels(&before) + 10,
-        "cleared face: expected no green boundary"
+        outline_pixels(&cleared) <= outline_pixels(&before) + 10,
+        "cleared face: expected the teal selection boundary to disappear"
     );
     world.close();
 }
 
 #[cfg(target_os = "linux")]
-fn green_pixels(capture: &oblikovati_viewport::ViewportCapture) -> usize {
+fn outline_pixels(capture: &oblikovati_viewport::ViewportCapture) -> usize {
+    const DEFAULT_DARK_FACE_OUTLINE: [u8; 3] = [94, 234, 212];
     capture
         .rgba
         .as_chunks::<4>()
         .0
         .iter()
-        .filter(|pixel| {
-            pixel[1] > 180
-                && pixel[1] > pixel[0].saturating_add(80)
-                && pixel[1] > pixel[2].saturating_add(80)
-        })
+        .filter(|pixel| pixel[..3] == DEFAULT_DARK_FACE_OUTLINE)
         .count()
 }
 
