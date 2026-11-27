@@ -136,12 +136,17 @@ impl TemplateChooser {
         icons: &crate::icons::GuiRibbonIcons,
     ) {
         let layout = self.details_layout(ui, state);
-        let region = crate::widget_abi::scroll_region_with_content_width(
+        let mut flags = imgui::WindowFlags::empty();
+        flags.set(
+            imgui::WindowFlags::HORIZONTAL_SCROLLBAR,
+            self.view != TemplateView::List,
+        );
+        let region = crate::widget_abi::child_region(
             ui,
             "##template-gallery",
             [0., GALLERY_HEIGHT],
             self.gallery_width(ui, state, icons, layout),
-            self.view != TemplateView::List,
+            flags,
         );
         if region.visible {
             self.gallery(ui, state, layout, icons);
