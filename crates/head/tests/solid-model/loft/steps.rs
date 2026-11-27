@@ -7,6 +7,8 @@ use oblikovati_model::{document_sketch::DocumentSketchId, sketch::SketchEntityId
 use oblikovati_viewport::ViewportNavigation;
 
 mod edit;
+mod fixtures;
+use fixtures::parallel_sections_if_needed;
 mod surface;
 
 #[given("the part contains no visible sketches or solid bodies")]
@@ -40,6 +42,7 @@ fn loft_tip_is_dismissed(world: &mut ApplicationWorld) {
 
 #[given("Loft is open and Sketch1 contains a visible circle and center point")]
 fn loft_is_open_on_the_parallel_circles(world: &mut ApplicationWorld) {
+    parallel_sections_if_needed(world);
     let browser = world.state().browser.unwrap();
     assert!(
         browser
@@ -190,7 +193,9 @@ fn loft_body_key(world: &mut ApplicationWorld) -> String {
 #[given(
     "Loft is open with the two circular sections selected and the Transition tab has Automatic Mapping selected"
 )]
+#[given("the Loft Transition tab has Automatic Mapping selected")]
 fn transition_uses_automatic_mapping(world: &mut ApplicationWorld) {
+    parallel_sections_if_needed(world);
     pick_both_circles(world);
     click_loft_control(world, "Transition");
     assert!(loft_panel_has_text(world, "AutomaticMapping"));

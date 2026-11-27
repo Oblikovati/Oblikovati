@@ -83,6 +83,7 @@ fn loft_surface_key(world: &mut ApplicationWorld) -> String {
     "the user creates LoftSrf1 with surface output by selecting both circular sketches as sections"
 )]
 fn create_loft_surface_for_edit(world: &mut ApplicationWorld) {
+    parallel_sections_if_needed(world);
     open_loft_for_surface(world);
     pick_surface_sections(world);
     assert_eq!(world.state().loft_preview, Some(Ok(())));
@@ -92,6 +93,9 @@ fn create_loft_surface_for_edit(world: &mut ApplicationWorld) {
 
 #[given("LoftSrf1 is open on Transition with Automatic Mapping enabled")]
 fn open_surface_transition(world: &mut ApplicationWorld) {
+    if world.state().document.is_none() {
+        create_loft_surface_for_edit(world);
+    }
     let row = diagnostics::pointer_pixels(world.run("LoftSrf1").center());
     world.pump(crate::native::gui_loop_tests::pointer_click_events(row, 2));
     world.pump(Vec::new());

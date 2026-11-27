@@ -5,7 +5,9 @@ use super::*;
 const OPTIONS: [&str; 2] = ["ClosedLoop", "MergeTangentFaces"];
 
 #[given("the user creates a solid Loft1 by selecting both circular sketches as sections")]
+#[given("a solid Loft1 made from Sketch1 and Sketch2")]
 fn create_loft_to_edit(world: &mut ApplicationWorld) {
+    parallel_sections_if_needed(world);
     pick_both_circles(world);
     assert_eq!(world.state().loft_preview, Some(Ok(())));
     accept_loft(world);
@@ -79,6 +81,9 @@ fn saved_options_remain_unchecked(world: &mut ApplicationWorld) {
 
 #[given("Loft1 is open for editing in its default Rails mode")]
 fn starts_in_rails_mode(world: &mut ApplicationWorld) {
+    if world.state().document.is_none() {
+        create_loft_to_edit(world);
+    }
     double_click_loft(world);
     rails_and_preview_return(world);
 }
