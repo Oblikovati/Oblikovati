@@ -20,6 +20,84 @@ impl crate::GuiFrameEngine {
     }
 }
 
+pub(super) fn draw_feature_dialogs(
+    (ui, commands, area, icons, parameters): (
+        &imgui::Ui,
+        &GuiCommandState,
+        crate::application::document_creation::workspaces::WorkspaceArea,
+        &crate::icons::GuiRibbonIcons,
+        &mut crate::parameters::GuiParameterEditor,
+    ),
+    (extrude, plane_selection, popup_was_open, browser_plane): (
+        &mut crate::extrude_dialog::ExtrudeDialog,
+        bool,
+        bool,
+        Option<String>,
+    ),
+    (revolve, sweep, loft): (
+        &mut crate::revolve_dialog::RevolveDialog,
+        &mut crate::sweep_dialog::SweepDialog,
+        &mut crate::loft_dialog::LoftDialog,
+    ),
+    (blend, hole, shell, motion, offset): (
+        &mut crate::blend_dialog::BlendDialog,
+        &mut crate::hole_dialog::HoleDialog,
+        &mut crate::shell_feature_dialog::ShellFeatureDialog,
+        &mut crate::move_body_dialog::MoveBodyDialog,
+        &mut crate::offset_plane::OffsetPlaneDialog,
+    ),
+    selected: &mut Vec<GuiShellAction>,
+) {
+    extrude.panel(
+        ui,
+        commands,
+        plane_selection,
+        selected,
+        crate::extrude_dialog::ExtrudePanelControls {
+            icons,
+            parameters,
+            popup_was_open,
+            browser_plane,
+            area,
+        },
+    );
+    revolve.panel(ui, commands, (area, icons, parameters), selected);
+    sweep.panel(ui, commands, (area, icons), selected);
+    loft.panel(ui, commands, area, selected);
+    blend.panel(ui, commands, selected, area);
+    hole.panel(ui, commands, area, selected);
+    shell.panel(ui, commands, area, selected);
+    motion.panel(ui, commands, area, selected);
+    offset.panel(ui, commands, area, selected);
+}
+
+pub(super) fn sync_offset_plane(
+    commands: &GuiCommandState,
+    workspace: &mut crate::application::workspace_layout::WorkspaceLayout,
+    offset_plane: &mut crate::offset_plane::OffsetPlaneDialog,
+    selected: &mut Vec<GuiShellAction>,
+) {
+    let open_offset = selected.contains(&GuiShellAction::OpenOffsetPlane);
+    selected.retain(|action| !matches!(action, GuiShellAction::OpenOffsetPlane));
+    if !open_offset && !offset_plane.active() {
+        return;
+    }
+    let base = workspace
+        .take_selected_origin_plane()
+        .map(crate::GuiOffsetPlaneBase::Origin)
+        .or_else(|| selected_work_plane(commands).map(crate::GuiOffsetPlaneBase::WorkPlane))
+        .or_else(|| {
+            commands
+                .model_face_chosen
+                .then_some(crate::GuiOffsetPlaneBase::SelectedFace)
+        });
+    if open_offset && let Some(document) = commands.document {
+        offset_plane.open(document, base);
+    } else if let Some(base) = base {
+        offset_plane.choose(base);
+    }
+}
+
 pub(super) fn resolve_menu_extrude(commands: &GuiCommandState, actions: &mut [GuiShellAction]) {
     for action in actions {
         if *action == GuiShellAction::OpenExtrude {

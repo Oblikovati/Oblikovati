@@ -72,6 +72,14 @@ impl SketchRevolveDefinition {
         Ok(definition)
     }
 
+    /// Replace the primary angular driver (for example to bind an owned model parameter).
+    /// Example: `definition.with_angle(DatumAngle::parameter(3))?`.
+    pub fn with_angle(mut self, angle: DatumAngle) -> Result<Self, SketchRevolveError> {
+        self.angle = angle;
+        validation::validate_sources(&self).map_err(|cause| self.decline(cause))?;
+        Ok(self)
+    }
+
     /// Select an explicit straight sketch line as the revolution axis.
     /// Example: `definition.with_axis(SketchEntityId(6))?`.
     pub fn with_axis(mut self, axis: SketchEntityId) -> Result<Self, SketchRevolveError> {
@@ -188,13 +196,11 @@ impl SketchRevolveDefinition {
     /// Direct sketch, target body, and angle parameter dependencies without resolving sketch internals.
     pub fn source_reads(&self) -> FeatureReadFootprint {
         let mut keys = vec![FeatureReadKey::Sketch(self.sketch.0)];
-        if !self.full {
-            if let Some(parameter) = self.angle.parameter_id() {
-                keys.push(FeatureReadKey::Parameter(parameter));
-            }
-            if let Some(parameter) = self.second_angle.and_then(DatumAngle::parameter_id) {
-                keys.push(FeatureReadKey::Parameter(parameter));
-            }
+        if let Some(parameter) = self.angle.parameter_id() {
+            keys.push(FeatureReadKey::Parameter(parameter));
+        }
+        if let Some(parameter) = self.second_angle.and_then(DatumAngle::parameter_id) {
+            keys.push(FeatureReadKey::Parameter(parameter));
         }
         if let Some((_, _, source)) = self.boolean_target() {
             keys.push(FeatureReadKey::Feature(source));

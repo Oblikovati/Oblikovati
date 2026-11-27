@@ -25,7 +25,7 @@ use std::collections::BTreeMap;
 #[derive(Clone)]
 enum RevolveCommit {
     Create(Box<PreparedRevolve>),
-    Edit(FeatureId, SketchRevolveDefinition),
+    Edit(FeatureId, SketchRevolveDefinition, Vec<(u64, String)>),
 }
 
 enum RevolveOutcome {
@@ -55,14 +55,15 @@ pub(in crate::owner) fn edit_seeds(
             } else {
                 GuiRevolveExtent::Angle
             };
+            let owned = feature.owned_scalars();
             let angle = if definition.is_full() {
                 "360 deg".into()
             } else {
-                angle_field(snapshot, Some(definition.angle()))?
+                angle_field(snapshot, owned, Some(definition.angle()))?
             };
             let second_angle = definition
                 .second_angle()
-                .and_then(|value| angle_field(snapshot, Some(value)))
+                .and_then(|value| angle_field(snapshot, owned, Some(value)))
                 .unwrap_or_else(|| "45,00 deg".into());
             Some((
                 feature.id(),
@@ -91,10 +92,21 @@ fn saved_output(definition: &SketchRevolveDefinition) -> FeatureOutputMode {
     }
 }
 
-fn angle_field(snapshot: &DocumentSnapshot, angle: Option<DatumAngle>) -> Option<String> {
+fn angle_field(
+    snapshot: &DocumentSnapshot,
+    owned: &[oblikovati_model::feature::FeatureScalarBinding],
+    angle: Option<DatumAngle>,
+) -> Option<String> {
     let angle = angle?;
     match angle.parameter_id() {
-        Some(id) => Some(snapshot.parameters.get(id)?.name.clone()),
+        Some(id) => {
+            let parameter = snapshot.parameters.get(id)?;
+            if owned.iter().any(|binding| binding.parameter == id) {
+                Some(parameter.source.clone())
+            } else {
+                Some(parameter.name.clone())
+            }
+        }
         None => {
             let degrees = angle.resolve(&snapshot.parameters).ok()?.to_degrees();
             Some(format!("{degrees:.2} deg").replace(".00 deg", " deg"))

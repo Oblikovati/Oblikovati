@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Dockable Revolution Properties panel built on the shared Feature Properties shell.
+mod behavior;
 mod types;
 pub use types::{
     GuiRevolveAction, GuiRevolveEditSeed, GuiRevolveExtent, GuiRevolvePreview,
@@ -10,10 +11,11 @@ use crate::{
     GuiAuthoringContext, GuiCommandState, GuiShellAction,
     dockable_window::DockableWindow,
     feature_properties::{
-        FeatureOutputMode, SelectorStyle, SessionPresets, draw_error_badge, draw_output_section,
+        FeatureOutputMode, SelectorStyle, SessionPresets, draw_output_section,
         draw_properties_footer, draw_properties_header,
     },
     icons::{GuiRibbonIcons, IconGlyph},
+    parameters::GuiParameterEditor,
     widget_abi,
 };
 use imgui::Ui;
@@ -72,6 +74,7 @@ pub(crate) struct RevolveDialog {
     boolean_style: SelectorStyle,
     presets: SessionPresets<RevolvePresetFields>,
     waiting_for_sketch_doc: Option<u64>,
+    request_sketch_plane: bool,
     requested: bool,
 }
 
@@ -87,6 +90,10 @@ impl RevolveDialog {
 
     pub(crate) fn request_open(&mut self) {
         self.requested = true;
+    }
+
+    pub(crate) fn take_sketch_plane_request(&mut self) -> bool {
+        std::mem::take(&mut self.request_sketch_plane)
     }
 
     pub(super) fn open(&mut self, state: &GuiCommandState, feature: Option<FeatureId>) {
@@ -129,6 +136,7 @@ impl RevolveDialog {
             })
         {
             self.waiting_for_sketch_doc = state.document;
+            self.request_sketch_plane = true;
             return;
         }
         self.feature = feature;
@@ -203,19 +211,13 @@ impl RevolveDialog {
         &mut self,
         ui: &Ui,
         state: &GuiCommandState,
-        (area, icons): (
+        (area, icons, parameters): (
             crate::application::document_creation::workspaces::WorkspaceArea,
             &GuiRibbonIcons,
+            &mut GuiParameterEditor,
         ),
         actions: &mut Vec<GuiShellAction>,
     ) {
-        if let Some(doc) = self.waiting_for_sketch_doc
-            && state.document == Some(doc)
-            && state.authoring == GuiAuthoringContext::Part
-        {
-            actions.push(GuiShellAction::ChooseSketchPlane);
-            return;
-        }
         let Some(document) = self.document else {
             return;
         };
@@ -270,7 +272,7 @@ impl RevolveDialog {
                 self.second_angle = chosen.second_angle;
             }
             self.draw_input_geometry(ui, preview);
-            self.draw_behavior(ui, icons, current_result);
+            self.draw_behavior(ui, icons, current_result, document, parameters);
             self.draw_output(ui, icons, state);
             let footer = draw_properties_footer(ui, ok_enabled, self.preview_hidden);
             commit_now = footer.ok;
@@ -349,91 +351,6 @@ impl RevolveDialog {
             ui.same_line_with_spacing(0., 12.);
             if widget_abi::button(ui, "ClearAxis", [0.; 2]) {
                 self.axis = None;
-            }
-        }
-    }
-
-    fn draw_behavior(
-        &mut self,
-        ui: &Ui,
-        icons: &GuiRibbonIcons,
-        result: Option<&GuiRevolvePreview>,
-    ) {
-        if !ui.collapsing_header("Behavior", imgui::TreeNodeFlags::DEFAULT_OPEN) {
-            return;
-        }
-        crate::theme::property_label(ui, "Extent");
-        if widget_abi::button(ui, "Full", [0.; 2]) {
-            self.extent = GuiRevolveExtent::Full;
-            self.angle = "360 deg".into();
-            self.presets.clear_selection();
-        }
-        ui.same_line();
-        if widget_abi::button(ui, "Angle", [0.; 2]) {
-            self.extent = GuiRevolveExtent::Angle;
-            if self.angle == "360 deg" {
-                self.angle = "90 deg".into();
-            }
-            self.presets.clear_selection();
-        }
-        ui.same_line();
-        if widget_abi::button(ui, "To", [0.; 2]) {
-            self.extent = GuiRevolveExtent::ToReference;
-            self.presets.clear_selection();
-        }
-
-        if self.extent == GuiRevolveExtent::ToReference {
-            crate::theme::property_label(ui, "From");
-            ui.text("1 Sketch Plane");
-            crate::theme::property_label(ui, "To");
-            ui.text("Select Face");
-            return;
-        }
-
-        self.direction_style
-            .draw_style_menu(ui, "Direction", "##revolve-direction-style");
-        if let Some(chosen) = self.direction_style.choose(
-            ui,
-            icons,
-            "##revolve-direction",
-            self.direction,
-            &DIRECTIONS,
-            |_| true,
-        ) {
-            self.direction = chosen;
-            if chosen == SketchRevolveDirection::Asymmetric {
-                self.extent = GuiRevolveExtent::Angle;
-                if self.second_angle.trim().is_empty() {
-                    self.second_angle = "45,00 deg".into();
-                }
-            }
-            self.presets.clear_selection();
-        }
-
-        if self.extent == GuiRevolveExtent::Full {
-            crate::theme::property_label(ui, "Angle A");
-            ui.text("(360 deg)");
-            return;
-        }
-        crate::theme::property_label(ui, "Angle A");
-        ui.set_next_item_width((ui.content_region_avail()[0] - 28.).max(60.));
-        if ui.input_text("##revolve-angle-a", &mut self.angle).build() {
-            self.presets.clear_selection();
-        }
-        if let Some(GuiRevolvePreview::Failed(message)) = result {
-            draw_error_badge(ui, message);
-            if message.contains("Out of Range") {
-                ui.text("Out of Range");
-            }
-        }
-        if self.direction == SketchRevolveDirection::Asymmetric {
-            crate::theme::property_label(ui, "Angle B");
-            ui.set_next_item_width((ui.content_region_avail()[0] - 28.).max(60.));
-            if ui
-                .input_text("##revolve-angle-b", &mut self.second_angle)
-                .build()
-            {
-                self.presets.clear_selection();
             }
         }
     }

@@ -44,7 +44,8 @@ pub use loft::{
     PreparedLoft, loft_definition, prepare_loft, replace_loft_section, replace_loft_takeoff,
 };
 pub use revolve::{
-    PreparedRevolve, RevolveInputs, automatic_revolve_profile, parse_positive_turn_angle,
+    PreparedRevolve, REVOLVE_ANGLE_ROLE, REVOLVE_SECOND_ANGLE_ROLE, RevolveInputs,
+    automatic_revolve_profile, canonical_angle_expression, parse_positive_turn_angle,
     prepare_revolve_definition,
 };
 pub use shell::{PreparedShell, prepare_shell};

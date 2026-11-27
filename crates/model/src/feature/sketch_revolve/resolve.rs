@@ -102,14 +102,12 @@ impl SketchRevolveDefinition {
             .map_err(|cause| self.decline(SketchRevolveCause::Sketch(cause)))?;
         let mut keys = sketch.read_footprint().keys().clone();
         keys.insert(FeatureReadKey::Sketch(self.sketch.0));
-        if !self.full {
-            keys.extend(self.angle.parameter_id().map(FeatureReadKey::Parameter));
-            keys.extend(
-                self.second_angle
-                    .and_then(DatumAngle::parameter_id)
-                    .map(FeatureReadKey::Parameter),
-            );
-        }
+        keys.extend(self.angle.parameter_id().map(FeatureReadKey::Parameter));
+        keys.extend(
+            self.second_angle
+                .and_then(DatumAngle::parameter_id)
+                .map(FeatureReadKey::Parameter),
+        );
         if let Some((_, _, source)) = self.boolean_target() {
             keys.insert(FeatureReadKey::Feature(source));
         }

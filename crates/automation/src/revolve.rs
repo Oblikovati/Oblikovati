@@ -14,6 +14,7 @@ use oblikovati_model::{
         work_geometry::{DatumAngle, WorkGeometryEvaluation},
     },
     history::{DocumentSnapshot, RecipeReservations},
+    quantity::Dimension,
     sketch::SketchEntityId,
 };
 use oblikovati_persistence::file_access::DocumentFiles;
@@ -21,12 +22,18 @@ use oblikovati_session::{TransactionObserver, files::FileWorkspace, workspace::W
 use std::f64::consts::TAU;
 
 const ANGLE_EPSILON: f64 = 1e-9;
+/// Owned scalar role name for the primary Revolve Angle A model parameter.
+pub const REVOLVE_ANGLE_ROLE: &str = "angle";
+/// Owned scalar role name for the Asymmetric Revolve Angle B model parameter.
+pub const REVOLVE_SECOND_ANGLE_ROLE: &str = "angle-b";
 
 /// A validated Revolve whose inputs are bound to authored sketch and body identities.
 #[derive(Clone)]
 pub struct PreparedRevolve {
     name: String,
     definition: SketchRevolveDefinition,
+    owned_angle: Option<String>,
+    owned_second_angle: Option<String>,
 }
 
 impl PreparedRevolve {
@@ -36,14 +43,71 @@ impl PreparedRevolve {
         snapshot: &mut DocumentSnapshot,
         ids: &mut RecipeReservations<'_>,
     ) -> Result<FeatureId, Error> {
-        snapshot
-            .create_sketch_revolve(&self.name, self.definition, ids)
-            .map_err(api_error)
+        let mut definition = self.definition;
+        let first = self
+            .owned_angle
+            .as_deref()
+            .map(|source| insert_owned_angle(snapshot, ids, source))
+            .transpose()?;
+        let second = self
+            .owned_second_angle
+            .as_deref()
+            .map(|source| insert_owned_angle(snapshot, ids, source))
+            .transpose()?;
+        if let Some(parameter) = first {
+            definition = definition
+                .with_angle(DatumAngle::parameter(parameter))
+                .map_err(api_error)?;
+        }
+        if let Some(parameter) = second {
+            definition = definition
+                .with_asymmetric_angle(DatumAngle::parameter(parameter))
+                .map_err(api_error)?;
+        }
+        let feature = snapshot
+            .create_sketch_revolve(&self.name, definition, ids)
+            .map_err(api_error)?;
+        for (role, parameter) in [
+            (REVOLVE_ANGLE_ROLE, first),
+            (REVOLVE_SECOND_ANGLE_ROLE, second),
+        ] {
+            if let Some(parameter) = parameter {
+                snapshot
+                    .work_geometry
+                    .assign_scalar_owner(feature, role, parameter)
+                    .map_err(api_error)?;
+            }
+        }
+        Ok(feature)
     }
 
     /// Inspect the prepared authored definition. Example: `prepared.definition()`.
     pub fn definition(&self) -> &SketchRevolveDefinition {
         &self.definition
+    }
+}
+
+fn insert_owned_angle(
+    snapshot: &mut DocumentSnapshot,
+    ids: &mut RecipeReservations<'_>,
+    source: &str,
+) -> Result<u64, Error> {
+    let parameter = ids.allocate().map_err(api_error)?;
+    snapshot
+        .parameters
+        .insert_auto_model_scalar(parameter, source, Dimension::Angle)
+        .map_err(api_error)?;
+    Ok(parameter)
+}
+
+/// Normalize a user-typed angle expression, appending the document's preferred angle unit to bare numbers.
+pub fn canonical_angle_expression(snapshot: &DocumentSnapshot, expression: &str) -> String {
+    let normalized = expression.trim().replace(',', ".");
+    if normalized.parse::<f64>().is_ok() {
+        let unit = snapshot.parameters.units().preferred_name(Dimension::Angle);
+        format!("{normalized} {unit}")
+    } else {
+        normalized
     }
 }
 
@@ -113,16 +177,22 @@ pub fn prepare_revolve_definition(
     datums: &WorkGeometryEvaluation,
     inputs: RevolveInputs<'_>,
 ) -> Result<PreparedRevolve, Error> {
-    let primary = if inputs.full {
-        DatumAngle::constant(TAU).map_err(api_error)?
+    let (primary, owned_angle) = if inputs.full {
+        (DatumAngle::constant(TAU).map_err(api_error)?, None)
     } else {
-        parse_positive_turn_angle(snapshot, inputs.angle, "revolve angle")?
+        let parsed = parse_positive_turn_angle(snapshot, inputs.angle, "revolve angle")?;
+        let owned = parsed
+            .parameter_id()
+            .is_none()
+            .then(|| canonical_angle_expression(snapshot, inputs.angle));
+        (parsed, owned)
     };
     let mut definition = SketchRevolveDefinition::new(inputs.sketch, inputs.selection, primary)
         .map_err(api_error)?;
     if let Some(axis) = inputs.axis {
         definition = definition.with_axis(axis).map_err(api_error)?;
     }
+    let mut owned_second_angle = None;
     if inputs.full {
         definition = definition.with_full_turn();
     } else if inputs.direction == SketchRevolveDirection::Asymmetric {
@@ -135,6 +205,10 @@ pub fn prepare_revolve_definition(
         if sum > TAU + ANGLE_EPSILON {
             return Err(Error("Out of Range: combined angle exceeds 360 deg".into()));
         }
+        owned_second_angle = second
+            .parameter_id()
+            .is_none()
+            .then(|| canonical_angle_expression(snapshot, second_expr));
         definition = definition
             .with_asymmetric_angle(second)
             .map_err(api_error)?;
@@ -159,6 +233,8 @@ pub fn prepare_revolve_definition(
     Ok(PreparedRevolve {
         name: crate::fillet::next_name(snapshot, prefix)?,
         definition,
+        owned_angle,
+        owned_second_angle,
     })
 }
 

@@ -87,6 +87,156 @@ fn preview_y_bounds(world: &mut ApplicationWorld) -> (f32, f32) {
         })
 }
 
+#[given("a fresh copy of `fixtures/cad/revolve/revolve-blank.opd` is open with no sketch or solid")]
+fn open_revolve_blank(world: &mut ApplicationWorld) {
+    open_fixture_copy(world, "fixtures/cad/revolve/revolve-blank.opd");
+    let browser = world.state().browser.unwrap();
+    assert!(browser.sketches.is_empty(), "expected no sketches");
+    assert!(browser.bodies.is_empty(), "expected no solid bodies");
+}
+
+#[when("Revolve is invoked and a plane is selected")]
+fn invoke_revolve_and_select_plane(world: &mut ApplicationWorld) {
+    invoke_revolve(world);
+    world.click_text("XY Plane");
+    world.pump(Vec::new());
+}
+
+#[then("sketch creation is entered")]
+fn sketch_creation_entered(world: &mut ApplicationWorld) {
+    let state = world.state();
+    assert_eq!(state.authoring, oblikovati_gui::GuiAuthoringContext::Sketch);
+    let browser = state.browser.unwrap();
+    assert_eq!(browser.sketches.len(), 1);
+    assert_eq!(browser.sketches[0].name, "Sketch1");
+}
+
+#[when("a rectangle is drawn and Finish Sketch is clicked")]
+fn draw_rectangle_and_finish_sketch(world: &mut ApplicationWorld) {
+    world.draw_rectangle();
+    assert_eq!(world.edited_geometry().lines().len(), 4);
+    world.finish_sketch();
+    world.pump(Vec::new());
+}
+
+#[then("Revolution shows 1 Profile and requests an Axis")]
+fn revolution_shows_profile_and_requests_axis(world: &mut ApplicationWorld) {
+    assert!(super::diagnostics::window_geometry("Revolution").is_some());
+    revolve_has_profile_and_no_axis(world);
+}
+
+#[when("Parameters is chosen from Angle A options")]
+fn choose_parameters_from_angle_a_options(world: &mut ApplicationWorld) {
+    let field = world.run_in_window("Revolution", "AngleA").center();
+    let (position, size) = super::diagnostics::window_geometry("Revolution").unwrap();
+    let button = super::diagnostics::pointer_pixels([position[0] + size[0] - 20., field[1]]);
+    world.click(button);
+    world.pump(Vec::new());
+    let item = world
+        .frame
+        .runs
+        .iter()
+        .find(|row| world.frame.is_popup_row(row) && row.text == "Parameters")
+        .unwrap_or_else(|| {
+            panic!(
+                "expected Parameters in Angle A options popup, saw {}",
+                world.text()
+            )
+        })
+        .center();
+    world.click(super::diagnostics::pointer_pixels(item));
+    world.pump(Vec::new());
+    world.pump(Vec::new());
+}
+
+#[then("Parameters shows d0 consumed by RevolutionSrf1")]
+fn parameters_shows_d0_consumed_by_revolution_srf1(world: &mut ApplicationWorld) {
+    assert!(super::diagnostics::window_geometry("Parameters").is_some());
+    let text = super::world::squeezed(&world.window_text("Parameters"));
+    assert!(
+        text.contains("d0") && text.contains("RevolutionSrf1"),
+        "expected d0 and RevolutionSrf1 in Parameters window, got {text}"
+    );
+}
+
+#[then("its unit is deg and equation is 90 deg")]
+fn d0_unit_and_equation(world: &mut ApplicationWorld) {
+    let text = super::world::squeezed(&world.window_text("Parameters"));
+    assert!(
+        text.contains("deg") && text.contains("90deg"),
+        "expected deg and 90 deg in Parameters window, got {text}"
+    );
+    let document = world.active_id();
+    let session = world
+        .app()
+        .owner
+        .documents()
+        .workspace()
+        .session(document)
+        .unwrap();
+    let snapshot = session.snapshot();
+    let id = *snapshot
+        .parameters
+        .ids()
+        .iter()
+        .find(|id| {
+            snapshot
+                .parameters
+                .get(**id)
+                .is_some_and(|p| p.name == "d0")
+        })
+        .expect("expected d0 parameter");
+    let detail = oblikovati_automation::parameter_detail(&snapshot.parameters, id).unwrap();
+    assert_eq!(detail.units, "deg");
+    assert_eq!(detail.parameter_info.expression, "90 deg");
+}
+
+#[then("its nominal and model values are 90")]
+fn d0_nominal_and_model_values_90(world: &mut ApplicationWorld) {
+    let document = world.active_id();
+    let session = world
+        .app()
+        .owner
+        .documents()
+        .workspace()
+        .session(document)
+        .unwrap();
+    let snapshot = session.snapshot();
+    let id = *snapshot
+        .parameters
+        .ids()
+        .iter()
+        .find(|id| {
+            snapshot
+                .parameters
+                .get(**id)
+                .is_some_and(|p| p.name == "d0")
+        })
+        .expect("expected d0 parameter");
+    let value = snapshot
+        .parameters
+        .inspection_value(id)
+        .unwrap()
+        .expect("expected evaluated angle");
+    let degrees = value.value.to_degrees();
+    assert!(
+        (degrees - 90.).abs() < 1e-6,
+        "expected 90 deg, got {degrees}"
+    );
+    let text = super::world::squeezed(&world.window_text("Parameters"));
+    assert!(
+        text.contains("90"),
+        "expected 90 in Parameters window, got {text}"
+    );
+}
+
+#[then("the Revolution property panel is visible again")]
+fn revolution_panel_visible_again(world: &mut ApplicationWorld) {
+    assert!(super::diagnostics::window_geometry("Parameters").is_none());
+    assert!(super::diagnostics::window_geometry("Revolution").is_some());
+    world.run_in_window("Revolution", "AngleA");
+}
+
 #[given("a fresh copy of `fixtures/cad/revolve/revolve-profile.opd` is open and Revolve is active")]
 fn open_revolve_profile_active(world: &mut ApplicationWorld) {
     open_fixture_copy(world, "fixtures/cad/revolve/revolve-profile.opd");

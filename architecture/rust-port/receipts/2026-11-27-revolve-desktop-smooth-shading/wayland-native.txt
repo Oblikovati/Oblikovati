@@ -1,9 +1,13 @@
-Command exited with code 0.
-
-Command output:
 
 running 1 test
 Feature: Revolve
+  Scenario: revolve-01 Prepare a sketch when Revolve starts in an empty part
+   ✔  Given a fresh copy of `fixtures/cad/revolve/revolve-blank.opd` is open with no sketch or solid
+   ✔  When Revolve is invoked and a plane is selected
+   ✔  Then sketch creation is entered
+   ✔  When a rectangle is drawn and Finish Sketch is clicked
+   ✔  Then Revolution shows 1 Profile and requests an Axis
+   ✔  And OK is disabled
   Scenario: revolve-02 Supply a straight sketch edge as the axis
    ✔  Given a fresh copy of `fixtures/cad/revolve/revolve-profile.opd` is open and Revolve is active
    ✔  And Revolution has its rectangular profile selected and no axis
@@ -69,6 +73,7 @@ Feature: Revolve
    ✔  When Redo is invoked
    ✔  Then the partial shape returns
   Scenario: revolve-10 Reject the sampled 400 degree angle and restores full mode
+test native::gui_loop_tests::application_bdd::application_scenarios_use_the_native_window has been running for over 60 seconds
    ✔  Given a writable copy of `fixtures/cad/revolve/revolve-profile.opd` is open
    ✔  And I create and accept a full solid Revolution1 from the rectangular profile using its long edge at Y=0 as the axis
    ✔  And I edit Revolution1 to a 90 degree partial revolution, accept it and reopen it for editing
@@ -77,7 +82,6 @@ Feature: Revolve
    ✔  When the full revolution control is clicked
    ✔  Then the angle displays the full 360 degree setting
    ✔  And the cylinder preview and enabled OK return
-test native::gui_loop_tests::application_bdd::application_scenarios_use_the_native_window has been running for over 60 seconds
   Scenario: revolve-11 Require a termination reference in the alternate extent mode
    ✔  Given a writable copy of `fixtures/cad/revolve/revolve-profile.opd` is open
    ✔  And I create and accept a full solid Revolution1 from the rectangular profile using its long edge at Y=0 as the axis
@@ -123,6 +127,16 @@ test native::gui_loop_tests::application_bdd::application_scenarios_use_the_nati
    ✔  Then Profiles displays 4 Curves and the valid preview returns
    ✔  When Cancel is clicked
    ✔  Then the panel closes and the accepted surface remains
+  Scenario: revolve-16 Inspect the model parameter used by a surface revolution angle
+   ✔  Given a writable copy of `fixtures/cad/revolve/revolve-profile.opd` is open
+   ✔  And I create and accept a 90 degree surface revolution from the four rectangle curves using the long Y=0 edge as the axis
+   ✔  And I reopen RevolutionSrf1 for editing
+   ✔  When Parameters is chosen from Angle A options
+   ✔  Then Parameters shows d0 consumed by RevolutionSrf1
+   ✔  And its unit is deg and equation is 90 deg
+   ✔  And its nominal and model values are 90
+   ✔  When Done is clicked
+   ✔  Then the Revolution property panel is visible again
   Scenario: revolve-17 Display named revolution directions
    ✔  Given a fresh copy of `fixtures/cad/revolve/revolve-profile.opd` is open and Revolve is active
    ✔  And Direction uses icon selector style
@@ -204,9 +218,9 @@ test native::gui_loop_tests::application_bdd::application_scenarios_use_the_nati
    ✔  Then the indicator clears and OK is enabled
 [Summary]
 1 feature
-23 scenarios (23 passed)
-174 steps (174 passed)
+25 scenarios (25 passed)
+189 steps (189 passed)
 test native::gui_loop_tests::application_bdd::application_scenarios_use_the_native_window ... ok
 
-test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1794 filtered out; finished in 164.60s
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1794 filtered out; finished in 178.67s
 

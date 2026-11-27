@@ -286,6 +286,13 @@ fn both_ellipses(world: &mut ApplicationWorld) {
 
 #[when("Done is clicked")]
 fn done(world: &mut ApplicationWorld) {
+    if diagnostics::window_geometry("Parameters").is_some() {
+        let done = world.run_in_window("Parameters", "Done").center();
+        world.click(diagnostics::pointer_pixels(done));
+        world.pump(Vec::new());
+        assert!(diagnostics::window_geometry("Parameters").is_none());
+        return;
+    }
     let done = world.run_in_window("Move", "Done").center();
     world.click(diagnostics::pointer_pixels(done));
     assert!(world.state().sketch_move.is_none());

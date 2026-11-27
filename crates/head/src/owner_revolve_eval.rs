@@ -3,7 +3,8 @@
 use super::*;
 use oblikovati_api::Error;
 use oblikovati_automation::{
-    PartUpdateAccess, RevolveInputs, automatic_revolve_profile, parse_positive_turn_angle,
+    PartUpdateAccess, REVOLVE_ANGLE_ROLE, REVOLVE_SECOND_ANGLE_ROLE, RevolveInputs,
+    automatic_revolve_profile, canonical_angle_expression, parse_positive_turn_angle,
     prepare_revolve_definition, sweep_boolean_target,
 };
 use oblikovati_gui::{GuiRevolveExtent, GuiRevolveRequest};
@@ -15,6 +16,7 @@ use oblikovati_model::{
         work_geometry::DatumAngle,
     },
     history::DocumentSnapshot,
+    quantity::Dimension,
 };
 
 impl<
@@ -103,13 +105,42 @@ impl<
             .session(request.document)
             .map_err(|cause| cause.to_string())?
             .snapshot();
+        let existing_feature = snapshot
+            .work_geometry
+            .get(id)
+            .map_err(|cause| cause.to_string())?;
+        let owned_angle = existing_feature
+            .owned_scalars()
+            .iter()
+            .find(|binding| binding.role == REVOLVE_ANGLE_ROLE)
+            .map(|binding| binding.parameter);
+        let owned_second = existing_feature
+            .owned_scalars()
+            .iter()
+            .find(|binding| binding.role == REVOLVE_SECOND_ANGLE_ROLE)
+            .map(|binding| binding.parameter);
         let existing = revolve_definition(snapshot, id)?.clone();
         let full = request.extent == GuiRevolveExtent::Full;
+        let mut param_updates = Vec::new();
         let primary = if full {
-            DatumAngle::constant(std::f64::consts::TAU).map_err(|cause| cause.to_string())?
+            match owned_angle {
+                Some(param) => DatumAngle::parameter(param),
+                None => DatumAngle::constant(std::f64::consts::TAU)
+                    .map_err(|cause| cause.to_string())?,
+            }
         } else {
-            parse_positive_turn_angle(snapshot, &request.angle, "revolve angle")
-                .map_err(|cause| cause.to_string())?
+            let parsed = parse_positive_turn_angle(snapshot, &request.angle, "revolve angle")
+                .map_err(|cause| cause.to_string())?;
+            match owned_angle {
+                Some(param) => {
+                    if parsed.parameter_id() != Some(param) {
+                        param_updates
+                            .push((param, canonical_angle_expression(snapshot, &request.angle)));
+                    }
+                    DatumAngle::parameter(param)
+                }
+                None => parsed,
+            }
         };
         let mut edited =
             SketchRevolveDefinition::new(existing.sketch(), existing.selection().clone(), primary)
@@ -120,9 +151,21 @@ impl<
         if full {
             edited = edited.with_full_turn();
         } else if request.direction == SketchRevolveDirection::Asymmetric {
-            let second =
+            let parsed_second =
                 parse_positive_turn_angle(snapshot, &request.second_angle, "revolve angle B")
                     .map_err(|cause| cause.to_string())?;
+            let second = match owned_second {
+                Some(param) => {
+                    if parsed_second.parameter_id() != Some(param) {
+                        param_updates.push((
+                            param,
+                            canonical_angle_expression(snapshot, &request.second_angle),
+                        ));
+                    }
+                    DatumAngle::parameter(param)
+                }
+                None => parsed_second,
+            };
             edited = edited
                 .with_asymmetric_angle(second)
                 .map_err(|cause| cause.to_string())?;
@@ -152,7 +195,7 @@ impl<
             .map_err(|cause| cause.to_string())?;
         let projection = session
             .preview_projected(
-                |candidate, _| replace_revolve(candidate, id, edited.clone()),
+                |candidate, _| apply_revolve_edit(candidate, id, edited.clone(), &param_updates),
                 |candidate, ()| {
                     Ok(self.part_scenes.project_feature_edit(
                         &self.files,
@@ -176,7 +219,11 @@ impl<
                     ));
                     self.part_scenes.invalidate_presentation();
                 }
-                Ok(RevolveOutcome::Ready(RevolveCommit::Edit(id, edited)))
+                Ok(RevolveOutcome::Ready(RevolveCommit::Edit(
+                    id,
+                    edited,
+                    param_updates,
+                )))
             }
             Err(FeatureEditPreviewError::UnchangedCut(cause)) => {
                 Ok(RevolveOutcome::UnchangedCut(cause))
@@ -206,13 +253,13 @@ impl<
                 )
                 .map_err(|cause| cause.to_string())?;
             }
-            RevolveCommit::Edit(id, definition) => {
+            RevolveCommit::Edit(id, definition, param_updates) => {
                 oblikovati_automation::edit_part_with_checkpoints(
                     &mut self.files,
                     &mut self.part_scenes,
                     document,
                     "Edit Revolution",
-                    |snapshot, _| replace_revolve(snapshot, id, definition),
+                    |snapshot, _| apply_revolve_edit(snapshot, id, definition, &param_updates),
                 )
                 .map_err(|cause| cause.to_string())?;
             }
@@ -235,11 +282,18 @@ pub(super) fn revolve_definition(
     Ok(definition)
 }
 
-fn replace_revolve(
+fn apply_revolve_edit(
     snapshot: &mut DocumentSnapshot,
     id: FeatureId,
     definition: SketchRevolveDefinition,
+    param_updates: &[(u64, String)],
 ) -> Result<(), Error> {
+    for (param, expr) in param_updates {
+        snapshot
+            .parameters
+            .set_scalar_expression(*param, expr, Dimension::Angle)
+            .map_err(|cause| Error(cause.to_string()))?;
+    }
     let reads = definition
         .reads(snapshot)
         .map_err(|cause| Error(cause.to_string()))?;

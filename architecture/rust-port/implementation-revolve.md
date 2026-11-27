@@ -26,8 +26,10 @@ and `Asymmetric` with `Angle A` / `Angle B`), `Surface` output, and single-body
 - **Desktop GUI and owner (`crates/gui`, `crates/head`)**: Extracted the reusable
   `FeaturePropertiesShell` (`crates/gui/src/feature_properties/`) and built the
   dockable `Revolution` Properties panel (`crates/gui/src/revolve_dialog/`),
-  default `R` keyboard shortcut, viewport straight-edge axis picking, preview
-  visibility toggle, session presets, and `Edit Feature` reopening.
+  default `R` keyboard shortcut, empty-part sketch-on-plane auto-reopen flow,
+  viewport straight-edge axis picking, owned `d0` angle model parameter with
+  Angle A `Parameters` inspection, preview visibility toggle, session presets,
+  and `Edit Feature` reopening.
 
 ## Verification
 
@@ -35,9 +37,6 @@ and `Asymmetric` with `Angle A` / `Angle B`), `Surface` output, and single-body
   verifies analytic volumes, named face topology, Undo/Redo, package reopen, and
   analytical smooth radial vertex normals across full, partial, asymmetric,
   surface, and Boolean (`Join`, `Cut`, `Intersect`) revolutions.
-- **Native desktop BDD**: 23 scenarios (`revolve-02`..`15`, `revolve-17`..`18`,
-  `revolve-21`..`27`, 174 steps) passed on both native Wayland and X11 (Xvfb +
-  Lavapipe). See the
+- **Native desktop BDD**: All 25 Revolve scenarios (`revolve-01`..`18`,
+  `revolve-21`..`27`, 189 steps) passed on native Wayland. See the
   [native Revolve and smooth shading receipt](receipts/2026-11-27-revolve-desktop-smooth-shading/README.md).
-- **Remaining Revolve scope**: `revolve-01` (empty-part sketch-on-plane flow) and
-  `revolve-16` (Angle A parameter picker menu) remain unbound.

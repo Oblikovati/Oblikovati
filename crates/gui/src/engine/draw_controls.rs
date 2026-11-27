@@ -191,28 +191,12 @@ impl GuiFrameEngine {
         selected.retain(|action| !matches!(action, GuiShellAction::OpenModelStateTable));
         self.model_state_table
             .panel(ui, &request.commands, &mut selected);
-        let open_offset = selected.contains(&GuiShellAction::OpenOffsetPlane);
-        selected.retain(|action| !matches!(action, GuiShellAction::OpenOffsetPlane));
-        if open_offset || self.offset_plane.active() {
-            let base = self
-                .workspace
-                .take_selected_origin_plane()
-                .map(crate::GuiOffsetPlaneBase::Origin)
-                .or_else(|| {
-                    selected_work_plane(&request.commands).map(crate::GuiOffsetPlaneBase::WorkPlane)
-                })
-                .or_else(|| {
-                    request
-                        .commands
-                        .model_face_chosen
-                        .then_some(crate::GuiOffsetPlaneBase::SelectedFace)
-                });
-            if open_offset && let Some(document) = request.commands.document {
-                self.offset_plane.open(document, base);
-            } else if let Some(base) = base {
-                self.offset_plane.choose(base);
-            }
-        }
+        feature_actions::sync_offset_plane(
+            &request.commands,
+            &mut self.workspace,
+            &mut self.offset_plane,
+            &mut selected,
+        );
         for action in &selected {
             if let GuiShellAction::OpenSketchPattern { sketch, pattern } = action {
                 self.sketch_pattern
@@ -304,6 +288,10 @@ impl GuiFrameEngine {
             ),
             &mut self.extrude_dialog,
         );
+        let revolve_needs_plane = self.revolve_dialog.take_sketch_plane_request();
+        if revolve_needs_plane {
+            self.plane_selection.active = true;
+        }
         self.home.panel(
             ui,
             &request.commands,
@@ -322,31 +310,32 @@ impl GuiFrameEngine {
             .panel(ui, commands, &mut selected, self.home.active, icons);
         let assets = (&mut self.material_browser, &mut self.appearance_browser);
         Self::draw_asset_docks(assets, ui, commands, self.home.active, &mut selected);
-        self.extrude_dialog.panel(
-            ui,
-            commands,
+        let browser_plane = self.workspace.take_picked_plane_reference();
+        let extrude_ctx = (
+            &mut self.extrude_dialog,
             self.plane_selection.active,
-            &mut selected,
-            crate::extrude_dialog::ExtrudePanelControls {
-                icons,
-                parameters: &mut self.parameter_editor,
-                popup_was_open: self.popup_was_open,
-                browser_plane: self.workspace.take_picked_plane_reference(),
-                area,
-            },
+            self.popup_was_open,
+            browser_plane,
         );
-        self.revolve_dialog
-            .panel(ui, commands, (area, icons), &mut selected);
-        self.sweep_dialog
-            .panel(ui, commands, (area, icons), &mut selected);
-        self.loft_dialog.panel(ui, commands, area, &mut selected);
-        self.blend_dialog.panel(ui, commands, &mut selected, area);
-        self.hole_dialog.panel(ui, commands, area, &mut selected);
-        self.shell_feature_dialog
-            .panel(ui, commands, area, &mut selected);
-        self.move_body_dialog
-            .panel(ui, commands, area, &mut selected);
-        self.offset_plane.panel(ui, commands, area, &mut selected);
+        let create_dialogs = (
+            &mut self.revolve_dialog,
+            &mut self.sweep_dialog,
+            &mut self.loft_dialog,
+        );
+        let modify_dialogs = (
+            &mut self.blend_dialog,
+            &mut self.hole_dialog,
+            &mut self.shell_feature_dialog,
+            &mut self.move_body_dialog,
+            &mut self.offset_plane,
+        );
+        feature_actions::draw_feature_dialogs(
+            (ui, commands, area, icons, &mut self.parameter_editor),
+            extrude_ctx,
+            create_dialogs,
+            modify_dialogs,
+            &mut selected,
+        );
         let interface = (&self.quick_access, &self.workspace);
         let keep_empty = self.shell_feature_dialog.active();
         self.ribbon
@@ -474,8 +463,10 @@ impl GuiFrameEngine {
                 over_extrude_measurement,
             ),
         );
-        activity.pending_layout |=
-            dock_lifecycle_changed || cancelled_pick || self.workspace_needs_frame(home_was_active);
+        activity.pending_layout |= dock_lifecycle_changed
+            || cancelled_pick
+            || revolve_needs_plane
+            || self.workspace_needs_frame(home_was_active);
         Ok(GuiFrameOutput {
             window_action,
             window_controls,
