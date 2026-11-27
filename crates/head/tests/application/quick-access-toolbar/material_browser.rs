@@ -12,8 +12,13 @@ fn appearance_browser_opens_its_own_window_and_assigns_an_appearance() {
     assert!(window_geometry("Material Browser").is_some());
     assert!(window_geometry("Appearance Browser").is_some());
     let chosen = world.state().browser.unwrap().appearances[0].id.clone();
+    let list = super::super::diagnostics::window_draw_list("Appearance Browser").unwrap();
     let button = world
-        .run_in_window("Appearance Browser", "Assigntopart")
+        .frame
+        .runs
+        .iter()
+        .find(|run| run.list == list && run.text == "Assigntopart")
+        .expect("expected the Appearance Browser assignment button")
         .center();
     world.click(super::super::diagnostics::pointer_pixels(button));
     assert_eq!(
