@@ -68,6 +68,7 @@ impl PartFeatureEvaluator for CertifiedNamedSolidEvaluator<'_> {
             self.document,
             feature,
             input.sections.map(|section| section.source),
+            input.center_line.map(|path| path.source),
             candidate,
         )
         .map_err(|cause| {

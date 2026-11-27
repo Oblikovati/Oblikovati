@@ -199,7 +199,7 @@ fn path_segment(
     Ok([point(line.endpoints[0])?, point(line.endpoints[1])?])
 }
 
-fn ray_hits_segment(
+pub(in crate::owner) fn ray_hits_segment(
     [origin, direction]: [[f64; 3]; 2],
     [start, end]: [[f64; 3]; 2],
     tolerance: f64,

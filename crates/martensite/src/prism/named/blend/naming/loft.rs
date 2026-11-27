@@ -4,7 +4,10 @@ use super::{
     *,
 };
 use crate::loft::LoftTopology;
-use oblikovati_model::{feature::sketch_loft::SketchLoftSection, identity::SemanticReferenceName};
+use oblikovati_model::{
+    feature::sketch_loft::{SketchLoftCenterLine, SketchLoftSection},
+    identity::SemanticReferenceName,
+};
 
 impl BlendNamedTopology {
     pub(in crate::prism::named) fn from_loft(
@@ -12,11 +15,15 @@ impl BlendNamedTopology {
         document: DocumentGuid,
         feature: FeatureId,
         [first, last]: [SketchLoftSection; 2],
+        center_line: Option<SketchLoftCenterLine>,
         candidate: crate::loft::LoftCandidate,
     ) -> Result<Self, String> {
         let first = [first.sketch.0, first.circle.0];
         let last = [last.sketch.0, last.circle.0];
-        let sources = [first[0], first[1], last[0], last[1]];
+        let mut sources = vec![first[0], first[1], last[0], last[1]];
+        if let Some(path) = center_line {
+            sources.extend([path.sketch.0, path.line.0]);
+        }
         let name = |kind, role: &str, ids: &[u64]| {
             SemanticReferenceName::new(document, feature.0, kind, "loft", role, ids)?.encode()
         };

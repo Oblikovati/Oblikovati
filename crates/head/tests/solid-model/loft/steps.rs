@@ -6,6 +6,7 @@ use oblikovati_gui::GuiLoftElement;
 use oblikovati_model::{document_sketch::DocumentSketchId, sketch::SketchEntityId};
 use oblikovati_viewport::ViewportNavigation;
 
+mod center_line;
 mod edit;
 mod fixtures;
 use fixtures::parallel_sections_if_needed;

@@ -314,7 +314,10 @@ impl BrowserTree<'_> {
             return;
         }
         let children = view.take_bodies_expansion();
-        let node = self.ui.tree_node_config("Solid Bodies");
+        let node = self
+            .ui
+            .tree_node_config("Solid Bodies")
+            .label::<String, String>(format!("Solid Bodies ({})", self.browser.bodies.len()));
         // Collapse All Children folds what is under the folder and leaves the folder open.
         let node = match (children == Some(true), self.expansion) {
             (true, _) => node.opened(true, imgui::Condition::Always),

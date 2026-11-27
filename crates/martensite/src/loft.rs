@@ -51,6 +51,7 @@ pub(crate) fn build_loft(
             format!("loft resolution: {cause}"),
         )
     })?;
+    require_center_line(input, resolution.weld)?;
     let edges = [circle(first)?, circle(last)?];
     let solid = input.output == SketchLoftOutput::Solid;
     let mut maker = BRepOffsetAPIThruSections::new(solid, false, resolution.maximum_tolerance);
@@ -100,6 +101,34 @@ pub(crate) fn build_loft(
         resolution,
         achieved,
     })
+}
+
+fn require_center_line(
+    input: &ResolvedSketchLoft,
+    tolerance: f64,
+) -> Result<(), EvaluationFailure> {
+    let Some(path) = &input.center_line else {
+        return Ok(());
+    };
+    let [first, last] = &input.sections;
+    let distance = |left: [f64; 3], right: [f64; 3]| {
+        left.into_iter()
+            .zip(right)
+            .map(|(a, b)| a - b)
+            .fold(0.0_f64, f64::hypot)
+    };
+    let [start, end] = path.endpoints;
+    let ordered = distance(first.center, start).max(distance(last.center, end));
+    let reversed = distance(first.center, end).max(distance(last.center, start));
+    if distance(start, end) <= tolerance || ordered.min(reversed) > tolerance {
+        return Err(Phase::Profile.refused(
+            Kind::InvalidInput, Entity::SketchEntity(path.source.line.0),
+            format!("Loft center line {:?}: expected a nondegenerate segment connecting both section centers within {tolerance}", path.endpoints),
+        ));
+    }
+    // With two sections the native ruled loft interpolates corresponding
+    // section points linearly. Its section centers follow this exact segment.
+    Ok(())
 }
 
 fn require_body_kind(shape: &Shape, solid: bool) -> Result<(), EvaluationFailure> {
@@ -207,3 +236,7 @@ fn history_failure(context: &str) -> EvaluationFailure {
 fn native(phase: Phase, context: &str, cause: Failure) -> EvaluationFailure {
     phase.native(Entity::Body, format!("loft: {context}"), cause)
 }
+
+#[cfg(test)]
+#[path = "../tests/unit/loft_center_line.rs"]
+mod tests;

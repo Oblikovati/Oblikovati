@@ -28,16 +28,24 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
             return Ok(());
         };
         let sketches = match feature.definition() {
-            PartFeatureDefinition::SketchPrism(definition) => [Some(definition.sketch()), None],
-            PartFeatureDefinition::SketchLoft(definition) => definition
-                .recipe()
-                .sections
-                .map(|section| Some(section.sketch)),
+            PartFeatureDefinition::SketchPrism(definition) => {
+                [Some(definition.sketch()), None, None]
+            }
+            PartFeatureDefinition::SketchLoft(definition) => {
+                let recipe = definition.recipe();
+                let [first, last] = recipe.sections;
+                [
+                    Some(first.sketch),
+                    Some(last.sketch),
+                    recipe.center_line.map(|path| path.sketch),
+                ]
+            }
             PartFeatureDefinition::SketchSweep(definition) => {
                 let recipe = definition.recipe();
                 [
                     Some(recipe.profile_sketch),
                     (recipe.profile_sketch != recipe.path_sketch).then_some(recipe.path_sketch),
+                    None,
                 ]
             }
             _ => return Ok(()),

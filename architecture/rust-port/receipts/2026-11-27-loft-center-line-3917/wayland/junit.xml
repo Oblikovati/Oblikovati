@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Loft: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/loft/loft.feature" package="testsuite/Feature: Loft: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/loft/loft.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-27T00:19:33.944977324Z" time="8.707026602"><testcase name="Scenario: loft-12 Create a solid Loft with a center-line sketch: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/loft/loft.feature:119:3" time="8.707026602"><system-out><![CDATA[  Scenario: loft-12 Create a solid Loft with a center-line sketch
+   ✔  Given a disposable copy of the native fixture "fixtures/cad/loft/circles-center-line.opd" is open
+   ✔  And the two circular sections and straight sketch between their centers are visible
+   ✔  When both circular profiles are selected in Loft and Center Line mode is chosen
+   ✔  Then the dialog requests a center-line sketch and OK is disabled
+   ✔  When the Center Line selector is activated and Sketch3 is shown as the selected center line
+   ✔  Then a solid preview appears and OK is enabled
+   ✔  When OK is clicked
+   ✔  Then Loft1 and Solid Bodies(1) appear in the browser
+]]></system-out></testcase></testsuite></testsuites>

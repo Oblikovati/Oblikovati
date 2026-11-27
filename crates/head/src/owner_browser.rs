@@ -183,7 +183,7 @@ fn populate_browser<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
             kind: feature_kind_name(feature.definition()),
         })
         .collect();
-    browser.loft_outputs = super::loft::loft_outputs(snapshot);
+    browser.loft_edits = super::loft::loft_edits(snapshot);
     browser.sweep_edits = super::owner_blend::owner_sweep::edit_seeds(snapshot);
     browser.extrusion_edits = snapshot
         .work_geometry

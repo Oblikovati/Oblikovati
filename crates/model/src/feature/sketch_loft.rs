@@ -15,6 +15,14 @@ pub struct SketchLoftSection {
     pub circle: SketchEntityId,
 }
 
+/// One authored straight curve through the Loft section centers.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SketchLoftCenterLine {
+    pub sketch: DocumentSketchId,
+    pub line: SketchEntityId,
+}
+
 /// A closed solid or a shell lofted through the current section boundaries.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -37,6 +45,8 @@ pub struct SketchLoftRecipe {
     pub sections: [SketchLoftSection; 2],
     #[serde(default, skip_serializing_if = "SketchLoftOutput::is_solid")]
     pub output: SketchLoftOutput,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub center_line: Option<SketchLoftCenterLine>,
 }
 
 /// A Loft whose sources are structurally valid and can be resolved for the current Part.
@@ -52,10 +62,17 @@ pub struct ResolvedLoftCircle {
     pub radius: f64,
 }
 
+/// Linear path geometry in the current Part coordinates.
+pub struct ResolvedLoftCenterLine {
+    pub source: SketchLoftCenterLine,
+    pub endpoints: [[f64; 3]; 2],
+}
+
 /// Current resolved source geometry and the authored result kind.
 pub struct ResolvedSketchLoft {
     pub sections: [ResolvedLoftCircle; 2],
     pub output: SketchLoftOutput,
+    pub center_line: Option<ResolvedLoftCenterLine>,
 }
 
 impl SketchLoftDefinition {
@@ -73,18 +90,50 @@ impl SketchLoftDefinition {
         Ok(Self(SketchLoftRecipe {
             sections,
             output: SketchLoftOutput::Solid,
+            center_line: None,
         }))
     }
 
     /// Restore ordered section IDs. Example: `SketchLoftDefinition::from_recipe(recipe)?`.
     pub fn from_recipe(recipe: SketchLoftRecipe) -> Result<Self, String> {
-        Self::new(recipe.sections).map(|loft| loft.with_output(recipe.output))
+        let loft = Self::new(recipe.sections)?.with_output(recipe.output);
+        match recipe.center_line {
+            Some(source) => loft.with_center_line(source),
+            None => Ok(loft),
+        }
     }
 
     /// Choose the result kind over the same sections. Example: `loft.with_output(SketchLoftOutput::Surface)`.
     pub fn with_output(mut self, output: SketchLoftOutput) -> Self {
         self.0.output = output;
         self
+    }
+
+    /// Bind the guide by authored identity. Example: `loft.with_center_line(path)?`.
+    pub fn with_center_line(mut self, path: SketchLoftCenterLine) -> Result<Self, String> {
+        if path.sketch.0 == 0
+            || path.line.0 == 0
+            || self
+                .0
+                .sections
+                .iter()
+                .any(|section| section.sketch == path.sketch)
+        {
+            return Err(format!(
+                "Loft center line {path:?}: expected a named line in a separate sketch"
+            ));
+        }
+        self.0.center_line = Some(path);
+        Ok(self)
+    }
+
+    /// Visit the sketches the definition consumes. Example: `loft.source_sketches().count()`.
+    pub fn source_sketches(&self) -> impl Iterator<Item = DocumentSketchId> + '_ {
+        self.0
+            .sections
+            .iter()
+            .map(|section| section.sketch)
+            .chain(self.0.center_line.map(|path| path.sketch))
     }
 
     /// Read the authored sources without geometry. Example: `loft.recipe().sections`.
@@ -94,9 +143,8 @@ impl SketchLoftDefinition {
 
     pub(crate) fn source_reads(&self) -> FeatureReadFootprint {
         FeatureReadFootprint::new(
-            self.0
-                .sections
-                .map(|section| FeatureReadKey::Sketch(section.sketch.0)),
+            self.source_sketches()
+                .map(|sketch| FeatureReadKey::Sketch(sketch.0)),
             false,
         )
     }
@@ -105,10 +153,10 @@ impl SketchLoftDefinition {
     pub fn reads(&self, snapshot: &DocumentSnapshot) -> Result<FeatureReadFootprint, String> {
         let mut keys = self.source_reads().keys().clone();
         let mut unattributed = false;
-        for section in self.0.sections {
+        for source in self.source_sketches() {
             let sketch = snapshot
                 .sketches
-                .get(section.sketch)
+                .get(source)
                 .map_err(|cause| cause.to_string())?;
             keys.extend(sketch.read_footprint().keys());
             unattributed |= sketch.read_footprint().has_unattributed_reads();
@@ -128,9 +176,20 @@ impl SketchLoftDefinition {
             circle_in_part(&source, section)
         };
         let [first, last] = self.0.sections;
+        let center_line = self
+            .0
+            .center_line
+            .map(|path| {
+                let source = snapshot
+                    .require_converged_sketch_with_datums(path.sketch, datums)
+                    .map_err(|cause| cause.to_string())?;
+                path_in_part(&source, path)
+            })
+            .transpose()?;
         Ok(ResolvedSketchLoft {
             sections: [resolve(first)?, resolve(last)?],
             output: self.0.output,
+            center_line,
         })
     }
 }
@@ -163,5 +222,36 @@ fn circle_in_part(
         normal: source.plane.normal(),
         x_direction: source.plane.recipe().x_axis,
         radius: circle.radius,
+    })
+}
+
+fn path_in_part(
+    source: &ResolvedDocumentSketch<'_>,
+    path: SketchLoftCenterLine,
+) -> Result<ResolvedLoftCenterLine, String> {
+    let geometry = source.sketch.geometry();
+    if geometry
+        .is_construction(path.line)
+        .map_err(|cause| cause.to_string())?
+    {
+        return Err(format!(
+            "Loft center line {path:?}: expected a regular straight curve"
+        ));
+    }
+    let line = geometry
+        .line(path.line)
+        .map_err(|cause| cause.to_string())?;
+    let project = |endpoint| {
+        let point = geometry
+            .point(endpoint)
+            .map_err(|cause| cause.to_string())?;
+        source
+            .plane
+            .to_model(point.position)
+            .map_err(|cause| cause.to_string())
+    };
+    Ok(ResolvedLoftCenterLine {
+        source: path,
+        endpoints: [project(line.endpoints[0])?, project(line.endpoints[1])?],
     })
 }

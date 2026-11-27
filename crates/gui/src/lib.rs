@@ -153,7 +153,9 @@ mod loft_dialog;
 mod move_body_dialog;
 mod move_body_ribbon;
 mod shell_feature_dialog;
-pub use loft_dialog::{GuiLoftAction, GuiLoftElement, GuiLoftPathMode, GuiLoftSection};
+pub use loft_dialog::{
+    GuiLoftAction, GuiLoftEditSeed, GuiLoftElement, GuiLoftPathMode, GuiLoftSection,
+};
 mod sweep_dialog;
 pub use sweep_dialog::{
     GuiSweepAction, GuiSweepEditSeed, GuiSweepOrientation, GuiSweepOutput, GuiSweepPresetStore,

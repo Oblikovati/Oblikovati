@@ -18,7 +18,7 @@ impl DocumentSnapshot {
         let reads = definition.reads(self).map_err(|cause| {
             HistoryError::PartProgram(PartFeatureProgramError::Loft { feature: id, cause })
         })?;
-        let sources = definition.recipe().sections;
+        let sources: Vec<_> = definition.source_sketches().collect();
         self.work_geometry
             .append(AuthoredFeature::new(
                 id,
@@ -30,10 +30,10 @@ impl DocumentSnapshot {
         if let Some(states) = &mut self.model_states {
             states.register_feature(id.0);
         }
-        for section in sources {
+        for source in sources {
             self.sketches
-                .set_visible(section.sketch, false)
-                .map_err(|_| HistoryError::UnreservedSketchId(section.sketch.0))?;
+                .set_visible(source, false)
+                .map_err(|_| HistoryError::UnreservedSketchId(source.0))?;
         }
         Ok(id)
     }

@@ -265,3 +265,11 @@ preview, Surface Bodies entry, and body identity through save and reopen.
 The [point set receipt](receipts/2026-11-27-loft-point-set-3917/README.md)
 covers adding an incomplete manual set in a surface edit and cancelling while
 retaining the committed surface.
+
+### Loft Center Line
+
+The solid Loft accepts a straight sketch line that connects both circular
+section centers. The authored line and its sketch participate in replay and
+stable body naming. Part recipe version 37 stores the guide identity. The
+[center-line receipt](receipts/2026-11-27-loft-center-line-3917/README.md)
+covers native picking, preview, commit, and package reopening.

@@ -15,11 +15,9 @@ impl crate::feature::FeatureSequence<PartFeatureDefinition> {
             .iter()
             .filter(move |feature| match feature.definition() {
                 PartFeatureDefinition::SketchPrism(definition) => definition.sketch() == sketch,
-                PartFeatureDefinition::SketchLoft(definition) => definition
-                    .recipe()
-                    .sections
-                    .iter()
-                    .any(|input| input.sketch == sketch),
+                PartFeatureDefinition::SketchLoft(definition) => {
+                    definition.source_sketches().any(|source| source == sketch)
+                }
                 PartFeatureDefinition::SketchSweep(definition) => {
                     let recipe = definition.recipe();
                     recipe.profile_sketch == sketch || recipe.path_sketch == sketch
