@@ -6,8 +6,27 @@ use oblikovati_model::feature::sketch_loft::SketchLoftPlacedSection;
 
 const DIMENSIONS: &str = "Section Dimensions";
 
+#[given("an editable loft has two circular sections and a selected center line")]
+fn open_editable_fixture_loft(world: &mut ApplicationWorld) {
+    create_fixture_loft(world);
+    reopen_with_guide(world);
+}
+
+#[given("an existing loft has a placed intermediate section")]
+fn create_fixture_loft_with_placed_section(world: &mut ApplicationWorld) {
+    create_fixture_loft(world);
+    accept_midpoint_section(world);
+}
+
+#[given("the existing two-circle loft has a straight center line and a placed section")]
+fn open_fixture_loft_with_placed_section(world: &mut ApplicationWorld) {
+    create_fixture_loft_with_placed_section(world);
+    reopen_with_the_saved_placed_section(world);
+}
+
 #[given("the user creates Loft1 from the two circular profiles and the 20 mm center line")]
 fn create_fixture_loft(world: &mut ApplicationWorld) {
+    fixtures::short_center_line_sections_if_needed(world);
     center_line::draft_on_guide(world, 2.);
     center_line::pick_guide(world, 1.);
     accept_loft(world);

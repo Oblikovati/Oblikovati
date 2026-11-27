@@ -4,7 +4,9 @@ use super::*;
 use oblikovati_model::feature::{part::PartFeatureDefinition, sketch_loft::SketchLoftCenterLine};
 
 #[given("the two circular sections and straight sketch between their centers are visible")]
+#[given("two circular sections on parallel planes and a straight sketch between their centers")]
 fn center_line_inputs_are_visible(world: &mut ApplicationWorld) {
+    fixtures::center_line_sections_if_needed(world);
     let browser = world.state().browser.unwrap();
     let names: Vec<_> = browser
         .sketches

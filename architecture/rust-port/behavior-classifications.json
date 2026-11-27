@@ -49916,8 +49916,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/app/loft_tool.go",
-      "mapping_reason": "Part feature or work geometry; kernel readiness remains a separate dependency."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a app/loft_tool_test.go.",
+      "mapping_reason": "Part feature or work geometry; kernel readiness remains a separate dependency.",
+      "go_test_premise": "TestLoftToolCenterlineBends exercises center-line interpolation after guide selection.",
+      "api_revision": "c8200b2da97c9a7dde43afb25debc977ff23b2fd",
+      "kernel_revision": "d463526642b7bf950ba33c7ab4a4c9bc97caffaf",
+      "kernel_capabilities": "Construct and replay an analytic Loft from two circular profiles and the authored straight guide.",
+      "platforms": "Linux COSMIC Wayland and X11 under Xvfb with Openbox.",
+      "kernel_integration": "Construct and replay an analytic Loft from two circular profiles and the authored straight guide.",
+      "rust_tests": "crates/head/tests/solid-model/loft/center_line.rs",
+      "oracle": "Select both circles in the viewport, confirm the missing-guide prompt, pick Sketch3, then inspect the solid preview and browser. See receipts/2026-11-27-loft-placed-pinned-3917/README.md.",
+      "expected_result": "The selected guide enables a solid preview and acceptance creates Loft1 with one solid.",
+      "baseline_source_sha256": "b207a6437cbe2927fdfb6c6ab136497ad41ceb59365a43113d70351738d15874"
     },
     {
       "id": "scenario:d5eeb030b33a89978fe6916a956fd4bdab833a3b6d27897249dc7e33f6ffed5a",
@@ -49933,8 +49943,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/app/loft_tool.go",
-      "mapping_reason": "Part feature or work geometry; kernel readiness remains a separate dependency."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a model/feature/loft_areagraph_test.go.",
+      "mapping_reason": "Part feature or work geometry; kernel readiness remains a separate dependency.",
+      "go_test_premise": "TestLoftAreaGraphBulges and TestLoftAreaGraphKeepsEnds exercise interpolation through an intermediate section.",
+      "api_revision": "c8200b2da97c9a7dde43afb25debc977ff23b2fd",
+      "kernel_revision": "d463526642b7bf950ba33c7ab4a4c9bc97caffaf",
+      "kernel_capabilities": "Build a native three-section analytic Loft, binding exact caps and wall through generated history.",
+      "platforms": "Linux COSMIC Wayland and X11 under Xvfb with Openbox.",
+      "kernel_integration": "Build a native three-section analytic Loft, binding exact caps and wall through generated history.",
+      "rust_tests": "crates/head/tests/solid-model/loft/placed.rs",
+      "oracle": "Resolve the projected guide click and compare the position and area annotations with the intermediate geometry before acceptance. See receipts/2026-11-27-loft-placed-pinned-3917/README.md.",
+      "expected_result": "The midpoint editor and annotations appear. Acceptance retains Loft1 and one stable solid.",
+      "baseline_source_sha256": "b207a6437cbe2927fdfb6c6ab136497ad41ceb59365a43113d70351738d15874"
     },
     {
       "id": "scenario:a5b3d8c2f28d11296614b37c710f92f29394704f6fd87c7fb0b95a664f50a12d",
@@ -49950,8 +49970,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/app/loft_tool.go",
-      "mapping_reason": "Part feature or work geometry; kernel readiness remains a separate dependency."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a model/feature/loft_areagraph_test.go.",
+      "mapping_reason": "Part feature or work geometry; kernel readiness remains a separate dependency.",
+      "go_test_premise": "TestLoftAreaGraphBulges exercises section growth. TestLoftAreaGraphRoundTrip exercises persisted section dimensions.",
+      "api_revision": "c8200b2da97c9a7dde43afb25debc977ff23b2fd",
+      "kernel_revision": "d463526642b7bf950ba33c7ab4a4c9bc97caffaf",
+      "kernel_capabilities": "Regenerate the native preview from the revised section recipe, retaining the same authored identity.",
+      "platforms": "Linux COSMIC Wayland and X11 under Xvfb with Openbox.",
+      "kernel_integration": "Regenerate the native preview from the revised section recipe, retaining the same authored identity.",
+      "rust_tests": "crates/head/tests/solid-model/loft/placed.rs",
+      "oracle": "Double-click the viewport point, double its annotated area, compare the preview radius, reopen and move it to 5 mm on the 20 mm guide. See receipts/2026-11-27-loft-placed-pinned-3917/README.md.",
+      "expected_result": "Size 2 survives reopening and the position shows 0.250000.",
+      "baseline_source_sha256": "b207a6437cbe2927fdfb6c6ab136497ad41ceb59365a43113d70351738d15874"
     },
     {
       "id": "scenario:68de044b60e7af50727af1497bdbace71a78f0d60fbded3ad175a9d93fd051e2",
@@ -49967,8 +49997,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/app/loft_tool.go",
-      "mapping_reason": "Part feature or work geometry; kernel readiness remains a separate dependency."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a app/loft_tool.go; app/loft_tool_test.go.",
+      "mapping_reason": "Part feature or work geometry; kernel readiness remains a separate dependency.",
+      "go_test_premise": "SetClosed toggles the Go definition. TestLoftToolCenterlineBends supplies the related guide baseline. The pinned scenario specifies the failure and cancellation.",
+      "api_revision": "c8200b2da97c9a7dde43afb25debc977ff23b2fd",
+      "kernel_revision": "d463526642b7bf950ba33c7ab4a4c9bc97caffaf",
+      "kernel_capabilities": "Check actual native guide-wire closure and preserve the saved feature and solid when the edit is canceled.",
+      "platforms": "Linux COSMIC Wayland and X11 under Xvfb with Openbox.",
+      "kernel_integration": "Check actual native guide-wire closure and preserve the saved feature and solid when the edit is canceled.",
+      "rust_tests": "crates/head/tests/solid-model/loft/placed.rs; crates/martensite/tests/unit/loft_center_line.rs",
+      "oracle": "Inspect the periodic-guide warning and cancel. Compare committed body identity, generation, saved section, and viewport state. See receipts/2026-11-27-loft-placed-pinned-3917/README.md.",
+      "expected_result": "The previous solid is visible and the failed draft is cleared.",
+      "baseline_source_sha256": "b207a6437cbe2927fdfb6c6ab136497ad41ceb59365a43113d70351738d15874"
     },
     {
       "id": "scenario:40abc881ef4b432b3d1c53454b43330aa431984ae36ddfce5bdb759966c3e60e",

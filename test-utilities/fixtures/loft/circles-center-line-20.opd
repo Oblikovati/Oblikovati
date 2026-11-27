@@ -1,0 +1,305 @@
+schemaVersion: 3
+documentType: 1
+displayName: Loft 20 mm center line sections
+partModelStates:
+  members:
+  - id: 1
+    name: Primary
+  active: 1
+  scope: SingleMember
+model:
+  workPlanes:
+    recipe:
+      version: 1
+      features:
+      - id: 1
+        name: Work Plane1
+        definition:
+          version: 1
+          definition: !Fixed
+            frame:
+              origin:
+              - 0.0
+              - 0.0
+              - 2.0
+              x_axis:
+              - 1.0
+              - 0.0
+              - 0.0
+              y_axis:
+              - 0.0
+              - 1.0
+              - 0.0
+            options:
+              version: 1
+              unit_deviation: 1e-9
+              angular_deviation: 1e-9
+        suppressed: false
+        condition: null
+        definition_reads:
+          keys: []
+          unattributed: false
+      - id: 2
+        name: Work Plane2
+        definition:
+          version: 1
+          definition: !Fixed
+            frame:
+              origin:
+              - 0.0
+              - 0.0
+              - 0.0
+              x_axis:
+              - 1.0
+              - 0.0
+              - 0.0
+              y_axis:
+              - 0.0
+              - 0.0
+              - 1.0
+            options:
+              version: 1
+              unit_deviation: 1e-9
+              angular_deviation: 1e-9
+        suppressed: false
+        condition: null
+        definition_reads:
+          keys: []
+          unattributed: false
+      end_of_part: null
+    featureHighWater: 2
+  planarSketches:
+    recipe:
+      version: 13
+      sketches:
+      - id: 1
+        name: Sketch1
+        plane_origin: XY
+        point_projections:
+        - anchor: 1
+          reference: Origin
+        geometry:
+          version: 12
+          points:
+          - id: 1
+            position:
+            - 0.0
+            - 0.0
+          - id: 2
+            position:
+            - 0.0
+            - 0.0
+          lines: []
+          circles:
+          - id: 3
+            center: 2
+            radius: 1.0
+          arcs: []
+          ellipses: []
+          splines: []
+          offset_splines: []
+          defining_points:
+          - 2
+          constraints: []
+          entity_order:
+          - 1
+          - 3
+          construction_curves: []
+          centerlines: []
+          dimension_placements: []
+          reference_dimensions: []
+          dimension_limits: []
+      - id: 2
+        name: Sketch2
+        plane_feature: 1
+        point_projections:
+        - anchor: 4
+          reference: Origin
+        geometry:
+          version: 12
+          points:
+          - id: 4
+            position:
+            - 0.0
+            - 0.0
+          - id: 5
+            position:
+            - 0.0
+            - 0.0
+          lines: []
+          circles:
+          - id: 6
+            center: 5
+            radius: 0.5
+          arcs: []
+          ellipses: []
+          splines: []
+          offset_splines: []
+          defining_points:
+          - 5
+          constraints: []
+          entity_order:
+          - 4
+          - 6
+          construction_curves: []
+          centerlines: []
+          dimension_placements: []
+          reference_dimensions: []
+          dimension_limits: []
+      - id: 3
+        name: Sketch3
+        plane_feature: 2
+        point_projections:
+        - anchor: 7
+          reference: Origin
+        geometry:
+          version: 12
+          points:
+          - id: 7
+            position:
+            - 0.0
+            - 0.0
+          - id: 8
+            position:
+            - 0.0
+            - 0.0
+          - id: 9
+            position:
+            - 0.0
+            - 2.0
+          lines:
+          - id: 10
+            endpoints:
+            - 8
+            - 9
+          circles: []
+          arcs: []
+          ellipses: []
+          splines: []
+          offset_splines: []
+          defining_points:
+          - 8
+          - 9
+          constraints:
+          - id: 1
+            relation: !line_vertical
+              line: 10
+          entity_order:
+          - 7
+          - 10
+          construction_curves: []
+          centerlines: []
+          dimension_placements: []
+          reference_dimensions: []
+          dimension_limits: []
+    sketchHighWater: 3
+    entityHighWater: 10
+    constraintHighWater:
+      3: 1
+    dimensionNameOrdinals: {}
+  properties: []
+  units:
+    angle: deg
+    angleFormat: decimal
+    anglePrecision: '2'
+    area: mm^2
+    length: mm
+    lengthFormat: decimal
+    lengthPrecision: '3'
+    mass: kg
+    time: s
+    volume: mm^3
+  parameters: []
+  parameterGroups: []
+  parameterSettings:
+    linearStandardTolerance: ''
+    angularStandardTolerance: ''
+    useStandardTolerances: false
+    exportStandardTolerances: false
+    linearDimensionPrecision: 3
+    angularDimensionPrecision: 2
+    dimensionDisplayType: value
+    displayParameterAsExpression: false
+  derivedParameterTables: []
+  parameterIds: {}
+  parameterHighWater: 0
+partDesignViews:
+  views:
+  - id: 1
+    name: Primary
+    built_in: true
+    active: true
+    locked: false
+    published: true
+    autosave_camera: true
+    annotation_scale:
+      mode: auto
+      numerator: 0
+      denominator: 0
+    standard_orientation: 0
+    camera: null
+    hidden_body_keys: []
+  - id: 2
+    name: Isometric
+    built_in: true
+    active: false
+    locked: false
+    published: true
+    autosave_camera: true
+    annotation_scale:
+      mode: auto
+      numerator: 0
+      denominator: 0
+    standard_orientation: 10759
+    camera: null
+    hidden_body_keys: []
+  - id: 3
+    name: Front
+    built_in: true
+    active: false
+    locked: false
+    published: true
+    autosave_camera: true
+    annotation_scale:
+      mode: auto
+      numerator: 0
+      denominator: 0
+    standard_orientation: 10764
+    camera: null
+    hidden_body_keys: []
+  - id: 4
+    name: Top
+    built_in: true
+    active: false
+    locked: false
+    published: true
+    autosave_camera: true
+    annotation_scale:
+      mode: auto
+      numerator: 0
+      denominator: 0
+    standard_orientation: 10754
+    camera: null
+    hidden_body_keys: []
+  - id: 5
+    name: Right
+    built_in: true
+    active: false
+    locked: false
+    published: true
+    autosave_camera: true
+    annotation_scale:
+      mode: auto
+      numerator: 0
+      denominator: 0
+    standard_orientation: 10755
+    camera: null
+    hidden_body_keys: []
+identity:
+  internalName: 2f84aad4-58f3-49c3-88f0-9ce41b3c565a
+  revisionId: 7991176f-9c7f-42df-8879-5b6872057da9
+  databaseRevisionId: 7cb7388a-e83e-48e7-be68-fb7e3d45bd89
+  saveCounter: 1
+  versionCreated: 0.1.0-dev
+  versionSaved: 0.1.0-dev
+  modelDigest: 85ae81407d7dda56d50dcf99d83e41f35d1f8918e784cb8fcaa84b38ba1d415c

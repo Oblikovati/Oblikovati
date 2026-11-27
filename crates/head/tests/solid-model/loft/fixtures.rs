@@ -17,15 +17,35 @@ fn open_parallel_sections(world: &mut ApplicationWorld) {
 }
 
 pub(super) fn parallel_sections_if_needed(world: &mut ApplicationWorld) {
+    embedded_fixture_if_needed(
+        world,
+        "parallel-circles.opd",
+        include_bytes!("../../../../../test-utilities/fixtures/loft/parallel-circles.opd"),
+    );
+}
+
+pub(super) fn center_line_sections_if_needed(world: &mut ApplicationWorld) {
+    embedded_fixture_if_needed(
+        world,
+        "circles-center-line.opd",
+        include_bytes!("../../../../../test-utilities/fixtures/loft/circles-center-line.opd"),
+    );
+}
+
+pub(super) fn short_center_line_sections_if_needed(world: &mut ApplicationWorld) {
+    embedded_fixture_if_needed(
+        world,
+        "circles-center-line-20.opd",
+        include_bytes!("../../../../../test-utilities/fixtures/loft/circles-center-line-20.opd"),
+    );
+}
+
+fn embedded_fixture_if_needed(world: &mut ApplicationWorld, name: &str, bytes: &[u8]) {
     if world.state().document.is_some() {
         return;
     }
-    let path = world.scratch_folder().join("parallel-circles.opd");
-    std::fs::write(
-        &path,
-        include_bytes!("../../../../../test-utilities/fixtures/loft/parallel-circles.opd"),
-    )
-    .unwrap();
+    let path = world.scratch_folder().join(name);
+    std::fs::write(&path, bytes).unwrap();
     let document = world
         .app()
         .owner
