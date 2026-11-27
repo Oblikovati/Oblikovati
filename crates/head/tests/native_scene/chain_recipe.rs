@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use super::copy_tests::{native_sketch_entities, verify_native_entity_reference};
+use super::copy_tests::{
+    native_sketch_entities, verify_copy_readiness_and_undo, verify_native_entity_reference,
+    verify_retained_profile_and_undo,
+};
 use super::*;
 use oblikovati_model::{
     history::SketchPlacementFieldLock,
@@ -26,7 +29,11 @@ fn run_native_chain_recipe(closed: bool) {
     .unwrap();
     verify_chain_preview(&mut window, &recipe, &original);
     verify_chain_commit(&mut owner, document, &recipe);
-    super::copy_tests::verify_copy_readiness_and_undo(&mut owner, &mut window, &original, 9);
+    if closed {
+        verify_retained_profile_and_undo(&mut owner, &mut window, &original, 9);
+    } else {
+        verify_copy_readiness_and_undo(&mut owner, &mut window, &original, 9);
+    }
     Client::new(owner.document_host())
         .transactions()
         .redo()

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::copy_tests::{
-    native_sketch_entities, verify_copy_readiness_and_undo, verify_native_entity_reference,
+    native_sketch_entities, verify_native_entity_reference, verify_retained_profile_and_undo,
 };
 use super::*;
 #[test]
@@ -22,7 +22,7 @@ fn verify_native_chain(kind: &str, points: &[[f64; 2]]) {
     let original = publish_native_scene(&mut owner, &mut window);
     assert!(solid_pixels(&original) > 0);
     verify_native_chain_creation(&mut owner, kind, points);
-    verify_copy_readiness_and_undo(&mut owner, &mut window, &original, points.len() * 2);
+    verify_retained_profile_and_undo(&mut owner, &mut window, &original, points.len() * 2);
     owner.finish().unwrap();
     window.finish().unwrap();
 }

@@ -108,6 +108,7 @@ fn verify_document_chain_preview(closed: bool) {
     let mut owner = native_owner(window.wake.clone()).unwrap();
     let document = open_native_part(&mut owner, &path);
     let original = publish_native_scene(&mut owner, &mut window);
+    infer_native_sketch_from_all_geometry(&mut owner);
     let request = SketchLineChainCreation {
         points: vec![[4.0001, 3.0001], [6.0, 3.02], [6.01, 5.0]],
         closed,
@@ -125,8 +126,11 @@ fn verify_document_chain_preview(closed: bool) {
     verify_preview_geometry_adoption(&owner, document, &preview);
     window.set_sketch_preview(None).unwrap();
     verify_inferred_chain_keys(&mut owner, &report);
-    let committed =
-        super::copy_tests::verify_copy_readiness_and_undo(&mut owner, &mut window, &original, 2);
+    let committed = if closed {
+        super::copy_tests::verify_retained_profile_and_undo(&mut owner, &mut window, &original, 2)
+    } else {
+        super::copy_tests::verify_copy_readiness_and_undo(&mut owner, &mut window, &original, 2)
+    };
     Client::new(owner.document_host())
         .transactions()
         .redo()

@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
+use oblikovati_martensite::{EvaluationFailureKind, EvaluationPhase};
 use oblikovati_model::{
     document_sketch::SketchReadinessCause,
-    feature::{FeatureEvaluationStatus, part::PartFeatureFailure, sketch_prism::SketchPrismCause},
+    feature::{FeatureEvaluationStatus, part::PartFeatureFailure},
     history::DocumentSketchPlacementError,
 };
 #[test]
@@ -120,30 +121,74 @@ pub(super) fn verify_copy_readiness_and_undo(
     free: usize,
 ) -> ViewportCapture {
     let after = publish_native_scene(owner, window);
+    verify_sketch_free_variables(owner, free);
     assert_eq!(solid_pixels(&after), 0);
-    verify_copy_free_variables(window.scene_status().unwrap(), free);
+    verify_invalid_profile(window.scene_status().unwrap());
+    undo_and_verify_native_scene(owner, window, before);
+    after
+}
+
+pub(super) fn verify_retained_profile_and_undo(
+    owner: &mut NativeDesktopOwner,
+    window: &mut NativeHeadWindow,
+    before: &ViewportCapture,
+    free: usize,
+) -> ViewportCapture {
+    let after = publish_native_scene(owner, window);
+    verify_sketch_free_variables(owner, free);
+    let status = window.scene_status().unwrap();
+    assert_eq!(status.health[0].status, FeatureEvaluationStatus::Healthy);
+    assert_eq!(solid_pixels(&after), solid_pixels(before));
+    undo_and_verify_native_scene(owner, window, before);
+    after
+}
+
+fn undo_and_verify_native_scene(
+    owner: &mut NativeDesktopOwner,
+    window: &mut NativeHeadWindow,
+    before: &ViewportCapture,
+) {
     Client::new(owner.document_host())
         .transactions()
         .undo()
         .unwrap();
-    assert!(publish_native_scene(owner, window).rgba == before.rgba);
-    after
+    assert_same_native_pixels(&publish_native_scene(owner, window), before);
 }
-fn verify_copy_free_variables(status: &crate::HeadSceneStatus, free: usize) {
-    let FeatureEvaluationStatus::Failed(PartFeatureFailure::Inputs(cause)) =
+
+fn verify_sketch_free_variables(owner: &NativeDesktopOwner, free: usize) {
+    let workspace = owner.documents().workspace();
+    let document = workspace.active_document().unwrap();
+    let session = workspace.session(document).unwrap();
+    let snapshot = session.snapshot();
+    snapshot
+        .require_converged_resolved_sketch(fixture::SKETCH)
+        .unwrap();
+    let decline = snapshot
+        .require_resolved_sketch(fixture::SKETCH)
+        .unwrap_err();
+    let DocumentSketchPlacementError::Verification(readiness) = decline else {
+        panic!("expected the sketch to report free variables, got {decline:?}");
+    };
+    assert_eq!(readiness.sketch, fixture::SKETCH);
+    assert_eq!(readiness.cause, SketchReadinessCause::FreeVariables(free));
+}
+
+fn verify_invalid_profile(status: &crate::HeadSceneStatus) {
+    let FeatureEvaluationStatus::Failed(PartFeatureFailure::Kernel(cause)) =
         &status.health[0].status
     else {
-        panic!(
-            "copied free points: expected input decline, got {:?}",
-            status.health
-        );
+        panic!("expected an invalid profile, got {:?}", status.health);
     };
-    assert_eq!(cause.sketch, fixture::SKETCH);
-    let SketchPrismCause::Placement(DocumentSketchPlacementError::Verification(readiness)) =
-        cause.cause.as_ref()
-    else {
-        panic!("copied free points: expected readiness decline, got {cause:?}");
-    };
-    assert_eq!(readiness.cause, SketchReadinessCause::FreeVariables(free));
+    assert_eq!(cause.phase(), EvaluationPhase::Profile);
+    assert!(
+        matches!(
+            cause.kind(),
+            EvaluationFailureKind::InvalidInput
+                | EvaluationFailureKind::InvalidGeometry
+                | EvaluationFailureKind::InvalidReference
+                | EvaluationFailureKind::Incomplete
+        ),
+        "expected a declined profile boundary, got {cause:?}"
+    );
     assert!(status.title().contains("1 unavailable features"));
 }

@@ -17,6 +17,7 @@ fn native_owner_commits_constrained_slot_recipes_and_reopens_their_locked_fields
         let document = open_native_part(&mut owner, &path);
         let original = publish_native_scene(&mut owner, &mut window);
         assert!(solid_pixels(&original) > 0);
+        infer_native_sketch_from_all_geometry(&mut owner);
         verify_native_placement(&mut owner, document, curved);
         verify_copy_readiness_and_undo(
             &mut owner,

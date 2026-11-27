@@ -51,6 +51,18 @@ pub(super) fn open_native_part(owner: &mut NativeDesktopOwner, path: &std::path:
         .unwrap()
         .id
 }
+
+fn infer_native_sketch_from_all_geometry(owner: &mut NativeDesktopOwner) {
+    Client::new(owner.document_host())
+        .sketch()
+        .set_inference_scope(&SketchInferenceScopeView {
+            sketch_index: 0,
+            scope: oblikovati_api::types::INFERENCE_SCOPE_ALL_GEOMETRY,
+            entities: None,
+        })
+        .unwrap();
+}
+
 /// Edit a retained part parameter; example: `native_set(owner, "width", "6 cm")`.
 pub(super) fn native_set(owner: &mut NativeDesktopOwner, name: &str, expression: &str) {
     Client::new(owner.document_host())
