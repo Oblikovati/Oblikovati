@@ -22,7 +22,12 @@ impl<O: TransactionObserver, W: WorkspaceObserver> WorkspaceSession<O, W> {
             .identity(document)
             .map_err(|error| oblikovati_api::Error(error.to_string()))?
             .internal_name;
-        Ok(crate::OwnedPartReplay::new(guid, policy, prefix))
+        Ok(crate::OwnedPartReplay::new(
+            guid,
+            policy,
+            prefix,
+            session.derived_sources().clone(),
+        ))
     }
     /// Issue a replay capability for a current checkpoint of this document and policy.
     /// Example: `workspace.owned_checkpoint_replay(id, policy, prefix)?` before an edit.
@@ -54,7 +59,11 @@ impl<O: TransactionObserver, W: WorkspaceObserver> WorkspaceSession<O, W> {
             .map_err(|error| error.to_string())?
             .internal_name;
         Ok(crate::OwnedCheckpointReplay::new(
-            document, guid, policy, prefix,
+            document,
+            guid,
+            policy,
+            prefix,
+            session.derived_sources().clone(),
         ))
     }
 }

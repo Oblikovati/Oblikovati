@@ -166,6 +166,15 @@ where
             .evaluate_coil_boolean(feature, body.get(), input, operation)
             .map(PrefixBody::Created)
     }
+    fn evaluate_derived_part(
+        &mut self,
+        feature: FeatureId,
+        input: crate::feature::derived_part::ResolvedDerivedPart,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        self.0
+            .evaluate_derived_part(feature, input)
+            .map(PrefixBody::Created)
+    }
     fn evaluate_emboss(
         &mut self,
         feature: FeatureId,

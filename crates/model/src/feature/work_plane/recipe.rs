@@ -29,6 +29,7 @@ pub enum WorkPlaneDefinitionRecipe {
     SketchRevolve(crate::feature::sketch_revolve::SketchRevolveRecipe),
     SketchCoil(crate::feature::sketch_coil::SketchCoilRecipe),
     SketchEmboss(crate::feature::sketch_emboss::SketchEmbossRecipe),
+    DerivedPart(crate::feature::derived_part::DerivedPartRecipe),
     SketchSweep(crate::feature::sketch_sweep::SketchSweepRecipe),
     AtAngleAboutAxis(crate::feature::work_geometry::WorkPlaneLineAngle),
     ThroughTwoAxes([crate::feature::work_axis::WorkAxisReference; 2]),
@@ -78,6 +79,7 @@ impl WorkPlaneDefinition {
             Self::SketchRevolve(definition) => Source::SketchRevolve(definition.recipe()),
             Self::SketchCoil(definition) => Source::SketchCoil(definition.recipe()),
             Self::SketchEmboss(definition) => Source::SketchEmboss(definition.recipe()),
+            Self::DerivedPart(definition) => Source::DerivedPart(definition.recipe()),
             Self::SketchSweep(definition) => Source::SketchSweep(definition.recipe().clone()),
             Self::SketchPrism(definition) => Source::SketchPrism(definition.recipe()),
             Self::AtAngleAboutAxis(source) => Source::AtAngleAboutAxis(source.clone()),
@@ -161,6 +163,11 @@ fn restore_definition(
                 .map(|definition| WorkPlaneDefinition::SketchEmboss(Box::new(definition)))
                 .map_err(WorkPlaneError::BodyReference)
         }
+        DerivedPart(recipe) => {
+            crate::feature::derived_part::DerivedPartDefinition::from_recipe(&recipe)
+                .map(|definition| WorkPlaneDefinition::DerivedPart(Box::new(definition)))
+                .map_err(WorkPlaneError::BodyReference)
+        }
         SketchSweep(recipe) => {
             crate::feature::sketch_sweep::SketchSweepDefinition::from_recipe(recipe)
                 .map(|definition| WorkPlaneDefinition::SketchSweep(Box::new(definition)))
@@ -236,6 +243,7 @@ impl WorkPlaneDefinitionRecipe {
             Self::SketchRevolve(_) => 38,
             Self::SketchCoil(_) => 39,
             Self::SketchEmboss(_) => 40,
+            Self::DerivedPart(_) => 41,
             Self::SketchSweep(recipe) => match recipe.version {
                 7 => 29,
                 6 => 28,
@@ -289,6 +297,7 @@ impl WorkPlaneDefinitionRecipe {
             Self::SketchRevolve(_) => 44,
             Self::SketchCoil(_) => 45,
             Self::SketchEmboss(_) => 46,
+            Self::DerivedPart(_) => 47,
             Self::SketchSweep(recipe) => match recipe.version {
                 7 => 34,
                 6 => 33,

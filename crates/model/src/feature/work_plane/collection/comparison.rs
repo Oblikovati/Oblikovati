@@ -20,6 +20,7 @@ impl WorkPlaneDefinition {
             (SketchRevolve(first), SketchRevolve(second)) => first.same_recipe(second),
             (SketchCoil(first), SketchCoil(second)) => first.same_recipe(second),
             (SketchEmboss(first), SketchEmboss(second)) => first.same_recipe(second),
+            (DerivedPart(first), DerivedPart(second)) => first.same_recipe(second),
             (SketchSweep(first), SketchSweep(second)) => first.same_recipe(second),
             (SketchPrism(first), SketchPrism(second)) => first.same_recipe(second),
             (AtAngleAboutAxis(first), AtAngleAboutAxis(second)) => {

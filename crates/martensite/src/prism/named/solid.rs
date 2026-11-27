@@ -105,7 +105,7 @@ impl NamedSolid {
             Self::Derived(body) => body.native_face(history, document, key),
         }
     }
-    pub(super) fn native_shape<'a>(
+    pub(crate) fn native_shape<'a>(
         &'a self,
         history: &'a DocumentEditHistory,
         document: DocumentGuid,
@@ -387,8 +387,10 @@ impl crate::BodyPresentationSource for NamedSolid {
 pub struct CertifiedNamedSolidEvaluator<'a> {
     prism: Option<CertifiedNamedPrismEvaluator<'a>>,
     diagnostic: NamedPrismEvaluator<'a>,
-    history: &'a DocumentEditHistory,
-    document: DocumentGuid,
+    pub(crate) history: &'a DocumentEditHistory,
+    pub(crate) document: DocumentGuid,
+    pub(crate) derived_sources:
+        Option<&'a std::collections::BTreeMap<String, oblikovati_model::history::DocumentSnapshot>>,
 }
 impl<'a> CertifiedNamedSolidEvaluator<'a> {
     /// Bind a document and resolution; example: `CertifiedNamedSolidEvaluator::new(&history, document, resolution)`.
@@ -404,6 +406,7 @@ impl<'a> CertifiedNamedSolidEvaluator<'a> {
             diagnostic: NamedPrismEvaluator::new(history, document),
             history,
             document,
+            derived_sources: None,
         }
     }
     /// Bind the host's per-sketch resolution policy; example: `CertifiedNamedSolidEvaluator::with_policy(&history, document, policy)`.
@@ -419,6 +422,7 @@ impl<'a> CertifiedNamedSolidEvaluator<'a> {
             diagnostic: NamedPrismEvaluator::new(history, document),
             history,
             document,
+            derived_sources: None,
         }
     }
     /// Select the host's optional resolution policy; example: `CertifiedNamedSolidEvaluator::with_optional_policy(&history, document, None)`.
@@ -434,8 +438,23 @@ impl<'a> CertifiedNamedSolidEvaluator<'a> {
                 diagnostic: NamedPrismEvaluator::new(history, document),
                 history,
                 document,
+                derived_sources: None,
             },
         }
+    }
+    /// Attach loaded source Part snapshots for Derived Part evaluation.
+    pub fn with_derived_sources(
+        mut self,
+        sources: &'a std::collections::BTreeMap<
+            String,
+            oblikovati_model::history::DocumentSnapshot,
+        >,
+    ) -> Self {
+        self.derived_sources = Some(sources);
+        self
+    }
+    pub(crate) fn resolution_policy(&self) -> Option<PrismResolutionPolicy> {
+        self.prism.as_ref().map(|prism| prism.resolution_policy())
     }
 }
 

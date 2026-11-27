@@ -9,10 +9,10 @@ use super::{
 };
 use crate::{
     feature::{
-        AuthoredFeature, FeatureId, sketch_coil::SketchCoilDefinition,
-        sketch_emboss::SketchEmbossDefinition, sketch_loft::SketchLoftDefinition,
-        sketch_prism::SketchPrismDefinition, sketch_revolve::SketchRevolveDefinition,
-        sketch_sweep::SketchSweepDefinition,
+        AuthoredFeature, FeatureId, derived_part::DerivedPartDefinition,
+        sketch_coil::SketchCoilDefinition, sketch_emboss::SketchEmbossDefinition,
+        sketch_loft::SketchLoftDefinition, sketch_prism::SketchPrismDefinition,
+        sketch_revolve::SketchRevolveDefinition, sketch_sweep::SketchSweepDefinition,
     },
     history::DocumentSnapshot,
 };
@@ -189,6 +189,24 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
             return self.accept_body_replacement(backend, feature, slot, key, result);
         }
         let body = backend.evaluate_coil(feature, input)?;
+        self.body_lineage
+            .register(feature)
+            .map_err(PartFeatureFailure::BodyReference)?;
+        self.bodies.insert(feature.into(), body);
+        Ok(())
+    }
+
+    pub(super) fn evaluate_derived_part<B: PartFeatureEvaluator<Body = Body, Failure = Failure>>(
+        &mut self,
+        backend: &mut B,
+        feature: FeatureId,
+        definition: &DerivedPartDefinition,
+    ) -> Result<(), PartFeatureFailure<Failure>> {
+        let input = definition.resolve();
+        if !input.include_bodies {
+            return Ok(());
+        }
+        let body = backend.evaluate_derived_part(feature, input)?;
         self.body_lineage
             .register(feature)
             .map_err(PartFeatureFailure::BodyReference)?;

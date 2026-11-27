@@ -109,3 +109,7 @@ path = "tests/coil.rs"
 [[test]]
 name = "emboss"
 path = "tests/emboss.rs"
+
+[[test]]
+name = "derive"
+path = "tests/derive.rs"

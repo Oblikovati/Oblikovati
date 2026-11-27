@@ -11,6 +11,7 @@ impl AuthoredFeature<WorkGeometryDefinition> {
                     | WorkGeometryDefinition::SketchRevolve(_)
                     | WorkGeometryDefinition::SketchCoil(_)
                     | WorkGeometryDefinition::SketchEmboss(_)
+                    | WorkGeometryDefinition::DerivedPart(_)
                     | WorkGeometryDefinition::DeleteBody(_)
                     | WorkGeometryDefinition::Fillet(_)
                     | WorkGeometryDefinition::Chamfer(_)

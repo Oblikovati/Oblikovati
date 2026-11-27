@@ -250,6 +250,13 @@ impl PartFeatureEvaluator for CertifiedNamedSolidEvaluator<'_> {
             .map_err(PartFeatureFailure::BodyReference)?;
         Ok(result)
     }
+    fn evaluate_derived_part(
+        &mut self,
+        feature: FeatureId,
+        input: oblikovati_model::feature::derived_part::ResolvedDerivedPart,
+    ) -> Result<NamedSolid, PartFeatureFailure<EvaluationFailure>> {
+        self.evaluate_named_derived_part(feature, input)
+    }
     fn evaluate_emboss(
         &mut self,
         feature: FeatureId,

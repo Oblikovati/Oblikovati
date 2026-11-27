@@ -7,6 +7,7 @@ use crate::{
 };
 mod checkpoints;
 mod coil_create;
+mod derived_part_create;
 mod emboss_create;
 mod evaluation;
 pub use evaluation::{

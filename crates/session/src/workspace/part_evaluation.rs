@@ -28,6 +28,14 @@ impl<O: TransactionObserver, W: WorkspaceObserver> WorkspaceSession<O, W> {
 }
 
 impl<O: TransactionObserver> SessionCommands<'_, O> {
+    pub(crate) fn set_derived_sources(
+        &mut self,
+        sources: std::sync::Arc<
+            std::collections::BTreeMap<String, oblikovati_model::history::DocumentSnapshot>,
+        >,
+    ) {
+        self.session.set_derived_sources(sources);
+    }
     pub(crate) fn ensure_owned_checkpoints(
         &mut self,
         guid: oblikovati_model::identity::DocumentGuid,

@@ -157,6 +157,16 @@ pub trait PartFeatureEvaluator {
             "coil {operation}: expected a named Boolean evaluator"
         )))
     }
+    /// Construct a named derived solid from an external source part.
+    fn evaluate_derived_part(
+        &mut self,
+        _feature: FeatureId,
+        _input: crate::feature::derived_part::ResolvedDerivedPart,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        Err(PartFeatureFailure::Unsupported(
+            "derive: expected an available derived-part evaluator".into(),
+        ))
+    }
     /// Apply a solved Emboss (raise, engrave, or level-to-plane) to a target body.
     fn evaluate_emboss(
         &mut self,

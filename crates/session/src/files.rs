@@ -12,6 +12,7 @@ pub use batch::BatchSaveError;
 mod copy;
 mod create;
 mod derived_edit;
+mod derived_part_sources;
 mod discovery;
 mod document_references;
 mod error;

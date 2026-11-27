@@ -22,6 +22,7 @@ pub struct BlendNamedTopology {
 
 mod capture;
 mod coil;
+mod derived;
 mod extrusion_boolean;
 mod hole;
 mod loft;
@@ -39,7 +40,7 @@ impl BlendNamedTopology {
         matches!(self.shape.shape_type(), Ok(ShapeEnum::Shell))
     }
 
-    pub(in crate::prism::named) fn resolution(&self) -> Option<PrismResolution> {
+    pub(crate) fn resolution(&self) -> Option<PrismResolution> {
         self.resolution
     }
     pub(in crate::prism::named) fn capture_current(
