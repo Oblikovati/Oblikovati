@@ -9,6 +9,9 @@ mod preset_save_update;
 #[path = "preset_remove.rs"]
 mod preset_remove;
 
+#[path = "preset_default.rs"]
+mod preset_default;
+
 const HIDE: &str = "HidePresets";
 const EMPTY: &str = "NoPreset";
 
@@ -208,12 +211,16 @@ fn add_named_preset(world: &mut ApplicationWorld, current: &str, name: &str) {
 }
 
 fn reopen_extrude(world: &mut ApplicationWorld) {
+    cancel_extrude(world);
+    world.click_text("Extrude");
+    world.pump(Vec::new());
+}
+
+fn cancel_extrude(world: &mut ApplicationWorld) {
     click_preset_control(world, |world| {
         diagnostics::pointer_pixels(world.run_in_window("Extrude", "Cancel").center())
     });
     assert!(diagnostics::window_geometry("Extrude").is_none());
-    world.click_text("Extrude");
-    world.pump(Vec::new());
 }
 
 fn assert_distance(world: &mut ApplicationWorld, value: &str) {
