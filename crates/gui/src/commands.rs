@@ -348,7 +348,7 @@ pub enum GuiShellAction {
     Revolve(crate::GuiRevolveAction),
     Sweep(crate::GuiSweepAction),
     Loft(crate::GuiLoftAction),
-    /// Open a fillet draft for selected edges.
+    Coil(crate::GuiCoilAction),
     OpenFillet,
     /// Open a body motion draft.
     OpenMoveBody,

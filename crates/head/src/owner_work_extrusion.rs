@@ -50,6 +50,9 @@ macro_rules! desktop_extrusion_work {
         ) -> Result<bool, String> {
             self.revolve_command(action)
         }
+        fn coil_from_gui(&mut self, action: oblikovati_gui::GuiCoilAction) -> Result<bool, String> {
+            self.coil_command(action)
+        }
         fn sweep_from_gui(
             &mut self,
             action: oblikovati_gui::GuiSweepAction,

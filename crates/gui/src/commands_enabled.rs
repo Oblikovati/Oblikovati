@@ -352,6 +352,7 @@ impl GuiShellAction {
             Self::Revolve(action) => action.enabled(state),
             Self::Sweep(action) => action.enabled(state),
             Self::Loft(action) => action.enabled(state),
+            Self::Coil(action) => action.enabled(state),
             Self::PreviewMoveBody(None)
             | Self::PreviewHole(None)
             | Self::PreviewShellFeature(None) => true,

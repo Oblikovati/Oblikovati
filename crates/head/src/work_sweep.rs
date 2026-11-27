@@ -15,6 +15,13 @@ macro_rules! sweep_work_methods {
         ) -> Result<bool, String> {
             Err("revolve: expected an available desktop owner".into())
         }
+        /// Dispatch a Coil command. Example: `work.coil_from_gui(action)?`.
+        fn coil_from_gui(
+            &mut self,
+            _action: oblikovati_gui::GuiCoilAction,
+        ) -> Result<bool, String> {
+            Err("coil: expected an available desktop owner".into())
+        }
         /// Dispatch a Sweep command. Example: `work.sweep_from_gui(action)?`.
         fn sweep_from_gui(
             &mut self,

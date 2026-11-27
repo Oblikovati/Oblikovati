@@ -134,6 +134,7 @@ pub struct GuiCommandState {
     pub loft_preview: Option<Result<(), String>>,
     pub sweep_preview: Option<crate::GuiSweepPreviewState>,
     pub revolve_preview: Option<crate::GuiRevolvePreviewState>,
+    pub coil_preview: Option<crate::GuiCoilPreviewState>,
     /// The exact extrusion draft accepted for preview at this document generation.
     pub extrude_draft_preview: Option<crate::GuiExtrudePreview>,
     pub extrude_profile_pick: Option<(crate::GuiExtrudeProfilePick, i32)>,

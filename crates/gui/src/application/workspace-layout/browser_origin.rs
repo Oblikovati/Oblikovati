@@ -62,6 +62,7 @@ pub(crate) fn origin_row(
         choose_origin_row(state, view, row, actions);
         view.picked_plane_reference =
             origin_plane_at_row(row).map(|plane| plane.work_reference().to_owned());
+        view.picked_axis_reference = origin_axis_at_row(row);
     }
     if ui.is_item_hovered() && ui.is_mouse_clicked(MouseButton::Right) {
         choose_origin_row(state, view, row, actions);
@@ -87,6 +88,17 @@ pub(super) fn origin_plane_at_row(row: usize) -> Option<crate::GuiOriginPlaneKin
     [Xy, Xz, Yz]
         .into_iter()
         .find(|plane| plane.label() == label)
+}
+pub(super) fn origin_axis_at_row(
+    row: usize,
+) -> Option<oblikovati_model::feature::work_axis::WorkAxisReference> {
+    use oblikovati_model::feature::work_axis::WorkAxisReference::{OriginX, OriginY, OriginZ};
+    match *crate::browser::ORIGIN_ROWS.get(row)? {
+        "X Axis" => Some(OriginX),
+        "Y Axis" => Some(OriginY),
+        "Z Axis" => Some(OriginZ),
+        _ => None,
+    }
 }
 /// Only one kind of row reads as chosen at a time, so whatever else was chosen lets go.
 fn choose_origin_row(

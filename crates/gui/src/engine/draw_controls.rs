@@ -285,10 +285,12 @@ impl GuiFrameEngine {
                 &mut self.sweep_dialog,
                 &mut self.loft_dialog,
                 &mut self.revolve_dialog,
+                &mut self.coil_dialog,
             ),
             &mut self.extrude_dialog,
         );
-        let revolve_needs_plane = self.revolve_dialog.take_sketch_plane_request();
+        let revolve_needs_plane = self.revolve_dialog.take_sketch_plane_request()
+            || self.coil_dialog.take_sketch_plane_request();
         if revolve_needs_plane {
             self.plane_selection.active = true;
         }
@@ -311,6 +313,7 @@ impl GuiFrameEngine {
         let assets = (&mut self.material_browser, &mut self.appearance_browser);
         Self::draw_asset_docks(assets, ui, commands, self.home.active, &mut selected);
         let browser_plane = self.workspace.take_picked_plane_reference();
+        let browser_axis = self.workspace.take_picked_axis_reference();
         let extrude_ctx = (
             &mut self.extrude_dialog,
             self.plane_selection.active,
@@ -321,6 +324,8 @@ impl GuiFrameEngine {
             &mut self.revolve_dialog,
             &mut self.sweep_dialog,
             &mut self.loft_dialog,
+            &mut self.coil_dialog,
+            browser_axis,
         );
         let modify_dialogs = (
             &mut self.blend_dialog,

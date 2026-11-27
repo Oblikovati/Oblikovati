@@ -45,6 +45,8 @@ pub(crate) struct BrowserView {
     /// The origin row a click chose.
     pub selected_origin_row: Option<usize>,
     pub(super) picked_plane_reference: Option<String>,
+    pub(super) picked_axis_reference:
+        Option<oblikovati_model::feature::work_axis::WorkAxisReference>,
     /// The last origin row retains a focus outline after viewport selection clears.
     pub focused_origin_row: Option<usize>,
     pub arrow_consumed: bool,

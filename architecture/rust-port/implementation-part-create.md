@@ -12,7 +12,7 @@ helical-spring sweep use the owning command and are additional scenario files.
 | [Revolve](implementation-revolve.md) | 25 |
 | Sweep | 21 |
 | Loft | 22 |
-| Coil | 7 |
+| [Coil](implementation-coil.md) | 7 |
 | Emboss | 7 |
 | Derive | 6 |
 | Rib | 5 |

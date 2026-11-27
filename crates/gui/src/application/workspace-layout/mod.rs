@@ -127,6 +127,11 @@ impl WorkspaceLayout {
     pub(crate) fn take_picked_plane_reference(&mut self) -> Option<String> {
         self.view.picked_plane_reference.take()
     }
+    pub(crate) fn take_picked_axis_reference(
+        &mut self,
+    ) -> Option<oblikovati_model::feature::work_axis::WorkAxisReference> {
+        self.view.picked_axis_reference.take()
+    }
     /// Open the Model Browser's tree filter; example: `layout.request_browser_search()`.
     pub(crate) fn request_browser_search(&mut self) {
         self.panels.open_panel(panel_tabs::DockPanel::Model);
@@ -210,6 +215,7 @@ impl WorkspaceLayout {
         self.pending_layout |= self.panels.visibility_changed_since_layout();
         self.view.arrow_consumed = false;
         self.view.picked_plane_reference = None;
+        self.view.picked_axis_reference = None;
         self.view.feature_keyboard_focus = false;
         self.view.document_area = Some(presentation.0);
         self.view.icons = Some(presentation.1.clone());

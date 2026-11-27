@@ -34,10 +34,12 @@ pub(super) fn draw_feature_dialogs(
         bool,
         Option<String>,
     ),
-    (revolve, sweep, loft): (
+    (revolve, sweep, loft, coil, picked_axis): (
         &mut crate::revolve_dialog::RevolveDialog,
         &mut crate::sweep_dialog::SweepDialog,
         &mut crate::loft_dialog::LoftDialog,
+        &mut crate::coil_dialog::CoilDialog,
+        Option<oblikovati_model::feature::work_axis::WorkAxisReference>,
     ),
     (blend, hole, shell, motion, offset): (
         &mut crate::blend_dialog::BlendDialog,
@@ -64,6 +66,7 @@ pub(super) fn draw_feature_dialogs(
     revolve.panel(ui, commands, (area, icons, parameters), selected);
     sweep.panel(ui, commands, (area, icons), selected);
     loft.panel(ui, commands, area, selected);
+    coil.panel(ui, commands, (area, icons, picked_axis), selected);
     blend.panel(ui, commands, selected, area);
     hole.panel(ui, commands, area, selected);
     shell.panel(ui, commands, area, selected);
@@ -129,6 +132,7 @@ pub(super) fn finish_frame_capture(
 enum Draft {
     Extrude,
     Revolve,
+    Coil,
     Sweep,
     Loft,
     Blend,
@@ -142,6 +146,9 @@ fn requested_draft(action: &GuiShellAction) -> Option<Draft> {
         GuiShellAction::Revolve(
             crate::GuiRevolveAction::Open | crate::GuiRevolveAction::OpenEdit(_),
         ) => Draft::Revolve,
+        GuiShellAction::Coil(crate::GuiCoilAction::Open | crate::GuiCoilAction::OpenEdit(_)) => {
+            Draft::Coil
+        }
         GuiShellAction::Sweep(crate::GuiSweepAction::Open | crate::GuiSweepAction::OpenEdit(_)) => {
             Draft::Sweep
         }
@@ -171,10 +178,11 @@ pub(super) fn open_drafts(
         &mut crate::move_body_dialog::MoveBodyDialog,
         &mut crate::blend_dialog::BlendDialog,
     ),
-    (sweep, loft, revolve): (
+    (sweep, loft, revolve, coil): (
         &mut crate::sweep_dialog::SweepDialog,
         &mut crate::loft_dialog::LoftDialog,
         &mut crate::revolve_dialog::RevolveDialog,
+        &mut crate::coil_dialog::CoilDialog,
     ),
     extrude: &mut crate::extrude_dialog::ExtrudeDialog,
 ) {
@@ -198,6 +206,9 @@ pub(super) fn open_drafts(
     if draft != Draft::Revolve {
         revolve.close(actions);
     }
+    if draft != Draft::Coil {
+        coil.close(actions);
+    }
     if draft != Draft::Sweep {
         sweep.close(actions);
     }
@@ -220,6 +231,10 @@ pub(super) fn open_drafts(
         GuiShellAction::Revolve(crate::GuiRevolveAction::Open) => revolve.open(state, None),
         GuiShellAction::Revolve(crate::GuiRevolveAction::OpenEdit(feature)) => {
             revolve.open(state, Some(feature))
+        }
+        GuiShellAction::Coil(crate::GuiCoilAction::Open) => coil.open(state, None),
+        GuiShellAction::Coil(crate::GuiCoilAction::OpenEdit(feature)) => {
+            coil.open(state, Some(feature))
         }
         GuiShellAction::Sweep(crate::GuiSweepAction::Open) => sweep.open(state, None),
         GuiShellAction::Sweep(crate::GuiSweepAction::OpenEdit(feature)) => {

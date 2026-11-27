@@ -204,6 +204,7 @@ pub(crate) fn action_glyph(action: &GuiShellAction) -> Option<IconGlyph> {
         GuiShellAction::Revolve(crate::GuiRevolveAction::Open) => IconGlyph::Revolve,
         GuiShellAction::Sweep(crate::GuiSweepAction::Open) => IconGlyph::Sweep,
         GuiShellAction::Loft(crate::GuiLoftAction::Open) => IconGlyph::Loft,
+        GuiShellAction::Coil(crate::GuiCoilAction::Open) => IconGlyph::Coil,
         _ => return None,
     })
 }

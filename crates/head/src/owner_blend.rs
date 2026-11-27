@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Preview and commit blends from exact desktop edge selections (#4045, #4046).
 use super::*;
+#[path = "owner_coil.rs"]
+pub(super) mod owner_coil;
 #[path = "owner_hole.rs"]
 mod owner_hole;
 #[path = "owner_move_body.rs"]

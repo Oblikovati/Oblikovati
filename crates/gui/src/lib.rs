@@ -161,6 +161,10 @@ pub use loft_dialog::{
 };
 mod feature_properties;
 pub use feature_properties::FeatureOutputMode;
+mod coil_dialog;
+pub use coil_dialog::{
+    GuiCoilAction, GuiCoilEditSeed, GuiCoilPreview, GuiCoilPreviewState, GuiCoilRequest,
+};
 mod revolve_dialog;
 pub use revolve_dialog::{
     GuiRevolveAction, GuiRevolveEditSeed, GuiRevolveExtent, GuiRevolvePreview,

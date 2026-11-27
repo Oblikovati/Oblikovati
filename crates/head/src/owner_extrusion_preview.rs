@@ -194,8 +194,9 @@ impl<
     pub(super) fn clear_extrusion_preview(&mut self) -> bool {
         self.extrusion_draft_preview = None;
         self.extrusion_handle_axis = None;
-        let sweep_changed =
-            self.sweep_preview.take().is_some() | self.revolve_preview.take().is_some();
+        let sweep_changed = self.sweep_preview.take().is_some()
+            | self.revolve_preview.take().is_some()
+            | self.coil_preview.take().is_some();
         if self.extrusion_preview.take().is_none() {
             return sweep_changed;
         }

@@ -47,6 +47,7 @@ fn register_model_windows(engine: &mut GuiFrameEngine) -> Result<(), String> {
     engine.shell_feature_dialog.register_dockable(registry)?;
     engine.sweep_dialog.register_dockable(registry)?;
     engine.revolve_dialog.register_dockable(registry)?;
+    engine.coil_dialog.register_dockable(registry)?;
     engine.loft_dialog.register_dockable(registry)?;
     engine.move_body_dialog.register_dockable(registry)?;
     engine.history_browser.register_dockable(registry)?;
@@ -114,6 +115,7 @@ impl GuiFrameEngine {
     }
     fn prepare_model_docks(&mut self, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
         self.revolve_dialog.synchronize(state, actions);
+        self.coil_dialog.synchronize(state, actions);
         self.sweep_dialog.synchronize(state, actions);
         self.loft_dialog.synchronize(state, actions);
         self.blend_dialog.sync_before_docking(state, actions);

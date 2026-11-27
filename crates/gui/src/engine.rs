@@ -31,6 +31,7 @@ use quick_access::{apply_home_requests, apply_quick_access};
 mod template_selection;
 #[path = "engine/workspace_layout.rs"]
 mod workspace_layout;
+use workspace_layout::home_follows_actions;
 #[derive(Clone, Debug)]
 pub struct GuiFrameRequest {
     pub extent: [u32; 2],
@@ -86,6 +87,7 @@ pub struct GuiFrameEngine {
     preferences: crate::ui_scale::GuiScalePreferences,
     loft_dialog: crate::loft_dialog::LoftDialog,
     revolve_dialog: crate::revolve_dialog::RevolveDialog,
+    coil_dialog: crate::coil_dialog::CoilDialog,
     sweep_dialog: crate::sweep_dialog::SweepDialog,
     extrude_dialog: crate::extrude_dialog::ExtrudeDialog,
     blend_dialog: crate::blend_dialog::BlendDialog,
@@ -181,6 +183,7 @@ impl GuiFrameEngine {
             preferences: Default::default(),
             loft_dialog: Default::default(),
             revolve_dialog: Default::default(),
+            coil_dialog: Default::default(),
             sweep_dialog: Default::default(),
             extrude_dialog: Default::default(),
             blend_dialog: Default::default(),
@@ -461,32 +464,6 @@ fn workspace_front(
         [area.right * scale[0], area.bottom * scale[1]],
     ];
     front_key(&request.commands, home_active).map(|key| (key, bounds))
-}
-/// Home is left by actions that put a document in front of it.
-fn home_follows_actions(
-    home: &mut crate::application::home_recent_documents::HomeWorkspace,
-    selected: &[GuiShellAction],
-) {
-    for action in selected {
-        match action {
-            GuiShellAction::ShowHome => home.active = true,
-            GuiShellAction::CloseDocumentWindow(_) if home.reached_from_home => {
-                home.active = true;
-            }
-            GuiShellAction::ActivateDocument(_)
-            | GuiShellAction::ActivateWindow(_)
-            | GuiShellAction::OpenDocument(_)
-            | GuiShellAction::OpenDeferredDrawing(_)
-            | GuiShellAction::CreateDocument(_)
-            | GuiShellAction::CreateProjectTemplate(_)
-            | GuiShellAction::DrawingLayout(
-                crate::GuiDrawingLayoutAction::Confirm { .. }
-                | crate::GuiDrawingLayoutAction::Acknowledge { .. },
-            )
-            | GuiShellAction::NewPart => home.active = false,
-            _ => {}
-        }
-    }
 }
 #[cfg(test)]
 #[path = "../tests/parameter_journey/platform.rs"]

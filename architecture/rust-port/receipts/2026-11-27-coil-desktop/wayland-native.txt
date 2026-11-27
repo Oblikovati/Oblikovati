@@ -1,0 +1,74 @@
+   Compiling oblikovati-head v0.1.0 (/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/pr-4184-publish/crates/head)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 28.77s
+     Running unittests src/lib.rs (target/integration-cache/debug/deps/oblikovati_head-72ffb486560ace27)
+
+running 1 test
+test native::gui_loop_tests::application_bdd::application_scenarios_use_the_native_window ... Feature: Coil
+  Scenario: coil-01 Create a coil as a new solid
+   ✔  Given a part has no available coil profile
+   ✔  When Coil is opened and a planar face is selected
+   ✔  Then the MCAD Software starts a sketch on that face
+   ✔  When a circle is drawn and the sketch is finished
+   ✔  Then Coil opens with one profile selected and requests an axis
+   ✔  When the origin Y axis is selected
+   ✔  Then a helical preview appears with Pitch and Revolution, 15 mm pitch and 2.5 revolutions
+   ✔  When New Solid is chosen and accepted
+   ✔  Then Coil1 appears in the browser and the solid body count increases to two
+  Scenario: coil-02 Change the coil method
+   ✔  Given Coil1 is open for editing
+   ✔  When I open Method
+   ✔  Then Pitch and Revolution, Revolution and Height, Pitch and Height, and Spiral are offered
+   ✔  When I select Revolution and Height
+   ✔  Then Revolution and Height fields are shown
+   ✔  When I select Pitch and Height
+   ✔  Then Pitch and Height fields are shown
+   ✔  When I select Spiral
+   ✔  Then Pitch and Revolution fields remain and the preview becomes an outward spiral
+   ✔  When I accept and reopen Coil1
+   ✔  Then Spiral remains selected
+  Scenario: coil-03 Change coil rotation and close its ends
+   ✔  Given Coil1 is open with Pitch and Revolution selected
+   ✔  When I select right-hand rotation
+   ✔  Then the helix preview changes direction
+   ✔  When I enable Close Start and Close End
+   ✔  Then each end exposes Flat Angle and Transition Angle fields
+   ✔  When I accept and reopen Coil1
+   ✔  Then right-hand rotation and both end options remain selected
+  Scenario: coil-04 Reject zero pitch
+   ✔  Given Coil1 is open with Pitch and Revolution selected
+   ✔  When I enter zero for Pitch
+   ✔  Then the field shows an error indicator and OK is disabled
+   ✔  When I cancel
+   ✔  Then the previous coil remains displayed
+  Scenario: coil-05 Change taper and reverse the coil axis
+   ✔  Given Coil1 uses Pitch and Revolution
+   ✔  When I set Taper to 5 degrees and accept
+   ✔  Then reopening Coil1 shows a 5 degree taper
+   ✔  When I reverse the axis direction
+   ✔  Then the preview extends to the opposite side of the profile
+   ✔  When I accept and reopen Coil1
+   ✔  Then the reversed preview and 5 degree taper remain
+  Scenario: coil-06 Require a coil profile
+   ✔  Given Coil1 is open with a profile and axis selected
+   ✔  When I clear the profile selection
+   ✔  Then the profile control requests a selection and OK is disabled
+   ✔  When I cancel
+   ✔  Then the previously accepted coil remains displayed
+  Scenario: coil-07 Reject zero pitch and zero revolutions
+   ✔  Given Coil1 uses Pitch and Revolution with 15 mm pitch and 2.5 revolutions
+   ✔  When I replace Pitch with zero
+   ✔  Then the preview disappears, Pitch shows an error, and OK is disabled
+   ✔  When I cancel and reopen Coil1
+   ✔  Then Pitch shows 15 mm
+   ✔  When I replace Revolution with zero
+   ✔  Then the preview disappears, Revolution shows an error, and OK is disabled
+   ✔  When I cancel
+   ✔  Then the Coil panel closes
+[Summary]
+1 feature
+7 scenarios (7 passed)
+53 steps (53 passed)
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1794 filtered out; finished in 978.58s
+

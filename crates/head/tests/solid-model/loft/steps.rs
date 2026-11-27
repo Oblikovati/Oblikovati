@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Exercise the Loft command through native ribbon and viewport input.
+#[path = "../coil/steps.rs"]
+mod solid_coil;
+
 use super::*;
 use cucumber::{given, then, when};
 use oblikovati_gui::GuiLoftElement;

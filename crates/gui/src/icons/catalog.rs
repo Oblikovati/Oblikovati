@@ -56,6 +56,7 @@ glyph_catalog! {
     Revolve => "revolve",
     Sweep => "sweep",
     Loft => "loft",
+    Coil => "coil",
     Hole => "hole",
     Shell => "shell",
     Fillet => "fillet",
