@@ -82,7 +82,12 @@ fn select_dock_tab(world: &mut ApplicationWorld, title: &str) {
 #[test]
 fn document_tabs_restore_the_model_dock_selection_when_leaving_home() {
     let mut world = ApplicationWorld::new();
-    super::retention_scenario::two_saved_documents(&mut world);
+    world.restore_layout_without_asset_tools();
+    let blank = world.add_part();
+    world.save_part_to_file(blank, "PartOne.opd");
+    world.other_document = Some(blank);
+    super::fixture_native::reopen_bundled_docking_part(&mut world);
+    world.previous_document = Some(world.active_id());
     model_and_log_share_left_dock(&mut world);
     select_log_in_part_one(&mut world);
     select_model_in_solid(&mut world);
