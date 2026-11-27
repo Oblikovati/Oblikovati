@@ -261,19 +261,63 @@ impl GuiScalePreferences {
         let mut open = self.open.is_open();
         let mut close_requested = false;
         let escape = Self::dockable_window(ui, "Application Options", &mut open)
+            .scroll_bar(false)
+            .scrollable(false)
             .build(|| {
-                ui.text("UI");
-                ui.separator();
-                ui.text("Text size");
-                scale_choices(
+                let body = crate::widget_abi::child_region(
                     ui,
-                    options,
-                    actions,
-                    #[cfg(test)]
-                    &mut self.scale_200_bounds,
+                    "##application-options-body",
+                    [0., -48.],
+                    0.,
+                    imgui::WindowFlags::empty(),
                 );
-                self.part_draft.draw(ui, state.part_options, actions);
-                close_requested = self.sketch_draft.draw(ui, state, actions);
+                if body.visible {
+                    {
+                        let _semi = ui_semibold_font(ui);
+                        ui.text("UI");
+                    }
+                    ui.separator();
+                    ui.text_colored(crate::theme::text_secondary(ui), "Text size");
+                    scale_choices(
+                        ui,
+                        options,
+                        actions,
+                        #[cfg(test)]
+                        &mut self.scale_200_bounds,
+                    );
+                    self.part_draft.draw(ui, state.part_options);
+                    self.sketch_draft.draw(ui, state);
+                }
+                drop(body);
+                ui.separator();
+                ui.dummy([0., 2.]);
+                let dirty = self.part_draft.has_changes(state.part_options)
+                    || self.sketch_draft.has_changes(state.sketch_options.as_ref());
+                let conflict = self.part_draft.has_conflict(state.part_options)
+                    || self
+                        .sketch_draft
+                        .has_conflict(state.sketch_options.as_ref());
+                if crate::theme::property_accept(ui, !conflict) {
+                    self.part_draft.apply(state.part_options, actions);
+                    self.sketch_draft
+                        .apply(state.sketch_options.as_ref(), actions);
+                    close_requested = true;
+                }
+                ui.same_line_with_spacing(0., 6.);
+                {
+                    let _disabled = ui.begin_disabled(!dirty || conflict);
+                    if crate::theme::secondary_button(ui, "Apply", [68., 28.]) {
+                        self.part_draft.apply(state.part_options, actions);
+                        self.sketch_draft
+                            .apply(state.sketch_options.as_ref(), actions);
+                    }
+                }
+                ui.same_line_with_spacing(0., 6.);
+                if crate::theme::property_cancel(ui) {
+                    self.part_draft.clear();
+                    self.sketch_draft.clear();
+                    close_requested = true;
+                }
                 ui.is_window_focused() && ui.is_key_pressed_no_repeat(imgui::Key::Escape)
             })
             .unwrap_or(false);

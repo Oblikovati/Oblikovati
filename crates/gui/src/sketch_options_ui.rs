@@ -93,84 +93,82 @@ impl SketchOptionsDraft {
             self.hud.panel(ui, edited);
         }
     }
-    pub(crate) fn draw(
+    pub(crate) fn has_changes(&self, accepted: Option<&SketchApplicationOptions>) -> bool {
+        matches!((self.edited.as_ref(), accepted), (Some(edited), Some(accepted)) if edited != accepted)
+    }
+    pub(crate) fn has_conflict(&self, accepted: Option<&SketchApplicationOptions>) -> bool {
+        matches!((self.original.as_ref(), accepted), (Some(original), Some(accepted)) if original != accepted)
+    }
+    pub(crate) fn apply(
         &mut self,
-        ui: &Ui,
-        state: &GuiCommandState,
+        accepted: Option<&SketchApplicationOptions>,
         actions: &mut Vec<GuiShellAction>,
-    ) -> bool {
+    ) {
+        if let (Some(edited), Some(accepted)) = (self.edited.as_ref(), accepted)
+            && edited != accepted
+            && !self.has_conflict(Some(accepted))
+        {
+            actions.push(GuiShellAction::SetSketchOptions(edited.clone()));
+        }
+    }
+    pub(crate) fn draw(&mut self, ui: &Ui, state: &GuiCommandState) {
         let Some(accepted) = &state.sketch_options else {
             self.clear();
-            return false;
+            return;
         };
         self.synchronize(accepted);
         let Some(edited) = self.edited.as_mut() else {
-            return false;
+            return;
         };
         ui.separator();
-        ui.text("Sketch");
-        let conflict = self.original.as_ref() != Some(accepted);
-        if conflict {
-            ui.text("Sketch settings changed. Revert before applying.");
+        {
+            let _semi = crate::ui_scale::ui_semibold_font(ui);
+            ui.text("Sketch");
         }
-        let close = draw_actions(ui, edited, accepted, conflict, actions);
+        if self.original.as_ref() != Some(accepted) {
+            ui.text_colored(
+                crate::theme::error_accent(ui),
+                "Sketch settings changed. Cancel and reopen before applying.",
+            );
+        }
         if let (Some(document), Some(settings)) =
             (state.document, state.document_sketch_settings.as_ref())
-            && ui.button("Constraint Settings")
+            && crate::theme::secondary_button(ui, "Constraint Settings", [0., 0.])
         {
             self.constraint.request(document, settings, edited);
         }
-        if ui.button("HUD Settings") {
+        if state.document.is_some() && state.document_sketch_settings.is_some() {
+            ui.same_line_with_spacing(0., 6.);
+        }
+        if crate::theme::secondary_button(ui, "HUD Settings", [0., 0.]) {
             self.hud.request(edited);
         }
         draw_grid(ui, edited);
         for (label, field) in TOGGLES {
             ui.checkbox(label, field(edited));
         }
-        close
     }
-}
-
-fn draw_actions(
-    ui: &Ui,
-    edited: &SketchApplicationOptions,
-    accepted: &SketchApplicationOptions,
-    conflict: bool,
-    actions: &mut Vec<GuiShellAction>,
-) -> bool {
-    let changed = edited != accepted;
-    let disabled = ui.begin_disabled(!changed || conflict);
-    if ui.button("Apply") {
-        actions.push(GuiShellAction::SetSketchOptions(edited.clone()));
-    }
-    disabled.end();
-    ui.same_line();
-    if !changed {
-        return ui.button("Close");
-    }
-    let disabled = ui.begin_disabled(conflict);
-    let ok = ui.button("OK");
-    disabled.end();
-    if ok {
-        actions.push(GuiShellAction::SetSketchOptions(edited.clone()));
-    }
-    ui.same_line();
-    ok || ui.button("Cancel")
 }
 
 fn draw_grid(ui: &Ui, options: &mut SketchApplicationOptions) {
     let mut spacing = options.grid_spacing_cm as f32;
-    if ui.input_float("Grid spacing (cm)", &mut spacing).build()
-        && spacing.is_finite()
-        && spacing > 0.
+    crate::theme::property_label(ui, "Grid spacing (cm)");
     {
-        options.grid_spacing_cm = f64::from(spacing);
+        let _numeric = crate::ui_scale::numeric_font(ui);
+        if ui.input_float("##grid-spacing", &mut spacing).build()
+            && spacing.is_finite()
+            && spacing > 0.
+        {
+            options.grid_spacing_cm = f64::from(spacing);
+        }
     }
     let Ok(mut interval) = i32::try_from(options.grid_major_every) else {
         ui.text("Major line interval is outside the desktop input range.");
         return;
     };
-    if ui.input_int("Major line every", &mut interval).build() && interval > 0 {
+    crate::theme::property_label(ui, "Major line every");
+    let _numeric = crate::ui_scale::numeric_font(ui);
+    if ui.input_int("##grid-major-every", &mut interval).build() && interval > 0 {
         options.grid_major_every = i64::from(interval);
     }
 }

@@ -9,7 +9,7 @@ fn set_look_at(world: &mut ApplicationWorld, enabled: bool) {
     world.click_text("Application Options");
     assert_eq!(world.checked("Look at sketch plane"), !enabled);
     world.click_text("Look at sketch plane");
-    world.click_text("Apply Part");
+    world.click_text("Apply");
     assert_eq!(
         world.state().part_options.unwrap().look_at_sketch_plane,
         enabled

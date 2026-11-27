@@ -160,9 +160,14 @@ fn part_sketch_view_preference_is_staged_reverted_and_applied() {
     click_shell_position(
         &mut window,
         &mut owner,
-        application_bdd::rendered_label_center("Revert Part"),
+        application_bdd::rendered_label_center("Cancel"),
     );
     assert!(current(&mut owner));
+    click_shell_position(
+        &mut window,
+        &mut owner,
+        application_bdd::rendered_label_center("Application Options"),
+    );
     click_shell_position(
         &mut window,
         &mut owner,
@@ -171,7 +176,7 @@ fn part_sketch_view_preference_is_staged_reverted_and_applied() {
     click_shell_position(
         &mut window,
         &mut owner,
-        application_bdd::rendered_label_center("Apply Part"),
+        application_bdd::rendered_label_center("Apply"),
     );
     assert!(!current(&mut owner));
     let reloaded =
@@ -231,7 +236,7 @@ fn check_startup_plane_choice(
         click_shell_position(
             &mut window,
             &mut owner,
-            application_bdd::rendered_label_center("Apply Part"),
+            application_bdd::rendered_label_center("Apply"),
         );
     }
     assert_eq!(

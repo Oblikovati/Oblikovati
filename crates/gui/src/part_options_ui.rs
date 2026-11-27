@@ -27,12 +27,25 @@ impl PartOptionsDraft {
     pub(crate) fn clear(&mut self) {
         *self = Self::default();
     }
-    pub(crate) fn draw(
+    pub(crate) fn has_changes(&self, accepted: Option<PartApplicationOptions>) -> bool {
+        matches!((self.edited, accepted), (Some(edited), Some(accepted)) if edited != accepted)
+    }
+    pub(crate) fn has_conflict(&self, accepted: Option<PartApplicationOptions>) -> bool {
+        matches!((self.original, accepted), (Some(original), Some(accepted)) if original != accepted)
+    }
+    pub(crate) fn apply(
         &mut self,
-        ui: &Ui,
         accepted: Option<PartApplicationOptions>,
         actions: &mut Vec<GuiShellAction>,
     ) {
+        if let (Some(edited), Some(accepted)) = (self.edited, accepted)
+            && edited != accepted
+            && !self.has_conflict(Some(accepted))
+        {
+            actions.push(GuiShellAction::SetPartOptions(edited));
+        }
+    }
+    pub(crate) fn draw(&mut self, ui: &Ui, accepted: Option<PartApplicationOptions>) {
         let Some(accepted) = accepted else {
             self.clear();
             return;
@@ -42,22 +55,17 @@ impl PartOptionsDraft {
             return;
         };
         ui.separator();
-        ui.text("Part");
+        {
+            let _semi = crate::ui_scale::ui_semibold_font(ui);
+            ui.text("Part");
+        }
         ui.checkbox("Look at sketch plane", &mut edited.look_at_sketch_plane);
         draw_startup_plane(ui, &mut edited.startup_sketch_plane);
-        let conflict = self.original != Some(accepted);
-        if conflict {
-            ui.text("Part settings changed. Revert before applying.");
-        }
-        let changed = *edited != accepted;
-        let disabled = ui.begin_disabled(!changed || conflict);
-        if ui.button_with_size("Apply Part", [0., 0.]) {
-            actions.push(GuiShellAction::SetPartOptions(*edited));
-        }
-        disabled.end();
-        ui.same_line();
-        if ui.button_with_size("Revert Part", [0., 0.]) {
-            self.clear();
+        if self.original != Some(accepted) {
+            ui.text_colored(
+                crate::theme::error_accent(ui),
+                "Part settings changed. Cancel and reopen before applying.",
+            );
         }
     }
 }
@@ -70,7 +78,8 @@ fn draw_startup_plane(ui: &Ui, plane: &mut Option<WorkPlaneOrigin>) {
         Some(WorkPlaneOrigin::XZ) => 3,
     }]
     .1;
-    let Some(_combo) = ui.begin_combo("New part sketch", label) else {
+    crate::theme::property_label(ui, "New part sketch");
+    let Some(_combo) = ui.begin_combo("##new-part-sketch", label) else {
         return;
     };
     for (value, name) in STARTUP_PLANES {

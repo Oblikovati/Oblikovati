@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! The dialogs' file list: its rows, their order, and how they are chosen, one or several.
 use super::folder_browser::file_rows::{FileCell, RowHit, cell_row, details_heading, details_row};
-use super::folder_browser::{FileFilter, FileListView, FolderBrowser, LISTING_HEIGHT, listed};
+use super::folder_browser::{FileFilter, FileListView, FolderBrowser, listed};
 use crate::application::file_system::FolderEntry;
 use imgui::{MouseButton, Ui};
 
@@ -55,6 +55,7 @@ impl FolderBrowser {
     }
     pub(super) fn listing_rows(&mut self, ui: &Ui, filter: FileFilter) -> ListingOutcome {
         let mut outcome = ListingOutcome::default();
+        let total = self.listing_height(ui);
         ui.group(|| {
             let top = ui.cursor_screen_pos()[1];
             if self.view == FileListView::Details {
@@ -62,7 +63,7 @@ impl FolderBrowser {
             }
             let used = ui.cursor_screen_pos()[1] - top;
             ui.child_window("##folder-listing")
-                .size([0., LISTING_HEIGHT - used])
+                .size([0., (total - used).max(60.)])
                 .border(true)
                 // A press on empty space starts a selection rectangle.
                 .flags(imgui::WindowFlags::NO_MOVE)
