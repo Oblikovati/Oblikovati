@@ -230,6 +230,7 @@ fn modify_additional_commands_reflow_without_closing() {
     world.add_part();
     world.click_text("Modify");
     world.expect_text("Move Bodies");
+    super::super::ribbon_panel_expansion::toggle_pin(&mut world);
     let normal = diagnostics::window_geometry("##ribbon-additional-PartModify").unwrap();
     choose_appearance(&mut world, "Modify", "Text Off");
     let compact = diagnostics::window_geometry("##ribbon-additional-PartModify").unwrap();
