@@ -6,10 +6,23 @@ use cucumber::{given, then, when};
 const EXPANSION: &str = "##ribbon-additional-PartWorkFeatures";
 
 #[given("the grouped \"Plane\" control is in the 3D Model Work Features main panel")]
-#[given("the 3D Model Work Features panel contains a grouped \"Plane\" command")]
 fn plane_in_main_panel(world: &mut ApplicationWorld) {
     world.expect_text("Work Features");
     world.expect_text("Plane");
+}
+
+#[given("the 3D Model Work Features panel contains a grouped \"Plane\" command")]
+fn grouped_plane_on_a_visible_part(world: &mut ApplicationWorld) {
+    let has_solid = world
+        .state()
+        .browser
+        .is_some_and(|browser| browser.bodies.iter().any(|body| body.visible));
+    if !has_solid {
+        // The pinned scenario predates the named Part supplied by the published source.
+        super::open_visible_extruded_part(world);
+        world.previous_document = Some(world.active_id());
+    }
+    plane_in_main_panel(world);
 }
 
 #[when("the user right-clicks \"Plane\" and selects \"Ungroup Commands from Drop-Down Menu\"")]
@@ -240,6 +253,7 @@ fn offset_command_closes(world: &mut ApplicationWorld) {
 #[then("the grouped Plane control and the part remain visible")]
 fn plane_and_part_remain_visible(world: &mut ApplicationWorld) {
     plane_in_main_panel(world);
+    assert_eq!(world.state().document, world.previous_document);
     super::super::workspace_layout::browser_feature::expect_solid_visible(world);
 }
 
