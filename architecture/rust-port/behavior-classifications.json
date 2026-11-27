@@ -1264,11 +1264,20 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3870"
       ],
       "state": "inventoried",
-      "last_receipt": null,
-      "go_reference": "../Oblikovati/model/feature/extrude_extent.go; ../Oblikovati/model/feature/extrude_modes_test.go; ../Oblikovati/head/ui/extrude_dialog.go",
+      "last_receipt": "architecture/rust-port/receipts/2026-11-27-extrude-taper-3870/README.md",
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a model/feature/extrude_modes_test.go.",
       "mapping_reason": "A tapered solid requires the remaining extrude geometry modes.",
-      "baseline_source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
-      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
+      "baseline_source_sha256": "ccb973b10334aa2f8f31a189392ad8049212caaa2938db03b034bc9f49008821",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json",
+      "go_test_premise": "TestExtrudeTaperWidensTopAndStaysValid validates the positive draft and measures its widened cap.",
+      "api_revision": "c8200b2da97c9a7dde43afb25debc977ff23b2fd",
+      "kernel_revision": "d463526642b7bf950ba33c7ab4a4c9bc97caffaf",
+      "kernel_capabilities": "Validated native side-face drafting with exact replacement history for both caps, side faces, edges and vertices.",
+      "platforms": "Linux COSMIC Wayland and X11 under Xvfb with Openbox.",
+      "kernel_integration": "Use the signed taper about the sketch plane on a private candidate and publish its measured tolerances and geometry with the existing feature identity.",
+      "rust_tests": "crates/head/tests/solid-model/extrusion/taper.rs and crates/martensite/tests/unit/certified_prism.rs",
+      "oracle": "Check the saved 8 mm depth, a fixed 30 mm × 40 mm start cap, the widening farther cap, and the same edge keys after accepting +5°. See receipts/2026-11-27-extrude-taper-3870/README.md.",
+      "expected_result": "The 8 mm extrusion widens toward the far cap and keeps the feature and edge keys."
     },
     {
       "id": "scenario:b84ae6cb0850b2186bd2f5bd0c974e37ff662f1085063ab3af3613b24bc48c4f",
@@ -1282,11 +1291,20 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3870"
       ],
       "state": "inventoried",
-      "last_receipt": null,
-      "go_reference": "../Oblikovati/model/feature/extrude_extent.go; ../Oblikovati/model/feature/extrude_modes_test.go; ../Oblikovati/head/ui/extrude_dialog.go",
+      "last_receipt": "architecture/rust-port/receipts/2026-11-27-extrude-taper-3870/README.md",
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a model/feature/extrude_modes_test.go.",
       "mapping_reason": "History for a tapered solid depends on the tapered extrude mode.",
-      "baseline_source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
-      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
+      "baseline_source_sha256": "ccb973b10334aa2f8f31a189392ad8049212caaa2938db03b034bc9f49008821",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json",
+      "go_test_premise": "TestExtrudeTaperWidensTopAndStaysValid validates the positive draft and measures its widened cap.",
+      "api_revision": "c8200b2da97c9a7dde43afb25debc977ff23b2fd",
+      "kernel_revision": "d463526642b7bf950ba33c7ab4a4c9bc97caffaf",
+      "kernel_capabilities": "Validated native side-face drafting with exact replacement history for both caps, side faces, edges and vertices.",
+      "platforms": "Linux COSMIC Wayland and X11 under Xvfb with Openbox.",
+      "kernel_integration": "Use the signed taper about the sketch plane on a private candidate and publish its measured tolerances and geometry with the existing feature identity.",
+      "rust_tests": "crates/head/tests/solid-model/extrusion/taper.rs and crates/martensite/tests/unit/certified_prism.rs",
+      "oracle": "Undo the taper, redo its geometry, save and reopen the Part, then compare the edge keys and reopened Taper A value. See receipts/2026-11-27-extrude-taper-3870/README.md.",
+      "expected_result": "Undo restores parallel walls. Redo and reopening restore the wider cap and 5° angle."
     },
     {
       "id": "scenario:4c78e263367780784697d1dda91e7ae5e8a6a3cd1b77232266f1d4c87c8607a4",
@@ -1300,11 +1318,20 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3870"
       ],
       "state": "inventoried",
-      "last_receipt": null,
-      "go_reference": "../Oblikovati/model/feature/extrude_extent.go; ../Oblikovati/model/feature/extrude_modes_test.go; ../Oblikovati/head/ui/extrude_dialog.go",
+      "last_receipt": "architecture/rust-port/receipts/2026-11-27-extrude-taper-3870/README.md",
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a model/feature/extrude_modes_test.go.",
       "mapping_reason": "Preview and cancellation of a signed taper depend on the tapered extrude mode.",
-      "baseline_source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
-      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
+      "baseline_source_sha256": "ccb973b10334aa2f8f31a189392ad8049212caaa2938db03b034bc9f49008821",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json",
+      "go_test_premise": "TestExtrudeTaperWidensTopAndStaysValid validates the positive draft and measures its widened cap.",
+      "api_revision": "c8200b2da97c9a7dde43afb25debc977ff23b2fd",
+      "kernel_revision": "d463526642b7bf950ba33c7ab4a4c9bc97caffaf",
+      "kernel_capabilities": "Validated native side-face drafting with exact replacement history for both caps, side faces, edges and vertices.",
+      "platforms": "Linux COSMIC Wayland and X11 under Xvfb with Openbox.",
+      "kernel_integration": "Use the signed taper about the sketch plane on a private candidate and publish its measured tolerances and geometry with the existing feature identity.",
+      "rust_tests": "crates/head/tests/solid-model/extrusion/taper.rs and crates/martensite/tests/unit/certified_prism.rs",
+      "oracle": "Reverse the taper sign using the desktop control, measure the preview's narrowed cap, cancel, and compare the saved angle, generation, and keys. See receipts/2026-11-27-extrude-taper-3870/README.md.",
+      "expected_result": "The -5° draft narrows the far cap. Cancel preserves the accepted +5° result and its identities."
     },
     {
       "id": "scenario:3e4b9e33e44dffb2c65edec2817081f095cd3ee4e2dd0a4018e976b135f897bb",

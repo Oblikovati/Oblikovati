@@ -26,10 +26,8 @@ The baseline run on `80cdf0e9c` executed all 74 current cases under Xvfb and
 Lavapipe. Four passed (`extrusion-10`, `extrusion-11`, `extrusion-12a`,
 `extrusion-12b`). Sixty-eight stopped on unbound steps, and two stopped on
 assertions.
-The published 8 mm recipe has a literal distance. Its Tolerance menu item
-currently requires an editable parameter, so `extrusion-12` stops before the
-Tolerance window opens. Taper, surface and reference operations still need
-their own end-to-end evidence.
+At that revision the published 8 mm recipe stopped before opening Tolerance
+because its distance was literal.
 
 The focused follow-up passed 10 executions and 71 steps on each of Wayland
 and X11. It covers entry, direction changes and presentation, Cancel, zero
@@ -52,6 +50,14 @@ The [released-kernel taper probe](../../crates/martensite/tests/release_probe/ex
 uses the 40 mm × 30 mm rectangle and 8 mm depth with +5° and −5°. It
 checks the analytic volume, the two cap widths, and a one-to-one native
 history map across all faces, edges and vertices.
+
+Edit Feature now accepts signed Taper A for single-sided normal extrusions.
+The candidate drafts the side faces around the sketch plane. Native history
+maps the existing face, edge and vertex roles to the drafted result, and
+the adapter measures the new geometry before publishing it. The Part stores
+Taper A in prism recipe version 2 and program version 40.
+See the [native taper receipt](receipts/2026-11-27-extrude-taper-3870/README.md)
+for scenarios 07–09, including history, package reopen and cancellation.
 
 ## Sweep, Loft, and Revolve
 

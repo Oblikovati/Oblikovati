@@ -15,6 +15,8 @@ mod panel;
 mod pending;
 #[path = "extrude_reference.rs"]
 mod reference;
+#[path = "extrude_taper.rs"]
+mod taper;
 
 const DEFAULT_DISTANCE: &str = "10.00 mm";
 
@@ -29,6 +31,7 @@ pub(crate) struct ExtrudeDialog {
     distance: String,
     distance_editor: distance_editor::DistanceEditor,
     second_distance: String,
+    taper: Option<taper::TaperDraft>,
     direction: GuiExtrudeDirection,
     direction_style: direction::SelectorStyle,
     reference: reference::ReferenceDraft,
@@ -64,6 +67,7 @@ impl ExtrudeDialog {
     fn set_document(&mut self, document: Option<u64>) {
         if document.is_none() || self.document != document {
             self.distance_editor = Default::default();
+            self.taper = None;
             self.preview_hidden = false;
             self.size = Default::default();
         }
@@ -88,6 +92,7 @@ impl ExtrudeDialog {
         self.distance = seed.distance.clone();
         self.distance_editor = Default::default();
         self.second_distance = seed.second_distance.clone().unwrap_or_default();
+        self.taper = seed.taper.clone().map(taper::TaperDraft::new);
         self.direction = seed.direction;
         self.reference = Default::default();
         self.edit_feature = Some(feature);
@@ -184,13 +189,20 @@ impl ExtrudeDialog {
                 let chrome = ui.cursor_pos()[1] + style.window_padding[1] + style.item_spacing[1];
                 let mut properties = 0.;
                 let mut edited = false;
-                ui.child_window("##extrude-properties")
-                    .size([0., -panel::FOOTER_HEIGHT])
-                    .build(|| {
+                {
+                    let region = crate::widget_abi::child_region(
+                        ui,
+                        "##extrude-properties",
+                        [0., -panel::FOOTER_HEIGHT],
+                        0.,
+                        imgui::WindowFlags::empty(),
+                    );
+                    if region.visible {
                         let start = ui.cursor_pos()[1];
                         edited = self.properties(ui, state, document, &mut controls, actions);
                         properties = ui.cursor_pos()[1] - start;
-                    });
+                    }
+                }
                 self.size.measure(chrome, properties);
                 // Child input still owns the draft. Popups keep their own Escape key.
                 let shortcuts = !controls.popup_was_open
@@ -226,6 +238,11 @@ impl ExtrudeDialog {
             ui.collapsing_header("Input Geometry", expanded) && self.geometry_controls(ui, state);
         if ui.collapsing_header("Behavior", expanded) {
             edited |= self.draw_extent(ui, state, controls.icons, controls.parameters, actions);
+            if self.reference.numeric()
+                && let Some(taper) = &mut self.taper
+            {
+                edited |= taper.draw(ui);
+            }
         }
         if edited {
             self.commit_error = None;
@@ -285,16 +302,8 @@ impl ExtrudeDialog {
         }
         self.attempted = request.clone();
         if let Some(request) = request {
-            if let Some(feature) = self.edit_feature {
-                actions.push(GuiShellAction::PreviewExtrudeEdit(
-                    crate::GuiExtrudeEditRequest {
-                        generation: request.generation,
-                        document,
-                        feature,
-                        distance: request.distance,
-                        second_distance: request.second_distance,
-                    },
-                ));
+            if let Some(edit) = self.edit_request(&request) {
+                actions.push(GuiShellAction::PreviewExtrudeEdit(edit));
             } else {
                 actions.push(GuiShellAction::PreviewExtrude(Some(request)));
             }
@@ -307,7 +316,11 @@ impl ExtrudeDialog {
         document: u64,
         edited: bool,
     ) -> Option<crate::GuiExtrudePreview> {
-        if edited {
+        if edited
+            || self.taper.as_ref().is_some_and(|taper| {
+                taper.is_empty() || (taper.change().is_some() && self.commit_error.is_some())
+            })
+        {
             return None;
         }
         if !self.reference.numeric() {
@@ -385,6 +398,7 @@ impl ExtrudeDialog {
             feature: self.edit_feature?,
             distance: request.distance.clone(),
             second_distance: request.second_distance.clone(),
+            taper: self.taper.as_ref().and_then(taper::TaperDraft::change),
         })
     }
     fn commit_request(
@@ -404,7 +418,9 @@ impl ExtrudeDialog {
             self.submitted = Some(submitted);
             actions.push(self.creation_action(request));
         }
+        let taper = self.taper.take();
         self.set_document(None);
+        self.taper = taper;
         self.edit_feature = None;
         self.previewed = false;
         true
@@ -450,9 +466,19 @@ impl ExtrudeDialog {
     }
     pub(crate) fn reject_edit(&mut self, request: &crate::GuiExtrudeEditRequest, cause: &str) {
         if self.submitted_edit.as_ref() != Some(request) {
+            if self.document == Some(request.document)
+                && self.edit_feature == Some(request.feature)
+                && self.distance == request.distance
+                && request.taper.is_some()
+                && self.taper.as_ref().and_then(taper::TaperDraft::change) == request.taper
+            {
+                self.commit_error = Some(cause.into());
+            }
             return;
         }
+        let taper = self.taper.take();
         self.set_document(Some(request.document));
+        self.taper = taper;
         self.edit_feature = Some(request.feature);
         self.commit_error = Some(cause.into());
     }

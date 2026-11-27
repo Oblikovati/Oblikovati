@@ -86,6 +86,7 @@ fn edit_seed_keeps_its_source_and_new_extrusion_clears_edit_mode() {
             distance: "size".into(),
             second_distance: None,
             direction: GuiExtrudeDirection::Symmetric,
+            taper: None,
         },
     );
     let mut dialog = ExtrudeDialog::default();

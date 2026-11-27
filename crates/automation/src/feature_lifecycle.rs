@@ -11,7 +11,7 @@ use oblikovati_session::{TransactionObserver, files::FileWorkspace, workspace::W
 mod blend_edit;
 mod prism_edit;
 pub use blend_edit::{apply_chamfer_distance_edit, apply_fillet_radius_edit};
-pub use prism_edit::apply_feature_distance_edit;
+pub use prism_edit::{apply_feature_distance_edit, apply_feature_extrusion_edit};
 
 /// Native feature lifecycle calls that operate on the active part history.
 pub const FEATURE_LIFECYCLE_METHODS: [&str; 5] = [

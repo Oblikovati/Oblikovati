@@ -71,6 +71,7 @@ pub struct GuiExtrudeEditSeed {
     pub distance: String,
     pub second_distance: Option<String>,
     pub direction: crate::GuiExtrudeDirection,
+    pub taper: Option<String>,
 }
 /// Authored radius and document generation for a Fillet edit.
 #[derive(Clone, Debug, PartialEq, Eq)]

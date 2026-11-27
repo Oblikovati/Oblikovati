@@ -213,12 +213,48 @@ fn populate_browser<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
                     distance,
                     second_distance,
                     direction: definition.direction(),
+                    taper: prism_taper_expression(snapshot, definition),
                 },
             ))
         })
         .collect();
     Ok(())
 }
+fn prism_taper_expression(
+    snapshot: &oblikovati_model::history::DocumentSnapshot,
+    definition: &oblikovati_model::feature::sketch_prism::SketchPrismDefinition,
+) -> Option<String> {
+    use oblikovati_model::feature::sketch_prism::SketchPrismDirection;
+    use oblikovati_model::feature::work_geometry::DatumLength;
+    use oblikovati_model::quantity::{Dimension, Quantity};
+    if !matches!(
+        definition.direction(),
+        SketchPrismDirection::Positive | SketchPrismDirection::Negative
+    ) || definition.displacement()[..2] != [DatumLength::Constant(0.); 2]
+    {
+        return None;
+    }
+    let parameters = &snapshot.parameters;
+    let units = parameters.units();
+    let radians = match definition.taper() {
+        Some(source) => {
+            if let Some(id) = source.parameter_id() {
+                return parameters.get(id).map(|parameter| parameter.name.clone());
+            }
+            source.resolve(parameters).ok()?
+        }
+        None => 0.,
+    };
+    let value = units.to_preferred(Quantity::new(radians, Dimension::Angle));
+    Some(
+        if units.from_preferred(value, Dimension::Angle).value == radians {
+            format!("{value} {}", units.preferred_name(Dimension::Angle))
+        } else {
+            format!("{radians} rad")
+        },
+    )
+}
+
 fn prism_distance_expression(
     snapshot: &oblikovati_model::history::DocumentSnapshot,
     feature: &oblikovati_model::feature::AuthoredFeature<

@@ -220,6 +220,9 @@ fn prepare_prism(
         .map_err(Error)
     };
     if let Some(extent) = extent {
+        if !input.taper.trim().is_empty() {
+            return Err(Error("Extrude Taper A requires a distance extent.".into()));
+        }
         return Ok(PreparedExtrusion {
             name: next_name(snapshot)?,
             definition: SketchPrismDefinition::between_planes(sketch, resolve_profile()?, extent)
@@ -256,10 +259,14 @@ fn prepare_distance_prism(
         .transpose()?;
     let owned_second_distance = matches!(second, Some(DatumLength::Constant(_)))
         .then(|| input.second_distance.trim().to_owned());
+    let taper = (!input.taper.trim().is_empty())
+        .then(|| crate::move_body::angle(snapshot, &input.taper, "Extrude Taper A"))
+        .transpose()?;
     let definition = match second {
         Some(depth) => definition.with_second_depth(depth),
         None => definition.with_direction(direction),
     }
+    .and_then(|definition| definition.with_taper(taper))
     .map_err(api_error)?;
     let name = next_name(snapshot)?;
     Ok(PreparedExtrusion {
@@ -343,15 +350,14 @@ fn require_supported(input: &Extrude) -> Result<(), Error> {
             )));
         }
     }
-    if !input.taper.is_empty()
-        || input.to_face_geom.is_some()
+    if input.to_face_geom.is_some()
         || input.from_face_geom.is_some()
         || input
             .profile_seeds
             .as_ref()
             .is_some_and(|seeds| !seeds.is_empty())
     {
-        return Err(Error("extrude extent inputs: expected an extent without taper, geometric face selectors, or profile seeds".into()));
+        return Err(Error("extrude extent inputs: expected an extent without geometric face selectors or profile seeds".into()));
     }
     Ok(())
 }

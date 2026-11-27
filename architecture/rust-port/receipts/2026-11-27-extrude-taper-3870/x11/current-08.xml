@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Extrude a profile in a part document: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature" package="testsuite/Feature: Extrude a profile in a part document: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-27T01:38:00.583449316Z" time="12.66608081"><testcase name="Scenario: extrusion-08 Taper history retains accepted value: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature:80:3" time="12.66608081"><system-out><![CDATA[  Scenario: extrusion-08 Taper history retains accepted value
+   ✔> Given the MCAD Software is displaying a part in the solid modeling workspace
+   ✔> And the viewport pointer is idle
+   ✔  Given a copy of `fixtures/cad/extrusion/extrusion-rect-8mm.opd` is open with its accepted untapered Extrusion1
+   ✔  And the user edits Extrusion1, sets Taper A to positive 5 degrees, and accepts the edit
+   ✔  When Undo then Redo are invoked and Edit Feature is opened
+   ✔  Then the widening shape returns and Taper A shows 5 degrees
+]]></system-out></testcase></testsuite></testsuites>

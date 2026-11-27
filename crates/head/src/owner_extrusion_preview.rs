@@ -171,9 +171,11 @@ impl<
         feature: u64,
         distance: &str,
         second_distance: Option<&str>,
+        taper: Option<&str>,
     ) -> Result<bool, String> {
         self.clear_extrusion_preview();
-        let scene = self.edited_extrusion_scene(document, feature, distance, second_distance)?;
+        let scene =
+            self.edited_extrusion_scene(document, feature, distance, second_distance, taper)?;
         let generation = self
             .files
             .workspace()
@@ -184,12 +186,13 @@ impl<
         self.part_scenes.invalidate_presentation();
         Ok(true)
     }
-    pub(super) fn edited_extrusion_scene(
+    fn edited_extrusion_scene(
         &self,
         document: u64,
         feature: u64,
         distance: &str,
         second_distance: Option<&str>,
+        taper: Option<&str>,
     ) -> Result<oblikovati_viewport::ViewportScene, String> {
         self.require_browser_document(document)?;
         let session = self
@@ -201,7 +204,7 @@ impl<
         session
             .preview_projected(
                 |candidate, _| {
-                    oblikovati_automation::apply_feature_distance_edit(candidate, &request)
+                    oblikovati_automation::apply_feature_extrusion_edit(candidate, &request, taper)
                 },
                 |candidate, ()| self.project_edited_scene(document, feature, candidate),
             )
@@ -245,17 +248,37 @@ impl<
             ));
         }
         let second_distance = request.second_distance.as_deref();
+        let taper = request.taper.as_deref();
         self.edited_extrusion_scene(
             request.document,
             request.feature.0,
             &request.distance,
             second_distance,
+            taper,
         )?;
         let edit = feature_distances_request(request.feature.0, &request.distance, second_distance);
-        oblikovati_api::client::Client::new(self.document_host())
-            .features()
-            .edit(&edit)
+        if let Some(taper) = taper {
+            oblikovati_automation::edit_part_with_checkpoints(
+                &mut self.files,
+                &mut self.part_scenes,
+                request.document,
+                "Edit Extrusion",
+                |snapshot, _| {
+                    oblikovati_automation::apply_feature_extrusion_edit(
+                        snapshot,
+                        &edit,
+                        Some(taper),
+                    )?;
+                    Ok(request.feature)
+                },
+            )
             .map_err(|cause| cause.to_string())?;
+        } else {
+            oblikovati_api::client::Client::new(self.document_host())
+                .features()
+                .edit(&edit)
+                .map_err(|cause| cause.to_string())?;
+        }
         self.clear_extrusion_preview();
         Ok(true)
     }

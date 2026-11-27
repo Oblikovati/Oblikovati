@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Extrude a profile in a part document: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature" package="testsuite/Feature: Extrude a profile in a part document: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-27T01:38:14.351122039Z" time="22.115593197"><testcase name="Scenario: extrusion-09 Cancel reversed taper edit: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature:87:3" time="22.115593197"><system-out><![CDATA[  Scenario: extrusion-09 Cancel reversed taper edit
+   ✔> Given the MCAD Software is displaying a part in the solid modeling workspace
+   ✔> And the viewport pointer is idle
+   ✔  Given a copy of `fixtures/cad/extrusion/extrusion-rect-8mm.opd` is open with its accepted untapered Extrusion1
+   ✔  And the user edits Extrusion1, sets Taper A to positive 5 degrees, and accepts the edit
+   ✔  And Edit Feature is reopened
+   ✔  When its sign control is clicked
+   ✔  Then Taper A shows -5 degrees and the preview narrows
+   ✔  When Cancel is clicked and Edit Feature is reopened
+   ✔  Then the retained value is positive 5 degrees
+]]></system-out></testcase></testsuite></testsuites>

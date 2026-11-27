@@ -193,6 +193,7 @@ macro_rules! desktop_extrusion_work {
                 request.feature.0,
                 &request.distance,
                 request.second_distance.as_deref(),
+                request.taper.as_deref(),
             )
         }
         fn commit_extrusion_edit(

@@ -1,13 +1,23 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 use crate::extrusion::{DISTANCE_ROLE, SECOND_DISTANCE_ROLE};
-use oblikovati_model::feature::work_geometry::DatumLength;
+use oblikovati_model::feature::{sketch_prism::SketchPrismDefinition, work_geometry::DatumLength};
 
 /// Edit supported prism distances on a private candidate.
 /// Example: `apply_feature_distance_edit(&mut candidate, &request)?` before preview.
 pub fn apply_feature_distance_edit(
     snapshot: &mut DocumentSnapshot,
     request: &EditFeatureArgs,
+) -> Result<(), Error> {
+    apply_feature_extrusion_edit(snapshot, request, None)
+}
+
+/// Apply distance inputs and an optional Taper A together on a private candidate.
+/// Example: `apply_feature_extrusion_edit(&mut candidate, &request, Some("5 deg"))?`.
+pub fn apply_feature_extrusion_edit(
+    snapshot: &mut DocumentSnapshot,
+    request: &EditFeatureArgs,
+    taper: Option<&str>,
 ) -> Result<(), Error> {
     let (feature, _) = locate(&snapshot.work_geometry, request.id)?;
     let PartFeatureDefinition::SketchPrism(definition) = feature.definition() else {
@@ -23,9 +33,34 @@ pub fn apply_feature_distance_edit(
         )));
     }
     let edits = validated_edits(request, definition.second_depth().is_some())?;
+    let taper = taper
+        .map(|source| crate::move_body::angle(snapshot, source, "Extrude Taper A"))
+        .transpose()?;
+    if let Some(angle) = taper {
+        definition
+            .as_ref()
+            .clone()
+            .with_taper(Some(angle))
+            .map_err(api_error)?;
+    }
     let mut changes_parameters = false;
     for edit in edits {
         changes_parameters |= apply_distance(snapshot, FeatureId(request.id), edit)?;
+    }
+    if let Some(angle) = taper {
+        let id = FeatureId(request.id);
+        let feature = snapshot.work_geometry.get(id).map_err(api_error)?;
+        let PartFeatureDefinition::SketchPrism(definition) = feature.definition() else {
+            return Err(Error(format!("feature {id:?}: expected a sketch prism")));
+        };
+        let tapered = definition
+            .as_ref()
+            .clone()
+            .with_taper(Some(angle))
+            .map_err(api_error)?;
+        if !definition.same_recipe(&tapered) {
+            replace_prism(snapshot, id, tapered)?;
+        }
     }
     if changes_parameters {
         crate::model_states::record_parameter_edits(snapshot)?;
@@ -89,6 +124,15 @@ fn apply_distance(
         definition.with_normal_source(distance)
     }
     .map_err(api_error)?;
+    replace_prism(snapshot, id, definition)?;
+    Ok(false)
+}
+
+fn replace_prism(
+    snapshot: &mut DocumentSnapshot,
+    id: FeatureId,
+    definition: SketchPrismDefinition,
+) -> Result<(), Error> {
     let reads = definition.reads(snapshot).map_err(api_error)?;
     snapshot
         .work_geometry
@@ -97,8 +141,8 @@ fn apply_distance(
             PartFeatureDefinition::SketchPrism(Box::new(definition)),
             reads,
         )
-        .map_err(api_error)?;
-    Ok(false)
+        .map(|_| ())
+        .map_err(api_error)
 }
 
 fn edit_owned_distance(

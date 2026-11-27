@@ -13,6 +13,8 @@ mod distance_editor;
 #[cfg(target_os = "linux")]
 mod reference_extent;
 #[cfg(target_os = "linux")]
+mod taper;
+#[cfg(target_os = "linux")]
 mod viewport_chamfer;
 #[cfg(target_os = "linux")]
 pub(super) mod viewport_fillet;

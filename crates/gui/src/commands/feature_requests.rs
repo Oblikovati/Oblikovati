@@ -75,6 +75,7 @@ pub struct GuiExtrudeEditRequest {
     pub feature: oblikovati_model::feature::FeatureId,
     pub distance: String,
     pub second_distance: Option<String>,
+    pub taper: Option<String>,
 }
 
 /// Sheet-space display geometry and any model-resolution failure.

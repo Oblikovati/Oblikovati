@@ -1,6 +1,55 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 #[test]
+fn typed_extrude_accepts_taper_and_publishes_the_widened_body() {
+    let (owner, _) = owner();
+    let mut owner = owner.with_extrusion_resolution(resolution()).unwrap();
+    let document = open_sketch(&mut owner);
+    let mut input = request();
+    input.distance = "8 mm".into();
+    input.taper = "5 deg".into();
+    let reply = Client::new(owner.document_host())
+        .features()
+        .add_feature(&input)
+        .unwrap()
+        .0
+        .unwrap();
+    assert_eq!(reply["feature"], "Extrusion1");
+    owner.take_scene().unwrap().unwrap();
+
+    let workspace = owner.documents().workspace();
+    let session = workspace.session(document).unwrap();
+    let snapshot = session.snapshot();
+    let id = oblikovati_model::feature::FeatureId(1);
+    let feature = snapshot.work_geometry.get(id).unwrap();
+    let oblikovati_model::feature::part::PartFeatureDefinition::SketchPrism(prism) =
+        feature.definition()
+    else {
+        panic!("expected a saved extrusion");
+    };
+    let taper = prism
+        .taper()
+        .unwrap()
+        .resolve(&snapshot.parameters)
+        .unwrap();
+    assert!((taper.to_degrees() - 5.).abs() < 1e-9);
+
+    let guid = workspace.identity(document).unwrap().internal_name;
+    let evaluated = owner.part_scenes.current(session).unwrap();
+    let body = evaluated.body(id).unwrap();
+    let key = body.body_reference_key(session.history(), guid).unwrap();
+    let report = body
+        .as_prism()
+        .unwrap()
+        .body_report(session.history(), guid, key)
+        .unwrap();
+    let depth = 0.8_f64;
+    let slope = taper.tan();
+    let volume = depth + 2. * depth.powi(2) * slope + 4. / 3. * depth.powi(3) * slope.powi(2);
+    assert!((report.properties.volume - volume).abs() < 1e-8);
+}
+
+#[test]
 fn typed_distance_edit_accepts_literal_extrusions_without_editing_sketch_parameters() {
     use oblikovati_api::wire::{EditFeatureArgs, FeatureRefArgs, ScalarEdit};
     let (owner, _) = owner();
@@ -109,7 +158,7 @@ fn distance_edit_preview_uses_private_candidate_and_cancel_preserves_history() {
         .generation();
     assert!(
         owner
-            .preview_edited_extrusion(document, id, "20 mm", None)
+            .preview_edited_extrusion(document, id, "20 mm", None, None)
             .unwrap()
     );
     assert_eq!(
@@ -156,7 +205,7 @@ fn distance_edit_preview_uses_private_candidate_and_cancel_preserves_history() {
     );
     assert!(
         owner
-            .preview_edited_extrusion(document, id, "0 mm", None)
+            .preview_edited_extrusion(document, id, "0 mm", None, None)
             .is_err()
     );
     assert_eq!(
@@ -201,6 +250,7 @@ fn stale_extrusion_edit_is_rejected_without_changing_the_feature() {
         feature: oblikovati_model::feature::FeatureId(1),
         distance: "20 mm".into(),
         second_distance: None,
+        taper: None,
     };
     assert!(
         owner

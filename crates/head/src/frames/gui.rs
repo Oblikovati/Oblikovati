@@ -391,7 +391,8 @@ pub(super) fn dispatch_action(
         window.reject_dimension_edit(value, cause);
     }
     if let Err(cause) = &result
-        && let GuiShellAction::EditExtrudeDistance(request) = action
+        && let GuiShellAction::EditExtrudeDistance(request)
+        | GuiShellAction::PreviewExtrudeEdit(request) = action
     {
         window.reject_extrusion_edit(request, cause);
     }

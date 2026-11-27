@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Extrude a profile in a part document: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature" package="testsuite/Feature: Extrude a profile in a part document: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-27T01:37:50.007547814Z" time="9.48574496"><testcase name="Scenario: extrusion-07 Edit Feature accepts positive taper: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature:73:3" time="9.48574496"><system-out><![CDATA[  Scenario: extrusion-07 Edit Feature accepts positive taper
+   ✔> Given the MCAD Software is displaying a part in the solid modeling workspace
+   ✔> And the viewport pointer is idle
+   ✔  Given a copy of `fixtures/cad/extrusion/extrusion-rect-8mm.opd` is open with its accepted untapered Extrusion1
+   ✔  When Edit Feature is chosen from its browser context menu
+   ✔  Then Distance A is retained as 8 mm and Taper A as zero degrees
+   ✔  When Taper A is replaced with 5 and OK is clicked
+   ✔  Then the edited solid visibly widens toward the far end
+]]></system-out></testcase></testsuite></testsuites>
