@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-#[path = "../../../model/tests/common/document_snapshot.rs"]
-mod document_snapshot;
+use super::document_snapshot;
 
 use oblikovati_martensite::{
     PrismResolution, PrismResolutionPolicy, certified_sketch_regions_with_policy,

@@ -12,11 +12,13 @@ fn native_light_distinguishes_faces_with_the_same_material() {
             ViewportTriangle {
                 face_index: None,
                 positions: [[-8., -4., 0.], [-2., -4., 0.], [-5., 5., 0.]],
+                normals: None,
                 color,
             },
             ViewportTriangle {
                 face_index: None,
                 positions: [[2., -4., -3.], [8., -4., 3.], [5., 5., 0.]],
+                normals: None,
                 color,
             },
         ],
@@ -48,11 +50,13 @@ fn lighting_retains_each_faces_material_color() {
             ViewportTriangle {
                 face_index: None,
                 positions: [[-8., -4., 0.], [-2., -4., 0.], [-5., 5., 0.]],
+                normals: None,
                 color: [1., 0., 0., 1.],
             },
             ViewportTriangle {
                 face_index: None,
                 positions: [[2., -4., 0.], [8., -4., 0.], [5., 5., 0.]],
+                normals: None,
                 color: [0., 1., 0., 1.],
             },
         ],
@@ -85,6 +89,7 @@ fn isometric_cube_has_three_visible_face_tones() {
         for positions in [[quad[0], quad[1], quad[2]], [quad[0], quad[2], quad[3]]] {
             triangles.push(ViewportTriangle {
                 positions,
+                normals: None,
                 color,
                 face_index: None,
             });
@@ -156,6 +161,7 @@ fn reversed_visible_face_keeps_ambient_color() {
     let triangle = ViewportTriangle {
         face_index: None,
         positions: [[-8., -4., 0.], [0., 8., 0.], [8., -4., 0.]],
+        normals: None,
         color: [0.7, 0., 0., 1.],
     };
     view.submit(&ViewportScene {
@@ -168,6 +174,35 @@ fn reversed_visible_face_keeps_ambient_color() {
     assert!(
         color[0] >= 80 && color[1] == 0 && color[2] == 0,
         "back face {color:?}"
+    );
+    view.close();
+    assert!(runtime.validation_errors().unwrap().is_empty());
+}
+
+#[test]
+fn per_vertex_normals_produce_smooth_phong_gradient_across_one_triangle() {
+    let runtime = ViewportRuntime::new(Default::default()).unwrap();
+    let mut view = runtime.open_offscreen([320, 240]).unwrap();
+    let tilt = 0.5_f32.sqrt();
+    let triangle = ViewportTriangle {
+        face_index: Some(0),
+        positions: [[-8., -4., 0.], [8., -4., 0.], [0., 6., 0.]],
+        normals: Some([[-tilt, 0., tilt], [tilt, 0., tilt], [0., 0., 1.]]),
+        color: [0.7, 0.7, 0.7, 1.],
+    };
+    view.submit(&ViewportScene {
+        background: [0., 0., 0.],
+        triangles: vec![triangle],
+    })
+    .unwrap();
+    let capture = view.redraw().unwrap();
+    let left = face_pixel(&view, &capture, [-4., -2., 0.]);
+    let center = face_pixel(&view, &capture, [0., -2., 0.]);
+    let right = face_pixel(&view, &capture, [4., -2., 0.]);
+    assert!(left[0] > 0 && center[0] > 0 && right[0] > 0);
+    assert!(
+        left != center || center != right,
+        "varying vertex normals must shade smoothly across one triangle: {left:?} {center:?} {right:?}"
     );
     view.close();
     assert!(runtime.validation_errors().unwrap().is_empty());

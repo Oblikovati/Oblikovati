@@ -80,6 +80,97 @@ impl PartFeatureEvaluator for CertifiedNamedSolidEvaluator<'_> {
         })?;
         Ok(NamedSolid::Derived(Box::new(topology)))
     }
+    fn evaluate_revolve(
+        &mut self,
+        feature: FeatureId,
+        input: oblikovati_model::feature::sketch_revolve::ResolvedSketchRevolve<'_>,
+    ) -> Result<NamedSolid, PartFeatureFailure<EvaluationFailure>> {
+        let Some(prism) = &self.prism else {
+            return Err(PartFeatureFailure::Unsupported(
+                "revolve: expected an explicit model resolution policy".into(),
+            ));
+        };
+        let sketch_id = input.sketch.sketch.id().0;
+        let policy = prism.resolution_policy();
+        let failure =
+            |error: EvaluationFailure| PartFeatureFailure::Kernel(error.for_feature(feature));
+        let topology = if input.surface {
+            let candidate =
+                crate::revolve::build_surface_revolve(input, policy).map_err(failure)?;
+            BlendNamedTopology::from_surface_revolve(
+                self.history,
+                self.document,
+                feature,
+                sketch_id,
+                candidate,
+            )
+        } else {
+            let candidate = crate::revolve::build_revolve(input, policy).map_err(failure)?;
+            BlendNamedTopology::from_revolve(
+                self.history,
+                self.document,
+                feature,
+                sketch_id,
+                candidate,
+            )
+        }
+        .map_err(|cause| {
+            failure(crate::EvaluationPhase::Naming.refused(
+                crate::EvaluationFailureKind::InvalidReference,
+                crate::EvaluationEntity::Body,
+                format!("revolve topology: {cause}"),
+            ))
+        })?;
+        Ok(NamedSolid::Derived(Box::new(topology)))
+    }
+    fn evaluate_revolve_boolean(
+        &mut self,
+        feature: FeatureId,
+        body: &NamedSolid,
+        input: oblikovati_model::feature::sketch_revolve::ResolvedSketchRevolve<'_>,
+        operation: oblikovati_model::feature::sketch_prism::PrismBoolean,
+    ) -> Result<NamedSolid, PartFeatureFailure<EvaluationFailure>> {
+        use super::super::blend::extrusion_boolean::BooleanFailure;
+        let NamedSolid::Derived(tool) = self.evaluate_revolve(feature, input)? else {
+            return Err(PartFeatureFailure::Unsupported(
+                "revolve Boolean: expected a named Revolve tool".into(),
+            ));
+        };
+        let failure = |kind, message| {
+            PartFeatureFailure::Kernel(
+                crate::EvaluationPhase::Prism
+                    .refused(kind, crate::EvaluationEntity::Body, message)
+                    .for_feature(feature),
+            )
+        };
+        let tool = tool
+            .sweep_boolean_tool(self.history, self.document)
+            .map_err(|message| failure(crate::EvaluationFailureKind::InvalidResult, message))?;
+        let candidate = body
+            .boolean_tools(
+                self.history,
+                self.document,
+                vec![tool],
+                operation,
+                &format!("revolve {operation}"),
+            )
+            .map_err(|decline| match decline {
+                BooleanFailure::UnchangedCut { faces, .. } => failure(
+                    crate::EvaluationFailureKind::UnchangedCut,
+                    format!("The feature did not change the number of faces ({faces})."),
+                ),
+                BooleanFailure::Refused(message) => {
+                    failure(crate::EvaluationFailureKind::InvalidResult, message)
+                }
+            })?;
+        let named = candidate
+            .name_topology(self.history, self.document, feature)
+            .map_err(|message| failure(crate::EvaluationFailureKind::InvalidResult, message))?;
+        let result = NamedSolid::Derived(Box::new(named));
+        self.verify_result_lineage(body, &result)
+            .map_err(PartFeatureFailure::BodyReference)?;
+        Ok(result)
+    }
     fn evaluate_sweep(
         &mut self,
         feature: FeatureId,

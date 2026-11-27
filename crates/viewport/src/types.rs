@@ -15,6 +15,8 @@ impl Default for ViewportOptions {
 #[derive(Clone, Copy, Debug)]
 pub struct ViewportTriangle {
     pub positions: [[f32; 3]; 3],
+    /// Optional analytical per-vertex unit normals for smooth Phong shading.
+    pub normals: Option<[[f32; 3]; 3]>,
     pub color: [f32; 4],
     /// Scene-local B-rep face ordinal for mesh diagnostics, when available.
     pub face_index: Option<usize>,
@@ -55,7 +57,19 @@ impl ViewportTriangle {
                 self.positions
             ));
         }
+        self.validate_normals(index)?;
         self.validate_color(index)
+    }
+    fn validate_normals(&self, index: usize) -> Result<(), String> {
+        let Some(normals) = self.normals else {
+            return Ok(());
+        };
+        if normals.iter().flatten().any(|value| !value.is_finite()) {
+            return Err(format!(
+                "viewport triangle {index} normals {normals:?}: expected finite vertex normals"
+            ));
+        }
+        Ok(())
     }
     fn validate_color(&self, index: usize) -> Result<(), String> {
         if self

@@ -27,6 +27,7 @@ mod file_host;
 mod fillet;
 mod hole;
 mod loft;
+mod revolve;
 mod shell;
 mod sweep;
 pub use extrusion::{
@@ -41,6 +42,10 @@ pub use fillet::{
 pub use hole::{PreparedHole, prepare_hole};
 pub use loft::{
     PreparedLoft, loft_definition, prepare_loft, replace_loft_section, replace_loft_takeoff,
+};
+pub use revolve::{
+    PreparedRevolve, RevolveInputs, automatic_revolve_profile, parse_positive_turn_angle,
+    prepare_revolve_definition,
 };
 pub use shell::{PreparedShell, prepare_shell};
 pub use sweep::{

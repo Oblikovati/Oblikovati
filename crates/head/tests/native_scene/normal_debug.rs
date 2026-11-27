@@ -14,11 +14,13 @@ fn native_normal_debug_colors_both_windings_and_restores_shading() {
                     ViewportTriangle {
                         face_index: None,
                         positions: [[-7., -2., 0.], [-3., -2., 0.], [-5., 2., 0.]],
+                        normals: None,
                         color,
                     },
                     ViewportTriangle {
                         face_index: None,
                         positions: [[3., -2., 0.], [5., 2., 0.], [7., -2., 0.]],
+                        normals: None,
                         color,
                     },
                 ],
@@ -83,6 +85,7 @@ fn native_mesh_colors_group_faces_and_restore_the_previous_render_mode() {
         .zip([0, 0, 1])
         .map(|(x, face_index)| ViewportTriangle {
             positions: [[x - 1., -2., 0.], [x + 1., -2., 0.], [x, 2., 0.]],
+            normals: None,
             color: [0.25, 0.35, 0.8, 1.],
             face_index: Some(face_index),
         })

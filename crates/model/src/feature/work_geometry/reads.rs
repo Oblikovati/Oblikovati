@@ -17,6 +17,7 @@ impl WorkGeometryDefinition {
             Self::RectangularPattern(definition) => return definition.reads(),
             Self::MoveBody(definition) => return definition.reads(),
             Self::SketchLoft(definition) => return definition.source_reads(),
+            Self::SketchRevolve(definition) => return definition.source_reads(),
             Self::SketchSweep(definition) => return definition.source_reads(),
             Self::SketchPrism(definition) => {
                 definition.source_reads().keys().iter().copied().collect()

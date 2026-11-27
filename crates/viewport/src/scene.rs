@@ -20,7 +20,9 @@ pub(crate) fn build_scene(
     triangles: &[ViewportTriangle],
     debug: MeshDebug,
 ) -> Result<Vec<Handle<Graphic3dStructure>>, String> {
-    let mut structures = Vec::with_capacity(triangles.len());
+    let mut batches: Vec<([f32; 4], bool, Vec<&ViewportTriangle>)> = Vec::new();
+    let mut index_by_key: std::collections::HashMap<([u32; 4], bool), usize> =
+        std::collections::HashMap::new();
     for (index, triangle) in triangles.iter().enumerate() {
         let color_index = match debug.colors {
             Some(true) => Some(index),
@@ -28,14 +30,23 @@ pub(crate) fn build_scene(
             None => None,
         };
         let color = color_index.map_or(triangle.color, mesh_palette::index_color);
-        let normals = debug.normals && color_index.is_none();
-        structures.push(build_triangle(viewer, triangle, color, normals)?);
+        let normal_debug = debug.normals && color_index.is_none();
+        let key = (color.map(f32::to_bits), normal_debug);
+        if let Some(&batch_idx) = index_by_key.get(&key) {
+            batches[batch_idx].2.push(triangle);
+        } else {
+            index_by_key.insert(key, batches.len());
+            batches.push((color, normal_debug, vec![triangle]));
+        }
     }
-    Ok(structures)
+    batches
+        .into_iter()
+        .map(|(color, normal_debug, group)| build_batch(viewer, &group, color, normal_debug))
+        .collect()
 }
-fn build_triangle(
+fn build_batch(
     viewer: &V3dViewer,
-    triangle: &ViewportTriangle,
+    triangles: &[&ViewportTriangle],
     color: [f32; 4],
     normal_debug: bool,
 ) -> Result<Handle<Graphic3dStructure>, String> {
@@ -44,7 +55,7 @@ fn build_triangle(
     let group = structure.new_group().map_err(|error| error.to_string())?;
     let aspects = triangle_aspect(color, normal_debug)?;
     group.set_group_primitives_aspect(&aspects.cast());
-    group.add_primitive_array(&triangle_vertices(triangle)?.cast(), true);
+    group.add_primitive_array(&batch_vertices(triangles)?.cast(), true);
     Ok(structure)
 }
 fn triangle_aspect(
@@ -72,27 +83,39 @@ fn triangle_aspect(
     );
     Ok(aspects)
 }
-fn triangle_vertices(
-    triangle: &ViewportTriangle,
+fn batch_vertices(
+    triangles: &[&ViewportTriangle],
 ) -> Result<Handle<Graphic3dArrayOfPrimitives>, String> {
+    let count = i32::try_from(triangles.len().saturating_mul(3)).map_err(|_| {
+        format!(
+            "viewport batch triangles {}: expected 32-bit vertex count",
+            triangles.len()
+        )
+    })?;
     let vertices = Handle::new(
         Graphic3dArrayOfPrimitives::new(
             Graphic3dTypeOfPrimitiveArray::Triangles,
-            3,
+            count,
             0,
-            3,
+            count,
             GRAPHIC3D_ARRAY_FLAGS_VERTEX_NORMAL,
         )
         .map_err(|error| error.to_string())?,
     );
-    let normal = crate::render_normal::triangle_normal(triangle.positions);
-    for point in triangle.positions {
+    let mut next = 1i32;
+    for triangle in triangles {
+        let normals = triangle
+            .normals
+            .unwrap_or_else(|| [crate::render_normal::triangle_normal(triangle.positions); 3]);
+        for (point, normal) in triangle.positions.into_iter().zip(normals) {
+            vertices
+                .add_vertex_normal(point, normal)
+                .map_err(|error| error.to_string())?;
+        }
         vertices
-            .add_vertex_normal(point, normal)
+            .add_edges3(next, next + 1, next + 2)
             .map_err(|error| error.to_string())?;
+        next += 3;
     }
-    vertices
-        .add_edges3(1, 2, 3)
-        .map_err(|error| error.to_string())?;
     Ok(vertices)
 }

@@ -398,6 +398,7 @@ fn feature_kind(definition: &PartFeatureDefinition) -> &'static str {
         SketchPrism(_) => "extrude",
         SketchSweep(_) => "sweep",
         SketchLoft(_) => "loft",
+        SketchRevolve(_) => "revolve",
         DeleteBody(_) => "delete-body",
         Fillet(_) => "fillet",
         Chamfer(_) => "chamfer",

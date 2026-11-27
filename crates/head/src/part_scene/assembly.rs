@@ -218,6 +218,7 @@ impl DesktopPartScenes {
                 .iter()
                 .map(|triangle| oblikovati_viewport::ViewportTriangle {
                     positions: triangle.positions,
+                    normals: None,
                     color: triangle.color,
                     face_index: triangle.face_index,
                 })

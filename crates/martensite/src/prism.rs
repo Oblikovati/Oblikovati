@@ -42,7 +42,7 @@ mod taper;
 mod types;
 use martensite_tkprim::brep_prim_api::BRepPrimAPIMakePrism;
 use martensite_tktopalgo::brep_builder_api::BRepBuilderAPIMakeShape;
-pub use mesh::{PrismFaceMesh, PrismMeshOptions, PrismPresentation};
+pub use mesh::{DisplayTriangle, PrismFaceMesh, PrismMeshOptions, PrismPresentation};
 use oblikovati_model::sketch::SketchPlane;
 pub use snapshot::{PrismProbeSnapshot, retain_planar_prism, retain_prism_on_plane};
 pub(crate) use taper::PrismTaper;
@@ -121,6 +121,24 @@ pub trait BodyPresentationSource {
         &self,
         options: PrismMeshOptions,
     ) -> Result<Vec<Vec<[[f64; 3]; 3]>>, String>;
+    /// Tessellate a body in face order with analytical per-vertex normals when available.
+    fn body_face_display_triangles(
+        &self,
+        options: PrismMeshOptions,
+    ) -> Result<Vec<Vec<DisplayTriangle>>, String> {
+        Ok(self
+            .body_face_triangles(options)?
+            .into_iter()
+            .map(|face| {
+                face.into_iter()
+                    .map(|positions| DisplayTriangle {
+                        positions,
+                        normals: None,
+                    })
+                    .collect()
+            })
+            .collect())
+    }
 }
 impl<T: PrismPresentationSource> BodyPresentationSource for T {
     fn body_face_triangles(
@@ -132,6 +150,27 @@ impl<T: PrismPresentationSource> BodyPresentationSource for T {
             .faces
             .into_iter()
             .map(|face| face.triangles)
+            .collect())
+    }
+    fn body_face_display_triangles(
+        &self,
+        options: PrismMeshOptions,
+    ) -> Result<Vec<Vec<DisplayTriangle>>, String> {
+        Ok(self
+            .presentation(options)?
+            .faces
+            .into_iter()
+            .map(|face| {
+                let has_normals = face.normals.len() == face.triangles.len();
+                face.triangles
+                    .into_iter()
+                    .enumerate()
+                    .map(|(index, positions)| DisplayTriangle {
+                        positions,
+                        normals: has_normals.then(|| face.normals[index]),
+                    })
+                    .collect()
+            })
             .collect())
     }
 }

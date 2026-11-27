@@ -60,6 +60,7 @@ pub enum PartFeatureDefinition {
     RectangularPattern(Box<super::rectangular_pattern::RectangularPatternDefinition>),
     SketchPrism(Box<super::sketch_prism::SketchPrismDefinition>),
     SketchLoft(Box<super::sketch_loft::SketchLoftDefinition>),
+    SketchRevolve(Box<super::sketch_revolve::SketchRevolveDefinition>),
     SketchSweep(Box<super::sketch_sweep::SketchSweepDefinition>),
     Fixed(SketchPlane),
     Offset {
@@ -84,6 +85,7 @@ impl PartFeatureDefinition {
             Self::SketchPrism(_) => "extrude",
             Self::SketchSweep(_) => "sweep",
             Self::SketchLoft(_) => "loft",
+            Self::SketchRevolve(_) => "revolve",
             Self::DeleteBody(_) => "delete-body",
             Self::Chamfer(_) => "chamfer",
             Self::Fillet(_) => "fillet",

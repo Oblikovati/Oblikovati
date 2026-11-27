@@ -17,6 +17,7 @@ impl WorkPlaneDefinition {
             (RectangularPattern(first), RectangularPattern(second)) => first.same_recipe(second),
             (MoveBody(first), MoveBody(second)) => first.same_recipe(second),
             (SketchLoft(first), SketchLoft(second)) => first == second,
+            (SketchRevolve(first), SketchRevolve(second)) => first.same_recipe(second),
             (SketchSweep(first), SketchSweep(second)) => first.same_recipe(second),
             (SketchPrism(first), SketchPrism(second)) => first.same_recipe(second),
             (AtAngleAboutAxis(first), AtAngleAboutAxis(second)) => {

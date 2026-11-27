@@ -8,6 +8,7 @@ impl AuthoredFeature<WorkGeometryDefinition> {
                 WorkGeometryDefinition::SketchPrism(_)
                     | WorkGeometryDefinition::SketchSweep(_)
                     | WorkGeometryDefinition::SketchLoft(_)
+                    | WorkGeometryDefinition::SketchRevolve(_)
                     | WorkGeometryDefinition::DeleteBody(_)
                     | WorkGeometryDefinition::Fillet(_)
                     | WorkGeometryDefinition::Chamfer(_)

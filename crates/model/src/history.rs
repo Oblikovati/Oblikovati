@@ -21,6 +21,7 @@ mod loft_create;
 mod move_body_create;
 mod occurrence_ids;
 mod prism_create;
+mod revolve_create;
 mod scalar_ownership;
 mod shell_create;
 mod sketch_block_create;
@@ -471,11 +472,9 @@ mod model_state_ids;
 mod model_state_parameter_validation;
 mod model_state_suppression;
 
-mod sketch_split;
-
 mod sketch_endpoint;
-
 mod sketch_polyline;
+mod sketch_split;
 mod sketch_text;
 pub use sketch_polyline::{SketchPolylineCreation, SketchPolylineCreationReport};
 

@@ -10,9 +10,27 @@ pub(super) fn validate_sources(
             definition.sketch
         )));
     }
+    if let Some(axis) = definition.axis
+        && axis.0 == 0
+    {
+        return Err(SketchRevolveCause::Definition(format!(
+            "revolve axis {axis:?}: expected a nonzero sketch entity identity"
+        )));
+    }
+    if definition.direction == SketchRevolveDirection::Asymmetric
+        && definition.second_angle.is_none()
+    {
+        return Err(SketchRevolveCause::Definition(
+            "revolve asymmetric direction: expected a second angle".into(),
+        ));
+    }
     crate::feature::sketch_prism::validation::validate_selection(&definition.selection)
         .map_err(|cause| SketchRevolveCause::Definition(cause.to_string()))?;
-    validate_angle(definition.angle)
+    validate_angle(definition.angle)?;
+    if let Some(second) = definition.second_angle {
+        validate_angle(second)?;
+    }
+    Ok(())
 }
 
 fn validate_angle(angle: DatumAngle) -> Result<(), SketchRevolveCause> {

@@ -10,7 +10,8 @@ use super::{
 use crate::{
     feature::{
         AuthoredFeature, FeatureId, sketch_loft::SketchLoftDefinition,
-        sketch_prism::SketchPrismDefinition, sketch_sweep::SketchSweepDefinition,
+        sketch_prism::SketchPrismDefinition, sketch_revolve::SketchRevolveDefinition,
+        sketch_sweep::SketchSweepDefinition,
     },
     history::DocumentSnapshot,
 };
@@ -30,6 +31,9 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
         };
         let sketches = match feature.definition() {
             PartFeatureDefinition::SketchPrism(definition) => {
+                [Some(definition.sketch()), None, None]
+            }
+            PartFeatureDefinition::SketchRevolve(definition) => {
                 [Some(definition.sketch()), None, None]
             }
             PartFeatureDefinition::SketchLoft(definition) => {
@@ -128,6 +132,31 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
             .resolve(snapshot, &self.datums)
             .map_err(PartFeatureFailure::LoftInput)?;
         let body = backend.evaluate_loft(feature, sections)?;
+        self.body_lineage
+            .register(feature)
+            .map_err(PartFeatureFailure::BodyReference)?;
+        self.bodies.insert(feature.into(), body);
+        Ok(())
+    }
+
+    pub(super) fn evaluate_revolve<B: PartFeatureEvaluator<Body = Body, Failure = Failure>>(
+        &mut self,
+        snapshot: &DocumentSnapshot,
+        backend: &mut B,
+        feature: FeatureId,
+        definition: &SketchRevolveDefinition,
+    ) -> Result<(), PartFeatureFailure<Failure>> {
+        let input = definition
+            .resolve_for_replay(snapshot, &self.datums)
+            .map_err(|cause| PartFeatureFailure::RevolveInput(Box::new(cause)))?;
+        if let Some((operation, key, source)) = definition.boolean_target() {
+            let slot = resolve_body_slot(&self.bodies, &self.body_lineage, backend, source, key)
+                .map_err(PartFeatureFailure::BodyReference)?;
+            let result =
+                backend.evaluate_revolve_boolean(feature, &self.bodies[&slot], input, operation)?;
+            return self.accept_body_replacement(backend, feature, slot, key, result);
+        }
+        let body = backend.evaluate_revolve(feature, input)?;
         self.body_lineage
             .register(feature)
             .map_err(PartFeatureFailure::BodyReference)?;

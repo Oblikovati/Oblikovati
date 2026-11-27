@@ -6,6 +6,7 @@ fn fixture(coordinate: f64) -> PrismPresentation {
         faces: vec![PrismFaceMesh {
             role: PrismFaceRole::End,
             triangles: vec![[[coordinate, 1., 2.], [3., 4., 5.], [6., 7., 8.]]],
+            normals: Vec::new(),
         }],
     }
 }

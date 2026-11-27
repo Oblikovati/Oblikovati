@@ -25,6 +25,7 @@ mod extrusion_boolean;
 mod hole;
 mod loft;
 mod result_names;
+mod revolve;
 mod rigid_motion;
 mod section_body;
 mod shell;
@@ -118,6 +119,13 @@ impl BlendNamedTopology {
         options: PrismMeshOptions,
     ) -> Result<Vec<Vec<[[f64; 3]; 3]>>, String> {
         super::super::super::mesh::body_face_triangles(&self.shape, options)
+    }
+
+    pub(crate) fn display_face_shaded(
+        &self,
+        options: PrismMeshOptions,
+    ) -> Result<Vec<Vec<crate::DisplayTriangle>>, String> {
+        super::super::super::mesh::body_face_display_triangles(&self.shape, options)
     }
     /// Integrate the current result; example: `named.volume(&history, document)?`.
     pub fn volume(

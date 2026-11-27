@@ -113,6 +113,28 @@ pub trait PartFeatureEvaluator {
             "loft: expected an available section evaluator".into(),
         ))
     }
+    /// Construct a named solid from a solved Revolve profile and axis. Example: `backend.evaluate_revolve(feature, input)?`.
+    fn evaluate_revolve(
+        &mut self,
+        _feature: FeatureId,
+        _input: crate::feature::sketch_revolve::ResolvedSketchRevolve<'_>,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        Err(PartFeatureFailure::Unsupported(
+            "revolve: expected an available revolution evaluator".into(),
+        ))
+    }
+    /// Replace a named body with a Revolve Boolean result. Example: `backend.evaluate_revolve_boolean(feature, body, input, op)?`.
+    fn evaluate_revolve_boolean(
+        &mut self,
+        _feature: FeatureId,
+        _body: &Self::Body,
+        _input: crate::feature::sketch_revolve::ResolvedSketchRevolve<'_>,
+        operation: PrismBoolean,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        Err(PartFeatureFailure::Unsupported(format!(
+            "revolve {operation}: expected a named Boolean evaluator"
+        )))
+    }
     /// Construct a named solid from a solved profile and path. Example: `backend.evaluate_sweep(feature, input)?`.
     fn evaluate_sweep(
         &mut self,

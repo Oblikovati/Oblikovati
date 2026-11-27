@@ -42,6 +42,7 @@ pub enum PartFeatureFailure<Failure> {
     Metadata(Box<WorkGeometryError>),
     Inputs(SketchPrismError),
     SweepInput(Box<crate::feature::sketch_sweep::SketchSweepError>),
+    RevolveInput(Box<crate::feature::sketch_revolve::SketchRevolveError>),
     LoftInput(String),
     Kernel(Failure),
     BodyReference(String),
@@ -356,6 +357,7 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
             PartFeatureDefinition::SketchPrism(_)
                 | PartFeatureDefinition::SketchSweep(_)
                 | PartFeatureDefinition::SketchLoft(_)
+                | PartFeatureDefinition::SketchRevolve(_)
                 | PartFeatureDefinition::DeleteBody(_)
                 | PartFeatureDefinition::Fillet(_)
                 | PartFeatureDefinition::Chamfer(_)
@@ -376,6 +378,9 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
             }
             PartFeatureDefinition::SketchLoft(definition) => {
                 self.evaluate_loft(snapshot, backend, id, definition)
+            }
+            PartFeatureDefinition::SketchRevolve(definition) => {
+                self.evaluate_revolve(snapshot, backend, id, definition)
             }
             PartFeatureDefinition::SketchSweep(definition) => {
                 self.evaluate_sweep(snapshot, backend, id, definition)

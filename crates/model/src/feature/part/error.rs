@@ -20,6 +20,10 @@ pub enum PartFeatureProgramError {
         feature: FeatureId,
         cause: String,
     },
+    Revolve {
+        feature: FeatureId,
+        cause: Box<crate::feature::sketch_revolve::SketchRevolveError>,
+    },
     Sequence(FeatureSequenceError),
     Reads(FeatureReplayError),
 }
@@ -33,6 +37,9 @@ impl fmt::Display for PartFeatureProgramError {
             Self::Prism { feature, cause } => write!(output, "part feature {feature:?}: {cause}"),
             Self::Sweep { feature, cause } => write!(output, "part feature {feature:?}: {cause}"),
             Self::Loft { feature, cause } => write!(output, "part Loft {feature:?}: {cause}"),
+            Self::Revolve { feature, cause } => {
+                write!(output, "part Revolve {feature:?}: {cause}")
+            }
             Self::Sequence(cause) => cause.fmt(output),
             Self::Reads(cause) => cause.fmt(output),
         }
@@ -44,6 +51,7 @@ impl Error for PartFeatureProgramError {
             Self::Cancelled { .. } | Self::Loft { .. } => None,
             Self::Prism { cause, .. } => Some(cause),
             Self::Sweep { cause, .. } => Some(cause.as_ref()),
+            Self::Revolve { cause, .. } => Some(cause.as_ref()),
             Self::Sequence(cause) => Some(cause),
             Self::Reads(cause) => Some(cause),
         }

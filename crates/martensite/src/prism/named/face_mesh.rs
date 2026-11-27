@@ -8,6 +8,7 @@ use super::*;
 pub struct NamedFaceMesh {
     pub key: Vec<u8>,
     pub triangles: Vec<[[f64; 3]; 3]>,
+    pub normals: Vec<[[f64; 3]; 3]>,
 }
 
 impl NamedSolid {
@@ -24,7 +25,7 @@ impl NamedSolid {
             .iter()
             .map(|key| self.native_face(history, document, key).cloned())
             .collect::<Result<Vec<_>, _>>()?;
-        let triangles = super::super::mesh::named_face_triangles(
+        let display = super::super::mesh::named_face_display_triangles(
             self.native_shape(history, document)?,
             &faces,
             options,
@@ -32,8 +33,12 @@ impl NamedSolid {
         )?;
         Ok(keys
             .into_iter()
-            .zip(triangles)
-            .map(|(key, triangles)| NamedFaceMesh { key, triangles })
+            .zip(display)
+            .map(|(key, face)| NamedFaceMesh {
+                key,
+                triangles: face.iter().map(|tri| tri.positions).collect(),
+                normals: face.into_iter().filter_map(|tri| tri.normals).collect(),
+            })
             .collect())
     }
 }

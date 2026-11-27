@@ -126,6 +126,26 @@ where
             .evaluate_loft(feature, input)
             .map(PrefixBody::Created)
     }
+    fn evaluate_revolve(
+        &mut self,
+        feature: FeatureId,
+        input: crate::feature::sketch_revolve::ResolvedSketchRevolve<'_>,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        self.0
+            .evaluate_revolve(feature, input)
+            .map(PrefixBody::Created)
+    }
+    fn evaluate_revolve_boolean(
+        &mut self,
+        feature: FeatureId,
+        body: &Self::Body,
+        input: crate::feature::sketch_revolve::ResolvedSketchRevolve<'_>,
+        operation: PrismBoolean,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        self.0
+            .evaluate_revolve_boolean(feature, body.get(), input, operation)
+            .map(PrefixBody::Created)
+    }
     fn evaluate_sweep(
         &mut self,
         feature: FeatureId,

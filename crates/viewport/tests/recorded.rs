@@ -14,6 +14,7 @@ fn scene() -> ViewportScene {
         triangles: vec![ViewportTriangle {
             face_index: None,
             positions: [[-8., -8., 0.], [8., -8., 0.], [0., 8., 0.]],
+            normals: None,
             color: [1., 0., 0., 1.],
         }],
     }

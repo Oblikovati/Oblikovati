@@ -15,6 +15,7 @@ impl crate::feature::FeatureSequence<PartFeatureDefinition> {
             .iter()
             .filter(move |feature| match feature.definition() {
                 PartFeatureDefinition::SketchPrism(definition) => definition.sketch() == sketch,
+                PartFeatureDefinition::SketchRevolve(definition) => definition.sketch() == sketch,
                 PartFeatureDefinition::SketchLoft(definition) => {
                     definition.source_sketches().any(|source| source == sketch)
                 }
@@ -73,6 +74,12 @@ impl DocumentSnapshot {
                         .map_err(|cause| PartFeatureProgramError::Loft {
                             feature: feature.id(),
                             cause,
+                        })?,
+                    PartFeatureDefinition::SketchRevolve(definition) => definition
+                        .reads(self)
+                        .map_err(|cause| PartFeatureProgramError::Revolve {
+                            feature: feature.id(),
+                            cause: Box::new(cause),
                         })?,
                     PartFeatureDefinition::SketchSweep(definition) => definition
                         .reads(self)

@@ -63,6 +63,13 @@ fn track_replacement(
             owners.insert(id, id);
             return;
         }
+        PartFeatureDefinition::SketchRevolve(revolve) => match revolve.boolean_target() {
+            Some((_, _, source)) => source,
+            None => {
+                owners.insert(id, id);
+                return;
+            }
+        },
         PartFeatureDefinition::SketchSweep(sweep) => match sweep.boolean_target() {
             Some((_, _, source)) => source,
             None => {

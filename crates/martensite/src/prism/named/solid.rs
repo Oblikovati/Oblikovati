@@ -357,6 +357,18 @@ impl crate::BodyPresentationSource for NamedSolid {
             Self::Derived(body) => body.display_face_triangles(options),
         }
     }
+    fn body_face_display_triangles(
+        &self,
+        options: PrismMeshOptions,
+    ) -> Result<Vec<Vec<crate::DisplayTriangle>>, String> {
+        match self {
+            Self::Prism(body) => super::super::BodyPresentationSource::body_face_display_triangles(
+                body.as_ref(),
+                options,
+            ),
+            Self::Derived(body) => body.display_face_shaded(options),
+        }
+    }
 }
 
 /// Evaluate certified prisms and named fillets in one ordered Part program.
