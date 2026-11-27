@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Loft: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/loft/loft.feature" package="testsuite/Feature: Loft: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/loft/loft.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-27T00:01:59.218643383Z" time="6.711801118"><testcase name="Scenario: loft-08 Create a surface from two circular sections: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/loft/loft.feature:77:3" time="6.711801118"><system-out><![CDATA[  Scenario: loft-08 Create a surface from two circular sections
+   ✔  Given a disposable copy of the native fixture "fixtures/cad/loft/parallel-circles.opd" is open
+   ✔  And the two circular sketches on separate parallel planes are visible
+   ✔  When Loft is opened and surface output is selected
+   ✔  And both circular edges are selected as sections
+   ✔  Then a tapered surface preview appears and OK is enabled
+   ✔  When OK is clicked
+   ✔  Then LoftSrf1 and Surface Bodies(1) appear in the browser
+]]></system-out></testcase></testsuite></testsuites>

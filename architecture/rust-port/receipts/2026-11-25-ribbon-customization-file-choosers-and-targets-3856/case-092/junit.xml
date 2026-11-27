@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:58:44.32953627Z" time="42.37683906"><testcase name="Scenario: Export an unapplied custom ribbon command: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature:1509:3" time="42.37683906"><system-out><![CDATA[  Scenario: Export an unapplied custom ribbon command
+   ✔> Given the MCAD Software starts with a writable copy of `fixtures/preferences/ribbon-normal` as its configuration directory
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part is active in the MCAD Software with the full Tools ribbon visible
+   ✔  And ribbon customization shows All Commands and an initially empty Part Tools target
+   ✔  And 2D Sketches has been staged with Large and Text unchecked
+   ✔  And the target shows a pending-change marker
+   ✔  When the user exports customization to a new XML file
+   ✔  Then the export chooser closes
+   ✔  And the customization dialog still shows 2D Sketches in the target list
+   ✔  And the target still shows a pending-change marker
+   ✔  And the exported settings do not contain the staged 2D Sketches command in Part Tools
+   ✔  When the user clicks Cancel in the customization dialog
+   ✔  Then the customization dialog closes
+   ✔  And the Tools ribbon remains visible
+]]></system-out></testcase></testsuite></testsuites>

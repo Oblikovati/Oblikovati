@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon panel visibility: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" package="testsuite/Feature: Ribbon panel visibility: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:09:13.405468741Z" time="22.819960838"><testcase name="Scenario: Switch ribbon tabs while the direct panel list is open: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:216:3" time="22.819960838"><system-out><![CDATA[  Scenario: Switch ribbon tabs while the direct panel list is open
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is open and active
+   ✔  And the expanded 3D Model ribbon is docked at the top
+   ✔  And Modify is visible and Parameters is hidden
+   ✔  When the user opens the ribbon panel selector
+   ✔  Then the panel list shows Modify checked and Parameters unchecked
+   ✔  When the user selects the View ribbon tab
+   ✔  Then the panel list closes
+   ✔  And the View ribbon is displayed
+   ✔  When the user returns to the 3D Model ribbon tab
+   ✔  Then the panel list remains closed
+   ✔  And Modify remains visible and Parameters remains hidden
+]]></system-out></testcase></testsuite></testsuites>

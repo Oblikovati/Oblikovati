@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Recent documents on Home: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature" package="testsuite/Feature: Recent documents on Home: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T01:10:07.032318659Z" time="16.700541144"><testcase name="Scenario: Show recent search history after clearing a search: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature:33:3" time="16.700541144"><system-out><![CDATA[  Scenario: Show recent search history after clearing a search
+   ✔  Given the MCAD Software starts with an isolated Recent profile prepared from a disposable copy of `fixtures/cad/home-recent-native`
+   ✔  And the Home workspace is active in the MCAD Software
+   ✔  And the user has searched recent documents for "Part26"
+   ✔  When the user clears the search field with its clear control
+   ✔  Then a Search History panel appears beneath the field
+   ✔  And it includes "Part26" preceded by a history symbol
+]]></system-out></testcase></testsuite></testsuites>

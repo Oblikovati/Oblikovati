@@ -25,19 +25,24 @@ on:
   workflow_dispatch:
     inputs:
       revision:
-        description: Full commit on rust to build
+        description: Full commit on rust or rust-work to build
         required: true
       version:
         description: Four-field development product version
         required: true
 permissions:
   contents: read
+env:
+  # Windows needs this for checkout and for Cargo's Git dependencies.
+  GIT_CONFIG_COUNT: '1'
+  GIT_CONFIG_KEY_0: core.longpaths
+  GIT_CONFIG_VALUE_0: 'true'
 defaults:
   run:
     shell: bash
 jobs:
   prepare:
-    runs-on: ubuntu-26.04
+    runs-on: ubuntu-24.04
     outputs:
       platforms: ${{ steps.matrix.outputs.platforms }}
     steps:
@@ -55,9 +60,14 @@ jobs:
         run: |
           [[ "$REVISION" =~ ^[0-9a-f]{40}$ ]] || { echo 'Expected a full commit SHA'; exit 1; }
           test "$(git rev-parse HEAD)" = "$REVISION"
-          git merge-base --is-ancestor HEAD origin/rust
           mode=build
-          if [ "$SIGNED" = true ]; then mode=publish; fi
+          if [ "$SIGNED" = true ]; then
+            git merge-base --is-ancestor HEAD origin/rust
+            mode=publish
+          else
+            git merge-base --is-ancestor HEAD origin/rust || \
+              git merge-base --is-ancestor HEAD origin/rust-work
+          fi
           cargo xtask preflight "$mode"
       - id: matrix
         run: echo "platforms=$(cargo xtask matrix)" >> "$GITHUB_OUTPUT"
@@ -97,7 +107,7 @@ jobs:
           args=(package "$TARGET" "$VERSION")
           if [ "$SIGNED" = true ]; then args+=(--signed); fi
           if [ "$RUNNER_OS" = Linux ]; then
-            xvfb-run -a cargo xtask "${args[@]}"
+            xvfb-run -a -s "-screen 0 1920x1080x24" cargo xtask "${args[@]}"
           else
             cargo xtask "${args[@]}"
           fi
@@ -117,6 +127,7 @@ jobs:
         run: security delete-keychain "$RUNNER_TEMP/oblikovati-rust.keychain-db"
   macos-universal:
     needs: package
+    # #3795: actions/runner-images#13518 retired Sonoma on 2026-11-02.
     runs-on: macos-26
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2

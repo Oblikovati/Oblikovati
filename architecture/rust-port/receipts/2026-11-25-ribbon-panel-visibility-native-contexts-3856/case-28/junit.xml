@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon panel visibility: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" package="testsuite/Feature: Ribbon panel visibility: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:06:05.83464565Z" time="20.512143591"><testcase name="Scenario: Preserve Tools panel choices while switching to Home: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:406:3" time="20.512143591"><system-out><![CDATA[  Scenario: Preserve Tools panel choices while switching to Home
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is open and the Home workspace is available in the MCAD Software
+   ✔  And the part is active with the full Tools ribbon visible
+   ✔  And the Tools panel selector is open
+   ✔  And Measure, Material and Appearance, Options, Clipboard, Find and Team Web are checked
+   ✔  And Tutorials is unchecked
+   ✔  When the user selects the Home workspace tab
+   ✔  Then Home is displayed and the part panel selector is no longer visible
+   ✔  When the user returns to the part document tab
+   ✔  Then the Tools ribbon is visible and the panel selector is closed
+   ✔  When the user opens the Tools panel selector
+   ✔  Then Measure, Material and Appearance, Options, Clipboard, Find and Team Web are checked
+   ✔  And Tutorials is unchecked
+   ✔  When the user presses Escape
+   ✔  Then the panel selector closes
+   ✔  And the part and Tools ribbon remain visible
+]]></system-out></testcase></testsuite></testsuites>

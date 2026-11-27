@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Expand a ribbon panel: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" package="testsuite/Feature: Expand a ribbon panel: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-19T02:21:24.346202503Z" time="11.680323982"><testcase name="Scenario: Retain a command in the expanded panel across tab switches: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:292:3" time="11.680323982"><system-out><![CDATA[  Scenario: Retain a command in the expanded panel across tab switches
+   ✔  Given a part is active in the MCAD Software with the full 3D Model ribbon visible
+   ✔  And Shell is in the Modify main panel
+   ✔  When the user moves Shell to the expanded panel using its context menu
+   ✔  And the user selects Tools and then returns to 3D Model
+   ✔  Then Shell is absent from the Modify main panel
+   ✔  When the user opens the Modify expanded panel
+   ✔  Then Shell is available in the expanded panel
+   ✔  When the user moves Shell back to the main panel using its context menu
+   ✔  Then Shell appears in the main Modify panel
+   ✔  And the part remains visible
+]]></system-out></testcase></testsuite></testsuites>

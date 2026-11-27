@@ -1,0 +1,299 @@
+[
+  {
+    "uri": "mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature",
+    "keyword": "Feature",
+    "name": "Workspace layout and panel visibility",
+    "tags": [
+      {
+        "name": "application",
+        "line": 2
+      },
+      {
+        "name": "workspace",
+        "line": 2
+      }
+    ],
+    "elements": [
+      {
+        "after": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1089023195
+            }
+          }
+        ],
+        "before": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 3169181270
+            }
+          }
+        ],
+        "keyword": "Scenario",
+        "type": "scenario",
+        "id": "workspace-layout-and-panel-visibility/inspect-the-model-browser-menu",
+        "line": 158,
+        "name": "Inspect the model browser menu",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "line": 159,
+            "name": "`fixtures/cad/docking-visible-solid-current.opd` is open in the MCAD Software",
+            "result": {
+              "status": "passed",
+              "duration": 4921261564
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 160,
+            "name": "the model browser is visible",
+            "result": {
+              "status": "passed",
+              "duration": 3169011
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 161,
+            "name": "the user opens the model browser menu",
+            "result": {
+              "status": "passed",
+              "duration": 910390316
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 162,
+            "name": "the menu offers Autoscroll, Expand All and Collapse All",
+            "result": {
+              "status": "passed",
+              "duration": 10458483
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 163,
+            "name": "it offers Find, Display Preferences and Help",
+            "result": {
+              "status": "passed",
+              "duration": 9049697
+            }
+          }
+        ]
+      },
+      {
+        "after": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1110767539
+            }
+          }
+        ],
+        "before": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 2243263085
+            }
+          }
+        ],
+        "keyword": "Scenario",
+        "type": "scenario",
+        "id": "workspace-layout-and-panel-visibility/search-the-model-tree-from-another-active-dock-tab",
+        "line": 177,
+        "name": "Search the Model tree from another active dock tab",
+        "tags": [
+          {
+            "name": "expected_contract",
+            "line": 177
+          },
+          {
+            "name": "inherits_common_docking",
+            "line": 177
+          },
+          {
+            "name": "fixture_variation",
+            "line": 177
+          }
+        ],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "line": 178,
+            "name": "`fixtures/cad/workspace-layout-points.opd` is open in the MCAD Software",
+            "result": {
+              "status": "passed",
+              "duration": 1966429557
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 179,
+            "name": "Model and Log occupy one dock tab bar with Log active",
+            "result": {
+              "status": "passed",
+              "duration": 874482827
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 180,
+            "name": "the Model search field is closed",
+            "result": {
+              "status": "passed",
+              "duration": 3142292
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 181,
+            "name": "the user clicks the search icon in that dock tab bar",
+            "result": {
+              "status": "passed",
+              "duration": 816838585
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 182,
+            "name": "Model becomes active and its empty search field has keyboard focus",
+            "result": {
+              "status": "passed",
+              "duration": 91565748
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 183,
+            "name": "the Find criteria dialog remains closed",
+            "result": {
+              "status": "passed",
+              "duration": 10005826
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 184,
+            "name": "the user types \"InspectionPoint\" without clicking another control",
+            "result": {
+              "status": "passed",
+              "duration": 217910902
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 185,
+            "name": "the Model tree shows InspectionPointA, InspectionPointB and InspectionPointC",
+            "result": {
+              "status": "passed",
+              "duration": 7004023
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 186,
+            "name": "the query is highlighted in the matching tree rows",
+            "result": {
+              "status": "passed",
+              "duration": 12530917702
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 187,
+            "name": "the user switches to Log and clicks the dock tab bar search icon again",
+            "result": {
+              "status": "passed",
+              "duration": 1159892224
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 188,
+            "name": "Model becomes active with \"InspectionPoint\" still in the focused search field",
+            "result": {
+              "status": "passed",
+              "duration": 7428749
+            }
+          }
+        ]
+      },
+      {
+        "after": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 356877678
+            }
+          }
+        ],
+        "before": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 2249993893
+            }
+          }
+        ],
+        "keyword": "Scenario",
+        "type": "scenario",
+        "id": "workspace-layout-and-panel-visibility/inspect-the-drawing-browser-tree-menu",
+        "line": 279,
+        "name": "Inspect the drawing browser tree menu",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "line": 280,
+            "name": "`fixtures/cad/blank-drawing.odd` is active in the MCAD Software",
+            "result": {
+              "status": "passed",
+              "duration": 802850715
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 281,
+            "name": "the drawing browser is visible",
+            "result": {
+              "status": "passed",
+              "duration": 3450722
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 282,
+            "name": "the user opens the drawing browser menu",
+            "result": {
+              "status": "passed",
+              "duration": 578662163
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 283,
+            "name": "the menu offers Expand All, Collapse All and Help",
+            "result": {
+              "status": "passed",
+              "duration": 10139313
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 284,
+            "name": "the drawing sheet remains visible",
+            "result": {
+              "status": "passed",
+              "duration": 52936215
+            }
+          }
+        ]
+      }
+    ]
+  }
+]

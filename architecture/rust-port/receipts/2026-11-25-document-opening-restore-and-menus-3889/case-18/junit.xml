@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Inspect files before opening a document: target/native-scratch.HSqCy5/current-document-opening-source/features/application/document-opening/document-opening.feature" package="testsuite/Feature: Inspect files before opening a document: target/native-scratch.HSqCy5/current-document-opening-source/features/application/document-opening/document-opening.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T02:00:04.211223976Z" time="46.06615232"><testcase name="Scenario: Reopen the dialog after cancelling a folder change: target/native-scratch.HSqCy5/current-document-opening-source/features/application/document-opening/document-opening.feature:254:3" time="46.06615232"><system-out><![CDATA[  Scenario: Reopen the dialog after cancelling a folder change
+   ✔  Given a writable copy of `fixtures/cad/document-opening/folder-navigation/NativeParent/NativeChild/NavigationDrawing.odd` is staged in a child folder
+   ✔  And the user opens and saves that drawing to establish its preview
+   ✔  And a drawing was opened from that child folder in the MCAD Software
+   ✔  And that drawing remains active
+   ✔  And the Open dialog is showing the same child folder
+   ✔  And `NavigationDrawing.odd` was opened from that child folder
+   ✔  When the user navigates up to its parent folder
+   ✔  And the user cancels the Open dialog
+   ✔  Then the drawing remains active
+   ✔  When the user reopens the Open dialog in the same session
+   ✔  Then it displays the original child folder
+   ✔  And the file name field identifies the previously opened drawing
+   ✔  And the drawing preview is displayed
+]]></system-out></testcase></testsuite></testsuites>

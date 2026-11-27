@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon panel visibility: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" package="testsuite/Feature: Ribbon panel visibility: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T09:21:33.503664234Z" time="10.48167977"><testcase name="Scenario: Expand a panel while the panel selector is open: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:440:3" time="10.48167977"><system-out><![CDATA[  Scenario: Expand a panel while the panel selector is open
+   ✔  Given a part is active in the MCAD Software with the full Tools ribbon visible
+   ✔  And the direct panel selector is open
+   ✔  When the user clicks the Options panel title
+   ✔  Then the panel selector closes
+   ✔  And the Options panel displays its additional commands
+   ✔  And the Tools ribbon remains visible
+]]></system-out></testcase></testsuite></testsuites>

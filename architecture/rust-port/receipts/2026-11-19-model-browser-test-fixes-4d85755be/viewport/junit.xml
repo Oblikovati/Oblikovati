@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-19T13:31:25.045167833Z" time="21.231320011"><testcase name="Scenario: Toggle camera autosave for an inactive copied view: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:945:3" time="21.231320011"><system-out><![CDATA[  Scenario: Toggle camera autosave for an inactive copied view
+   ✔  Given an empty part is active in the MCAD Software
+   ✔  And Primary is the active view representation
+   ✔  And an inactive copied view representation exists
+   ✔  And its camera autosave option is checked
+   ✔  When the user opens the copied view's context menu and expands Camera View
+   ✔  Then Save Current Camera is unavailable
+   ✔  And Restore Saved Camera is available
+   ✔  And Autosave Camera is checked
+   ✔  When the user chooses Autosave Camera
+   ✔  And the user reopens the Camera View submenu
+   ✔  Then Autosave Camera is unchecked
+   ✔  When the user chooses Autosave Camera again
+   ✔  And the user reopens the Camera View submenu
+   ✔  Then Autosave Camera is checked
+   ✔  And the viewport remains empty
+   ✔  When the user dismisses the menus
+   ✔  Then Primary remains the active view
+]]></system-out></testcase></testsuite></testsuites>

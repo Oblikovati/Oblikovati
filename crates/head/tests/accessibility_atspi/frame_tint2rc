@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: GPL-2.0-only
+panel_items = T
+panel_size = 100% 30
+panel_position = bottom center horizontal
+panel_window_name = tint2
+panel_layer = top
+taskbar_mode = single_desktop
+taskbar_name = 1
+taskbar_distribute_size = 0
+task_align = left
+task_text = 1
+task_icon = 1
+task_maximum_size = 150 35
+mouse_left = toggle_iconify

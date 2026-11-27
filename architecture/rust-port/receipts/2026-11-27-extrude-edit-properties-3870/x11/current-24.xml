@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Extrude a profile in a part document: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature" package="testsuite/Feature: Extrude a profile in a part document: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-27T02:56:33.266000298Z" time="6.054163619"><testcase name="Scenario: extrusion-24 Match Shape is disabled for the captured feature: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature:242:3" time="6.054163619"><system-out><![CDATA[  Scenario: extrusion-24 Match Shape is disabled for the captured feature
+   ✔> Given the MCAD Software is displaying a part in the solid modeling workspace
+   ✔> And the viewport pointer is idle
+   ✔  Given a copy of `fixtures/cad/extrusion/extrusion-rect-20mm.opd` is open with Edit Feature active for Extrusion1
+   ✔  Then Match Shape is visible and disabled
+   ✔  When Cancel is clicked
+   ✔  Then the accepted feature remains unchanged
+]]></system-out></testcase></testsuite></testsuites>

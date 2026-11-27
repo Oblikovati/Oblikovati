@@ -1,0 +1,13 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.09s
+     Running unittests src/lib.rs (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/target/debug/deps/oblikovati_gui-8e4225150c4459f1)
+
+running 7 tests
+test application::workspace_layout::panel_tabs::tests::favorites_visibility_follows_menu_toggles_and_keeps_the_model ... ok
+test application::workspace_layout::panel_tabs::tests::closing_the_last_native_tab_empties_the_dock ... ok
+test application::workspace_layout::panel_tabs::tests::native_dock_tab_windows_open_and_close_independently ... ok
+test application::workspace_layout::panel_tabs::tests::panel_visibility_requests_one_follow_up_layout ... ok
+test application::workspace_layout::panel_tabs::tests::saved_open_panels_restore_without_overriding_imgui_active_tab ... ok
+test application::workspace_layout::panel_tabs::tests::the_log_keeps_each_new_message_once_and_never_the_idle_status ... ok
+test application::workspace_layout::panel_tabs::tests::the_log_stays_within_its_capacity ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 739 filtered out; finished in 0.00s

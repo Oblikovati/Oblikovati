@@ -1,0 +1,7 @@
+d9336c2a99b51246344f200657ce8da9d1dd501e3f3e02efddfa83afcd21d220  /mnt/vininas-projects/MCAD-Scenarios/features/application/document-creation/document-creation-populated-layout.feature
+67249ad1225df1737c23689803b2b35e475abb5fa37fb1ebc4d3098d9db7cf2d  /mnt/vininas-projects/MCAD-Scenarios/fixtures/cad/document-creation-layout-candidate.opj
+6dfa9dc243268fdf38af248129b995d1d8c1dbad096357f7b8d25eec45ce3c92  /mnt/vininas-projects/MCAD-Scenarios/fixtures/cad/document-creation-layout-candidate/English/Populated Layout.odd
+50d6b58b9d2d48e778334b9bce4f1610c0401f88e3e37d304536120b6d099643  /mnt/vininas-projects/MCAD-Scenarios/fixtures/cad/document-creation-layout-candidate/English/layout-data/alternate-component.opd
+e25b898cb5edead91cac7da7d9c71f7905b13603957a51c7bab5350d50f7bb1f  /mnt/vininas-projects/MCAD-Scenarios/fixtures/cad/document-creation-layout-candidate/English/layout-data/extrusion/extrusion-rect-8mm.opd
+a7140e0b9162cf26a635ccb686a4309a501074df5aca04ca638f8feb7d0470fe  /mnt/vininas-projects/MCAD-Scenarios/fixtures/cad/document-creation-layout-candidate/English/layout-data/suppression-two-occurrences.oad
+d55a0cce8c436ece286dd96d1ebf8aa7a9e58058e5f059a528bd4f38e6ae8ea4  /mnt/vininas-projects/MCAD-Scenarios/fixtures/cad/document-opening/OpenPart.opd

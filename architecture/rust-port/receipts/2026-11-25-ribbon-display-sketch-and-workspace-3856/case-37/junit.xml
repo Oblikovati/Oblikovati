@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon display modes: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature" package="testsuite/Feature: Ribbon display modes: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T02:43:57.916980532Z" time="28.845418532"><testcase name="Scenario: Change ribbon context while editing an existing sketch: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature:537:3" time="28.845418532"><system-out><![CDATA[  Scenario: Change ribbon context while editing an existing sketch
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part containing an existing extrusion and sketch is active in the MCAD Software
+   ✔  And the ribbon is minimized to tabs with Tools selected
+   ✔  When the user expands the extrusion in the model browser
+   ✔  And the user double-clicks its sketch
+   ✔  Then the Sketch tab is selected while the ribbon remains minimized to tabs
+   ✔  When the user selects the Tools tab
+   ✔  Then temporary Tools command groups appear beneath the tabs
+   ✔  And Finish is available in an Exit group
+   ✔  When the user selects Finish
+   ✔  Then sketch editing ends and the part model is displayed
+   ✔  And the ribbon remains minimized to tabs with Tools selected
+]]></system-out></testcase></testsuite></testsuites>

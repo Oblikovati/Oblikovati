@@ -1,0 +1,5 @@
+wayland
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1733 filtered out; finished in 8.80s
+
+x11
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1733 filtered out; finished in 12.27s

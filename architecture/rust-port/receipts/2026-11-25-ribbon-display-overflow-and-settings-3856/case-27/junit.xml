@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon display modes: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature" package="testsuite/Feature: Ribbon display modes: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T02:42:34.409469486Z" time="26.666858948"><testcase name="Scenario: Select an overflowed tab while the ribbon is minimized to tabs: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature:406:3" time="26.666858948"><system-out><![CDATA[  Scenario: Select an overflowed tab while the ribbon is minimized to tabs
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part is active in the MCAD Software with Tools active in tabs-only ribbon display
+   ✔  And the narrow application window places View in the tab overflow menu
+   ✔  When the user opens the tab overflow menu and selects View
+   ✔  Then the overflow menu closes
+   ✔  And no temporary ribbon command panel opens
+   ✔  And the part remains visible
+   ✔  When the user maximizes the application window
+   ✔  Then View is visible as the active tab
+   ✔  And the ribbon remains in tabs-only display
+]]></system-out></testcase></testsuite></testsuites>

@@ -1,0 +1,16 @@
+{
+  "kind": "scenario queue verification",
+  "application_commit": "814ac01cded62cdb434616f87cd3acdf4e11425e",
+  "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+  "results": {
+    "ledger_tool_tests": "49 passed",
+    "markdownlint": "passed",
+    "queue": "23 grouped rows and 2516 unclassified scenarios; group totals checked against ledger",
+    "scope": "Queue lists assigned work and baseline gaps. It does not decide dependency readiness or include non-scenario action items."
+  },
+  "artifacts": {
+    "tests.log.gz": "8d971d8d74918eaf7a04c0b775d12d5e2f0b60c183c349388a0d8a3ba57147f6",
+    "markdown.log.gz": "490e80ddb0b3af400eef525e1da1a3a82ab4a857e445bd2c08139855f215737f",
+    "queue.json": "7e8b68243604ecb5439f13eeaf8408282d2c44a2f47a24bec94a77d4a2249f19"
+  }
+}

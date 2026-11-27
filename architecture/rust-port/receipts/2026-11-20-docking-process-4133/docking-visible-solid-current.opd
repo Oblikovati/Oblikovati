@@ -1,0 +1,275 @@
+schemaVersion: 3
+documentType: 1
+model:
+  units:
+    angle: deg
+    angleFormat: decimal
+    anglePrecision: '2'
+    area: mm^2
+    length: mm
+    lengthFormat: decimal
+    lengthPrecision: '3'
+    mass: kg
+    time: s
+    volume: mm^3
+  parameters:
+  - name: width
+    kind: user
+    valueType: ''
+    expression: 4 cm
+    text: ''
+    bool: false
+    value: 0.0
+    unit: ''
+    comment: ''
+    key: false
+    export: false
+    precision: 0
+    hidden: false
+    displayFormat: decimal
+    renamed: false
+    disabledActions: []
+    expressionList: []
+    allowCustomValue: false
+    sortedValueList: false
+    customProperty:
+      propertyType: text
+      units: ''
+      precision: threeDecimalPlaces
+      showLeadingZeros: true
+      showTrailingZeros: false
+      showUnitsString: true
+    tolerance: null
+    modelValueType: ''
+  - name: height
+    kind: user
+    valueType: ''
+    expression: 3 cm
+    text: ''
+    bool: false
+    value: 0.0
+    unit: ''
+    comment: ''
+    key: false
+    export: false
+    precision: 0
+    hidden: false
+    displayFormat: decimal
+    renamed: false
+    disabledActions: []
+    expressionList: []
+    allowCustomValue: false
+    sortedValueList: false
+    customProperty:
+      propertyType: text
+      units: ''
+      precision: threeDecimalPlaces
+      showLeadingZeros: true
+      showTrailingZeros: false
+      showUnitsString: true
+    tolerance: null
+    modelValueType: ''
+  parameterGroups: []
+  parameterSettings:
+    linearStandardTolerance: ''
+    angularStandardTolerance: ''
+    useStandardTolerances: false
+    exportStandardTolerances: false
+    linearDimensionPrecision: 3
+    angularDimensionPrecision: 2
+    dimensionDisplayType: value
+    displayParameterAsExpression: false
+  derivedParameterTables: []
+  planarSketches:
+    recipe:
+      version: 1
+      sketches:
+      - id: 1
+        name: Profile
+        plane:
+          origin:
+          - 0.0
+          - 0.0
+          - 0.0
+          x_axis:
+          - 1.0
+          - 0.0
+          - 0.0
+          y_axis:
+          - 0.0
+          - 1.0
+          - 0.0
+        plane_options:
+          version: 1
+          unit_deviation: 1e-9
+          angular_deviation: 1e-9
+        geometry:
+          version: 5
+          points:
+          - id: 1
+            position:
+            - 0.0
+            - 0.0
+          - id: 2
+            position:
+            - 4.0
+            - 0.0
+          - id: 3
+            position:
+            - 4.0
+            - 3.0
+          - id: 4
+            position:
+            - 0.0
+            - 3.0
+          lines:
+          - id: 101
+            endpoints:
+            - 1
+            - 2
+          - id: 102
+            endpoints:
+            - 2
+            - 3
+          - id: 103
+            endpoints:
+            - 3
+            - 4
+          - id: 104
+            endpoints:
+            - 4
+            - 1
+          circles: []
+          arcs: []
+          constraints:
+          - id: 1
+            relation: !fix
+              point: 1
+              position:
+              - 0.0
+              - 0.0
+          - id: 2
+            relation: !horizontal
+              points:
+              - 1
+              - 2
+          - id: 3
+            relation: !vertical
+              points:
+              - 2
+              - 3
+          - id: 4
+            relation: !vertical
+              points:
+              - 1
+              - 4
+          - id: 5
+            relation: !horizontal
+              points:
+              - 3
+              - 4
+          - id: 6
+            relation: !distance
+              points:
+              - 1
+              - 2
+              measure: horizontal
+              parameter: 1
+          - id: 7
+            relation: !distance
+              points:
+              - 2
+              - 3
+              measure: vertical
+              parameter: 2
+          entity_order:
+          - 1
+          - 2
+          - 3
+          - 4
+          - 101
+          - 102
+          - 103
+          - 104
+          construction_curves: []
+          centerlines: []
+          dimension_placements:
+          - constraint: 6
+            position:
+            - 0.0
+            - -1.0
+          - constraint: 7
+            position:
+            - 1.5
+            - -1.0
+    sketchHighWater: 1
+    entityHighWater: 104
+    constraintHighWater:
+      1: 7
+    dimensionNameOrdinals: {}
+  workPlanes:
+    recipe:
+      version: 16
+      features:
+      - id: 1
+        name: Extrude1
+        definition:
+          version: 11
+          definition: !SketchPrism
+            version: 1
+            sketch: 1
+            selection:
+              outer:
+              - curve: 101
+                reversed: false
+              - curve: 102
+                reversed: false
+              - curve: 103
+                reversed: false
+              - curve: 104
+                reversed: false
+              holes: []
+            displacement:
+            - !Constant 0.0
+            - !Constant 0.0
+            - !Constant 2.0
+        suppressed: false
+        condition: null
+        definition_reads:
+          keys:
+          - !Parameter 1
+          - !Parameter 2
+          - !Sketch 1
+          unattributed: false
+      end_of_part: null
+    featureHighWater: 1
+  properties: []
+  parameterIds:
+    height: 2
+    width: 1
+  parameterHighWater: 2
+displayName: docking-visible-solid-current
+previewPicture:
+  width: 64
+  height: 36
+  rgb: ODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCh4yWh4yWh4yWh4yWNztCNztCNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBhoyWhoyWhoyWhoyWNjpBNjpBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBhoyWhoyWhoyWhoyWNjlBNjlBNTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/KioqNDg/NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+tbi6tbi6tbi6tbi6tbi6tbi6tbi6tbi6tbi6tbi6tbi6NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+KioqNDc+MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9tbi6tbi6tbi6tbi6tbi6tbi6tbi6tbi6tbi6tbi6tbi6MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9KioqMzY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9tbi6tbi6tbi6tbi6tbi6tbi6tbi6tbi6tbi6tbi6tbi6MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9KioqMjY9MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8tbi6tbi6tbi6tbi6tbi6tbi6tbi6tbi6tbi6tbi6tbi6MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7tbi6tbi6tbi6tbi6tbi6tbi6tbi6tbi6tbi6tbi6tbi6MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7KioqMTU7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7tbi6tbi6tbi6tbi6tbi6tbi6tbi6tbi6tbi6tbi6tbi6MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7KioqMTQ7MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6tbi6tbi6tbi6tbi6tbi6tbi6tbi6tbi6tbi6tbi6tbi6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6KioqMDM6MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ki0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMo
+partModelStates:
+  members:
+  - id: 1
+    name: Primary
+  active: 1
+  scope: SingleMember
+designViews:
+- Primary
+- Isometric
+- Front
+- Top
+- Right
+identity:
+  internalName: dc48d045-4cc3-498a-ab2d-fdf750e19671
+  revisionId: f53022b3-1948-47ce-8741-cdf61ef7fc2b
+  databaseRevisionId: e77659ea-2198-4b50-aede-4a814dd61979
+  saveCounter: 1
+  versionCreated: 0.1.0-dev
+  versionSaved: 0.1.0-dev
+  modelDigest: df70de8e4e745839c4db5ac94834a339db38df7016e3ddd62d97d054560fd830

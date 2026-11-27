@@ -1,0 +1,6 @@
+
+running 1 test
+test native::gui_loop_tests::application_bdd::ribbon_panel_expansion::shell_native::x11_shell_opens_on_a_selected_face_reports_refusal_and_cancels ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1615 filtered out; finished in 14.04s
+

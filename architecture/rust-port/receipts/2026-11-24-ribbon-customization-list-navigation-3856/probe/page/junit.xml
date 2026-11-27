@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="1" hostname="localhost" timestamp="2026-11-24T13:22:53.817361911Z" time="24.331597776"><testcase name="Scenario: Page between staged commands in a short target list: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature:1445:3" time="24.331597776"><failure type="Step Panicked" message="Step panicked. Captured output: assertion `left == right` failed: target highlight for &quot;2DSketches&quot;
+  left: true
+ right: false"/><system-out><![CDATA[  Scenario: Page between staged commands in a short target list
+   ✔  Given ribbon customization is open in the MCAD Software for the Part Tools target
+   ✔  And "2D Sketches" and "3D Annotations" are staged in that order
+   ✔  And both staged rows have Large and Text unchecked
+   ✔  When the user selects "2D Sketches" in the target list and presses Page Down
+   ✘  Then "3D Annotations" is highlighted
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature:1450:5
+      Matched: crates/head/src/../tests/application/ribbon-customization/list_keyboard_steps.rs:40:1
+      Step panicked. Captured output: assertion `left == right` failed: target highlight for "2DSketches"
+        left: true
+       right: false
+      ApplicationWorld {
+          text: "W\nP\nZ\nv\nO\nv\nFRONT\nModel\nMaterialBrow\u{85}\nAppearanceBr\u{85}\nMenu\nSearch\nPart1<Primary>\nRepresentations\nModelState\n<Primary>\n1\nView\n<Primary>\nOrigin\nYZPlane\nXZPlane\nXYPlane\nXAxis\nYAxis\nZAxis\nCenterPoint\nParameters\nSketches\nFeatures\nEndofPart\nABS(Black)\nAppearance\nAssigntopart\nClose\nReady\nRibbonDisplay\nv\nv\n...\nPart1\nFile\n3DModel\nSketch\nTools\nManage\nView\nAnnotate\nMeasure\nMeasure\nDefault\nMaterial\nDefault\nAppearance\nMaterialandAppearance\nCustomize\nApplicationOptions\nDocumentSettings\nOptionsv\nCopy\nClipboard\nFind\nFind\nOpenTeamWeb\nTeamWeb\nHome\nPart1<Primary>*\nDocuments\nX\nY\nZ\nCustomize\nRibbon\nCustomizeusercommands\nAvailablecommands\nAllCommands\nName\n>\n<\nCustompanel\nPart|Tools*\nName\nLarge\nText\nUp\nDown\nKeyboard\nMarkingMenu\nOK\nCancel\nApply\nClose\nImport\nExport\n<Separator>\n3-PointArc\n3-PointCircle\n3-PtCenterRect.\n3-PtRect.\nCenterArc\nCenterRect.\nCircle(CenterPoint)\nCoincident\nCollinear\nConcentric\n2DSketches\n3DAnnotations",
+          ..
+      }
+]]></system-out></testcase></testsuite></testsuites>

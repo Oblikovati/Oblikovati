@@ -1,0 +1,29 @@
+Labwc and Waybar
+[2026-11-26 05:26:29.175] [info] Bar configured (width: 1024, height: 36) for output: X11-1
+[04:26:31.689378] {Default Queue} zwlr_foreign_toplevel_handle_v1#4278190080.app_id("org.oblikovati.Oblikovati")
+[04:26:32.812729]  -> xdg_toplevel#12.set_minimized()
+[04:26:32.864719] {Default Queue}  -> zwlr_foreign_toplevel_handle_v1#4278190080.activate(wl_seat#35)
+[04:26:32.865417] {Default Queue} zwlr_foreign_toplevel_handle_v1#4278190080.app_id("org.oblikovati.Oblikovati")
+[04:26:35.449833] {Default Queue} zwlr_foreign_toplevel_handle_v1#4278190080.app_id("org.oblikovati.Oblikovati")
+[04:26:36.502075]  -> xdg_toplevel#12.set_maximized()
+[04:26:36.892143]  -> xdg_toplevel#12.set_minimized()
+[04:26:36.934135] {Default Queue}  -> zwlr_foreign_toplevel_handle_v1#4278190080.activate(wl_seat#35)
+[04:26:36.934505] {Default Queue} zwlr_foreign_toplevel_handle_v1#4278190080.app_id("org.oblikovati.Oblikovati")
+
+Wayland taskbar outline
+2 scenarios (2 passed)
+18 steps (18 passed)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1733 filtered out; finished in 8.59s
+
+X11 taskbar outline
+2 scenarios (2 passed)
+18 steps (18 passed)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1733 filtered out; finished in 9.28s
+
+Wayland desktop Close regression without Waybar
+[04:27:13.466352] xdg_toplevel#12.close()
+7 steps (7 passed)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1733 filtered out; finished in 6.70s
+
+Workspace Clippy
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 12.58s

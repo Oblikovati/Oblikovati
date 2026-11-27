@@ -1,0 +1,291 @@
+{
+  "kind": "diagnostic only; not acceptance",
+  "source_files": {
+    "/tmp/oblikovati-bdd-SfCkS7/checkout/features/sketch/circle-center-point/scenario.feature": "@sketch\r\nFeature: Circle center point\r\n\r\n  @needs_fixture\r\n  Scenario: circle-center-point-10 Enter a diameter through circle creation\r\n    Given an editable metric sketch with a midpoint line\r\n    When the user invoke Center Point Circle using Ctrl+Shift+C\r\n    And the user select the recorded free center at (0.000, 6.553, -12.440) mm\r\n    Then the prompt requests a point on the circle\r\n    And the status displays a radius of 0.000 mm\r\n    When the user enter 6 in the active size field\r\n    And the user press Return\r\n    Then the command returns to center selection with a 6 mm circle dimension retained\r\n    When the user exit and measure the circle\r\n    Then its diameter is 6.000 mm and radius is 3.000 mm\r\n    And its global center is (0.000, 6.553, -12.440) mm within displayed precision\r\n\r\n  @needs_fixture\r\n  Scenario: circle-center-point-11 Edit diameter while retaining the measured center\r\n    Given the recorded circle has a driving diameter dimension equal to 6 mm\r\n    And its displayed center is (0.000, 6.553, -12.440) mm\r\n    When the user open the diameter dimension and accept the value 8 mm\r\n    And the user exit General Dimension and measure the circle\r\n    Then diameter is 8.000 mm and radius is 4.000 mm\r\n    And its measured center remains (0.000, 6.553, -12.440) mm\r\n    When the user close Measure and undo the edit\r\n    Then the visible dimension and extent return to 6 mm\r\n    When the user redo the edit\r\n    Then the visible dimension and extent return to 8 mm\r\n    When the user undo once more\r\n    Then the 6 mm baseline is restored with the surrounding midpoint line retained\r\n\r\n  @acceptance @documented_observation @needs_fixture\r\n  Scenario: circle-center-point-01 Commit the intended result\r\n    Given the MCAD Software is running\r\n    And an editable planar sketch is active\r\n    When the user select Center Point Circle, click a center, then a distinct circumference point\r\n    Then one circle has the selected center and passes through the circumference point\r\n    And the command returns to Select center of circle\r\n\r\n  @needs_fixture\r\n  Scenario: circle-center-point-06 Cancel after choosing only the center\r\n    Given an editable sketch is Ready\r\n    When the user select Center Point Circle from the dropdown\r\n    And the user select a center\r\n    Then the prompt requests a point on the circle\r\n    When the user press Escape\r\n    Then the MCAD Software returns to Ready without a new circle\r\n\r\n  @needs_fixture\r\n  Scenario: circle-center-point-07 Create a free circle and undo and redo it\r\n    Given an editable sketch is Ready\r\n    When the user invoke Center Point Circle\r\n    And the user select a center and a distinct circumference point\r\n    Then a circle appears and the command requests another center\r\n    When the user press Escape\r\n    Then the circle is retained\r\n    When the user undo\r\n    Then the circle is removed\r\n    When the user redo\r\n    Then the circle returns\r\n\r\n  @needs_fixture\r\n  Scenario: circle-center-point-08 Measure the restored mouse-created circle\r\n    Given the upper-right center-point circle has been restored by redo\r\n    When the user open Measure and select its circumference\r\n    Then Measure displays diameter 8.375 mm and radius 4.187 mm\r\n        And center X 0.000 mm, Y 27.574 mm, Z -85.283 mm\r\n\r\n  @needs_fixture\r\n  Scenario: circle-center-point-09 Keep selecting circumference after a same-position click\r\n    Given an editable sketch is Ready\r\n    When the user invoke Center Point Circle\r\n    And the user select a center\r\n    And the user click the same screen position for its circumference\r\n    Then Select point on circle remains active\r\n    And the displayed radius is 0.000 mm\r\n    And no error dialog or new circle appears\r\n    When the user press Escape\r\n    Then the MCAD Software returns to Ready\r\n\r\n  @needs_fixture\r\n  Scenario: circle-center-point-12 Reject zero advancement and cancel through two Escape states\r\n    Given an editable sketch contains the retained 6 mm circle and midpoint line\r\n    When Center Point Circle is invoked and a free center is selected\r\n    And the 0 key is pressed followed by Return\r\n    Then the size field remains red with 0 and Select point on circle remains active\r\n    And no modal error dialog appears\r\n    When Escape is pressed once\r\n    Then the numeric entry clears and a mouse-driven circle preview remains active\r\n    When Escape is pressed again\r\n    Then Ready appears and the preview disappears\r\n    And the retained circle and midpoint line remain visible\r\n\r\n  @needs_fixture\r\n  Scenario: circle-center-point-13 Cancel a proposed diameter and inspect the retained value\r\n    Given the retained circle has a driving diameter dimension equal to 6 mm\r\n    When General Dimension opens the diameter dimension and the selected expression is replaced with 9\r\n    And Escape cancels the editor\r\n    Then General Dimension remains active and the circle keeps its visible size\r\n    When the diameter annotation is clicked again\r\n    Then Edit Dimension displays the retained 6 mm expression\r\n    When Escape closes the editor and Escape exits General Dimension\r\n    Then Ready appears\r\n\r\n"
+  },
+  "scenarios": [
+    {
+      "source": "/tmp/oblikovati-bdd-SfCkS7/checkout/features/sketch/circle-center-point/scenario.feature",
+      "scenario": "circle-center-point-01 Commit the intended result",
+      "line": 34,
+      "classification": "passes",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 35,
+          "step": "the MCAD Software is running",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 36,
+          "step": "an editable planar sketch is active",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 37,
+          "step": "the user select Center Point Circle, click a center, then a distinct circumference point",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 38,
+          "step": "one circle has the selected center and passes through the circumference point",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 39,
+          "step": "the command returns to Select center of circle",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/oblikovati-bdd-SfCkS7/checkout/features/sketch/circle-center-point/scenario.feature",
+      "scenario": "circle-center-point-06 Cancel after choosing only the center",
+      "line": 42,
+      "classification": "passes",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 43,
+          "step": "an editable sketch is Ready",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 44,
+          "step": "the user select Center Point Circle from the dropdown",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 45,
+          "step": "the user select a center",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 46,
+          "step": "the prompt requests a point on the circle",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 47,
+          "step": "the user press Escape",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 48,
+          "step": "the MCAD Software returns to Ready without a new circle",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/oblikovati-bdd-SfCkS7/checkout/features/sketch/circle-center-point/scenario.feature",
+      "scenario": "circle-center-point-07 Create a free circle and undo and redo it",
+      "line": 51,
+      "classification": "passes",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 52,
+          "step": "an editable sketch is Ready",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 53,
+          "step": "the user invoke Center Point Circle",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 54,
+          "step": "the user select a center and a distinct circumference point",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 55,
+          "step": "a circle appears and the command requests another center",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 56,
+          "step": "the user press Escape",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 57,
+          "step": "the circle is retained",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 58,
+          "step": "the user undo",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 59,
+          "step": "the circle is removed",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 60,
+          "step": "the user redo",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 61,
+          "step": "the circle returns",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/oblikovati-bdd-SfCkS7/checkout/features/sketch/circle-center-point/scenario.feature",
+      "scenario": "circle-center-point-08 Measure the restored mouse-created circle",
+      "line": 64,
+      "classification": "passes",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 65,
+          "step": "the upper-right center-point circle has been restored by redo",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 66,
+          "step": "the user open Measure and select its circumference",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 67,
+          "step": "Measure displays diameter 8.375 mm and radius 4.187 mm",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 68,
+          "step": "center X 0.000 mm, Y 27.574 mm, Z -85.283 mm",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/oblikovati-bdd-SfCkS7/checkout/features/sketch/circle-center-point/scenario.feature",
+      "scenario": "circle-center-point-09 Keep selecting circumference after a same-position click",
+      "line": 71,
+      "classification": "passes",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 72,
+          "step": "an editable sketch is Ready",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 73,
+          "step": "the user invoke Center Point Circle",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 74,
+          "step": "the user select a center",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 75,
+          "step": "the user click the same screen position for its circumference",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 76,
+          "step": "Select point on circle remains active",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 77,
+          "step": "the displayed radius is 0.000 mm",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 78,
+          "step": "no error dialog or new circle appears",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 79,
+          "step": "the user press Escape",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 80,
+          "step": "the MCAD Software returns to Ready",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        }
+      ]
+    }
+  ]
+}

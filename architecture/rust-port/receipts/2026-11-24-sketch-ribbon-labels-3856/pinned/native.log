@@ -1,0 +1,21 @@
+
+running 1 test
+Feature: Ribbon display modes
+  Scenario: Hide command labels and restore the normal ribbon appearance
+   ✔  Given a part has an active editable sketch in the MCAD Software
+   ✔  And Ribbon Appearance is set to Normal
+   ✔  When the user opens Ribbon Appearance from the Create panel title context menu
+   ✔  And the user selects Text Off
+   ✔  Then command labels are hidden while command icons and panel titles remain visible
+   ✔  And the active sketch remains unchanged
+   ✔  When the user opens Ribbon Appearance again
+   ✔  And the user selects Normal
+   ✔  Then command labels return to the ribbon
+   ✔  And the active sketch remains unchanged
+[Summary]
+1 feature
+1 scenario (1 passed)
+10 steps (10 passed)
+test native::gui_loop_tests::application_bdd::application_scenarios_use_the_native_window ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1617 filtered out; finished in 58.46s

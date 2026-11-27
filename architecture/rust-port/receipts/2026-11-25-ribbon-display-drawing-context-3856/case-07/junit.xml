@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon display modes: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature" package="testsuite/Feature: Ribbon display modes: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T02:36:19.567654624Z" time="16.477828081"><testcase name="Scenario: Cycle drawing ribbon display by double-clicking its active tab: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature:102:3" time="16.477828081"><system-out><![CDATA[  Scenario: Cycle drawing ribbon display by double-clicking its active tab
+   ✔  Given `fixtures/cad/blank-drawing.odd` is open and active in the MCAD Software
+   ✔  And a drawing document is active in the MCAD Software
+   ✔  And the ribbon display control is configured to cycle through all modes
+   ✔  And the Place Views tab shows its full command groups
+   ✔  When the user double-clicks the active Place Views tab
+   ✔  Then the ribbon shows compact Create, Modify, Sketch and Sheets group buttons
+   ✔  And the drawing workspace has more vertical space
+   ✔  When the user double-clicks the active Place Views tab again
+   ✔  Then the ribbon shows the group titles in a narrow strip
+   ✔  When the user double-clicks the active Place Views tab again
+   ✔  Then the ribbon shows tabs without the group strip
+   ✔  When the user double-clicks the active Place Views tab again
+   ✔  Then the full Place Views command groups are visible
+   ✔  And the drawing document remains active
+]]></system-out></testcase></testsuite></testsuites>

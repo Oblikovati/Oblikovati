@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Workspace layout and panel visibility: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature" package="testsuite/Feature: Workspace layout and panel visibility: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-19T14:28:23.670602778Z" time="11.407846202"><testcase name="Scenario: Float and redock the drawing browser: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:227:3" time="11.407846202"><system-out><![CDATA[  Scenario: Float and redock the drawing browser
+   ✔  Given a drawing document is active in the MCAD Software
+   ✔  And its browser is docked to the left of the drawing
+   ✔  When the user drags the browser header into the drawing area
+   ✔  Then the browser floats over the drawing sheet
+   ✔  And the browser displays drawing resources and the sheet tree
+   ✔  And the drawing remains visible behind the browser
+   ✔  When the user drags the floating browser header to the left edge of the workspace
+   ✔  Then the browser docks at the left edge
+   ✔  And the drawing remains visible in the remaining workspace
+]]></system-out></testcase></testsuite></testsuites>

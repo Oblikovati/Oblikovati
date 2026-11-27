@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon panel visibility: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" package="testsuite/Feature: Ribbon panel visibility: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T09:30:19.037905454Z" time="32.422418049"><testcase name="Scenario: Retain independent panel visibility across ribbon tabs: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:141:3" time="32.422418049"><system-out><![CDATA[  Scenario: Retain independent panel visibility across ribbon tabs
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the 3D Model ribbon is docked on the left with Modify visible
+   ✔  And Navigate is visible on the View ribbon
+   ✔  When the user hides Modify through the direct panel selector
+   ✔  Then the Modify panel disappears from the 3D Model ribbon
+   ✔  When the user switches to the View ribbon
+   ✔  Then Navigate remains visible
+   ✔  When the user returns to the 3D Model ribbon
+   ✔  And the user opens the direct panel selector
+   ✔  Then Modify is unchecked
+   ✔  When the user selects Modify in the panel selector
+   ✔  Then the Modify panel returns to the 3D Model ribbon
+   ✔  And the panel selector remains open with Modify checked
+]]></system-out></testcase></testsuite></testsuites>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Loft: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/loft/loft.feature" package="testsuite/Feature: Loft: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/loft/loft.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-27T00:37:19.155042453Z" time="25.265655868"><testcase name="Scenario: loft-14 Edit a placed section on a center-line loft: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/loft/loft.feature:141:3" time="25.265655868"><system-out><![CDATA[  Scenario: loft-14 Edit a placed section on a center-line loft
+   ✔  Given a disposable copy of the native fixture "fixtures/cad/loft/circles-center-line-20.opd" is open
+   ✔  And the user creates Loft1 from the two circular profiles and the 20 mm center line
+   ✔  And the user edits Loft1, selects placed-sections mode, adds an intermediate section near the center-line midpoint and accepts it with alternate section size 1
+   ✔  When the user edits Loft1 and double-clicks the intermediate point in the preview
+   ✔  Then Section Dimensions opens with the saved section settings
+   ✔  When the user changes the alternate section size from 1 to 2 and accepts it
+   ✔  Then the displayed section area doubles and the loft preview bulges
+   ✔  When the user accepts and reopens the loft and section dimensions
+   ✔  Then the section size remains 2
+   ✔  When the user sets the section position distance to 5 mm on the 20 mm center line
+   ✔  Then the section moves and its position annotation reads 0.250000
+]]></system-out></testcase></testsuite></testsuites>

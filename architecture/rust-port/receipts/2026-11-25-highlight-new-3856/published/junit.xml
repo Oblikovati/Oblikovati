@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Expand a ribbon panel: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" package="testsuite/Feature: Expand a ribbon panel: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T11:17:09.747347658Z" time="23.6617584"><testcase name="Scenario: Open a main-panel menu while additional commands are visible: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:375:3" time="23.6617584"><system-out><![CDATA[  Scenario: Open a main-panel menu while additional commands are visible
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open and active
+   ✔  And the full Tools ribbon is visible
+   ✔  And the Options additional command area is open and unpinned
+   ✔  When the user opens the Highlight New drop-down in the main Options panel
+   ✔  Then the drop-down menu appears over the additional command area
+   ✔  And the Options additional command area remains visible behind the menu
+   ✔  When the user presses Escape
+   ✔  Then the drop-down menu closes
+   ✔  And the Options additional command area remains visible
+   ✔  When the user clicks the selected Tools tab
+   ✔  Then the additional command area closes
+   ✔  And the part remains visible
+]]></system-out></testcase></testsuite></testsuites>

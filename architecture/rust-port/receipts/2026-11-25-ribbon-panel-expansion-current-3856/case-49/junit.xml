@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" package="testsuite/Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:25:20.705868023Z" time="43.669471485"><testcase name="Scenario: Change appearance from an expanded panel title: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:667:3" time="43.669471485"><system-out><![CDATA[  Scenario: Change appearance from an expanded panel title
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open and active
+   ✔  And the full 3D Model ribbon is at the top
+   ✔  And the ribbon appearance is "Normal"
+   ✔  And the Modify additional command area is open and unpinned
+   ✔  When the user right-clicks the lower Modify title
+   ✔  And the user opens the "Ribbon Appearance" submenu
+   ✔  Then "Normal" is checked and the Modify additional commands remain visible
+   ✔  When the user selects "Text Off"
+   ✔  Then the menus and Modify additional command area close
+   ✔  And the ribbon displays command icons without their command labels
+   ✔  And the panel titles remain visible
+   ✔  When the user opens the Modify additional command area again
+   ✔  And the user right-clicks the lower Modify title
+   ✔  And the user opens the "Ribbon Appearance" submenu
+   ✔  Then "Text Off" is checked
+   ✔  When the user selects "Normal"
+   ✔  Then the full ribbon displays its command labels again
+   ✔  And the Modify additional command area remains closed
+]]></system-out></testcase></testsuite></testsuites>

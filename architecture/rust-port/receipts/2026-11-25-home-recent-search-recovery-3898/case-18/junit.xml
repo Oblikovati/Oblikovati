@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Recent documents on Home: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature" package="testsuite/Feature: Recent documents on Home: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T01:22:03.513984679Z" time="21.258785769"><testcase name="Scenario: Clear an active type filter while retaining the search: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature:234:3" time="21.258785769"><system-out><![CDATA[  Scenario: Clear an active type filter while retaining the search
+   ✔  Given the MCAD Software starts with an isolated Recent profile prepared from a disposable copy of `fixtures/cad/home-recent-native`
+   ✔  And the Home workspace is active in the MCAD Software
+   ✔  And searching for "Part26" displays a matching recent part
+   ✔  And no assembly matches "Part26"
+   ✔  When the user opens Filter and selects Assembly
+   ✔  Then No results is displayed
+   ✔  And the filter control indicates one active filter
+   ✔  When the user activates the clear control beside the active filter indicator
+   ✔  Then the Assembly filter is unchecked
+   ✔  And the active-filter count is removed
+   ✔  And the search field still contains "Part26"
+   ✔  And the matching part is displayed again
+   ✔  And the Filter panel remains open
+]]></system-out></testcase></testsuite></testsuites>

@@ -1,0 +1,14 @@
+--- a/libweston/desktop/xdg-shell.c
++++ b/libweston/desktop/xdg-shell.c
+@@ -803,0 +804,9 @@
++static struct weston_size
++weston_desktop_xdg_toplevel_get_min_size(struct weston_desktop_surface *dsurface,
++                                        void *user_data)
++{
++	struct weston_desktop_xdg_toplevel *toplevel = user_data;
++
++	return toplevel->current.min_size;
++}
++
+@@ -1575,0 +1585 @@
++	.get_min_size = weston_desktop_xdg_toplevel_get_min_size,

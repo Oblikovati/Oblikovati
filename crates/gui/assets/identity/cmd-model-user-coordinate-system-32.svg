@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-labelledby="t d">
+  <title id="t">User Coordinate System (UCS)</title>
+  <desc id="d">Custom RGB orthogonal XYZ triad mounted at a Warm Amber origin node.</desc>
+  <g id="layer-body">
+    <polygon points="15,18 24,22 15,26 6,22" fill="var(--icon-surf-front, #F59E0B)" fill-opacity="0.25" stroke="var(--icon-surf-top, #FDE08A)" stroke-width="1.0" stroke-linejoin="round" stroke-dasharray="2.5 1.5"/>
+  </g>
+  <g id="layer-accent">
+    <path d="M13,21 L13,5.5 M14.67,8.23 L13,5.5 L11.33,8.23" fill="none" stroke="var(--vp-triad-y, #22C55E)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M13,21 L27,21 M24.27,22.67 L27,21 L24.27,19.33" fill="none" stroke="var(--vp-triad-x, #EF4444)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M13,21 L5.5,27.5 M6.47,24.45 L5.5,27.5 L8.66,26.98" fill="none" stroke="var(--vp-triad-z, #3B82F6)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="13" cy="21" r="2.6" fill="var(--icon-surf-top, #FDE08A)" stroke="var(--icon-surf-stroke, #2E1D05)" stroke-width="1"/>
+  </g>
+</svg>

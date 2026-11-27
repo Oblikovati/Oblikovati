@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Open document tabs: target/native-scratch.HSqCy5/current-document-tabs-source/features/application/document-tabs/document-tabs.feature" package="testsuite/Feature: Open document tabs: target/native-scratch.HSqCy5/current-document-tabs-source/features/application/document-tabs/document-tabs.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T00:44:47.06487631Z" time="23.508067097"><testcase name="Scenario: Visit Home without leaving an active sketch: target/native-scratch.HSqCy5/current-document-tabs-source/features/application/document-tabs/document-tabs.feature:271:3" time="23.508067097"><system-out><![CDATA[  Scenario: Visit Home without leaving an active sketch
+   ✔  Given `fixtures/cad/planar-sketch-empty-xy.opd` is open with Sketch1 being edited
+   ✔  When the user chooses Home from the View tab's Switch menu
+   ✔  Then the Home workspace displays its recent documents
+   ✔  And the part remains available in the document tab strip
+   ✔  When the user selects the part's document tab
+   ✔  Then the part's sketch viewport and model browser are displayed
+   ✔  And the sketch editing environment remains active
+]]></system-out></testcase></testsuite></testsuites>

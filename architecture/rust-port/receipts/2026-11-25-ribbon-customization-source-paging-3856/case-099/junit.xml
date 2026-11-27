@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T06:07:13.466891359Z" time="27.391861282"><testcase name="Scenario: Page through a short filtered command list: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature:1628:3" time="27.391861282"><system-out><![CDATA[  Scenario: Page through a short filtered command list
+   ✔> Given the MCAD Software starts with a writable copy of `fixtures/preferences/ribbon-normal` as its configuration directory
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And ribbon customization is open in the MCAD Software for an empty Part Tools custom panel
+   ✔  And the source category is "Exit 2D Sketch Tab"
+   ✔  And the source list shows the separator, "Cancel Sketch", and "Finish Sketch"
+   ✔  When the user selects "Cancel Sketch" and presses Page Down
+   ✔  Then "Finish Sketch" is highlighted
+   ✔  And the target custom panel remains empty
+   ✔  When the user presses Page Up
+   ✔  Then the separator is highlighted
+   ✔  And the target custom panel remains empty
+   ✔  When the user closes customization without changes
+   ✔  Then the customization dialog closes
+]]></system-out></testcase></testsuite></testsuites>

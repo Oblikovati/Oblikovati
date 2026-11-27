@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T12:31:03.120839108Z" time="22.512700788"><testcase name="Scenario: Transfer a source command after clicking the empty target list: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature:1151:3" time="22.512700788"><system-out><![CDATA[  Scenario: Transfer a source command after clicking the empty target list
+   ✔  Given a part is active in the MCAD Software with the full Tools ribbon visible
+   ✔  And ribbon customization shows All Commands and an empty Part Tools target
+   ✔  When the user selects "2D Sketches" in the available commands list
+   ✔  And the user clicks an empty area of the target list
+   ✔  Then "2D Sketches" remains highlighted in the available commands list
+   ✔  And the target list remains empty
+   ✔  And Apply remains disabled
+   ✔  When the user clicks the add command button
+   ✔  Then "2D Sketches" appears in the target list
+   ✔  And the target shows a pending-change marker
+   ✔  When the user clicks Cancel
+   ✔  Then the customization dialog closes
+   ✔  And the Tools ribbon remains visible
+]]></system-out></testcase></testsuite></testsuites>

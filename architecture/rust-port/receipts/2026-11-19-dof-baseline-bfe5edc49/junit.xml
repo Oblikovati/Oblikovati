@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Degrees of freedom: mnt/vininas-projects/MCAD-Scenarios/features/sketch/degrees-of-freedom/scenario.feature" package="testsuite/Feature: Degrees of freedom: mnt/vininas-projects/MCAD-Scenarios/features/sketch/degrees-of-freedom/scenario.feature" tests="4" errors="0" failures="4" hostname="localhost" timestamp="2026-11-19T16:55:29.611974998Z" time="12.75312285"><testcase name="Scenario: degrees-of-freedom-01 Show indicators on a rectangle: mnt/vininas-projects/MCAD-Scenarios/features/sketch/degrees-of-freedom/scenario.feature:5:3" time="3.137277618"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: degrees-of-freedom-01 Show indicators on a rectangle
+   ✘  Given an active sketch with a rectangle and no red freedom arrows
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/sketch/degrees-of-freedom/scenario.feature:6:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: degrees-of-freedom-02 Hide the displayed indicators: mnt/vininas-projects/MCAD-Scenarios/features/sketch/degrees-of-freedom/scenario.feature:12:3" time="3.222965785"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: degrees-of-freedom-02 Hide the displayed indicators
+   ✘  Given the fixture sketch contains a rectangle and projected contours
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/sketch/degrees-of-freedom/scenario.feature:13:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: degrees-of-freedom-03 Undo and redo the display operation: mnt/vininas-projects/MCAD-Scenarios/features/sketch/degrees-of-freedom/scenario.feature:22:3" time="3.225933805"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: degrees-of-freedom-03 Undo and redo the display operation
+   ✘  Given an active sketch contains the required mixed geometry, visible constraint glyphs and no red freedom indicators
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/sketch/degrees-of-freedom/scenario.feature:23:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: degrees-of-freedom-04 Retain shown mode across same-session sketch reentry: mnt/vininas-projects/MCAD-Scenarios/features/sketch/degrees-of-freedom/scenario.feature:34:3" time="3.166945642"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: degrees-of-freedom-04 Retain shown mode across same-session sketch reentry
+   ✘  Given the mixed-geometry fixture sketch reports 13 dimensions needed
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/sketch/degrees-of-freedom/scenario.feature:35:5
+      Step doesn't match any function
+]]></system-out></testcase></testsuite></testsuites>

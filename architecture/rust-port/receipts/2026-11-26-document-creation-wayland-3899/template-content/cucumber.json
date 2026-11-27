@@ -1,0 +1,148 @@
+[
+  {
+    "uri": "mnt/vininas-projects/MCAD-Scenarios/features/application/document-creation/document-creation-template-content.feature",
+    "keyword": "Feature",
+    "name": "Create a document from the selected native template's contents",
+    "tags": [
+      {
+        "name": "application",
+        "line": 2
+      },
+      {
+        "name": "documents",
+        "line": 2
+      },
+      {
+        "name": "fixture_variation",
+        "line": 2
+      }
+    ],
+    "elements": [
+      {
+        "after": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 505758483
+            }
+          }
+        ],
+        "before": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1987839933
+            }
+          }
+        ],
+        "keyword": "Scenario",
+        "type": "scenario",
+        "id": "create-a-document-from-the-selected-native-template-s-contents/preserve-the-selected-part-template-s-geometry-in-the-new-document",
+        "line": 6,
+        "name": "Preserve the selected part template's geometry in the new document",
+        "tags": [
+          {
+            "name": "expected_contract",
+            "line": 6
+          },
+          {
+            "name": "inherits_common_document_creation",
+            "line": 6
+          }
+        ],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "line": 7,
+            "name": "a fresh MCAD Software session loads `fixtures/cad/document-creation-template-content.opj` as its active project",
+            "result": {
+              "status": "passed",
+              "duration": 26075008
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 8,
+            "name": "no model document is open",
+            "result": {
+              "status": "passed",
+              "duration": 2999773
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 9,
+            "name": "the Metric catalog contains `fixtures/cad/document-creation-template-content/Metric/Geometry Template.opd`",
+            "result": {
+              "status": "passed",
+              "duration": 1453100
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 10,
+            "name": "the user opens the new-document template chooser",
+            "result": {
+              "status": "passed",
+              "duration": 121858836
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 11,
+            "name": "the user selects the Metric folder and the Geometry Template part",
+            "result": {
+              "status": "passed",
+              "duration": 233476344
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 12,
+            "name": "the user chooses Create",
+            "result": {
+              "status": "passed",
+              "duration": 345485507
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 13,
+            "name": "a new unsaved part document is active",
+            "result": {
+              "status": "passed",
+              "duration": 12849696
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 14,
+            "name": "its viewport displays the template's rectangular solid",
+            "result": {
+              "status": "passed",
+              "duration": 98028684
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 15,
+            "name": "its model browser contains the template's extrusion and source sketch",
+            "result": {
+              "status": "passed",
+              "duration": 9438372
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 16,
+            "name": "the original template file remains unchanged",
+            "result": {
+              "status": "passed",
+              "duration": 8531793
+            }
+          }
+        ]
+      }
+    ]
+  }
+]

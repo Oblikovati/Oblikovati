@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:35:29.505646762Z" time="74.509696542"><testcase name="Scenario: Cancel a sketch line style change: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature:172:3" time="74.509696542"><system-out><![CDATA[  Scenario: Cancel a sketch line style change
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software
+   ✔  And a dimensioned sketch is nested under an extrusion in the MCAD Software
+   ✔  And the sketch line type is Default
+   ✔  When the user opens Properties from the sketch row context menu
+   ✔  Then the geometry properties dialog shows line color, line type and line weight controls
+   ✔  And the line type field displays Default
+   ✔  And Apply is disabled
+   ✔  When the user chooses Dashed as the line type
+   ✔  Then the line type field displays Dashed and Apply is enabled
+   ✔  When the user clicks Cancel and reopens the sketch properties
+   ✔  Then the line type field displays Default
+   ✔  When the user clicks Cancel
+   ✔  Then the properties dialog closes
+]]></system-out></testcase></testsuite></testsuites>

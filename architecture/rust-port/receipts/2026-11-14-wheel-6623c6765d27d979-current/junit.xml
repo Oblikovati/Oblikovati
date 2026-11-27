@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Viewport navigation wheel: tmp/obk-wheel-size-3943-source/features/application/viewport-navigation-wheel/viewport-navigation-wheel.feature" package="testsuite/Feature: Viewport navigation wheel: tmp/obk-wheel-size-3943-source/features/application/viewport-navigation-wheel/viewport-navigation-wheel.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T22:30:14.670092643Z" time="17.101976552"><testcase name="Scenario: Switch between the basic wheel layouts: tmp/obk-wheel-size-3943-source/features/application/viewport-navigation-wheel/viewport-navigation-wheel.feature:23:3" time="17.101976552"><system-out><![CDATA[  Scenario: Switch between the basic wheel layouts
+   ✔  Given the full navigation wheel is open over a visible model in the MCAD Software
+   ✔  When the user right-clicks the wheel and chooses Basic View Object Wheel
+   ✔  Then the wheel shows Center, Zoom, Rewind and Orbit controls
+   ✔  When the user right-clicks the wheel
+   ✔  Then Basic View Object Wheel is marked as the selected layout
+   ✔  When the user chooses Basic Tour Building Wheel
+   ✔  Then the wheel shows Forward, Look, Rewind and Up Down controls
+   ✔  When the user right-clicks the wheel
+   ✔  Then Basic Tour Building Wheel is marked as the selected layout
+   ✔  When the user chooses Full Navigation Wheel
+   ✔  And the user presses Escape
+   ✔  Then the wheel disappears
+   ✔  And the model remains visible in the same apparent view
+   ✔  And the status area displays Ready
+]]></system-out></testcase></testsuite></testsuites>

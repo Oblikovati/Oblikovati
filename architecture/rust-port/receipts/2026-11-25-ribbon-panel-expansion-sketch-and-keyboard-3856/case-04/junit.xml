@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" package="testsuite/Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:21:30.061450085Z" time="52.223829922"><testcase name="Scenario: Dismiss Show Panels from the expanded Constrain command menu: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:50:3" time="52.223829922"><system-out><![CDATA[  Scenario: Dismiss Show Panels from the expanded Constrain command menu
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open with an active editable `Sketch1` in the MCAD Software
+   ✔  And the full Sketch ribbon is visible
+   ✔  And the Constrain additional command area is open
+   ✔  When the user right-clicks Edit Coordinate System
+   ✔  And the user opens Show Panels
+   ✔  Then Sketch, Create, Modify, Pattern, Constrain, Insert and Format are checked
+   ✔  And Layout and Parameters are unchecked
+   ✔  When the user presses Escape
+   ✔  Then the Show Panels submenu closes and the command context menu remains open
+   ✔  And the Constrain additional command area remains open
+   ✔  When the user presses Escape again
+   ✔  Then the command context menu and Constrain additional command area close
+   ✔  And the editable sketch remains active and unchanged
+]]></system-out></testcase></testsuite></testsuites>

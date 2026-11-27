@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Inspect ribbon command availability: target/native-scratch.HSqCy5/current-ribbon-command-availability-source/features/application/ribbon-command-availability/ribbon-command-availability.feature" package="testsuite/Feature: Inspect ribbon command availability: target/native-scratch.HSqCy5/current-ribbon-command-availability-source/features/application/ribbon-command-availability/ribbon-command-availability.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T22:44:25.329212373Z" time="9.667696241"><testcase name="Scenario: Inspect component commands in an active assembly: target/native-scratch.HSqCy5/current-ribbon-command-availability-source/features/application/ribbon-command-availability/ribbon-command-availability.feature:44:3" time="9.667696241"><system-out><![CDATA[  Scenario: Inspect component commands in an active assembly
+   ✔  Given the saved empty assembly fixture "fixtures/cad/blank-metric-assembly.oad" is active in the MCAD Software
+   ✔  Then the assembly ribbon offers commands to place and create components
+   ✔  And the assembly document remains active
+   ✔  And no assembly command has been started
+]]></system-out></testcase></testsuite></testsuites>

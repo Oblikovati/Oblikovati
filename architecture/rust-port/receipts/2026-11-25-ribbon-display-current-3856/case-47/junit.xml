@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon display modes: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature" package="testsuite/Feature: Ribbon display modes: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T02:46:58.960625173Z" time="16.517227258"><testcase name="Scenario: Toggle full and tabs-only display by double-clicking the active tab: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature:691:3" time="16.517227258"><system-out><![CDATA[  Scenario: Toggle full and tabs-only display by double-clicking the active tab
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part is active in the MCAD Software
+   ✔  And the full Tools ribbon is visible
+   ✔  When the user double-clicks the active Tools tab
+   ✔  Then the ribbon shows its tabs without permanent command groups
+   ✔  When the user double-clicks the active Tools tab again
+   ✔  Then the full Tools command groups are visible again
+   ✔  And the part remains active
+]]></system-out></testcase></testsuite></testsuites>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T11:03:42.576621464Z" time="40.263874771"><testcase name="Scenario: Open and closes an additional browser pane: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature:105:3" time="40.263874771"><system-out><![CDATA[  Scenario: Open and closes an additional browser pane
+   ✔  Given an active part is visible in the MCAD Software
+   ✔  And the Model browser tab is active
+   ✔  When the user opens the add-pane menu in the browser header
+   ✔  And the user chooses Favorites
+   ✔  Then a Favorites tab appears beside the Model tab and becomes active
+   ✔  And the Favorites pane shows its content controls
+   ✔  And the model remains visible in the same apparent view
+   ✔  When the user selects the Model tab
+   ✔  Then the model hierarchy is visible again
+   ✔  When the user selects Favorites and closes its tab
+   ✔  Then the Favorites tab disappears and the Model hierarchy is visible
+   ✔  And the model remains visible in the same apparent view
+]]></system-out></testcase></testsuite></testsuites>

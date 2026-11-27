@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T11:34:05.734415141Z" time="71.842131301"><testcase name="Scenario: Toggle the lock marker on a copied view representation: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:992:3" time="71.842131301"><system-out><![CDATA[  Scenario: Toggle the lock marker on a copied view representation
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is active in the MCAD Software
+   ✔  And the user copies the Primary view representation as BrowserView and leaves Primary active
+   ✔  And an empty part is active in the MCAD Software
+   ✔  And Primary is the active view representation
+   ✔  And an unlocked copied view representation exists in the expanded View branch
+   ✔  When the user opens the copied view representation's context menu
+   ✔  Then Lock is unchecked
+   ✔  And Publish is checked
+   ✔  And activates and Copy are available
+   ✔  And Edit View is unavailable
+   ✔  When the user chooses Lock
+   ✔  Then a lock symbol appears beside the copied view representation
+   ✔  And Primary remains active
+   ✔  When the user reopens the copied view representation's context menu
+   ✔  Then Lock is checked
+   ✔  When the user chooses Lock again
+   ✔  Then the lock symbol disappears from the copied view representation
+   ✔  When the user reopens its context menu
+   ✔  Then Lock is unchecked
+   ✔  When the user presses Escape
+   ✔  Then the context menu closes
+]]></system-out></testcase></testsuite></testsuites>

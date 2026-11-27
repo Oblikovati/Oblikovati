@@ -1,0 +1,10 @@
+{
+  "kind": "experimental-committed-source-export",
+  "application_commit": "def28777118f9bc59601b7286d75f62c6bda366d",
+  "tracked_files": 9648,
+  "inventory_sha256": "f31a6c7499ae64ca01c8419a7595a8933d5dea86f4493586a867b14f85ebd79a",
+  "inventory_retained": false,
+  "cargo_metadata": "cargo metadata --locked --offline --no-deps succeeded against the exported manifest",
+  "reusable": false,
+  "limitations": "No build was executed. Source remains writable; Cargo, compiler, toolchain, dependencies, system and runtime inputs are unbounded."
+}

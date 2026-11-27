@@ -1,0 +1,275 @@
+[
+  {
+    "uri": "mnt/vininas-projects/MCAD-Scenarios/features/application/document-creation/document-creation-template-restart.feature",
+    "keyword": "Feature",
+    "name": "Retain the selected template across application restart",
+    "tags": [
+      {
+        "name": "application",
+        "line": 2
+      },
+      {
+        "name": "documents",
+        "line": 2
+      },
+      {
+        "name": "fixture_variation",
+        "line": 2
+      }
+    ],
+    "elements": [
+      {
+        "after": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 442981345
+            }
+          }
+        ],
+        "before": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 2054372504
+            }
+          }
+        ],
+        "keyword": "Scenario",
+        "type": "scenario",
+        "id": "retain-the-selected-template-across-application-restart/retain-the-last-selected-template-after-an-application-restart",
+        "line": 10,
+        "name": "Retain the last selected template after an application restart",
+        "tags": [
+          {
+            "name": "cross_cutting",
+            "line": 10
+          },
+          {
+            "name": "fixture_variation",
+            "line": 10
+          }
+        ],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "line": 11,
+            "name": "fixture `fixtures/cad/workspace-layout-native.opd` is open with Sketch1 visible in the MCAD Software",
+            "result": {
+              "status": "passed",
+              "duration": 1152304962
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 12,
+            "name": "the user presses Control+N",
+            "result": {
+              "status": "passed",
+              "duration": 213791756
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 13,
+            "name": "the Create New File chooser opens over the part",
+            "result": {
+              "status": "passed",
+              "duration": 12174387
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 14,
+            "name": "the user selects the metric template folder",
+            "result": {
+              "status": "passed",
+              "duration": 226985299
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 15,
+            "name": "the user selects the standard metric part template in the Part group",
+            "result": {
+              "status": "passed",
+              "duration": 221886991
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 16,
+            "name": "the user cancels the chooser",
+            "result": {
+              "status": "passed",
+              "duration": 184651754
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 17,
+            "name": "the user closes the MCAD Software while the part remains unchanged",
+            "result": {
+              "status": "passed",
+              "duration": 272355074
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 18,
+            "name": "the user restarts the MCAD Software",
+            "result": {
+              "status": "passed",
+              "duration": 2092329206
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 19,
+            "name": "the user opens fixture `fixtures/cad/workspace-layout-native.opd`",
+            "result": {
+              "status": "passed",
+              "duration": 1650809838
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 20,
+            "name": "the user presses Control+N",
+            "result": {
+              "status": "passed",
+              "duration": 219608784
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 21,
+            "name": "the Create New File chooser opens over the part",
+            "result": {
+              "status": "passed",
+              "duration": 8411160
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 22,
+            "name": "the template gallery is grouped by document type",
+            "result": {
+              "status": "passed",
+              "duration": 25723347
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 23,
+            "name": "Metric is selected in the template folder tree",
+            "result": {
+              "status": "passed",
+              "duration": 137098867
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 24,
+            "name": "the standard metric part template is selected in the Part group",
+            "result": {
+              "status": "passed",
+              "duration": 8070339
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 25,
+            "name": "the details identify a Part with millimeter units and Generic material",
+            "result": {
+              "status": "passed",
+              "duration": 7976134
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 26,
+            "name": "Create and Cancel are available",
+            "result": {
+              "status": "passed",
+              "duration": 7125471
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 27,
+            "name": "the existing part and sketch remain visible behind the chooser",
+            "result": {
+              "status": "passed",
+              "duration": 10752474
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 28,
+            "name": "the user presses Escape",
+            "result": {
+              "status": "passed",
+              "duration": 309034472
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 29,
+            "name": "the chooser closes without creating a document",
+            "result": {
+              "status": "passed",
+              "duration": 9088283
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 30,
+            "name": "the same part and sketch remain active",
+            "result": {
+              "status": "passed",
+              "duration": 11336736
+            }
+          }
+        ]
+      },
+      {
+        "keyword": "Background",
+        "type": "background",
+        "id": "retain-the-selected-template-across-application-restart/retain-the-last-selected-template-after-an-application-restart",
+        "line": 10,
+        "name": "Retain the last selected template after an application restart",
+        "tags": [
+          {
+            "name": "cross_cutting",
+            "line": 10
+          },
+          {
+            "name": "fixture_variation",
+            "line": 10
+          }
+        ],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "line": 5,
+            "name": "a fresh MCAD Software session loads `fixtures/cad/document-creation-generic-candidate.opj` as its active project",
+            "result": {
+              "status": "passed",
+              "duration": 126536114
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 6,
+            "name": "its Metric folder contains a standard part template with the material label Generic",
+            "result": {
+              "status": "passed",
+              "duration": 3884741
+            }
+          }
+        ]
+      }
+    ]
+  }
+]

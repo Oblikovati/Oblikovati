@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Recent documents on Home: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature" package="testsuite/Feature: Recent documents on Home: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T01:33:02.035149322Z" time="16.294091623"><testcase name="Scenario: Reveal the controls on a recent document row: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature:439:3" time="16.294091623"><system-out><![CDATA[  Scenario: Reveal the controls on a recent document row
+   ✔  Given the MCAD Software starts with an isolated Recent profile prepared from a disposable copy of `fixtures/cad/home-recent-native`
+   ✔  And the Home workspace is active in the MCAD Software
+   ✔  And recent documents are displayed in List View
+   ✔  And no recent-document rows are checked
+   ✔  And a recent part row is visible
+   ✔  When the user hovers over the part row
+   ✔  Then the row is visually highlighted
+   ✔  And the row shows a selection checkbox and an actions control
+   ✔  When the user opens the row's actions control
+   ✔  Then the individual document actions are displayed
+]]></system-out></testcase></testsuite></testsuites>

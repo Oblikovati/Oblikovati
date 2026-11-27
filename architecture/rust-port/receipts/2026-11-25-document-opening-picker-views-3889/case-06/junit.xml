@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Inspect files before opening a document: target/native-scratch.HSqCy5/current-document-opening-source/features/application/document-opening/document-opening.feature" package="testsuite/Feature: Inspect files before opening a document: target/native-scratch.HSqCy5/current-document-opening-source/features/application/document-opening/document-opening.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T01:47:10.864712066Z" time="80.00201387"><testcase name="Scenario: Switch navigation panes without changing the selected file: target/native-scratch.HSqCy5/current-document-opening-source/features/application/document-opening/document-opening.feature:74:3" time="80.00201387"><system-out><![CDATA[  Scenario: Switch navigation panes without changing the selected file
+   ✔  Given the Open dialog is open in the MCAD Software
+   ✔  And its project navigation pane shows libraries and recent folders
+   ✔  And a saved part is selected with its file name and preview displayed
+   ✔  And `fixtures/cad/extrusion/extrusion-rect-8mm.opd` is selected with its name and preview
+   ✔  When the user switches to the system folder navigation pane
+   ✔  Then common system locations are displayed in the navigation pane
+   ✔  And the selected part, file name and preview remain displayed
+   ✔  When the user switches back to the project navigation pane
+   ✔  Then libraries and recent folders are displayed again
+   ✔  And the selected part, file name and preview remain displayed
+]]></system-out></testcase></testsuite></testsuites>

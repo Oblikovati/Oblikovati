@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon display modes: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature" package="testsuite/Feature: Ribbon display modes: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T02:37:57.570716319Z" time="20.961965255"><testcase name="Scenario: Cycle all ribbon display modes in one part session: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature:209:3" time="20.961965255"><system-out><![CDATA[  Scenario: Cycle all ribbon display modes in one part session
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part document is open in the MCAD Software
+   ✔  And the ribbon display control is configured to cycle through all modes
+   ✔  And the View ribbon tab displays its full groups of commands
+   ✔  When the user activates the ribbon display control
+   ✔  Then the View groups are shown as compact buttons
+   ✔  When the user activates the ribbon display control again
+   ✔  Then the View group titles appear in a narrow strip
+   ✔  When the user activates the ribbon display control again
+   ✔  Then the tabs remain visible without a permanent group strip
+   ✔  When the user selects the View tab
+   ✔  Then its commands appear in a temporary panel
+   ✔  When the user activates the ribbon display control again
+   ✔  And the user clicks an empty area of the viewport
+   ✔  Then the full View command groups remain visible
+   ✔  And the same part remains active
+]]></system-out></testcase></testsuite></testsuites>

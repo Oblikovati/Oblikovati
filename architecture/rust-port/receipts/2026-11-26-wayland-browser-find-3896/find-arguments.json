@@ -1,0 +1,619 @@
+{
+  "cucumber_sha256": "8b4fc2400923047cd01afac7628bd1501c275888a043661998469ad172a9b1ad",
+  "scenarios": [
+    {
+      "path": "features/application/model-browser/model-browser.feature",
+      "line": 382,
+      "name": "Group search criteria for the same feature property",
+      "background_steps": [],
+      "scenario_steps": [
+        {
+          "line": 383,
+          "name": "`fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software"
+        },
+        {
+          "line": 384,
+          "name": "a part with one extrusion and no fillet is open in the MCAD Software"
+        },
+        {
+          "line": 385,
+          "name": "the Find dialog contains the criterion Type equals Extrusion"
+        },
+        {
+          "line": 386,
+          "name": "Features is the selected object type and And is selected for additional criteria"
+        },
+        {
+          "line": 387,
+          "name": "the user chooses Type equals Fillet and clicks Add to list"
+        },
+        {
+          "line": 388,
+          "name": "a prompt says criteria using the same property must be grouped"
+        },
+        {
+          "line": 389,
+          "name": "the prompt offers to add the criterion using the OR operator"
+        },
+        {
+          "line": 390,
+          "name": "the user chooses Yes"
+        },
+        {
+          "line": 391,
+          "name": "the criteria list shows Type equals Extrusion"
+        },
+        {
+          "line": 392,
+          "name": "the next line shows OR Type equals Fillet"
+        },
+        {
+          "line": 393,
+          "name": "the user closes and reopens the Find dialog"
+        },
+        {
+          "line": 394,
+          "name": "both criteria remain in the list"
+        },
+        {
+          "line": 395,
+          "name": "the user clicks Find Now"
+        },
+        {
+          "line": 396,
+          "name": "the extrusion row is selected and the block edges are highlighted"
+        },
+        {
+          "line": 397,
+          "name": "the Find dialog remains open"
+        },
+        {
+          "line": 398,
+          "name": "the user closes the Find dialog and clicks empty viewport space"
+        },
+        {
+          "line": 399,
+          "name": "the highlight disappears and the part remains visible"
+        }
+      ]
+    },
+    {
+      "path": "features/application/model-browser/model-browser.feature",
+      "line": 99,
+      "name": "Inspect the Find feature criteria",
+      "background_steps": [],
+      "scenario_steps": [
+        {
+          "line": 100,
+          "name": "`fixtures/cad/workspace-layout-native.opd` is active in the MCAD Software"
+        },
+        {
+          "line": 101,
+          "name": "an active part is open in the MCAD Software"
+        },
+        {
+          "line": 102,
+          "name": "the user chooses Find from the model browser menu"
+        },
+        {
+          "line": 103,
+          "name": "a search criteria dialog opens over the workspace"
+        },
+        {
+          "line": 104,
+          "name": "its object type list offers Sketches and Features"
+        },
+        {
+          "line": 105,
+          "name": "the user selects Features and opens the Property list"
+        },
+        {
+          "line": 106,
+          "name": "the list offers Name, Note contents, Note title, Suppress status and Type"
+        },
+        {
+          "line": 107,
+          "name": "the user selects Name and opens the Condition list"
+        },
+        {
+          "line": 108,
+          "name": "the list offers any value, begins with, ends with, includes, is exactly and is not"
+        },
+        {
+          "line": 109,
+          "name": "the user dismisses the list and closes the dialog"
+        },
+        {
+          "line": 110,
+          "name": "the model browser and part remain visible"
+        }
+      ]
+    },
+    {
+      "path": "features/application/model-browser/model-browser.feature",
+      "line": 345,
+      "name": "Inspect sketch parameter search criteria",
+      "background_steps": [],
+      "scenario_steps": [
+        {
+          "line": 346,
+          "name": "`fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software"
+        },
+        {
+          "line": 347,
+          "name": "a part is open in the MCAD Software with its model browser visible"
+        },
+        {
+          "line": 348,
+          "name": "the user chooses Find from the model browser menu"
+        },
+        {
+          "line": 349,
+          "name": "the user chooses Sketches in the object type list"
+        },
+        {
+          "line": 350,
+          "name": "the user opens the Property list"
+        },
+        {
+          "line": 351,
+          "name": "the list offers Name, Note contents, Note title and Sketch Parameter Name"
+        },
+        {
+          "line": 352,
+          "name": "the user chooses Sketch Parameter Name"
+        },
+        {
+          "line": 353,
+          "name": "the Condition field displays contains"
+        },
+        {
+          "line": 354,
+          "name": "the Value field is empty and adds to list is disabled"
+        },
+        {
+          "line": 355,
+          "name": "the user opens the Condition list"
+        },
+        {
+          "line": 356,
+          "name": "it offers contains and does not contain"
+        },
+        {
+          "line": 357,
+          "name": "the user dismisses the list and closes the dialog"
+        },
+        {
+          "line": 358,
+          "name": "the model browser and part are visible"
+        }
+      ]
+    },
+    {
+      "path": "features/application/model-browser/model-browser.feature",
+      "line": 361,
+      "name": "Find an extrusion by feature type",
+      "background_steps": [],
+      "scenario_steps": [
+        {
+          "line": 362,
+          "name": "`fixtures/cad/workspace-layout-native.opd` is active in the MCAD Software"
+        },
+        {
+          "line": 363,
+          "name": "an active part in the MCAD Software contains one extrusion forming a block"
+        },
+        {
+          "line": 364,
+          "name": "the model browser is visible"
+        },
+        {
+          "line": 365,
+          "name": "the Find criteria list is empty"
+        },
+        {
+          "line": 366,
+          "name": "the user chooses Find from the model browser menu"
+        },
+        {
+          "line": 367,
+          "name": "the user selects Features as the object type"
+        },
+        {
+          "line": 368,
+          "name": "the user selects Type as the property and Extrusion as the value"
+        },
+        {
+          "line": 369,
+          "name": "the condition displays equals"
+        },
+        {
+          "line": 370,
+          "name": "the user clicks Add to list"
+        },
+        {
+          "line": 371,
+          "name": "the criteria list contains Type equals Extrusion"
+        },
+        {
+          "line": 372,
+          "name": "the user clicks Find Now"
+        },
+        {
+          "line": 373,
+          "name": "the extrusion row is selected in the model browser"
+        },
+        {
+          "line": 374,
+          "name": "the visible edges of the block are highlighted in blue"
+        },
+        {
+          "line": 375,
+          "name": "the Find dialog remains open"
+        },
+        {
+          "line": 376,
+          "name": "the user closes the dialog"
+        },
+        {
+          "line": 377,
+          "name": "the extrusion remains selected and the block edges remain highlighted"
+        },
+        {
+          "line": 378,
+          "name": "the user clicks empty viewport space"
+        },
+        {
+          "line": 379,
+          "name": "the selection highlight disappears and the block remains visible"
+        }
+      ]
+    },
+    {
+      "path": "features/application/model-browser/model-browser.feature",
+      "line": 402,
+      "name": "Report no matching feature search results",
+      "background_steps": [],
+      "scenario_steps": [
+        {
+          "line": 403,
+          "name": "`fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software"
+        },
+        {
+          "line": 404,
+          "name": "a part with one unsuppressed extrusion and no fillet is open in the MCAD Software"
+        },
+        {
+          "line": 405,
+          "name": "the Find dialog contains Type equals Extrusion OR Type equals Fillet"
+        },
+        {
+          "line": 406,
+          "name": "And is selected for additional criteria"
+        },
+        {
+          "line": 407,
+          "name": "the user selects Suppress status as the property"
+        },
+        {
+          "line": 408,
+          "name": "the condition is equals and the value is Suppressed"
+        },
+        {
+          "line": 409,
+          "name": "the user clicks Add to list"
+        },
+        {
+          "line": 410,
+          "name": "the criteria list includes Suppress status equals Suppressed"
+        },
+        {
+          "line": 411,
+          "name": "the user clicks Find Now"
+        },
+        {
+          "line": 412,
+          "name": "an information message says that no objects matched the criteria"
+        },
+        {
+          "line": 413,
+          "name": "the user acknowledges the message"
+        },
+        {
+          "line": 414,
+          "name": "the Find dialog remains open with the criteria displayed"
+        },
+        {
+          "line": 415,
+          "name": "the user closes the Find dialog"
+        },
+        {
+          "line": 416,
+          "name": "the block remains visible in the same apparent view"
+        }
+      ]
+    },
+    {
+      "path": "features/application/model-browser/model-browser.feature",
+      "line": 419,
+      "name": "Decline grouping an additional feature type",
+      "background_steps": [],
+      "scenario_steps": [
+        {
+          "line": 420,
+          "name": "`fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software"
+        },
+        {
+          "line": 421,
+          "name": "a part is open in the MCAD Software with the Find dialog open"
+        },
+        {
+          "line": 422,
+          "name": "the criteria list contains Type equals Extrusion OR Type equals Fillet"
+        },
+        {
+          "line": 423,
+          "name": "the criteria list contains Suppress status equals Suppressed"
+        },
+        {
+          "line": 424,
+          "name": "And is selected for additional criteria"
+        },
+        {
+          "line": 425,
+          "name": "the user chooses Type equals Hole and clicks Add to list"
+        },
+        {
+          "line": 426,
+          "name": "a prompt offers to group the additional type criterion using OR"
+        },
+        {
+          "line": 427,
+          "name": "the user chooses No"
+        },
+        {
+          "line": 428,
+          "name": "the prompt closes and the existing three criteria remain in the list"
+        },
+        {
+          "line": 429,
+          "name": "Type equals Hole is not added to the list"
+        },
+        {
+          "line": 430,
+          "name": "the property, condition and value controls still show Type equals Hole"
+        },
+        {
+          "line": 431,
+          "name": "the user closes the Find dialog"
+        },
+        {
+          "line": 432,
+          "name": "the part remains visible"
+        }
+      ]
+    },
+    {
+      "path": "features/application/model-browser/model-browser.feature",
+      "line": 595,
+      "name": "Inspect existing feature search criteria",
+      "background_steps": [],
+      "scenario_steps": [
+        {
+          "line": 596,
+          "name": "`fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software"
+        },
+        {
+          "line": 597,
+          "name": "the MCAD Software Find dialog contains these feature criteria in order:",
+          "table": [
+            [
+              "Property",
+              "Condition",
+              "Value",
+              "Join"
+            ],
+            [
+              "Type",
+              "equals",
+              "Extrusion",
+              "And"
+            ],
+            [
+              "Type",
+              "equals",
+              "Fillet",
+              "Or"
+            ],
+            [
+              "Suppress status",
+              "equals",
+              "Suppressed",
+              "And"
+            ]
+          ]
+        },
+        {
+          "line": 602,
+          "name": "the user selects the Suppress status criterion"
+        },
+        {
+          "line": 603,
+          "name": "the criterion controls show Suppress status, equals and Suppressed"
+        },
+        {
+          "line": 604,
+          "name": "And is selected"
+        },
+        {
+          "line": 605,
+          "name": "the user selects the Fillet criterion"
+        },
+        {
+          "line": 606,
+          "name": "the criterion controls show Type, equals and Fillet"
+        },
+        {
+          "line": 607,
+          "name": "Or is selected"
+        },
+        {
+          "line": 608,
+          "name": "the user selects the Extrusion criterion"
+        },
+        {
+          "line": 609,
+          "name": "the criterion controls show Type, equals and Extrusion"
+        },
+        {
+          "line": 610,
+          "name": "And is selected"
+        },
+        {
+          "line": 611,
+          "name": "the three criteria remain listed"
+        },
+        {
+          "line": 612,
+          "name": "the user closes the Find dialog"
+        },
+        {
+          "line": 613,
+          "name": "the part workspace is visible"
+        }
+      ]
+    },
+    {
+      "path": "features/application/model-browser/model-browser.feature",
+      "line": 616,
+      "name": "Change a pending Find value without replacing a listed criterion",
+      "background_steps": [],
+      "scenario_steps": [
+        {
+          "line": 617,
+          "name": "`fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software"
+        },
+        {
+          "line": 618,
+          "name": "the MCAD Software Find dialog lists Type equals Extrusion and OR Type equals Fillet"
+        },
+        {
+          "line": 619,
+          "name": "Type equals Extrusion is selected with And selected"
+        },
+        {
+          "line": 620,
+          "name": "the user chooses Hole in the Value list"
+        },
+        {
+          "line": 621,
+          "name": "the Value field shows Hole and adds to list is enabled"
+        },
+        {
+          "line": 622,
+          "name": "the listed Extrusion and Fillet criteria remain unchanged"
+        },
+        {
+          "line": 623,
+          "name": "the user selects the Fillet criterion"
+        },
+        {
+          "line": 624,
+          "name": "the controls show Type, equals, Fillet and Or"
+        },
+        {
+          "line": 625,
+          "name": "the user selects the Extrusion criterion"
+        },
+        {
+          "line": 626,
+          "name": "the controls show Type, equals, Extrusion and And"
+        },
+        {
+          "line": 627,
+          "name": "adds to list is disabled"
+        },
+        {
+          "line": 628,
+          "name": "the user closes the Find dialog"
+        },
+        {
+          "line": 629,
+          "name": "the part workspace is visible"
+        }
+      ]
+    },
+    {
+      "path": "features/application/model-browser/model-browser.feature",
+      "line": 632,
+      "name": "Cancel the saved-search name prompt",
+      "background_steps": [],
+      "scenario_steps": [
+        {
+          "line": 633,
+          "name": "`fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software"
+        },
+        {
+          "line": 634,
+          "name": "the MCAD Software Find dialog contains feature search criteria"
+        },
+        {
+          "line": 635,
+          "name": "the user chooses Save Search"
+        },
+        {
+          "line": 636,
+          "name": "a prompt shows an empty search-name field"
+        },
+        {
+          "line": 637,
+          "name": "OK is disabled and cancels is available"
+        },
+        {
+          "line": 638,
+          "name": "the user clicks Cancel"
+        },
+        {
+          "line": 639,
+          "name": "the Find dialog remains open with its criteria unchanged"
+        }
+      ]
+    },
+    {
+      "path": "features/application/model-browser/model-browser.feature",
+      "line": 642,
+      "name": "Cancel the open-search picker",
+      "background_steps": [],
+      "scenario_steps": [
+        {
+          "line": 643,
+          "name": "`fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software"
+        },
+        {
+          "line": 644,
+          "name": "the MCAD Software Find dialog contains feature search criteria"
+        },
+        {
+          "line": 645,
+          "name": "at least one saved search is available"
+        },
+        {
+          "line": 646,
+          "name": "the user chooses Open Search"
+        },
+        {
+          "line": 647,
+          "name": "a picker shows a saved-search list and opens, Cancel and Delete actions"
+        },
+        {
+          "line": 648,
+          "name": "the user clicks Cancel"
+        },
+        {
+          "line": 649,
+          "name": "the Find dialog remains open with its original criteria unchanged"
+        }
+      ]
+    }
+  ]
+}

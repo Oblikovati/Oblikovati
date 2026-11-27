@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T12:25:01.200500212Z" time="13.355151146"><testcase name="Scenario: Open ribbon customization from a panel: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature:4:3" time="13.355151146"><system-out><![CDATA[  Scenario: Open ribbon customization from a panel
+   ✔  Given a part document is active in the MCAD Software
+   ✔  When the user right-clicks a ribbon panel title
+   ✔  And the user chooses "Customize User Commands"
+   ✔  Then the customization dialog opens on the "Ribbon" tab
+   ✔  And the available commands and target custom panel lists are displayed
+   ✔  And the target tab is "Part | 3D Model"
+]]></system-out></testcase></testsuite></testsuites>

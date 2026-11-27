@@ -1,0 +1,4 @@
+a4c1893e7055cdcced5cb4c75bca76bddf41952a332a54bc7132e3d8d3561850  features/application/document-creation/document-creation-template-restart.feature
+8819d3312b2317abef13185289f738e5265fc2ef47c77b6c89062fcd3d71e39b  fixtures/cad/document-creation-generic-candidate.opj
+41ae38e6bcdb04c0f12056c11def9ac629feb0b6b3961abc6c066b7e31492575  fixtures/cad/document-creation-generic-candidate/Metric/Standard (mm).opd
+d85db64234c40a7bb09268f57abbd97aaa33c7542a81a022f385e8d590bae2ac  fixtures/cad/workspace-layout-native.opd

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon display modes: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature" package="testsuite/Feature: Ribbon display modes: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T02:37:03.085076124Z" time="16.874337638"><testcase name="Scenario: Choose panel buttons as the ribbon minimization mode: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature:176:3" time="16.874337638"><system-out><![CDATA[  Scenario: Choose panel buttons as the ribbon minimization mode
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part is active in the MCAD Software
+   ✔  And the Tools ribbon is expanded
+   ✔  When the user opens the ribbon display control menu
+   ✔  And the user chooses Minimize to Panel Buttons
+   ✔  Then the Tools command groups appear as compact buttons
+   ✔  When the user opens the ribbon display control menu
+   ✔  Then Minimize to Panel Buttons is checked
+   ✔  When the user presses Escape
+   ✔  Then the display menu closes and the compact buttons remain
+   ✔  When the user activates the ribbon display control
+   ✔  Then the full Tools command groups are visible
+]]></system-out></testcase></testsuite></testsuites>

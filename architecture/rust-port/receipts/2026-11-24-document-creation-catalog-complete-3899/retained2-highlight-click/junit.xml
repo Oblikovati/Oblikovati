@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Navigate the native template catalog: tmp/oblikovati-ribbon-relocated.RcZVDl/current-document-creation-catalog-source/features/application/document-creation/document-creation-catalog-basics.feature" package="testsuite/Feature: Navigate the native template catalog: tmp/oblikovati-ribbon-relocated.RcZVDl/current-document-creation-catalog-source/features/application/document-creation/document-creation-catalog-basics.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T20:07:36.642491788Z" time="31.809921326"><testcase name="Scenario: Click a folder highlighted by keyboard navigation: tmp/oblikovati-ribbon-relocated.RcZVDl/current-document-creation-catalog-source/features/application/document-creation/document-creation-catalog-basics.feature:215:3" time="31.809921326"><system-out><![CDATA[  Scenario: Click a folder highlighted by keyboard navigation
+   ✔> Given a fresh MCAD Software session loads `fixtures/cad/document-creation-native-candidate.opj` as its active project
+   ✔> And the native catalog contains metric and inch templates in their respective folders
+   ✔> And the catalog root has no direct template files
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is active with `Sketch1` visible in the MCAD Software
+   ✔  And the template chooser shows the metric folder and its grouped templates
+   ✔  And the details pane identifies the selected Standard (mm) part template
+   ✔  When the user clicks Metric in the folder tree and presses Up
+   ✔  Then English is highlighted in the tree
+   ✔  And the metric gallery and Standard (mm) details remain visible
+   ✔  When the user clicks the highlighted English folder
+   ✔  Then the gallery displays the English folder templates
+   ✔  And the details pane still identifies Standard (mm) with millimeter units
+   ✔  When the user cancels the chooser
+   ✔  Then the original part remains active
+]]></system-out></testcase></testsuite></testsuites>

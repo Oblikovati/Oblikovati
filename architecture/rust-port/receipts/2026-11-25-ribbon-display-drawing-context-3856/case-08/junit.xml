@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon display modes: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature" package="testsuite/Feature: Ribbon display modes: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T02:36:36.963584156Z" time="21.500479453"><testcase name="Scenario: Keep compact ribbon display when switching document types: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature:119:3" time="21.500479453"><system-out><![CDATA[  Scenario: Keep compact ribbon display when switching document types
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` and `fixtures/cad/blank-drawing.odd` are open in the MCAD Software
+   ✔  And a drawing and a part are open in the MCAD Software
+   ✔  And the drawing is active with its ribbon in compact group-button mode
+   ✔  When the user activates the part document
+   ✔  Then the part ribbon displays its command groups as compact buttons
+   ✔  And those buttons include Sketch, Create and Modify
+   ✔  When the user returns to the drawing document
+   ✔  Then its ribbon displays compact Create, Modify, Sketch and Sheets group buttons
+]]></system-out></testcase></testsuite></testsuites>

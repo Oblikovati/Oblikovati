@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon panel visibility: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" package="testsuite/Feature: Ribbon panel visibility: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T09:38:36.862190261Z" time="18.043419046"><testcase name="Scenario: Dismiss the remaining title strip of a hidden expanded panel: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:506:3" time="18.043419046"><system-out><![CDATA[  Scenario: Dismiss the remaining title strip of a hidden expanded panel
+   ✔  Given a part is active in the MCAD Software with the full 3D Model ribbon at the top
+   ✔  And the Modify additional command area is open and unpinned
+   ✔  When the user opens the panel selector and clears Modify
+   ✔  Then the Modify main panel and additional commands are hidden
+   ✔  And a small Modify title strip remains beneath the ribbon
+   ✔  And the panel selector remains open with Modify unchecked
+   ✔  When the user clicks the remaining Modify title strip
+   ✔  Then the title strip and panel selector close
+   ✔  And the Modify panel remains hidden
+   ✔  When the user opens the panel selector and selects Modify
+   ✔  Then the Modify main panel returns
+   ✔  And the additional command area remains closed
+   ✔  And the panel selector remains open with Modify checked
+   ✔  When the user clicks the panel selector control
+   ✔  Then the selector closes and the Modify main panel remains visible
+]]></system-out></testcase></testsuite></testsuites>

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="1" hostname="localhost" timestamp="2026-11-25T16:53:38.699170922Z" time="8.74729173"><testcase name="Scenario: Cancel a staged ribbon customization during a modeling command: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-customization/ribbon-customization.feature:1796:3" time="8.74729173"><failure type="Step Panicked" message="Step panicked. Captured output: expected a certified Shell preview, window shows &quot;Shell 1openingfacesselected 1mm Thickness OK Cancel&quot;"/><system-out><![CDATA[  Scenario: Cancel a staged ribbon customization during a modeling command
+   ✔> Given the MCAD Software starts with a writable copy of `fixtures/preferences/ribbon-normal` as its configuration directory
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open with its solid block in the MCAD Software
+   ✔  And the full 3D Model ribbon is visible
+   ✔  And the Part Tools custom panel target is initially empty
+   ✔  When the user starts Shell from Modify
+   ✔  And the user selects the Tools ribbon tab
+   ✔  And the user opens the Options panel title context menu
+   ✔  And the user selects Customize User Commands
+   ✔  Then the Ribbon customization dialog opens with Part Tools as the target
+   ✔  And the Shell properties and model preview remain visible behind the dialog
+   ✔  When the user adds 2D Sketches to the target list
+   ✔  Then the target is marked as changed
+   ✔  And the target list contains 2D Sketches
+   ✔  When the user cancels customization
+   ✔  Then the customization dialog closes without adding a User Commands panel
+   ✔  And the Shell properties and model preview remain visible
+   ✔  When the user selects a face of the block
+   ✔  Then the Shell Remove field reports 1 Face
+   ✘  And the model preview shows the selected face removed
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-customization/ribbon-customization.feature:1814:5
+      Matched: crates/head/src/../tests/application/ribbon-customization/shell_customization.rs:67:1
+      Step panicked. Captured output: expected a certified Shell preview, window shows "Shell 1openingfacesselected 1mm Thickness OK Cancel"
+      ApplicationWorld {
+          text: "1.Face\n40mm\n30mm\nFRONT\nModel\nMaterialBro...\nAppearance...\ndocking-visible-solid-current<Primary>\nRepresentations\nModelState\n<Primary>1\nView\n<Primary>\nSolidBodies\nOrigin\nYZPlane\nXZPlane\nXYPlane\nXAxis\nYAxis\nZAxis\nCenterPoint\nParameters\nSketches\nFeatures\nExtrude1\nProfile\n[DOF0]\nEndofPart\nABS(Black)\nAppearance\nAssigntopart\nCommandfailed:shellvertextolerance0.0005000000000000589:expectedfinitenonnegativetoleranceatmost0.00000010000000000000002;featureFeatureId(2)preview:expectedavalidbody;health[FeatureHealthRecord{feature:FeatureId(1),status:Healthy},Featu\n...\ndocking-visible-solid-current<Primary>—Oblikovati\nFile\n3DModel\nSketch\nTools\nManage\nView\nAnnotate\nMeasure\nMEASURE\nMaterial\nDefault\nAppearance\nDefault\nMATERIALANDAPPEARANCE\nApplicationOptions\nDocumentSettings\nCustomize\nHighlightNew▼\nOPTIONS▼\nCopy\nCLIPBOARD\nFind\nFIND\nOpenTeamWeb\nTEAMWEB\nHome\ndocking-visible-solid-current<Primary>\nDocuments\nX\nY\nZ\nShell\n1openingfacesselected\n1mm\nThickness\nOK\nCancel\nZoomSelected",
+          ..
+      }
+]]></system-out></testcase></testsuite></testsuites>

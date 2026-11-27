@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon display modes: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature" package="testsuite/Feature: Ribbon display modes: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T02:39:49.798324021Z" time="17.570650035"><testcase name="Scenario: Switch tabs while temporary commands are open in tabs-only mode: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature:286:3" time="17.570650035"><system-out><![CDATA[  Scenario: Switch tabs while temporary commands are open in tabs-only mode
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part is active in the MCAD Software
+   ✔  And the ribbon is in tabs-only display with View active
+   ✔  And the temporary View command groups are open
+   ✔  When the user clicks the Tools tab
+   ✔  Then Tools becomes the active tab
+   ✔  And the temporary Tools command groups replace the View command groups
+   ✔  When the user clicks empty viewport space
+   ✔  Then the temporary Tools command groups close
+   ✔  And Tools remains the active tab in tabs-only display
+]]></system-out></testcase></testsuite></testsuites>

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: File menu: tmp/obk-menu-refresh/features/application/file-menu/file-menu.feature" package="testsuite/Feature: File menu: tmp/obk-menu-refresh/features/application/file-menu/file-menu.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T18:25:46.684808222Z" time="3.896985626"><testcase name="Scenario: Inspect the Save As submenu for a saved part: tmp/obk-menu-refresh/features/application/file-menu/file-menu.feature:52:3" time="3.896985626"><system-out><![CDATA[  Scenario: Inspect the Save As submenu for a saved part
+   ✔  Given a saved part is active in the MCAD Software
+   ✔  When the user selects File
+   ✔  And the user expands Save As
+   ✔  Then the submenu offers Save As and Save Copy As
+   ✔  And it offers Save Copy As Template and Pack and Go
+   ✔  And the Save Copy As description says the original file remains open
+]]></system-out></testcase></testsuite></testsuites>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Create and modify solid features through viewport interactions: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/viewport-feature-interaction/viewport-feature-interaction.feature" package="testsuite/Feature: Create and modify solid features through viewport interactions: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/viewport-feature-interaction/viewport-feature-interaction.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-27T01:44:34.017023445Z" time="11.593772042"><testcase name="Scenario: Cancel a feature modification without changing the committed model: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/viewport-feature-interaction/viewport-feature-interaction.feature:44:3" time="11.593772042"><system-out><![CDATA[  Scenario: Cancel a feature modification without changing the committed model
+   ✔> Given a disposable copy of the native fixture "fixtures/cad/extrusion/extrusion-rect-8mm.opd" is open in the part modeling workspace
+   ✔> And the viewport pointer is idle
+   ✔  Given the user opens the fixture extrusion for modification
+   ✔  And the user changes its distance from 8 mm to 6 mm and the changed preview is visible
+   ✔  When the user cancels the modification
+   ✔  Then the edit panel closes
+   ✔  And the previously committed model remains visible
+]]></system-out></testcase></testsuite></testsuites>

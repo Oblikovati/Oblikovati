@@ -1,0 +1,23 @@
+{
+  "date": "2026-11-13",
+  "issue": "https://github.com/Oblikovati/Oblikovati/issues/3869",
+  "base_commit": "4832c3e41e2d14d8c61c88e74f80b4039e55e85a",
+  "tested_file_sha256": {
+    "tools/bdd/behavior_cli.py": "80bf953b969d648aa6f2677c4b1e6dfffbce4bf0c6de0eb08d604796f067a51c",
+    "tools/bdd/behavior_evidence.py": "73638aca490e1f10c8561892afacbea8ec853beb916beb0ea95780ac46dcdc65",
+    "tools/bdd/behavior_ledger.py": "34a1fae4bfac1bdd6e140360764682f0e76401c623d9640a3fd727cbe38c87df",
+    "tools/bdd/test_behavior_evidence.py": "b91c137556531ff4af9820efde234322f3140eb702a5c503c3e75b5dd2a80d09",
+    "tools/bdd/test_behavior_ledger.py": "81da00a0bfb4ab8c6c9cbb3fb320027f73d9f3d7d48a6613642fc95529f35be7"
+  },
+  "checks": [
+    "23 Python BDD tests passed, including stale code, dirty inputs, dependency revision changes, and damaged historical artifacts",
+    "ledger-only tool changes retained six current native receipts",
+    "make gate preflight correctly reports 2713 unclassified and zero stale scenarios"
+  ],
+  "scope": "Ledger behavior only; no full gate pass is claimed.",
+  "artifacts_sha256": {
+    "tests.log.gz": "9c9f5e69ad8caedda98ae46829182c655225b277ebab12e2dc0425c0e0967185",
+    "progress.json": "8ebb7590607bae7159cf155962d9001bc993594bbc32eb3859347f48fe724ac5",
+    "gate-preflight.log": "2fabb22256c0de1bcf9ce584844da75400258dc3244f015906124746a1fedea5"
+  }
+}

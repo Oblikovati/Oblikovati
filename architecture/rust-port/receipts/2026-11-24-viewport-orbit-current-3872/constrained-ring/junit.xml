@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Viewport orbit: tmp/oblikovati-ribbon-relocated.RcZVDl/current-viewport-orbit-source/features/application/viewport-orbit/viewport-orbit.feature" package="testsuite/Feature: Viewport orbit: tmp/oblikovati-ribbon-relocated.RcZVDl/current-viewport-orbit-source/features/application/viewport-orbit/viewport-orbit.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T22:05:41.385958618Z" time="37.655073589"><testcase name="Scenario: Select and exit constrained orbit: tmp/oblikovati-ribbon-relocated.RcZVDl/current-viewport-orbit-source/features/application/viewport-orbit/viewport-orbit.feature:20:3" time="37.655073589"><system-out><![CDATA[  Scenario: Select and exit constrained orbit
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open with its rectangular solid visible in the active part in the MCAD Software
+   ✔  When the user opens the orbit menu on the navigation bar
+   ✔  Then the menu offers Orbit, Constrained Orbit and Rotate at Angle
+   ✔  When the user chooses Constrained Orbit
+   ✔  Then a circular rotation guide appears over the viewport
+   ✔  And the active part remains visible
+   ✔  When the user presses Escape
+   ✔  Then the guide disappears
+   ✔  And the status area displays Ready
+   ✔  When the user reopens the orbit menu
+   ✔  Then Constrained Orbit is marked as the selected action
+]]></system-out></testcase></testsuite></testsuites>

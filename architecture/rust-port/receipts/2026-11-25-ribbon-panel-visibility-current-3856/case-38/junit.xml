@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon panel visibility: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" package="testsuite/Feature: Ribbon panel visibility: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:13:57.861545269Z" time="24.68313099"><testcase name="Scenario: Dismiss the remaining title strip of a hidden expanded panel: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:547:3" time="24.68313099"><system-out><![CDATA[  Scenario: Dismiss the remaining title strip of a hidden expanded panel
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is open and active
+   ✔  And the full 3D Model ribbon is at the top
+   ✔  And the Modify additional command area is open and unpinned
+   ✔  When the user opens the panel selector and clears Modify
+   ✔  Then the Modify main panel and additional commands are hidden
+   ✔  And a small Modify title strip remains beneath the ribbon
+   ✔  And the panel selector remains open with Modify unchecked
+   ✔  When the user clicks the remaining Modify title strip
+   ✔  Then the title strip and panel selector close
+   ✔  And the Modify panel remains hidden
+   ✔  When the user opens the panel selector and selects Modify
+   ✔  Then the Modify main panel returns
+   ✔  And the additional command area remains closed
+   ✔  And the panel selector remains open with Modify checked
+   ✔  When the user clicks the panel selector control
+   ✔  Then the selector closes and the Modify main panel remains visible
+]]></system-out></testcase></testsuite></testsuites>

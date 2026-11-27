@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon panel visibility: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" package="testsuite/Feature: Ribbon panel visibility: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T09:02:10.289654342Z" time="38.055449808"><testcase name="Scenario: Hide a panel while the ribbon shows compact group buttons: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:46:3" time="38.055449808"><system-out><![CDATA[  Scenario: Hide a panel while the ribbon shows compact group buttons
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the 3D Model ribbon shows compact group buttons
+   ✔  And the Parameters group button is visible
+   ✔  When the user opens the compact ribbon context menu and expand Show Panels
+   ✔  Then Parameters is checked
+   ✔  When the user selects Parameters in Show Panels
+   ✔  Then the Parameters group button disappears
+   ✔  And the other compact group buttons remain visible and close the gap
+   ✔  When the user returns the ribbon to its expanded display
+   ✔  Then the Parameters panel is absent from the expanded ribbon
+]]></system-out></testcase></testsuite></testsuites>

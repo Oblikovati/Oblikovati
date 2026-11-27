@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Extrude a profile in a part document: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature" package="testsuite/Feature: Extrude a profile in a part document: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-27T01:53:58.920520928Z" time="10.856702202"><testcase name="Scenario: extrusion-13 Join adds a boss to one body: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature:146:3" time="10.856702202"><system-out><![CDATA[  Scenario: extrusion-13 Join adds a boss to one body
+   ✔> Given the MCAD Software is displaying a part in the solid modeling workspace
+   ✔> And the viewport pointer is idle
+   ✔  Given a copy of `fixtures/cad/extrusion/extrusion-base-circle.opd` is open with its diameter-3 mm circle sketch on the top face
+   ✔  When Extrude uses Default direction, Distance A 8 mm, zero taper and Join
+   ✔  And OK is clicked
+   ✔  Then a cylindrical boss and Extrusion2 are visible
+   ✔  And the browser still shows Solid Bodies(1)
+   ✔  When Undo is invoked
+   ✔  Then the circular sketch returns and the boss disappears
+]]></system-out></testcase></testsuite></testsuites>

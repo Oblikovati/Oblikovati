@@ -1,0 +1,97 @@
+// SPDX-License-Identifier: GPL-2.0-only
+use super::*;
+/// The document history action is distinct from camera Previous View.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum DesktopHistoryAction {
+    Undo,
+    Redo,
+}
+impl DesktopHistoryAction {
+    /// Name the action in command feedback; example: `DesktopHistoryAction::Undo.label()`.
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::Undo => "Undo",
+            Self::Redo => "Redo",
+        }
+    }
+}
+impl<
+    O: TransactionObserver,
+    W: WorkspaceObserver,
+    F: DocumentFiles,
+    G: GuidSource,
+    R: DocumentObserverFactory<Observer = O> + HeadInvalidation,
+    S: DispatchWakeup,
+> DesktopOwner<O, W, F, G, R, S>
+{
+    pub(in crate::owner) fn gui_histories(
+        &self,
+    ) -> Result<Vec<oblikovati_api::wire::TransactionHistory>, String> {
+        let client = Client::new(oblikovati_automation::SessionQueryHost::new(
+            self.files.workspace(),
+        ));
+        self.files
+            .workspace()
+            .documents()
+            .iter()
+            .map(|document| {
+                client
+                    .transactions()
+                    .history(&oblikovati_api::wire::TransactionHistoryArgs {
+                        document: *document,
+                    })
+                    .map_err(|cause| cause.to_string())
+            })
+            .collect()
+    }
+    pub(super) fn restore_document_history(
+        &mut self,
+        action: DesktopHistoryAction,
+        window: Option<&mut dyn crate::HeadWindow>,
+    ) -> Option<DesktopCommandNotice> {
+        let Some(document) = self.files.workspace().active_document() else {
+            return Some(history_failure(
+                action,
+                "expected an active document".into(),
+            ));
+        };
+        // The running Line command keeps its chain: undo applies once it has ended (line-23).
+        if self
+            .placement_state()
+            .is_some_and(|tool| tool.tool == crate::SketchPlacementTool::Line)
+        {
+            return None;
+        }
+        match self.files.workspace().session(document) {
+            Ok(session) if session.in_transaction() => return None,
+            Err(cause) => return Some(history_failure(action, cause.to_string())),
+            _ => {}
+        }
+        Some(self.call_document_history(document, action, window))
+    }
+    fn call_document_history(
+        &mut self,
+        document: u64,
+        action: DesktopHistoryAction,
+        window: Option<&mut dyn crate::HeadWindow>,
+    ) -> DesktopCommandNotice {
+        let mut display = window.map(crate::part_view_display::WindowPartViewDisplay);
+        let host = self.document_host();
+        let host = match display.as_mut() {
+            Some(display) => host.with_part_view_display(display),
+            None => host,
+        };
+        let client = Client::new(host);
+        let result = match action {
+            DesktopHistoryAction::Undo => client.transactions().undo(),
+            DesktopHistoryAction::Redo => client.transactions().redo(),
+        };
+        match result {
+            Ok(_) => DesktopCommandNotice::HistoryCompleted { document, action },
+            Err(cause) => history_failure(action, cause.to_string()),
+        }
+    }
+}
+fn history_failure(action: DesktopHistoryAction, cause: String) -> DesktopCommandNotice {
+    DesktopCommandNotice::HistoryFailed { action, cause }
+}

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="1" hostname="localhost" timestamp="2026-11-24T12:03:45.725948346Z" time="79.132839644"><testcase name="Scenario: Report an unevaluable model-state parameter equation: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1451:3" time="79.132839644"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Report an unevaluable model-state parameter equation
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is open in the MCAD Software
+   ✔  And the user creates an undimensioned rectangular sketch and extrudes it 1 in with zero taper
+   ✔  And the user creates model states Capture State and Copy State and activates Copy State
+   ✘  And the user opens the model-state table and adds length parameter d0 to the table
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1455:5
+      Step doesn't match any function
+]]></system-out></testcase></testsuite></testsuites>

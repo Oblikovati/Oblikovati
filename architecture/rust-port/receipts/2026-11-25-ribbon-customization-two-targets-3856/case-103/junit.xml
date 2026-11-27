@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T04:48:23.534331447Z" time="45.364616704"><testcase name="Scenario: Cancel staged commands on two ribbon targets: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature:1688:3" time="45.364616704"><system-out><![CDATA[  Scenario: Cancel staged commands on two ribbon targets
+   ✔> Given the MCAD Software starts with a writable copy of `fixtures/preferences/ribbon-normal` as its configuration directory
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part is active in the MCAD Software with the full Tools ribbon visible
+   ✔  And the Part Tools and Part Manage custom panel lists are empty
+   ✔  And ribbon customization is open with All Commands as the source
+   ✔  When the user adds "2D Sketches" to Part Tools
+   ✔  And the user selects Part Manage as the target
+   ✔  And the user adds "3D Annotations" to Part Manage
+   ✔  Then Part Manage is marked as having pending changes
+   ✔  And its target list contains "3D Annotations"
+   ✔  When the user clicks Cancel without applying the changes
+   ✔  And the user reopens ribbon customization from Tools
+   ✔  Then Part Tools is selected and its target list is empty
+   ✔  And "2D Sketches" and "3D Annotations" are available in the source list
+   ✔  When the user selects Part Manage as the target
+   ✔  Then its target list is empty
+   ✔  And the target selector has no pending-change marker
+   ✔  When the user closes customization
+   ✔  Then the customization dialog closes
+]]></system-out></testcase></testsuite></testsuites>

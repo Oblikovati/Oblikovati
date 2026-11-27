@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T12:22:22.250836831Z" time="18.909197358"><testcase name="Scenario: Select an available command without changing the custom panel: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature:457:3" time="18.909197358"><system-out><![CDATA[  Scenario: Select an available command without changing the custom panel
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the Ribbon customization dialog shows an empty Part Tools custom panel
+   ✔  And the source category is All Commands
+   ✔  When the user selects "2D Sketches" in the available commands list
+   ✔  Then the "2D Sketches" row is highlighted
+   ✔  And the right transfer button is enabled
+   ✔  And the custom panel list remains empty
+   ✔  And Apply and cancels remain disabled
+   ✔  When the user clicks Close
+   ✔  Then the customization dialog closes
+   ✔  And the Tools ribbon remains visible
+]]></system-out></testcase></testsuite></testsuites>

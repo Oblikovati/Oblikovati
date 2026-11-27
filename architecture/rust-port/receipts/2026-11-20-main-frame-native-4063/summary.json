@@ -1,0 +1,11 @@
+{
+  "kind": "unsealed full-feature diagnostic",
+  "application_commit": "a590fedfe3a56e0ddf804d6c90ea7052213dbc57",
+  "build_note": "The test ran with these committed changes present before the fixture commit.",
+  "feature_sha256": "382162b5c11e33a252989ae65fee05e83d2e53a9ec3cac2f8ccad9ee05d7fe55",
+  "scenario_declarations": 11,
+  "executed_cases": 20,
+  "passed_cases": 20,
+  "passed_steps": 149,
+  "limitations": "Minimum-size Close uses a disposable dirty part to cancel the prompt; fixture wording asks for an unchanged part. Await scenario clarification. Source and build are unsealed (#3978). X11 input is used for window operations; setup uses scripted input."
+}

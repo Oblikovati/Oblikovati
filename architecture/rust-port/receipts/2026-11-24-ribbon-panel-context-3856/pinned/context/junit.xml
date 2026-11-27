@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon panel visibility: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" package="testsuite/Feature: Ribbon panel visibility: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T09:12:43.282835948Z" time="13.69082955"><testcase name="Scenario: Open a ribbon context menu while the panel selector is open: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:428:3" time="13.69082955"><system-out><![CDATA[  Scenario: Open a ribbon context menu while the panel selector is open
+   ✔  Given a part is active in the MCAD Software with the full Tools ribbon visible
+   ✔  And the direct panel selector is open
+   ✔  When the user right-clicks the Options panel title
+   ✔  Then the panel selector closes
+   ✔  And the ribbon context menu opens
+   ✔  And the context menu offers Ribbon Appearance, Show Panels, Customize User Commands, Undock Ribbon and Docking Positions
+   ✔  And Show Panel Titles is checked
+   ✔  When the user presses Escape
+   ✔  Then the ribbon context menu closes
+   ✔  And the Tools ribbon remains visible
+]]></system-out></testcase></testsuite></testsuites>

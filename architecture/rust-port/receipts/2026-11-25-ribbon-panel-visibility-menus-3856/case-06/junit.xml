@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon panel visibility: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" package="testsuite/Feature: Ribbon panel visibility: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:10:51.966991171Z" time="50.059775698"><testcase name="Scenario: Hide and restore a panel from the left-docked ribbon context menu: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:78:3" time="50.059775698"><system-out><![CDATA[  Scenario: Hide and restore a panel from the left-docked ribbon context menu
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is open and active
+   ✔  And the 3D Model ribbon is docked on the left
+   ✔  And the Modify group is visible
+   ✔  When the user opens the ribbon context menu and expand Show Panels
+   ✔  Then Modify is checked
+   ✔  When the user selects Modify in Show Panels
+   ✔  Then the Modify group disappears from the side-docked ribbon
+   ✔  And the remaining ribbon groups reflow vertically
+   ✔  When the user reopens Show Panels from the ribbon context menu
+   ✔  Then Modify is unchecked
+   ✔  When the user selects Modify in Show Panels
+   ✔  Then the Modify group returns to the side-docked ribbon
+   ✔  And Modify is checked
+   ✔  And the remaining ribbon groups return to their earlier positions
+   ✔  And the part remains active
+]]></system-out></testcase></testsuite></testsuites>

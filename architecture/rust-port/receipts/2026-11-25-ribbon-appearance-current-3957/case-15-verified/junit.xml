@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon appearance: target/native-scratch.HSqCy5/current-ribbon-appearance-source/features/application/ribbon-appearance/ribbon-appearance.feature" package="testsuite/Feature: Ribbon appearance: target/native-scratch.HSqCy5/current-ribbon-appearance-source/features/application/ribbon-appearance/ribbon-appearance.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T23:36:57.817603793Z" time="19.137542501"><testcase name="Scenario: Cancel the Reset Ribbon confirmation: target/native-scratch.HSqCy5/current-ribbon-appearance-source/features/application/ribbon-appearance/ribbon-appearance.feature:199:3" time="19.137542501"><system-out><![CDATA[  Scenario: Cancel the Reset Ribbon confirmation
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active with the full Tools ribbon selected in the MCAD Software
+   ✔  When the user right-clicks the Options panel title
+   ✔  And the user opens Ribbon Appearance
+   ✔  And the user selects Reset Ribbon
+   ✔  Then a confirmation says ribbon customizations will be removed
+   ✔  And the confirmation offers Yes and No
+   ✔  When the user selects No
+   ✔  Then the confirmation closes without resetting the ribbon
+   ✔  And the full Tools ribbon and active part remain visible
+]]></system-out></testcase></testsuite></testsuites>

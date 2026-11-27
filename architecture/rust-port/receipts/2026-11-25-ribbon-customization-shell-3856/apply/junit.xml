@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T16:53:13.968848152Z" time="8.889506148"><testcase name="Scenario: Apply a ribbon customization during a modeling command: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-customization/ribbon-customization.feature:1820:3" time="8.889506148"><system-out><![CDATA[  Scenario: Apply a ribbon customization during a modeling command
+   ✔> Given the MCAD Software starts with a writable copy of `fixtures/preferences/ribbon-normal` as its configuration directory
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open with its solid block in the MCAD Software
+   ✔  And the full 3D Model ribbon is visible
+   ✔  And the Part Tools custom panel target is initially empty
+   ✔  When the user starts Shell from Modify
+   ✔  And the user selects the Tools ribbon tab
+   ✔  And the user opens the Options panel title context menu
+   ✔  And the user selects Customize User Commands
+   ✔  And the user adds 2D Sketches to the Part Tools target
+   ✔  And the user clicks Apply
+   ✔  Then the customization dialog remains open
+   ✔  And the target list retains 2D Sketches without a pending marker
+   ✔  And the User Commands panel is visible behind the dialog
+   ✔  And the Shell properties and model preview remain visible behind the dialog
+   ✔  When the user removes 2D Sketches from the Part Tools target
+   ✔  And the user clicks Apply
+   ✔  Then the Part Tools target is empty without a pending marker
+   ✔  And the User Commands panel remains visible behind the dialog
+   ✔  And the Shell properties and model preview remain visible behind the dialog
+   ✔  When the user closes customization
+   ✔  Then the User Commands panel is removed
+   ✔  And the Shell properties and model preview remain visible
+   ✔  When the user cancels Shell
+   ✔  Then the command properties and preview close
+   ✔  And the original solid block remains visible
+]]></system-out></testcase></testsuite></testsuites>

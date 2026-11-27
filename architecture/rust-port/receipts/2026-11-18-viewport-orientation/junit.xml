@@ -1,0 +1,269 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Orient a model using the viewport control: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-orientation/viewport-orientation.feature" package="testsuite/Feature: Orient a model using the viewport control: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-orientation/viewport-orientation.feature" tests="22" errors="0" failures="0" hostname="localhost" timestamp="2026-11-18T14:41:47.984307778Z" time="367.240038894"><testcase name="Scenario: View the top of a part and return to the home view: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-orientation/viewport-orientation.feature:6:3" time="8.797771555"><system-out><![CDATA[  Scenario: View the top of a part and return to the home view
+   ✔  Given a part containing a rectangular block is active in the MCAD Software
+   ✔  And its home view shows the block isometrically
+   ✔  And the viewport orientation control is visible
+   ✔  When the user selects the Top face of the orientation control
+   ✔  Then the viewport shows the top of the block face-on as a rectangle
+   ✔  And the orientation control displays Top
+   ✔  And the same part and model browser remain active
+   ✔  When the user selects the orientation control's Home action
+   ✔  Then the viewport returns to the block's isometric home view
+   ✔  And the same part and model browser remain active
+]]></system-out></testcase><testcase name="Scenario: Step between adjacent orthogonal views: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-orientation/viewport-orientation.feature:19:3" time="8.522641964"><system-out><![CDATA[  Scenario: Step between adjacent orthogonal views
+   ✔  Given a rectangular block is active in the MCAD Software
+   ✔  And the orientation control displays the Front view
+   ✔  When the user selects the right-side navigation arrow beside the orientation control
+   ✔  Then the control displays Right
+   ✔  And the block is displayed face-on from the right
+   ✔  When the user selects the left-side navigation arrow
+   ✔  Then the control displays Front
+   ✔  And the block returns to the face-on front view
+   ✔  And the same part and model browser remain active
+]]></system-out></testcase><testcase name="Scenario: Show the Front label without a diagonal stroke across the ViewCube face: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-orientation/viewport-orientation.feature:31:3" time="6.966618673"><system-out><![CDATA[  Scenario: Show the Front label without a diagonal stroke across the ViewCube face
+   ✔  Given a rectangular block is active in the MCAD Software
+   ✔  And the viewport orientation control displays the Front view
+   ✔  When the user inspects the visible orientation face
+   ✔  Then the square face is labeled FRONT in uppercase
+   ✔  And no diagonal stroke crosses the face
+   ✔  And the block and model browser remain visible
+]]></system-out></testcase><testcase name="Scenario: Display the axis triad at the lower-left of the viewport: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-orientation/viewport-orientation.feature:40:3" time="6.760026897"><system-out><![CDATA[  Scenario: Display the axis triad at the lower-left of the viewport
+   ✔  Given a rectangular block is active in the MCAD Software
+   ✔  And the viewport orientation control displays the Front view
+   ✔  When the user inspects the viewport corners
+   ✔  Then an axis triad appears at the lower-left of the viewport
+   ✔  And the X axis points right and is red
+   ✔  And the Y axis points up and is green
+   ✔  And the Z axis is indicated in blue at the triad origin
+   ✔  And the orientation control remains at the upper-right of the viewport
+   ✔  And the block remains visible
+]]></system-out></testcase><testcase name="Scenario: Rotate and restore a face-on view: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-orientation/viewport-orientation.feature:52:3" time="9.093477452"><system-out><![CDATA[  Scenario: Rotate and restore a face-on view
+   ✔  Given a rectangular block is active in the MCAD Software
+   ✔  And the orientation control displays Front with its label upright
+   ✔  And the block's front face is wider than it is tall on screen
+   ✔  When the user selects the upper curved rotation arrow on the orientation control
+   ✔  Then the control still displays Front with its label rotated by a quarter turn
+   ✔  And the block's front face is taller than it is wide on screen
+   ✔  When the user selects the other curved rotation arrow
+   ✔  Then the Front label is upright again
+   ✔  And the block's front face is wider than it is tall again
+   ✔  And the same part and model browser remain active
+]]></system-out></testcase><testcase name="Scenario: Choose a corner from a face-on view: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-orientation/viewport-orientation.feature:65:3" time="7.72058268"><system-out><![CDATA[  Scenario: Choose a corner from a face-on view
+   ✔  Given a rectangular block is active in the MCAD Software
+   ✔  And the orientation control displays an upright Front view
+   ✔  When the user selects the upper-right corner of the orientation control
+   ✔  Then the block is displayed obliquely with its top, front and right faces visible
+   ✔  And the orientation control shows the Top, Front and Right faces
+   ✔  And the same part and model browser remain active
+]]></system-out></testcase><testcase name="Scenario: Cancel a compass preference change: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-orientation/viewport-orientation.feature:74:3" time="13.685032558"><system-out><![CDATA[  Scenario: Cancel a compass preference change
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the orientation control is visible in the viewport
+   ✔  And its compass preference is off
+   ✔  When the user opens the orientation control context menu and chooses Options
+   ✔  Then the options dialog displays controls for position, size and inactive opacity
+   ✔  And it displays view transition and orientation settings
+   ✔  And the compass option is unchecked and the north angle field is unavailable
+   ✔  When the user enables the compass option
+   ✔  Then the north angle field becomes available
+   ✔  When the user cancels the options dialog and reopens it
+   ✔  Then the compass option is unchecked
+   ✔  And the north angle field is unavailable
+]]></system-out></testcase><testcase name="Scenario: Move the orientation control to the opposite upper corner: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-orientation/viewport-orientation.feature:89:3" time="18.965470331"><system-out><![CDATA[  Scenario: Move the orientation control to the opposite upper corner
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the orientation control and navigation bar are at the upper right of the viewport
+   ✔  When the user opens the orientation control options
+   ✔  And the user opens the on-screen position list
+   ✔  Then the list offers Top Right, Bottom Right, Top Left and Bottom Left
+   ✔  When the user chooses Top Left and confirms the options
+   ✔  Then the orientation control appears at the upper left of the viewport
+   ✔  And the navigation bar appears on the left side of the viewport
+   ✔  And the part remains in its existing view
+   ✔  When the user reopens the options
+   ✔  Then the on-screen position displays Top Left
+   ✔  When the user chooses Top Right and confirms
+   ✔  Then the orientation control and navigation bar return to the right side
+   ✔  And the same part and model browser remain active
+]]></system-out></testcase><testcase name="Scenario: Change and restore the orientation control size: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-orientation/viewport-orientation.feature:106:3" time="19.47563976"><system-out><![CDATA[  Scenario: Change and restore the orientation control size
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the orientation control is visible with its size set to Automatic
+   ✔  When the user opens the orientation control options and expands the size list
+   ✔  Then the list offers Automatic, Tiny, Small, Normal and Large
+   ✔  When the user chooses Large and confirms the options
+   ✔  Then the orientation control is visibly larger in the viewport
+   ✔  And the part remains in its existing view
+   ✔  When the user reopens the options
+   ✔  Then the size displays Large
+   ✔  When the user chooses Automatic and confirms
+   ✔  Then the orientation control returns to its earlier size in this viewport
+   ✔  And the same part and model browser remain active
+]]></system-out></testcase><testcase name="Scenario: Adjust the inactive opacity of the orientation control: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-orientation/viewport-orientation.feature:121:3" time="24.924798152"><system-out><![CDATA[  Scenario: Adjust the inactive opacity of the orientation control
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the orientation control has 50 percent inactive opacity
+   ✔  When the user opens the orientation control options and expands the inactive opacity list
+   ✔  Then the list offers 0, 25, 50, 75 and 100 percent
+   ✔  When the user chooses 100 percent and confirms the options
+   ✔  And the user moves the pointer away from the orientation control
+   ✔  Then the inactive control appears more opaque than at 50 percent
+   ✔  And the part remains in its existing view
+   ✔  When the user reopens the options, chooses 50 percent and confirms
+   ✔  And the user moves the pointer away from the control
+   ✔  Then the control returns to its earlier translucent appearance
+   ✔  And the same part remains active
+]]></system-out></testcase><testcase name="Scenario: Switch between orthographic and perspective projection: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-orientation/viewport-orientation.feature:136:3" time="14.414375044"><system-out><![CDATA[  Scenario: Switch between orthographic and perspective projection
+   ✔  Given a rectangular block is active in the MCAD Software
+   ✔  And the block is displayed obliquely in Orthographic projection
+   ✔  When the user opens the orientation control context menu
+   ✔  Then Orthographic is marked as the current projection
+   ✔  And Perspective and Perspective with Ortho Faces are offered
+   ✔  When the user chooses Perspective
+   ✔  Then the block remains visible in an oblique view with a changed projection
+   ✔  And the same part and model browser remain active
+   ✔  When the user reopens the orientation control context menu
+   ✔  Then Perspective is marked as the current projection
+   ✔  When the user chooses Orthographic
+   ✔  Then the block returns to its orthographic appearance
+   ✔  And the same part remains active
+]]></system-out></testcase><testcase name="Scenario: Retain hybrid projection when selecting a named face: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-orientation/viewport-orientation.feature:152:3" time="15.647134554"><system-out><![CDATA[  Scenario: Retain hybrid projection when selecting a named face
+   ✔  Given a rectangular block is active in the MCAD Software
+   ✔  And it is displayed obliquely in Orthographic projection
+   ✔  When the user chooses Perspective with Ortho Faces from the orientation control menu
+   ✔  Then the block remains visible in an oblique view with a changed projection
+   ✔  When the user selects Top on the orientation control
+   ✔  Then the block is displayed face-on from the top
+   ✔  And the orientation control displays Top
+   ✔  When the user reopens the orientation control menu
+   ✔  Then Perspective with Ortho Faces is marked as the current mode
+   ✔  When the user chooses Orthographic
+   ✔  Then the same part remains active in the top view
+]]></system-out></testcase><testcase name="Scenario: Show and hide the orientation compass: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-orientation/viewport-orientation.feature:166:3" time="18.154408148"><system-out><![CDATA[  Scenario: Show and hide the orientation compass
+   ✔  Given a part is active in the MCAD Software with its Top view displayed
+   ✔  And the orientation compass is disabled
+   ✔  When the user opens the orientation control options
+   ✔  And the user enables the compass and confirms the options
+   ✔  Then a compass with north, east, south and west indicators appears around the orientation control
+   ✔  And the part remains in the Top view
+   ✔  When the user reopens the orientation control options
+   ✔  Then the compass option is checked and its north angle field is available
+   ✔  When the user disables the compass and confirms the options
+   ✔  Then the compass disappears
+   ✔  And the orientation control and the same part remain visible
+]]></system-out></testcase><testcase name="Scenario: Enable and select the orientation control visibility scope: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-orientation/viewport-orientation.feature:180:3" time="15.849460266"><system-out><![CDATA[  Scenario: Enable and select the orientation control visibility scope
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the orientation control options are open
+   ✔  And showing the orientation control on window creation is enabled
+   ✔  And Only in Current View is selected
+   ✔  When the user clears the show-on-window-creation option
+   ✔  Then the All 3D Views and Only in Current View choices are unavailable
+   ✔  And the position, size and inactive opacity controls remain available
+   ✔  When the user enables the show-on-window-creation option
+   ✔  Then both visibility scope choices are available
+   ✔  And Only in Current View remains selected
+   ✔  When the user selects All 3D Views
+   ✔  Then All 3D Views is selected and Only in Current View is cleared
+   ✔  When the user selects Only in Current View
+   ✔  Then Only in Current View is selected and All 3D Views is cleared
+   ✔  When the user cancels the options
+   ✔  Then the options close and the part view remains displayed
+]]></system-out></testcase><testcase name="Scenario: Select the current top plane as the front plane and cancel: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-orientation/viewport-orientation.feature:199:3" time="15.421652602"><system-out><![CDATA[  Scenario: Select the current top plane as the front plane and cancel
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the orientation control options are open
+   ✔  And the Front View Plane is XY(+Z) and the Top View Plane is XZ(+Y)
+   ✔  When the user opens the Front View Plane list
+   ✔  Then it offers XY(+Z), XY(-Z), XZ(+Y), XZ(-Y), YZ(+X) and YZ(-X)
+   ✔  When the user selects XZ(+Y) as the Front View Plane
+   ✔  Then the Front View Plane displays XZ(+Y)
+   ✔  And the Top View Plane displays XY(+Z)
+   ✔  When the user cancels the options and reopens them
+   ✔  Then the Front View Plane displays XY(+Z)
+   ✔  And the Top View Plane displays XZ(+Y)
+]]></system-out></testcase><testcase name="Scenario: Set and restore the compass north angle: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-orientation/viewport-orientation.feature:213:3" time="30.687389291"><system-out><![CDATA[  Scenario: Set and restore the compass north angle
+   ✔  Given a rectangular block is active in the MCAD Software in Top view
+   ✔  And the compass is disabled and its north angle is 0 degrees
+   ✔  When the user opens the orientation control options
+   ✔  And the user enables the compass and enters 90 degrees as the north angle
+   ✔  And the user confirms the options
+   ✔  Then the compass is visible around the orientation control
+   ✔  And its north indicator appears to the right of the Top face
+   ✔  And the block remains in Top view
+   ✔  When the user reopens the orientation control options
+   ✔  Then the compass is enabled and the north angle is 90 degrees
+   ✔  When the user changes the north angle to 0 degrees and confirms
+   ✔  And the user selects Top on the orientation control
+   ✔  Then the compass north indicator appears above the Top face
+   ✔  When the user disables the compass in the orientation control options and confirms
+   ✔  Then the compass is hidden and the block remains visible
+]]></system-out></testcase><testcase name="Scenario: Fit the model when changing orientation: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-orientation/viewport-orientation.feature:231:3" time="30.950565144"><system-out><![CDATA[  Scenario: Fit the model when changing orientation
+   ✔  Given a rectangular block is active in the MCAD Software in Top view
+   ✔  And fit to view on orientation change is enabled
+   ✔  And the block is magnified until its face extends beyond the viewport
+   ✔  When the user uses the orientation control to change to Front view
+   ✔  Then the whole block is visible within the viewport
+   ✔  When the user disables fit to view on orientation change in the orientation control options
+   ✔  And the user magnifies the Front view until the block extends beyond the viewport
+   ✔  And the user uses the orientation control to change to Top view
+   ✔  Then the block remains magnified beyond the viewport
+   ✔  When the user re-enables fit to view on orientation change
+   ✔  And the user uses the orientation control to change to Front view
+   ✔  Then the whole block is visible within the viewport
+]]></system-out></testcase><testcase name="Scenario: Rotate the Front view with keep model upright enabled: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-orientation/viewport-orientation.feature:246:3" time="23.857113863"><system-out><![CDATA[  Scenario: Rotate the Front view with keep model upright enabled
+   ✔  Given a rectangular block is active in the MCAD Software in upright Front view
+   ✔  And the orientation control option to keep the model upright is disabled
+   ✔  When the user enables keep model upright and confirms the options
+   ✔  And the user selects the upper curved rotation arrow on the orientation control
+   ✔  Then the Front view and its label rotate by a quarter turn in the screen plane
+   ✔  And the rectangular block remains visible
+   ✔  When the user reopens the orientation control options
+   ✔  Then keep model upright is checked
+   ✔  When the user clears keep model upright and confirms the options
+   ✔  Then the active part remains visible
+]]></system-out></testcase><testcase name="Scenario: Place the orientation control in the lower viewport corners: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-orientation/viewport-orientation.feature:259:3" time="25.299150369"><system-out><![CDATA[  Scenario: Place the orientation control in the lower viewport corners
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the orientation control is in the Top Right position
+   ✔  When the user sets the orientation control position to Bottom Right and confirms
+   ✔  Then the orientation control appears near the lower-right viewport corner
+   ✔  And the navigation bar appears above it on the right
+   ✔  And the part view remains visible
+   ✔  When the user reopens the orientation control options
+   ✔  Then the position is Bottom Right
+   ✔  When the user sets the position to Bottom Left and confirms
+   ✔  Then the orientation control appears near the lower-left viewport corner
+   ✔  And the navigation bar appears above it on the left
+   ✔  And the part view remains visible
+   ✔  When the user restores the position to Top Right and confirms
+   ✔  Then the orientation control and navigation bar return to the right side
+]]></system-out></testcase><testcase name="Scenario: Toggle orientation lock for a selected face: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-orientation/viewport-orientation.feature:276:3" time="22.078474956"><system-out><![CDATA[  Scenario: Toggle orientation lock for a selected face
+   ✔  Given a rectangular block is active in the MCAD Software
+   ✔  And no model geometry is selected
+   ✔  When the user opens the orientation control context menu
+   ✔  Then Lock to Current Selection is unavailable
+   ✔  When the user closes the menu and selects a visible face of the block
+   ✔  And the user opens the orientation control context menu
+   ✔  Then Lock to Current Selection is available
+   ✔  When the user chooses Lock to Current Selection
+   ✔  Then a lock indicator appears beside the orientation control
+   ✔  When the user reopens the orientation control context menu
+   ✔  Then Lock to Current Selection is checked
+   ✔  When the user chooses Lock to Current Selection again
+   ✔  Then the lock indicator disappears
+   ✔  When the user clears the face selection and reopens the orientation control context menu
+   ✔  Then Lock to Current Selection is unavailable
+]]></system-out></testcase><testcase name="Scenario: Inspect view-definition choices without applying them: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-orientation/viewport-orientation.feature:294:3" time="11.076053574"><system-out><![CDATA[  Scenario: Inspect view-definition choices without applying them
+   ✔  Given a part is active in the MCAD Software
+   ✔  When the user opens the orientation control context menu
+   ✔  And the user expands Set Current View as
+   ✔  Then the submenu offers Top and Front
+   ✔  When the user expands Set Current View as Home
+   ✔  Then the submenu offers Fixed Distance and Fit to View
+   ✔  When the user presses Escape without choosing a submenu action
+   ✔  Then the menus close and the same part view remains visible
+]]></system-out></testcase><testcase name="Scenario: Reduce the orientation control to Tiny size: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-orientation/viewport-orientation.feature:305:3" time="18.892201061"><system-out><![CDATA[  Scenario: Reduce the orientation control to Tiny size
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the orientation control size is Automatic
+   ✔  When the user sets the orientation control size to Tiny and confirms
+   ✔  Then the orientation control is visibly smaller in the same viewport
+   ✔  And the part view remains visible
+   ✔  When the user reopens the orientation control options
+   ✔  Then the size is Tiny
+   ✔  When the user sets the size to Automatic and confirms
+   ✔  Then the orientation control returns to its earlier apparent size
+   ✔  And the same part view remains visible
+]]></system-out></testcase></testsuite></testsuites>

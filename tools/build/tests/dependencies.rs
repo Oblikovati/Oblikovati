@@ -4,6 +4,70 @@ use super::*;
 use crate::{process::tests::FakeRunner, release_config::tests::config, tree::tests::FixtureTree};
 
 #[test]
+fn source_installation_refuses_ambiguous_locked_packages() {
+    let lock: CargoLock = toml::from_str("[[package]]\nname='wanted'\nversion='1.0.0'\n[[package]]\nname='wanted'\nversion='2.0.0'\n").unwrap();
+    assert!(
+        unique_locked_package(&lock, "wanted")
+            .unwrap_err()
+            .contains("multiple versions")
+    );
+    assert!(unique_locked_package(&lock, "missing").is_err());
+}
+
+#[test]
+fn renderer_pin_rejects_local_and_changed_sources() {
+    let mut package = LockedPackage {
+        name: "martensite-vulkan".into(),
+        version: "0.7.0".into(),
+        source: None,
+    };
+    assert!(verify_renderer_package(&package).is_err());
+    package.source = Some("git+https://github.com/Oblikovati/Martensite#changed".into());
+    assert!(verify_renderer_package(&package).is_err());
+    let tree = FixtureTree::new();
+    tree.put("Cargo.lock", include_str!("../../../Cargo.lock"));
+    check_renderer_pin(tree.root()).unwrap();
+    tree.put("Cargo.lock", "package = []");
+    assert!(check_renderer_pin(tree.root()).is_err());
+}
+
+#[test]
+fn previous_martensite_release_is_refused_for_renderer_and_sketch_packages() {
+    let previous = "d463526642b7bf950ba33c7ab4a4c9bc97caffaf";
+    for name in ["martensite-vulkan", "martensite-tkg2d"] {
+        let package = LockedPackage {
+            name: name.into(),
+            version: "0.0.0".into(),
+            source: Some(format!(
+                "git+https://github.com/Oblikovati/Martensite?rev={previous}#{previous}"
+            )),
+        };
+        let cause = verify_renderer_package(&package).unwrap_err();
+        assert!(cause.contains(name));
+        assert!(cause.contains("db01546bb032659682715c6120e628b95fe5773d"));
+    }
+}
+
+#[test]
+fn application_lock_consumes_the_pinned_kernel_modeling_release() {
+    let tree = FixtureTree::new();
+    tree.put("release.toml", include_str!("../../../release.toml"));
+    tree.put("Cargo.lock", include_str!("../../../Cargo.lock"));
+    let pin = crate::release_config::load(tree.root()).unwrap().kernel;
+    let names = locked_crates(&tree.root().join("Cargo.lock"), &pin).unwrap();
+    assert_eq!(pin.version, "0.15.0");
+    assert_eq!(pin.revision, "db01546bb032659682715c6120e628b95fe5773d");
+    for name in [
+        "martensite-tkprim",
+        "martensite-tkbrep",
+        "martensite-tkgeombase",
+        "martensite-tktopalgo",
+    ] {
+        assert!(names.iter().any(|locked| locked == name), "missing {name}");
+    }
+}
+
+#[test]
 fn published_archive_and_tag_must_both_match_the_pin() {
     let tree = FixtureTree::new();
     let mut dependency = config().api;
@@ -90,6 +154,18 @@ fn lockfile_cannot_substitute_a_local_or_different_dependency() {
     assert!(locked_crates(&tree.root().join("Cargo.lock"), &dependency).is_err());
     tree.put("Cargo.lock", "malformed");
     assert!(locked_crates(&tree.root().join("Cargo.lock"), &dependency).is_err());
-    assert!(owned_package("rustycad-tkbrep", &config().kernel));
+    assert!(owned_package("martensite-tkbrep", &config().kernel));
     assert!(!owned_package("serde", &config().kernel));
+}
+
+#[test]
+fn application_lock_consumes_the_api_release_named_by_packaging() {
+    let tree = FixtureTree::new();
+    tree.put("release.toml", include_str!("../../../release.toml"));
+    tree.put("Cargo.lock", include_str!("../../../Cargo.lock"));
+    let pin = crate::release_config::load(tree.root()).unwrap().api;
+    let names = locked_crates(&tree.root().join("Cargo.lock"), &pin).unwrap();
+    assert_eq!(names, ["oblikovati-api"]);
+    assert_eq!(pin.version, "0.166.0");
+    assert_eq!(pin.revision, "c8200b2da97c9a7dde43afb25debc977ff23b2fd");
 }

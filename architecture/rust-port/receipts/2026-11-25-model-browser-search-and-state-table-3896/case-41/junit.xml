@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:32:07.288596982Z" time="94.787447707"><testcase name="Scenario: Cancel the saved-search name prompt: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature:632:3" time="94.787447707"><system-out><![CDATA[  Scenario: Cancel the saved-search name prompt
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software
+   ✔  And the MCAD Software Find dialog contains feature search criteria
+   ✔  When the user chooses Save Search
+   ✔  Then a prompt shows an empty search-name field
+   ✔  And OK is disabled and cancels is available
+   ✔  When the user clicks Cancel
+   ✔  Then the Find dialog remains open with its criteria unchanged
+]]></system-out></testcase></testsuite></testsuites>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T12:35:01.835909954Z" time="23.257580076"><testcase name="Scenario: Reopen customization after choosing a command source without editing: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature:940:3" time="23.257580076"><system-out><![CDATA[  Scenario: Reopen customization after choosing a command source without editing
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the Tools ribbon tab is selected
+   ✔  And the Part | Tools custom target is empty
+   ✔  When the user opens Customize from Tools
+   ✔  Then the command source is "All Commands"
+   ✔  When the user selects "View Tab" as the command source
+   ✔  Then the available command list shows View Tab commands
+   ✔  When the user closes customization without editing any commands
+   ✔  And the user opens Customize from Tools again
+   ✔  Then the command source is "All Commands"
+   ✔  And the Part | Tools custom target remains empty
+   ✔  When the user closes customization
+   ✔  Then the Tools ribbon remains visible
+]]></system-out></testcase></testsuite></testsuites>

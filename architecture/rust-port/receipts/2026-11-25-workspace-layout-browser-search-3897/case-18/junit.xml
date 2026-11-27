@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Workspace layout and panel visibility: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature" package="testsuite/Feature: Workspace layout and panel visibility: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T02:56:11.200483734Z" time="22.3652044"><testcase name="Scenario: Collapse and expands model browser branches: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature:190:3" time="22.3652044"><system-out><![CDATA[  Scenario: Collapse and expands model browser branches
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software with nested model browser branches
+   ✔  And some browser branches are expanded
+   ✔  When the user opens the model browser menu
+   ✔  And the user chooses Collapse All
+   ✔  Then the expanded branches collapse to their parent rows
+   ✔  And the model remains displayed in the viewport
+   ✔  When the user opens the model browser menu
+   ✔  And the user chooses Expand All
+   ✔  Then nested browser rows are displayed
+   ✔  And the model remains displayed in the viewport
+]]></system-out></testcase></testsuite></testsuites>

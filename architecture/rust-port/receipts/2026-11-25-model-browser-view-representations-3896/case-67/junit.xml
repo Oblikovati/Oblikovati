@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:36:16.125475005Z" time="85.002818802"><testcase name="Scenario: Correct an invalid custom annotation scale: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature:1096:3" time="85.002818802"><system-out><![CDATA[  Scenario: Correct an invalid custom annotation scale
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is active in the MCAD Software
+   ✔  And the user copies the Primary view representation as BrowserView and activates BrowserView
+   ✔  And an empty part is active in the MCAD Software
+   ✔  And a copied view representation is active with annotation scale Auto
+   ✔  And the Edit Annotation Scale dialog is open
+   ✔  When the user replaces the scale with "0"
+   ✔  Then the scale text is red
+   ✔  And OK is disabled
+   ✔  When the user replaces the scale with "1:0"
+   ✔  Then the scale text is red
+   ✔  And OK is disabled
+   ✔  When the user replaces the scale with "abc"
+   ✔  Then the scale text is red
+   ✔  And OK is disabled
+   ✔  When the user replaces the scale with "3:2"
+   ✔  Then the scale text returns to its normal color
+   ✔  And OK is enabled
+   ✔  When the user cancels the dialog
+   ✔  Then the dialog closes
+]]></system-out></testcase></testsuite></testsuites>

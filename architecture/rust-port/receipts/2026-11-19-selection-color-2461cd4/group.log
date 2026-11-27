@@ -1,0 +1,21 @@
+    Finished `test` profile [unoptimized] target(s) in 0.13s
+     Running unittests src/lib.rs (/tmp/obk-selection-color-4168-target/debug/deps/oblikovati_head-10ebd026c75ea768)
+
+running 14 tests
+test native::gui_loop_tests::application_bdd::sketch::viewport_entity_interaction::candidate_clears_on_pointer_exit_and_tool_cancellation ... ok
+test native::gui_loop_tests::application_bdd::sketch::viewport_entity_interaction::measure_candidate_frames_for_dense_sketch ... ignored, run in release mode on a native desktop to measure interactive frames
+test native::gui_loop_tests::application_bdd::sketch::viewport_entity_interaction::measure_candidate_query_for_dense_sketch ... ignored, run in release mode on a native desktop to measure candidate query cost
+test native::gui_loop_tests::application_bdd::sketch::viewport_entity_interaction::measure_perf::measure_inspect_candidate_for_dense_sketch ... ignored, run in release mode on a native desktop to measure Measure hover
+test native::gui_loop_tests::application_bdd::sketch::viewport_entity_interaction::measure_perf::measure_inspect_frames_for_dense_sketch ... ignored, run in release mode on a native desktop to measure Measure frames
+test native::gui_loop_tests::application_bdd::sketch::viewport_entity_interaction::overlap::native_context_offers_overlapping_point_and_line ... ok
+test native::gui_loop_tests::application_bdd::sketch::viewport_entity_interaction::pick_cue::overlap_pick_cue_names_the_point_and_clears_when_pointer_moves ... ok
+test native::gui_loop_tests::application_bdd::sketch::viewport_entity_interaction::ready_hover::native_ready_hover_after_external_line_creation_uses_current_sketch ... ok
+test native::gui_loop_tests::application_bdd::sketch::viewport_entity_interaction::ready_hover::native_ready_hover_burst_ends_on_the_last_entity_without_selection ... ok
+test native::gui_loop_tests::application_bdd::sketch::viewport_entity_interaction::ready_hover::ready_hover_identifies_point_and_line_without_selecting_them ... ok
+test native::gui_loop_tests::application_bdd::sketch::viewport_entity_interaction::ready_hover::ready_hover_is_retired_when_the_sketch_is_undone ... ok
+test native::gui_loop_tests::application_bdd::sketch::viewport_entity_interaction::ready_hover_perf::measure_ready_hover_frames_for_dense_sketch ... ignored, measure native Ready hover frames in an optimized build
+test native::gui_loop_tests::application_bdd::sketch::viewport_entity_interaction::ready_hover_perf::measure_ready_hover_motion_bursts ... ignored, measure batched native Ready hover frames in an optimized build
+test native::gui_loop_tests::application_bdd::sketch::viewport_entity_interaction::rectangle_menu::rectangle_selection_survives_context_menu_and_escape ... ok
+
+test result: ok. 8 passed; 0 failed; 6 ignored; 0 measured; 1500 filtered out; finished in 84.34s
+

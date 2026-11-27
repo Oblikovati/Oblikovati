@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Workspace layout and panel visibility: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature" package="testsuite/Feature: Workspace layout and panel visibility: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-19T15:12:53.581083458Z" time="4.183644506"><testcase name="Scenario: Align the model browser and viewport to the workspace frame: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:41:3" time="4.183644506"><system-out><![CDATA[  Scenario: Align the model browser and viewport to the workspace frame
+   ✔  Given a part document is active in the MCAD Software
+   ✔  And the model browser is docked at the left
+   ✔  When the user inspects the workspace boundaries
+   ✔  Then the model browser begins at the left content edge directly below the ribbon
+   ✔  And the viewport begins at the browser's shared divider without an empty gutter
+   ✔  And the viewport fills the remaining content width
+   ✔  And the ribbon, browser, viewport and status area use aligned outer edges
+]]></system-out></testcase></testsuite></testsuites>

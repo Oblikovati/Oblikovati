@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Coincident: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/sketch/coincident/scenario.feature" package="testsuite/Feature: Coincident: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/sketch/coincident/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T15:11:42.004382844Z" time="42.350936689"><testcase name="Scenario: coincident-07 Constrain two standalone points and inspect history: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/sketch/coincident/scenario.feature:40:3" time="42.350936689"><system-out><![CDATA[  Scenario: coincident-07 Constrain two standalone points and inspect history
+   ✔  Given two separate standalone points at the recorded upper-left and lower-right positions
+   ✔  When the user invokes Coincident and selects the upper-left point
+   ✔  Then the prompt requests a second curve or point
+   ✔  When the user selects the lower-right point
+   ✔  Then the points share a visible position and a coincidence marker appears there
+   ✔  And the prompt returns to the first curve or point
+   ✔  When the user presses Escape
+   ✔  Then the placement remains
+   ✔  When the user undoes the relation
+   ✔  Then both points appear separately again
+   ✔  When the user redoes the relation
+   ✔  Then their shared visible position returns
+]]></system-out></testcase></testsuite></testsuites>

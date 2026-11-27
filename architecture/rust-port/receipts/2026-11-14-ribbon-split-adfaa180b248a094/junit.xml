@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: New sketch: tmp/oblikovati-ribbon-split-source/features/sketch/new-sketch/scenario.feature" package="testsuite/Feature: New sketch: tmp/oblikovati-ribbon-split-source/features/sketch/new-sketch/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T05:16:53.956657985Z" time="7.732318666"><testcase name="Scenario: new-sketch-03 Escape after accepting the support plane: tmp/oblikovati-ribbon-split-source/features/sketch/new-sketch/scenario.feature:20:3" time="7.732318666"><system-out><![CDATA[  Scenario: new-sketch-03 Escape after accepting the support plane
+   ✔  Given selecting XZ Plane has created empty Sketch2
+   ✔  When the user press Escape
+   ✔  Then Sketch2 remains active in the Sketch editing environment
+   ✔  And creation is not rolled back
+]]></system-out></testcase></testsuite></testsuites>

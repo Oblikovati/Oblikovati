@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Expand a ribbon panel: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" package="testsuite/Feature: Expand a ribbon panel: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T14:22:30.681063475Z" time="7.945499652"><testcase name="Scenario: Pin and unpin the expanded Modify panel: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:109:3" time="7.945499652"><system-out><![CDATA[  Scenario: Pin and unpin the expanded Modify panel
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open with its visible solid in the MCAD Software
+   ✔  And the 3D Model Modify panel is expanded with its pin control unselected
+   ✔  When the user selects the pin control
+   ✔  And the user clicks an empty area of the viewport
+   ✔  Then the expanded Modify command area remains visible
+   ✔  And the pin control is highlighted
+   ✔  When the user selects the pin control again
+   ✔  And the user clicks an empty area of the viewport
+   ✔  Then the additional command area closes
+   ✔  And the part remains active
+]]></system-out></testcase></testsuite></testsuites>

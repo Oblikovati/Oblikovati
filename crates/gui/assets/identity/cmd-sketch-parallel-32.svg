@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-labelledby="t d">
+  <title id="t">Parallel Constraint</title>
+  <desc id="d">Two angled sketch segments constrained to identical parallel slopes.</desc>
+  <g id="layer-body">
+    <line x1="6" y1="23" x2="19" y2="6" stroke="var(--icon-line-general, #D2D7E2)" stroke-width="2.2" stroke-linecap="round"/>
+  </g>
+  <g id="layer-accent">
+    <line x1="13" y1="26" x2="26" y2="9" stroke="var(--icon-line-active, #8172FA)" stroke-width="2.2" stroke-linecap="round"/><circle cx="12.5" cy="14.5" r="1.8" fill="var(--accent-selection-bright, #2DD4BF)" stroke="var(--icon-cutout, #121317)" stroke-width="0.7"/><circle cx="19.5" cy="17.5" r="1.8" fill="var(--accent-selection-bright, #2DD4BF)" stroke="var(--icon-cutout, #121317)" stroke-width="0.7"/>
+  </g>
+</svg>

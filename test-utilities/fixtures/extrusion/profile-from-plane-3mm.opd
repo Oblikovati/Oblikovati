@@ -1,0 +1,225 @@
+schemaVersion: 3
+documentType: 1
+displayName: Revolve profile
+partModelStates:
+  members:
+  - id: 1
+    name: Primary
+  active: 1
+  scope: SingleMember
+model:
+  planarSketches:
+    recipe:
+      version: 13
+      sketches:
+      - id: 1
+        name: Sketch1
+        plane_origin: XY
+        point_projections:
+        - anchor: 1
+          reference: Origin
+        geometry:
+          version: 12
+          points:
+          - id: 1
+            position:
+            - 0.0
+            - 0.0
+          - id: 2
+            position:
+            - -0.6
+            - 0.0
+          - id: 3
+            position:
+            - 0.6
+            - 0.0
+          - id: 4
+            position:
+            - 0.6
+            - 0.5
+          - id: 5
+            position:
+            - -0.6
+            - 0.5
+          lines:
+          - id: 6
+            endpoints:
+            - 2
+            - 3
+          - id: 7
+            endpoints:
+            - 3
+            - 4
+          - id: 8
+            endpoints:
+            - 4
+            - 5
+          - id: 9
+            endpoints:
+            - 5
+            - 2
+          circles: []
+          arcs: []
+          ellipses: []
+          splines: []
+          offset_splines: []
+          defining_points:
+          - 2
+          - 3
+          - 4
+          - 5
+          constraints: []
+          entity_order:
+          - 1
+          - 6
+          - 7
+          - 8
+          - 9
+          construction_curves: []
+          centerlines: []
+          dimension_placements: []
+          reference_dimensions: []
+          dimension_limits: []
+    sketchHighWater: 1
+    entityHighWater: 9
+    constraintHighWater: {}
+    dimensionNameOrdinals: {}
+  properties: []
+  units:
+    angle: deg
+    angleFormat: decimal
+    anglePrecision: '2'
+    area: mm^2
+    length: mm
+    lengthFormat: decimal
+    lengthPrecision: '3'
+    mass: kg
+    time: s
+    volume: mm^3
+  parameters: []
+  parameterGroups: []
+  parameterSettings:
+    linearStandardTolerance: ''
+    angularStandardTolerance: ''
+    useStandardTolerances: false
+    exportStandardTolerances: false
+    linearDimensionPrecision: 3
+    angularDimensionPrecision: 2
+    dimensionDisplayType: value
+    displayParameterAsExpression: false
+  derivedParameterTables: []
+  parameterIds: {}
+  parameterHighWater: 0
+  workPlanes:
+    recipe:
+      version: 1
+      features:
+      - id: 1
+        name: Work Plane1
+        definition:
+          version: 1
+          definition: !Fixed
+            frame:
+              origin:
+              - 0.0
+              - 0.0
+              - 0.3
+              x_axis:
+              - 1.0
+              - 0.0
+              - 0.0
+              y_axis:
+              - 0.0
+              - 1.0
+              - 0.0
+            options:
+              version: 1
+              unit_deviation: 1e-9
+              angular_deviation: 1e-9
+        suppressed: false
+        condition: null
+        definition_reads:
+          keys: []
+          unattributed: false
+      end_of_part: null
+    featureHighWater: 1
+partDesignViews:
+  views:
+  - id: 1
+    name: Primary
+    built_in: true
+    active: true
+    locked: false
+    published: true
+    autosave_camera: true
+    annotation_scale:
+      mode: auto
+      numerator: 0
+      denominator: 0
+    standard_orientation: 0
+    camera: null
+    hidden_body_keys: []
+  - id: 2
+    name: Isometric
+    built_in: true
+    active: false
+    locked: false
+    published: true
+    autosave_camera: true
+    annotation_scale:
+      mode: auto
+      numerator: 0
+      denominator: 0
+    standard_orientation: 10759
+    camera: null
+    hidden_body_keys: []
+  - id: 3
+    name: Front
+    built_in: true
+    active: false
+    locked: false
+    published: true
+    autosave_camera: true
+    annotation_scale:
+      mode: auto
+      numerator: 0
+      denominator: 0
+    standard_orientation: 10764
+    camera: null
+    hidden_body_keys: []
+  - id: 4
+    name: Top
+    built_in: true
+    active: false
+    locked: false
+    published: true
+    autosave_camera: true
+    annotation_scale:
+      mode: auto
+      numerator: 0
+      denominator: 0
+    standard_orientation: 10754
+    camera: null
+    hidden_body_keys: []
+  - id: 5
+    name: Right
+    built_in: true
+    active: false
+    locked: false
+    published: true
+    autosave_camera: true
+    annotation_scale:
+      mode: auto
+      numerator: 0
+      denominator: 0
+    standard_orientation: 10755
+    camera: null
+    hidden_body_keys: []
+identity:
+  internalName: 59d6c367-b797-5968-8b3e-4b1d6e508296
+  revisionId: a8e4c3ff-649e-511d-8d91-a6bed320b0de
+  databaseRevisionId: f805ae0a-6264-5607-8101-97c8a4c11c52
+  saveCounter: 2
+  versionCreated: 0.1.0-dev
+  versionSaved: 0.1.0-dev
+  modelDigest: 2caec487e72bae91538a4ba58d8393657ba0477cc7bf167e2b5f2e048d33d3f2

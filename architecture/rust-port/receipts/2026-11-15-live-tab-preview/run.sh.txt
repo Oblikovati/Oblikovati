@@ -1,0 +1,10 @@
+#!/bin/bash
+set -eu
+printf '%s\n' "$DISPLAY" > /tmp/obk-preview-xtest-3987/display
+printf '%s\n' "$XAUTHORITY" > /tmp/obk-preview-xtest-3987/xauthority
+export OBK_ADDINS_DIR=/tmp/obk-preview-xtest-3987/addins OBK_MCP_ADDR=127.0.0.1:17987 VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json XMODIFIERS=@im=none
+/tmp/obk-preview-xtest-3987/target/debug/oblikovati > /tmp/obk-preview-xtest-3987/host.log 2>&1 &
+pid=$!
+cleanup() { kill "$pid" 2>/dev/null || true; wait "$pid" 2>/dev/null || true; }
+trap cleanup EXIT
+wait "$pid"

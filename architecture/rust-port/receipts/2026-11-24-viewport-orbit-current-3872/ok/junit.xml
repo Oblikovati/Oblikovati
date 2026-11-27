@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Viewport orbit: tmp/oblikovati-ribbon-relocated.RcZVDl/current-viewport-orbit-source/features/application/viewport-orbit/viewport-orbit.feature" package="testsuite/Feature: Viewport orbit: tmp/oblikovati-ribbon-relocated.RcZVDl/current-viewport-orbit-source/features/application/viewport-orbit/viewport-orbit.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T22:14:37.190822284Z" time="43.678143797"><testcase name="Scenario: Exit orbit with the context menu OK action: tmp/oblikovati-ribbon-relocated.RcZVDl/current-viewport-orbit-source/features/application/viewport-orbit/viewport-orbit.feature:105:3" time="43.678143797"><system-out><![CDATA[  Scenario: Exit orbit with the context menu OK action
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open with its rectangular solid visible in the active part in the MCAD Software
+   ✔  And Orbit is active with its circular guide visible
+   ✔  When the user opens the orbit context menu
+   ✔  And the user chooses OK
+   ✔  Then the circular guide disappears
+   ✔  And the status area displays Ready
+   ✔  And the block remains visible in the same apparent orientation
+]]></system-out></testcase></testsuite></testsuites>

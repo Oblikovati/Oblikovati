@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon panel visibility: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" package="testsuite/Feature: Ribbon panel visibility: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:09:25.950234035Z" time="57.009612932"><testcase name="Scenario: Keep a panel hidden when redocking the floating ribbon: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:123:3" time="57.009612932"><system-out><![CDATA[  Scenario: Keep a panel hidden when redocking the floating ribbon
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is open and active
+   ✔  And the floating 3D Model ribbon shows the Modify group
+   ✔  When the user hides Modify through Show Panels
+   ✔  Then the floating ribbon no longer shows the Modify group
+   ✔  When the user docks the ribbon at the top
+   ✔  Then the top ribbon does not show the Modify panel
+   ✔  When the user opens Show Panels on the top ribbon
+   ✔  Then Modify is unchecked
+   ✔  When the user selects Modify
+   ✔  Then the Modify panel is visible again
+]]></system-out></testcase></testsuite></testsuites>

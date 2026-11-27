@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:43:08.443023702Z" time="59.385313627"><testcase name="Scenario: Inspect and cancels the custom line color picker: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature:481:3" time="59.385313627"><system-out><![CDATA[  Scenario: Inspect and cancels the custom line color picker
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software
+   ✔  And a nested sketch in the MCAD Software has Default line color
+   ✔  And its geometry properties dialog is open
+   ✔  When the user chooses Select from the Line Color list
+   ✔  Then a color dialog opens with basic color swatches and custom color slots
+   ✔  When the user chooses Define Custom Colors
+   ✔  Then the dialog expands to show a color field, brightness control and color preview
+   ✔  And it shows hue, saturation, luminance and red, green and blue fields
+   ✔  And it offers Add to Custom Colors
+   ✔  When the user cancels the color dialog
+   ✔  Then the geometry properties dialog shows Default line color
+   ✔  And Apply is disabled
+   ✔  When the user cancels the geometry properties dialog
+   ✔  Then the dialog closes without applying a color change
+]]></system-out></testcase></testsuite></testsuites>

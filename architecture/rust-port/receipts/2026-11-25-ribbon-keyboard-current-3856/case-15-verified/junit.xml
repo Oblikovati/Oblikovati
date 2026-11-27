@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Navigate the ribbon using key tips: target/native-scratch.HSqCy5/current-ribbon-keyboard-navigation-source/features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature" package="testsuite/Feature: Navigate the ribbon using key tips: target/native-scratch.HSqCy5/current-ribbon-keyboard-navigation-source/features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T23:09:49.105665043Z" time="22.792885694"><testcase name="Scenario: Select a solid face while command key tips are visible: target/native-scratch.HSqCy5/current-ribbon-keyboard-navigation-source/features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature:221:3" time="22.792885694"><system-out><![CDATA[  Scenario: Select a solid face while command key tips are visible
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open with its asymmetric solid visible in the MCAD Software
+   ✔  And the full 3D Model ribbon is selected
+   ✔  When the user presses Alt and then the 3D Model tab key tip
+   ✔  Then command-level ribbon key tips are visible
+   ✔  When the user clicks a visible solid face
+   ✔  Then the ribbon key tips disappear
+   ✔  And the clicked face is selected
+   ✔  And a contextual mini toolbar appears beside the selected face
+   ✔  When the user clicks empty viewport space
+   ✔  Then the face selection and contextual mini toolbar clear
+]]></system-out></testcase></testsuite></testsuites>

@@ -1,0 +1,5 @@
+# Extrusion resume and remaining scenario gap
+
+The native window tests on Linux with Vulkan Lavapipe under Xvfb checked the resumed panel with a fully constrained rectangle, its 10 mm preview, cancellation, the four-DOF refusal, and ordinary sketch entry. The constrained fixture used API constraints after mouse drawing; it is not the scenario fixture. The Go reference is `../Oblikovati/head/ui/extrude_dialog.go` at `aa8297d1b0ac33c024f19e54821536d76e8a447a`.
+
+The pinned `extrusion-02` scenario at `48987af7b5cbb06515bc6f30385f508382f34064` **failed**: the mouse-drawn rectangle has four degrees of freedom and feature admission requires zero. The panel resumed at 10 mm, but no profile or preview was accepted. The saved Cucumber and JUnit reports and inspected capture show this refusal; the final preview step did not run. The run used the production code of `864708f4c` and the same test code later committed as `e1e932931`, then uncommitted. This report is diagnostic evidence, not an acceptance receipt. See #3927 and #3870.

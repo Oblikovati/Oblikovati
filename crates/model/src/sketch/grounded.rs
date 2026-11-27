@@ -1,0 +1,259 @@
+// SPDX-License-Identifier: GPL-2.0-only
+use super::{
+    Sketch2D, SketchError, SketchPoint2D, SketchRelationId, compile, residual::PreparedConstraint,
+};
+use crate::parameter::ParameterCollection;
+use oblikovati_solve::{
+    ad::DualNumber,
+    residual::{ResidualBlock, ResidualError, ResidualSource},
+};
+use std::collections::BTreeSet;
+mod coincident_constants;
+mod layout;
+use layout::{GroundedLayout, GroundedSlot};
+
+pub(super) struct GroundedSketch {
+    pub values: Vec<f64>,
+    pub constants: Vec<(usize, f64)>,
+    pub origins: Vec<SketchRelationId>,
+    pub parameter_dependencies: Vec<u64>,
+    sources: Vec<GroundedResidual>,
+    layout: GroundedLayout,
+}
+impl GroundedSketch {
+    pub fn blocks(&self) -> Vec<ResidualBlock<'_>> {
+        self.sources
+            .iter()
+            .map(|source| ResidualBlock {
+                source,
+                variables: &source.variables,
+                equations: source.original.equations(),
+            })
+            .collect()
+    }
+    pub fn equation_evidence(
+        &self,
+        sketch: &Sketch2D,
+    ) -> Vec<Vec<super::equation_evidence::EquationEvidence>> {
+        self.sources
+            .iter()
+            .zip(&self.origins)
+            .map(|(source, origin)| {
+                super::equation_evidence::rows(sketch, *origin, &source.original)
+            })
+            .collect()
+    }
+    pub fn active_slots(&self) -> Vec<Option<usize>> {
+        self.layout.active_slots()
+    }
+    pub fn operand_columns(&self) -> Vec<Vec<usize>> {
+        self.sources
+            .iter()
+            .map(|source| source.original.variables.clone())
+            .collect()
+    }
+    pub fn warm_start_values(&self, sketch: &Sketch2D) -> Vec<f64> {
+        self.layout.active_values(&sketch.variable_values())
+    }
+    pub fn restore_freedoms(&self, values: &[bool]) -> Result<Vec<bool>, SketchError> {
+        self.layout.restore_freedoms(values)
+    }
+    pub fn restore(&self, values: &[f64]) -> Result<Vec<f64>, SketchError> {
+        self.layout.restore(values)
+    }
+    pub fn preference_slot(&self, column: usize, target: f64) -> (Option<usize>, bool) {
+        match self.layout.slot(column) {
+            GroundedSlot::Active(index) => (Some(index), false),
+            GroundedSlot::Constant(value) => (None, value != target),
+        }
+    }
+}
+pub(super) fn prepare(
+    sketch: &Sketch2D,
+    parameters: &ParameterCollection<u64>,
+    anchors: &[SketchPoint2D],
+) -> Result<GroundedSketch, SketchError> {
+    prepare_with_fixed_scalars(sketch, parameters, anchors, &[])
+}
+pub(super) fn prepare_with_fixed_scalars(
+    sketch: &Sketch2D,
+    parameters: &ParameterCollection<u64>,
+    anchors: &[SketchPoint2D],
+    scalars: &[(super::variables::SketchVariable, f64)],
+) -> Result<GroundedSketch, SketchError> {
+    let (prepared, layout, constants) = prepare_coordinates(sketch, parameters, anchors, scalars)?;
+    let sources = prepared
+        .sources
+        .into_iter()
+        .map(|source| GroundedResidual::new(source, &layout))
+        .collect();
+    Ok(GroundedSketch {
+        values: layout.active_values(&prepared.values),
+        constants: layout.active_constants(&constants),
+        origins: prepared.origins,
+        parameter_dependencies: prepared.parameter_dependencies,
+        sources,
+        layout,
+    })
+}
+type PreparedCoordinates = (compile::PreparedSketch, GroundedLayout, Vec<(usize, f64)>);
+fn prepare_coordinates(
+    sketch: &Sketch2D,
+    parameters: &ParameterCollection<u64>,
+    anchors: &[SketchPoint2D],
+    scalars: &[(super::variables::SketchVariable, f64)],
+) -> Result<PreparedCoordinates, SketchError> {
+    // #3762 / #3808: branch and contact preparation must see the current reference coordinates.
+    let (warm, identities) = grounded_seed(sketch, anchors)?;
+    let mut columns = grounded_columns(&warm, &identities);
+    add_fixed_scalar_columns(&warm, scalars, &mut columns)?;
+    let targets = super::frozen::authored_targets(&warm)?;
+    let constants = coincident_constants::propagate(&warm, anchors, &targets, &columns)?;
+    let seed = super::frozen::seed_authored(&warm, &constants)?;
+    // #3808: rank inspection evaluates the same fixed target positions as nonlinear iteration.
+    let prepared = compile::prepare(&seed, parameters)?;
+    let layout = GroundedLayout::new(&prepared.values, &columns);
+    Ok((prepared, layout, constants))
+}
+
+pub(super) fn add_fixed_scalar_columns(
+    sketch: &Sketch2D,
+    scalars: &[(super::variables::SketchVariable, f64)],
+    columns: &mut BTreeSet<usize>,
+) -> Result<(), SketchError> {
+    if scalars.is_empty() {
+        return Ok(());
+    }
+    let values = sketch.variable_values();
+    for (variable, expected) in scalars {
+        let column = sketch.variable_column(*variable)?;
+        let actual = *values.get(column).ok_or_else(|| SketchError::Definition(format!(
+            "inference source scalar {variable:?} column {column}: expected an owned solver value"
+        )))?;
+        if actual.to_bits() != expected.to_bits() {
+            return Err(SketchError::Definition(format!(
+                "inference source scalar {variable:?} is {actual:?}: expected unchanged {expected:?}"
+            )));
+        }
+        columns.insert(column);
+    }
+    Ok(())
+}
+
+fn grounded_seed(
+    sketch: &Sketch2D,
+    anchors: &[SketchPoint2D],
+) -> Result<(Sketch2D, BTreeSet<super::SketchEntityId>), SketchError> {
+    let mut seed = sketch.clone();
+    let mut identities = BTreeSet::new();
+    if anchors.len() < 2 {
+        for anchor in anchors {
+            identities.insert(anchor.id);
+            seed.set_position(anchor.id, anchor.position)?;
+        }
+        return Ok((seed, identities));
+    }
+    let indexed = super::point_index::PointIndex::new(&seed);
+    for anchor in anchors {
+        if !identities.insert(anchor.id) {
+            return Err(SketchError::Definition(format!(
+                "grounded sketch point {:?}: expected one current coordinate source per point",
+                anchor.id
+            )));
+        }
+        super::geometry::require_position(anchor.position)?;
+        let index = indexed.index(sketch, anchor.id)?;
+        let point = seed.points.get_mut(index).ok_or_else(|| {
+            SketchError::Definition(format!(
+                "grounded sketch point {:?}: expected a valid indexed position",
+                anchor.id
+            ))
+        })?;
+        point.position = anchor.position;
+    }
+    Ok((seed, identities))
+}
+fn grounded_columns(
+    seed: &Sketch2D,
+    identities: &BTreeSet<super::SketchEntityId>,
+) -> BTreeSet<usize> {
+    seed.points()
+        .iter()
+        .enumerate()
+        .filter(|(_, point)| identities.contains(&point.id))
+        .flat_map(|(index, _)| [index * 2, index * 2 + 1])
+        .collect()
+}
+struct GroundedResidual {
+    original: PreparedConstraint,
+    slots: Option<Vec<GroundedSlot>>,
+    variables: Vec<usize>,
+}
+impl GroundedResidual {
+    fn new(original: PreparedConstraint, layout: &GroundedLayout) -> Self {
+        let slots = layout.local_slots(&original.variables);
+        let variables = slots
+            .iter()
+            .filter_map(|slot| match slot {
+                GroundedSlot::Active(index) => Some(*index),
+                GroundedSlot::Constant(_) => None,
+            })
+            .collect();
+        Self {
+            original,
+            // Ordinary sketches retain the original residual input path without another allocation.
+            slots: slots
+                .iter()
+                .any(|slot| matches!(slot, GroundedSlot::Constant(_)))
+                .then_some(slots),
+            variables,
+        }
+    }
+}
+impl ResidualSource for GroundedResidual {
+    fn tolerance_kind(&self) -> oblikovati_solve::residual::ResidualTolerance {
+        self.original.tolerance_kind()
+    }
+
+    fn equation_tolerance(&self, row: usize) -> oblikovati_solve::residual::ResidualTolerance {
+        self.original.equation_tolerance(row)
+    }
+    fn equation_unit(&self, row: usize) -> oblikovati_solve::residual::ResidualValueUnit {
+        self.original.equation_unit(row)
+    }
+    fn evaluate(&self, variables: &[DualNumber]) -> Result<Vec<DualNumber>, ResidualError> {
+        let Some(slots) = &self.slots else {
+            return self.original.evaluate(variables);
+        };
+        if variables.len() != self.variables.len() {
+            return Err(ResidualError::Domain(format!(
+                "grounded residual has {} inputs: expected {} active coordinates",
+                variables.len(),
+                self.variables.len()
+            )));
+        }
+        self.original
+            .evaluate(&expand_grounded_inputs(slots, variables)?)
+    }
+}
+fn expand_grounded_inputs(
+    slots: &[GroundedSlot],
+    variables: &[DualNumber],
+) -> Result<Vec<DualNumber>, ResidualError> {
+    let mut active = variables.iter();
+    slots
+        .iter()
+        .map(|slot| match slot {
+            GroundedSlot::Constant(value) => {
+                DualNumber::constant(*value).map_err(ResidualError::from)
+            }
+            GroundedSlot::Active(_) => {
+                Ok(active.next().expect("validated active input count").clone())
+            }
+        })
+        .collect()
+}
+
+#[cfg(test)]
+#[path = "../../tests/sketch/grounded.rs"]
+mod tests;

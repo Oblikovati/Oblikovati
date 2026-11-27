@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Text: tmp/obk-pinned-text-29-source-iyxk6wgx/checkout/features/sketch/text/scenario.feature" package="testsuite/Feature: Text: tmp/obk-pinned-text-29-source-iyxk6wgx/checkout/features/sketch/text/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-21T03:22:09.744290197Z" time="97.42606936"><testcase name="Scenario: text-29 Restore fraction replacement through history: tmp/obk-pinned-text-29-source-iyxk6wgx/checkout/features/sketch/text/scenario.feature:285:3" time="97.42606936"><system-out><![CDATA[  Scenario: text-29 Restore fraction replacement through history
+   ✔  Given an accepted stacked fraction
+   ✔  When the user presses Undo
+   ✔  Then the previous AB diameter content returns
+   ✔  When the user presses Redo
+   ✔  Then the stacked fraction returns with 35 dimensions needed
+   ✔  And the linked Text remains 10.000
+]]></system-out></testcase></testsuite></testsuites>

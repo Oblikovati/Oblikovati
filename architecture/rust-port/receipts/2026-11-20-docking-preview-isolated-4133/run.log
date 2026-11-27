@@ -1,0 +1,38 @@
+   Compiling oblikovati-gui v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/docking-menu-4133/crates/gui)
+   Compiling oblikovati-head v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/docking-menu-4133/crates/head)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 55.71s
+     Running unittests src/lib.rs (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/target/debug/deps/oblikovati_head-a63049949246ef13)
+
+running 1 test
+Feature: Dockable workspace panels
+  Scenario: Join panels in one dock region as selectable tabs
+[DEBUG-dock-preview] from=[97, 167] to=[1220, 168] source=Some(([22.0, 158.0], [173.0, 177.0])) destination=Some(([1000.0, 158.0], [440.0, 720.0]))
+   ✔  Given a part document is active in the MCAD Software
+   ✔  And two dockable panels are open in separate workspace regions
+   ✔  When the user drags one panel onto the center of the other panel's dock region
+   ✘  Then the destination region indicates a tab insertion target
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/docking-system/docking-system.feature:98:5
+      Matched: crates/head/src/../tests/application/docking-system/tabs_scenario.rs:53:1
+      Step panicked. Captured output: tab preview color [42, 42, 42]
+[Summary]
+1 feature
+1 scenario (1 failed)
+4 steps (3 passed, 1 failed)
+
+thread 'application-scenarios' (2862978) panicked at crates/head/src/../tests/application/benchmark.rs:374:5:
+scenario benchmark: expected no failed, undefined, or skipped steps
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'native::gui_loop_tests::application_bdd::application_scenarios_use_the_native_window' (2862977) panicked at crates/head/src/../tests/application/benchmark.rs:267:10:
+called `Result::unwrap()` on an `Err` value: Any { .. }
+test native::gui_loop_tests::application_bdd::application_scenarios_use_the_native_window ... FAILED
+
+failures:
+
+failures:
+    native::gui_loop_tests::application_bdd::application_scenarios_use_the_native_window
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 1546 filtered out; finished in 27.25s
+
+error: test failed, to rerun pass `-p oblikovati-head --lib`

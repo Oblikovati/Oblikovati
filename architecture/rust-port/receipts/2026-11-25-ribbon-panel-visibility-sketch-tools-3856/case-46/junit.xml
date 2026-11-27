@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon panel visibility: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" package="testsuite/Feature: Ribbon panel visibility: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:12:13.047324721Z" time="37.607301934"><testcase name="Scenario: Show and hides the Tutorials panel from the Tools tab: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:690:3" time="37.607301934"><system-out><![CDATA[  Scenario: Show and hides the Tutorials panel from the Tools tab
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is open and active
+   ✔  And the full Tools ribbon is visible
+   ✔  And the Tutorials panel is visible
+   ✔  When the user opens Show Panels from a ribbon panel title context menu
+   ✔  Then Tutorials is checked in the panel list
+   ✔  When the user selects Tutorials
+   ✔  Then the Tutorials panel disappears from the ribbon
+   ✔  And Tutorials is unchecked in the panel list
+   ✔  When the user selects Tutorials again
+   ✔  Then the Tutorials panel reappears after Team Web
+   ✔  And Tutorials is checked in the panel list
+   ✔  And the part remains active
+]]></system-out></testcase></testsuite></testsuites>

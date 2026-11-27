@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T13:02:11.349393447Z" time="50.388374113"><testcase name="Scenario: Transfer an available command after changing the target: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature:1072:3" time="50.388374113"><system-out><![CDATA[  Scenario: Transfer an available command after changing the target
+   ✔  Given a part is active in the MCAD Software with the full 3D Model ribbon visible
+   ✔  And the Ribbon customization dialog shows All Commands and the Part 3D Model target
+   ✔  And the Part Tools custom panel list is initially empty
+   ✔  When the user selects "2D Sketches" in the available command list
+   ✔  And the user opens the target selector
+   ✔  And the user selects the Part Tools target
+   ✔  Then "2D Sketches" remains selected in the available command list
+   ✔  And the Part Tools custom panel list is empty
+   ✔  When the user clicks the add command button
+   ✔  Then "2D Sketches" appears in the Part Tools custom panel list
+   ✔  And the target shows a pending-change marker
+   ✔  When the user clicks Cancel
+   ✔  Then the customization dialog closes
+]]></system-out></testcase></testsuite></testsuites>

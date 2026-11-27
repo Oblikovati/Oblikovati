@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Workspace layout and panel visibility: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature" package="testsuite/Feature: Workspace layout and panel visibility: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-19T14:20:39.505266258Z" time="8.869045548"><testcase name="Scenario: Filter drawing browser entries while retaining their parent branches: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:290:3" time="8.869045548"><system-out><![CDATA[  Scenario: Filter drawing browser entries while retaining their parent branches
+   ✔  Given a drawing with border entries in its resources and sheet is open in the MCAD Software
+   ✔  And the drawing browser branches are expanded
+   ✔  When the user opens the drawing browser search field
+   ✔  And the user enters "Border"
+   ✔  Then matching border entries are displayed beneath their respective parent branches
+   ✔  And matching text is highlighted
+   ✔  And unrelated browser entries are hidden
+   ✔  And the drawing sheet remains visible
+   ✔  When the user clears the search text
+   ✔  Then the unfiltered drawing browser tree is displayed
+   ✔  When the user closes the empty search field
+   ✔  Then the search field is hidden
+]]></system-out></testcase></testsuite></testsuites>

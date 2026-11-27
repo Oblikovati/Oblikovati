@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T12:31:01.101783226Z" time="19.118240044"><testcase name="Scenario: Close customization with the command-source list open: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature:1087:3" time="19.118240044"><system-out><![CDATA[  Scenario: Close customization with the command-source list open
+   ✔  Given a part is active in the MCAD Software with the full Tools ribbon visible
+   ✔  And the Ribbon customization dialog has no pending edits
+   ✔  And the command source is All Commands
+   ✔  When the user opens the command-source list
+   ✔  And the user clicks Close
+   ✔  Then the command-source list closes
+   ✔  And the customization dialog remains open with All Commands selected
+   ✔  When the user clicks Close again
+   ✔  Then the customization dialog closes
+   ✔  And the Tools ribbon remains visible
+]]></system-out></testcase></testsuite></testsuites>

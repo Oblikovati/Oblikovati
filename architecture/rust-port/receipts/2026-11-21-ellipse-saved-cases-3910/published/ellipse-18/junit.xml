@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ellipse: mnt/vininas-projects/MCAD-Scenarios/features/sketch/ellipse/scenario.feature" package="testsuite/Feature: Ellipse: mnt/vininas-projects/MCAD-Scenarios/features/sketch/ellipse/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-21T11:33:38.049944598Z" time="27.049492567"><testcase name="Scenario: ellipse-18 Reject a zero minor radius and retain the prior value: mnt/vininas-projects/MCAD-Scenarios/features/sketch/ellipse/scenario.feature:210:3" time="27.049492567"><system-out><![CDATA[  Scenario: ellipse-18 Reject a zero minor radius and retain the prior value
+   ✔  Given a copy of `fixtures/cad/ellipse/axis-both-8-4.opd` is open with Sketch1 being edited in RIGHT view
+   ✔  Given the recorded ellipse has a driving minor-radius dimension storing 4 mm
+   ✔  When General Dimension opens the minor-radius dimension and 0 followed by Return attempts an edit
+   ✔  Then Edit Dimension Value reports Failed to edit dimension value
+   ✔  When Cancel dismisses the failure window
+   ✔  Then General Dimension remains active with annotations 8 and 4 visible
+   ✔  When the minor-radius dimension is reopened
+   ✔  Then its stored expression is 4 mm
+   ✔  When Escape closes the editor and another Escape exits the command
+   ✔  Then Ready appears and the ellipse remains visible
+]]></system-out></testcase></testsuite></testsuites>

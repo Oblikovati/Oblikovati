@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Orient a model using the viewport control: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-orientation/viewport-orientation.feature" package="testsuite/Feature: Orient a model using the viewport control: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-orientation/viewport-orientation.feature" tests="5" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T14:40:32.497544395Z" time="86.764042533"><testcase name="Scenario: Show the Front label without a diagonal stroke across the orientation face: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-orientation/viewport-orientation.feature:35:3" time="9.976548059"><system-out><![CDATA[  Scenario: Show the Front label without a diagonal stroke across the orientation face
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is active with its rectangular block visible in the MCAD Software
+   ✔  And the viewport orientation control displays the Front view
+   ✔  When the user inspects the visible orientation face
+   ✔  Then the square face is labeled FRONT in uppercase
+   ✔  And no diagonal stroke crosses the face
+   ✔  And the block and model browser remain visible
+]]></system-out></testcase><testcase name="Scenario: Rotate and restore a face-on view: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-orientation/viewport-orientation.feature:52:3" time="12.312066608"><system-out><![CDATA[  Scenario: Rotate and restore a face-on view
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is active with its rectangular block visible in the MCAD Software
+   ✔  And the orientation control displays Front with its label upright
+   ✔  And the block's front face is wider than it is tall on screen
+   ✔  When the user selects the upper curved rotation arrow on the orientation control
+   ✔  Then the control still displays Front with its label rotated by a quarter turn
+   ✔  And the block's front face is taller than it is wide on screen
+   ✔  When the user selects the other curved rotation arrow
+   ✔  Then the Front label is upright again
+   ✔  And the block's front face is wider than it is tall again
+   ✔  And the same part and model browser remain active
+]]></system-out></testcase><testcase name="Scenario: Choose a corner from a face-on view: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-orientation/viewport-orientation.feature:63:3" time="16.399791684"><system-out><![CDATA[  Scenario: Choose a corner from a face-on view
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is active with its rectangular block visible in the MCAD Software
+   ✔  And the orientation control displays an upright Front view
+   ✔  When the user selects the upper-right corner of the orientation control
+   ✔  Then the block is displayed obliquely with its top, front and right faces visible
+   ✔  And the orientation control shows the Top, Front and Right faces
+   ✔  And the same part and model browser remain active
+]]></system-out></testcase><testcase name="Scenario: Retain hybrid projection when selecting a named face: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-orientation/viewport-orientation.feature:138:3" time="20.538296704"><system-out><![CDATA[  Scenario: Retain hybrid projection when selecting a named face
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is active with its rectangular block visible in the MCAD Software
+   ✔  And it is displayed obliquely in Orthographic projection
+   ✔  When the user chooses Perspective with Ortho Faces from the orientation control menu
+   ✔  Then the block remains visible in an oblique view with a changed projection
+   ✔  When the user selects Top on the orientation control
+   ✔  Then the block is displayed face-on from the top
+   ✔  And the orientation control displays Top
+   ✔  When the user reopens the orientation control menu
+   ✔  Then Perspective with Ortho Faces is marked as the current mode
+   ✔  When the user chooses Orthographic
+   ✔  Then the same part remains active in the top view
+]]></system-out></testcase><testcase name="Scenario: Toggle orientation lock for a selected face: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-orientation/viewport-orientation.feature:246:3" time="27.537339478"><system-out><![CDATA[  Scenario: Toggle orientation lock for a selected face
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is active with its rectangular block visible in the MCAD Software
+   ✔  And no model geometry is selected
+   ✔  When the user opens the orientation control context menu
+   ✔  Then Lock to Current Selection is unavailable
+   ✔  When the user closes the menu and selects a visible face of the block
+   ✔  And the user opens the orientation control context menu
+   ✔  Then Lock to Current Selection is available
+   ✔  When the user chooses Lock to Current Selection
+   ✔  Then a lock indicator appears beside the orientation control
+   ✔  When the user reopens the orientation control context menu
+   ✔  Then Lock to Current Selection is checked
+   ✔  When the user chooses Lock to Current Selection again
+   ✔  Then the lock indicator disappears
+   ✔  When the user clears the face selection and reopens the orientation control context menu
+   ✔  Then Lock to Current Selection is unavailable
+]]></system-out></testcase></testsuite></testsuites>

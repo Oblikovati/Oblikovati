@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T04:07:47.434834531Z" time="36.109387044"><testcase name="Scenario: Cancel a staged command on the View ribbon target: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature:1106:3" time="36.109387044"><system-out><![CDATA[  Scenario: Cancel a staged command on the View ribbon target
+   ✔> Given the MCAD Software starts with a writable copy of `fixtures/preferences/ribbon-normal` as its configuration directory
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part is active in the MCAD Software
+   ✔  And the View ribbon tab is selected
+   ✔  And the Part | View custom target is empty
+   ✔  When the user opens Customize User Commands from the Windows panel context menu
+   ✔  And the user double-clicks "2D Sketches" in All Commands
+   ✔  Then "2D Sketches" appears in the Part | View target
+   ✔  And the target is marked as changed
+   ✔  When the user cancels customization
+   ✔  And the user reopens Customize User Commands from the Windows panel context menu
+   ✔  Then the Part | View target is empty
+   ✔  And "2D Sketches" is available in All Commands
+   ✔  When the user closes customization
+   ✔  Then the View ribbon remains visible
+]]></system-out></testcase></testsuite></testsuites>

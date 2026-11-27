@@ -1,0 +1,23 @@
+{
+  "kind": "foreground-api-check",
+  "application_commit": "82f06f8a8c409a7c0277ec2813e36c354efb2e4c",
+  "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+  "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+  "bridge_binary_sha256": "2942bdba7a756d20ea17f24fb18e9eb41f495e20b1d259caf9d28d77e237b20b",
+  "environment": "Linux, Xvfb 1440x900, Vulkan Lavapipe; X11 XTest input and MCPBridge.",
+  "result": "passed",
+  "scope": "After creating a parameter-driven cube by UI, changing size to 20 mm, undo/redo, saving and reopening, analysis_measure resolves a face key recorded at 10 mm and returns 399.9999999984629 mm\u00b2.",
+  "limitations": [
+    "The input driver uses fixed coordinates and is retained as a historical record.",
+    "Bridge shared-library source-to-binary provenance was not verified.",
+    "One planar cube face is checked live; exact integration and refusal cases have separate automated tests.",
+    "Other analysis.measure types are explicitly declined."
+  ],
+  "sha256": {
+    "driver.py.gz": "eeca3a6ef8d9cef9395809ed46fc924401aa1be1af6d3d57d0c1611125719510",
+    "get_reference_keys.json": "fcd6dadf17f545644d9a34c90f61fd4b3db2cae9b23a49eafe7b6e961eb46251",
+    "reopened-face-area.json": "ae2b096241032bf6da9cb6df0606a3b24faec44485da5969721a9849b0860173",
+    "reopened.png": "fc46911e34b3e92bfd754d0fa7297a4b862ba5e53b97559cd149526cae3fddf4",
+    "run.log.gz": "a61954a40701b3870fd6c03c4eacc67ac17b0e1dccbeb22d8e47abc7bb397ad9"
+  }
+}

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Recent documents on Home: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature" package="testsuite/Feature: Recent documents on Home: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T01:26:55.034220097Z" time="24.353554849"><testcase name="Scenario: Keep search and type filter when changing Recent views: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature:311:3" time="24.353554849"><system-out><![CDATA[  Scenario: Keep search and type filter when changing Recent views
+   ✔  Given the MCAD Software starts with an isolated Recent profile prepared from a disposable copy of `fixtures/cad/home-recent-native`
+   ✔  And the Home workspace is active in the MCAD Software
+   ✔  And a recent part named "Part26" is displayed in List View
+   ✔  And the search for "Part26" and the Part filter are active
+   ✔  When the user switches to Grid View
+   ✔  Then the search field contains "Part26"
+   ✔  And the filter control indicates one active filter
+   ✔  And the matching part is displayed as a card
+   ✔  When the user switches back to List View
+   ✔  Then the search field still contains "Part26"
+   ✔  And the filter control still indicates one active filter
+   ✔  And the matching part is displayed as a row
+]]></system-out></testcase></testsuite></testsuites>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T05:50:58.437498245Z" time="25.48166829"><testcase name="Scenario: Inspect marking-menu sub-environment choices without changing selection: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature:1928:3" time="25.48166829"><system-out><![CDATA[  Scenario: Inspect marking-menu sub-environment choices without changing selection
+   ✔> Given the MCAD Software starts with a writable copy of `fixtures/preferences/ribbon-normal` as its configuration directory
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And the customization dialog is open on the Marking Menu tab in the MCAD Software
+   ✔  And Environment is "2D Sketch"
+   ✔  And Sub-Environment is "None Selected"
+   ✔  When the user opens the Sub-Environment selector
+   ✔  Then the available choices include "Arc", "Circle", "Dimension", "Line", "Point", "Sketch Block", "Sketch Pattern", "Spline" and "Text"
+   ✔  And "None Selected" remains highlighted
+   ✔  When the user dismisses the selector without choosing an option
+   ✔  Then Sub-Environment remains "None Selected"
+   ✔  And no customization change is pending
+]]></system-out></testcase></testsuite></testsuites>

@@ -1,0 +1,3388 @@
+{
+  "features": 1,
+  "scenarios": 126,
+  "excluded_capture_only": 0,
+  "blocked_capture_host_only": 0,
+  "steps": 1528,
+  "unresolved": [
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Open ribbon customization from the Tools tab in its first captured state",
+      "line": 139,
+      "step": "ribbon customization has not been opened earlier in the captured session",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Open ribbon customization from the Tools tab in its first captured state",
+      "line": 140,
+      "step": "the user clicks \"Customize\" in the Options panel",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Open ribbon customization from the Tools tab in its first captured state",
+      "line": 142,
+      "step": "the target selector shows \"Part | Tools\"",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Open ribbon customization from the Tools tab in its first captured state",
+      "line": 143,
+      "step": "the available-command category is \"All Commands\"",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Open ribbon customization from the Tools tab in its first captured state",
+      "line": 144,
+      "step": "the Part | Tools custom panel list is empty with no pending-change marker",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Open ribbon customization from the Tools tab in its first captured state",
+      "line": 147,
+      "step": "the dialog closes and the Tools ribbon remains visible",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Inspect the keyboard customization initial state",
+      "line": 152,
+      "step": "the user opens Customize from the Options panel",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Inspect the keyboard customization initial state",
+      "line": 154,
+      "step": "the Categories selector shows \"All\"",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Inspect the keyboard customization initial state",
+      "line": 155,
+      "step": "the command-type selector shows \"All\"",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Inspect the keyboard customization initial state",
+      "line": 156,
+      "step": "the keyword search field is empty",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Inspect the keyboard customization initial state",
+      "line": 157,
+      "step": "the command list has Keys, Command Name, Type and Category columns",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Inspect the keyboard customization initial state",
+      "line": 158,
+      "step": "the command list is populated",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Inspect the keyboard customization initial state",
+      "line": 159,
+      "step": "\"Use default multi-character command aliases\" is unchecked",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Inspect the keyboard customization initial state",
+      "line": 160,
+      "step": "the Reset All Keys and Copy to Clipboard controls are visible",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Inspect the keyboard customization initial state",
+      "line": 161,
+      "step": "cancels and Apply are unavailable because no edits are staged",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Inspect the keyboard customization initial state",
+      "line": 163,
+      "step": "the customization dialog closes without changing the active sketch",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Inspect the marking-menu customization initial state",
+      "line": 168,
+      "step": "the user opens Customize from the Options panel",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Inspect the marking-menu customization initial state",
+      "line": 169,
+      "step": "the user selects the \"Marking Menu\" tab",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Inspect the marking-menu customization initial state",
+      "line": 170,
+      "step": "the environment selector shows \"2D Sketch\"",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Inspect the marking-menu customization initial state",
+      "line": 171,
+      "step": "the sub-environment selector shows \"None Selected\"",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Inspect the marking-menu customization initial state",
+      "line": 172,
+      "step": "the menu-location area shows the configured sketch command positions",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Inspect the marking-menu customization initial state",
+      "line": 173,
+      "step": "the command search field is empty with \"All Commands\" selected",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Inspect the marking-menu customization initial state",
+      "line": 174,
+      "step": "the Marking Menu Style is \"Show Icon and Text\"",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Inspect the marking-menu customization initial state",
+      "line": 175,
+      "step": "the Overflow Menu is \"Full Menu\"",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Inspect the marking-menu customization initial state",
+      "line": 176,
+      "step": "\"Use Classic Context Menu\" is unchecked",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Inspect the marking-menu customization initial state",
+      "line": 177,
+      "step": "the Restore Default control is visible",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Inspect the marking-menu customization initial state",
+      "line": 178,
+      "step": "cancels and Apply are unavailable because no edits are staged",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Inspect the marking-menu customization initial state",
+      "line": 180,
+      "step": "the customization dialog closes without changing the active sketch",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Inspect marking-menu customization for a part environment",
+      "line": 184,
+      "step": "a part is active in the MCAD Software with no active sketch",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Inspect marking-menu customization for a part environment",
+      "line": 186,
+      "step": "the user opens Customize from the Options panel",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Inspect marking-menu customization for a part environment",
+      "line": 187,
+      "step": "the user selects the \"Marking Menu\" tab",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Inspect marking-menu customization for a part environment",
+      "line": 188,
+      "step": "the environment selector shows \"Part\"",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Inspect marking-menu customization for a part environment",
+      "line": 189,
+      "step": "the sub-environment selector shows \"None Selected\"",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Inspect marking-menu customization for a part environment",
+      "line": 190,
+      "step": "the menu-location area shows Fillet above the center, Measure and Undo on the left, Extrude and Revolve on the right, Work Plane and Hole below, and New Sketch at the bottom",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Inspect marking-menu customization for a part environment",
+      "line": 191,
+      "step": "the command search field is empty with \"All Commands\" selected",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Inspect marking-menu customization for a part environment",
+      "line": 192,
+      "step": "Marking Menu Style is \"Show Icon and Text\"",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Inspect marking-menu customization for a part environment",
+      "line": 193,
+      "step": "Overflow Menu is \"Full Menu\"",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Inspect marking-menu customization for a part environment",
+      "line": 194,
+      "step": "\"Use Classic Context Menu\" is unchecked",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Inspect marking-menu customization for a part environment",
+      "line": 195,
+      "step": "Restore Default is visible",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Inspect marking-menu customization for a part environment",
+      "line": 196,
+      "step": "cancels and Apply are unavailable because no edits are staged",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Inspect marking-menu customization for a part environment",
+      "line": 198,
+      "step": "the customization dialog closes without applying changes",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Filter keyboard commands by keyword and clear the filter",
+      "line": 225,
+      "step": "ribbon customization is open on the \"Keyboard\" tab",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Filter keyboard commands by keyword and clear the filter",
+      "line": 226,
+      "step": "the Categories and command-type selectors both show \"All\"",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Filter keyboard commands by keyword and clear the filter",
+      "line": 227,
+      "step": "the keyboard command search field is empty",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Filter keyboard commands by keyword and clear the filter",
+      "line": 228,
+      "step": "the user types \"pattern\" in the search field",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Filter keyboard commands by keyword and clear the filter",
+      "line": 229,
+      "step": "the visible command rows have names containing \"Pattern\" regardless of case",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Filter keyboard commands by keyword and clear the filter",
+      "line": 230,
+      "step": "matching commands remain visible from more than one category",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Filter keyboard commands by keyword and clear the filter",
+      "line": 231,
+      "step": "the Categories and command-type selectors remain set to \"All\"",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Filter keyboard commands by keyword and clear the filter",
+      "line": 232,
+      "step": "the user selects the clear-search control",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Filter keyboard commands by keyword and clear the filter",
+      "line": 234,
+      "step": "the unfiltered command list is restored",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Filter keyboard commands by keyword and clear the filter",
+      "line": 236,
+      "step": "no keyboard mapping has changed",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Inspect custom panel targets from a part document",
+      "line": 241,
+      "step": "ribbon customization is open on the Ribbon tab with Part | Tools selected",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Inspect custom panel targets from a part document",
+      "line": 242,
+      "step": "the Part | Tools custom panel list is empty",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Inspect custom panel targets from a part document",
+      "line": 243,
+      "step": "the user opens the target tab selector",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Inspect custom panel targets from a part document",
+      "line": 244,
+      "step": "the visible part targets include Tools, Manage, View, Environments, Collaborate and Fusion",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Inspect custom panel targets from a part document",
+      "line": 245,
+      "step": "they also include 3D Sketch, Construction, Edit Base Solid, Repair, Route, Render, Analysis, 3D Print, Freeform, Hidden Tab and BIM Content",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Inspect custom panel targets from a part document",
+      "line": 246,
+      "step": "the visible assembly targets include Mold Layout, Core/Cavity, Mold Assembly and Assemble",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Inspect custom panel targets from a part document",
+      "line": 247,
+      "step": "Part | Tools remains the selected target",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Inspect custom panel targets from a part document",
+      "line": 248,
+      "step": "the user closes the selector with Escape",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Inspect custom panel targets from a part document",
+      "line": 249,
+      "step": "the selector closes without changing the target or custom panel list",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Inspect custom panel targets from a part document",
+      "line": 251,
+      "step": "the dialog closes and the part remains active",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Change a main-panel command button size",
+      "line": 293,
+      "step": "\"Shell\" is a standard-sized button in the 3D Model \"Modify\" main panel",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Change a main-panel command button size",
+      "line": 294,
+      "step": "the user right-clicks \"Shell\" and opens \"Button Size\"",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Change a main-panel command button size",
+      "line": 295,
+      "step": "\"Standard\" is selected and \"Large\" is available",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Change a main-panel command button size",
+      "line": 297,
+      "step": "\"Shell\" is displayed with a larger icon and its label below",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Change a main-panel command button size",
+      "line": 298,
+      "step": "the other commands in the panel reflow",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Change a main-panel command button size",
+      "line": 299,
+      "step": "the user right-clicks \"Shell\" and opens \"Button Size\"",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Change a main-panel command button size",
+      "line": 300,
+      "step": "\"Large\" is selected",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Change a main-panel command button size",
+      "line": 302,
+      "step": "\"Shell\" returns to a small icon with its label beside it",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Ungroup and regroup a ribbon command family",
+      "line": 306,
+      "step": "the 3D Model Work Features panel contains a grouped \"Plane\" command",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Ungroup and regroup a ribbon command family",
+      "line": 307,
+      "step": "the user right-clicks \"Plane\" and selects \"Ungroup Commands from Drop-Down Menu\"",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Ungroup and regroup a ribbon command family",
+      "line": 308,
+      "step": "the user opens the compact Work Features panel",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Ungroup and regroup a ribbon command family",
+      "line": 309,
+      "step": "separate plane command buttons are visible including \"Offset from Plane\" and \"Three Points\"",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Ungroup and regroup a ribbon command family",
+      "line": 310,
+      "step": "the user right-clicks \"Plane\" and selects \"Group Commands into Drop-Down Menu\"",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Ungroup and regroup a ribbon command family",
+      "line": 311,
+      "step": "the user opens the Work Features panel again",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Ungroup and regroup a ribbon command family",
+      "line": 312,
+      "step": "the plane choices are represented by a grouped \"Plane\" control",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Reflow the ribbon after changing the application window state",
+      "line": 317,
+      "step": "the 3D Model ribbon is compact after regrouping the Plane choices",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Reflow the ribbon after changing the application window state",
+      "line": 318,
+      "step": "the user double-clicks the application title bar to change the window state",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Reflow the ribbon after changing the application window state",
+      "line": 319,
+      "step": "the ribbon reflows to show more command labels and panels",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Reflow the ribbon after changing the application window state",
+      "line": 320,
+      "step": "the Plane choices remain grouped",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Open and dismisses a grouped command menu",
+      "line": 325,
+      "step": "the 3D Model Work Features panel contains a grouped \"Plane\" command",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Open and dismisses a grouped command menu",
+      "line": 326,
+      "step": "the user clicks the Plane drop-down arrow",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Open and dismisses a grouped command menu",
+      "line": 327,
+      "step": "a vertical menu opens beneath the control",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Open and dismisses a grouped command menu",
+      "line": 328,
+      "step": "the menu contains \"Plane\", \"Offset from Plane\", and \"Three Points\"",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Open and dismisses a grouped command menu",
+      "line": 329,
+      "step": "the menu presents icons and dividers between groups of choices",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Open and dismisses a grouped command menu",
+      "line": 332,
+      "step": "the part remains visible without a plane command being started",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Export and restore a custom ribbon command",
+      "line": 337,
+      "step": "\"2D Sketches\" is added with Large and Text unchecked and applied",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Export and restore a custom ribbon command",
+      "line": 338,
+      "step": "the customization is exported to a new XML file",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Export and restore a custom ribbon command",
+      "line": 339,
+      "step": "the command is returned to the available list and the empty panel is applied",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Export and restore a custom ribbon command",
+      "line": 340,
+      "step": "the user imports the exported XML file",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Export and restore a custom ribbon command",
+      "line": 341,
+      "step": "\"2D Sketches\" appears in the target list with Large and Text unchecked",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Export and restore a custom ribbon command",
+      "line": 342,
+      "step": "the target has a pending-change marker",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Export and restore a custom ribbon command",
+      "line": 343,
+      "step": "the User Commands panel is not yet visible on the Tools ribbon",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Export and restore a custom ribbon command",
+      "line": 345,
+      "step": "the User Commands panel appears with a small command icon and no visible label",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Add and remove a ribbon command in quick access",
+      "line": 350,
+      "step": "\"Shell\" is visible in the 3D Model Modify panel",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Add and remove a ribbon command in quick access",
+      "line": 351,
+      "step": "\"Shell\" is absent from the quick-access toolbar",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Add and remove a ribbon command in quick access",
+      "line": 352,
+      "step": "the user right-clicks \"Shell\" and selects \"Add to Quick Access Toolbar\"",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Add and remove a ribbon command in quick access",
+      "line": 353,
+      "step": "a Shell icon appears in the quick-access toolbar",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Add and remove a ribbon command in quick access",
+      "line": 354,
+      "step": "\"Shell\" remains in the Modify panel",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Add and remove a ribbon command in quick access",
+      "line": 355,
+      "step": "the user reopens the ribbon command context menu",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Add and remove a ribbon command in quick access",
+      "line": 356,
+      "step": "\"Add to Quick Access Toolbar\" is unavailable",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Add and remove a ribbon command in quick access",
+      "line": 357,
+      "step": "the user right-clicks the added Shell icon in the quick-access toolbar",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Add and remove a ribbon command in quick access",
+      "line": 358,
+      "step": "its menu offers \"Remove from Quick Access Toolbar\"",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Add and remove a ribbon command in quick access",
+      "line": 360,
+      "step": "the added Shell icon disappears from the toolbar",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Add and remove a ribbon command in quick access",
+      "line": 361,
+      "step": "the ribbon command context menu offers \"Add to Quick Access Toolbar\" again",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Launch a choice from a grouped command menu",
+      "line": 365,
+      "step": "the 3D Model Work Features panel contains a grouped \"Plane\" command",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Launch a choice from a grouped command menu",
+      "line": 366,
+      "step": "the user opens the Plane drop-down and selects \"Offset from Plane\"",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Launch a choice from a grouped command menu",
+      "line": 368,
+      "step": "the software prompts the user to select a planar face",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Launch a choice from a grouped command menu",
+      "line": 369,
+      "step": "the user presses Escape without selecting a face",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Launch a choice from a grouped command menu",
+      "line": 370,
+      "step": "the software returns to the ready state",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Launch a choice from a grouped command menu",
+      "line": 371,
+      "step": "the grouped Plane control and the part remain visible",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Launch a choice from a grouped command menu",
+      "line": 372,
+      "step": "no new work plane is created",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Use a grouped command choice and then the main button",
+      "line": 419,
+      "step": "the 3D Model Work Features panel shows the grouped Plane control",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Use a grouped command choice and then the main button",
+      "line": 420,
+      "step": "the user opens the Plane drop-down",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Use a grouped command choice and then the main button",
+      "line": 422,
+      "step": "the drop-down closes",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Use a grouped command choice and then the main button",
+      "line": 423,
+      "step": "the status area prompts the user to select a point",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Use a grouped command choice and then the main button",
+      "line": 424,
+      "step": "the user presses Escape without selecting a point",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Use a grouped command choice and then the main button",
+      "line": 425,
+      "step": "the part remains visible and the status area shows Ready",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Use a grouped command choice and then the main button",
+      "line": 426,
+      "step": "the user clicks the main Plane button",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Use a grouped command choice and then the main button",
+      "line": 427,
+      "step": "the status area prompts the user to define a work plane by selecting geometry",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Use a grouped command choice and then the main button",
+      "line": 428,
+      "step": "the user presses Escape without selecting geometry",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Use a grouped command choice and then the main button",
+      "line": 430,
+      "step": "the part remains visible without a new work plane",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Use a grouped command choice and then the main button",
+      "line": 431,
+      "step": "the status area shows Ready",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Leave two selected staged commands in place when ordering up is clicked",
+      "line": 560,
+      "step": "the user has staged these commands in order:",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Leave two selected staged commands in place when ordering up is clicked",
+      "line": 571,
+      "step": "\"2D Sketches\" and \"3D Annotations\" remain selected",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Retain a customized command size while switching tabs",
+      "line": 645,
+      "step": "Shell uses the Standard button size in the Modify panel",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Retain a customized command size while switching tabs",
+      "line": 646,
+      "step": "the user chooses Large from the Shell button size menu",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Retain a customized command size while switching tabs",
+      "line": 647,
+      "step": "the user selects the Tools tab and then returns to 3D Model",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Retain a customized command size while switching tabs",
+      "line": 648,
+      "step": "Shell is still shown as a large button",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Retain a customized command size while switching tabs",
+      "line": 649,
+      "step": "its button size menu marks Large as selected",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Retain a customized command size while switching tabs",
+      "line": 650,
+      "step": "the user chooses Standard from that menu",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Retain a customized command size while switching tabs",
+      "line": 651,
+      "step": "Shell returns to its standard button presentation",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Navigate the available command list with the keyboard",
+      "line": 674,
+      "step": "the available command list is in its observed ascending order",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Navigate the available command list with the keyboard",
+      "line": 677,
+      "step": "the list scrolls to its end and selects \"Zoom Window\"",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Navigate the available command list with the keyboard",
+      "line": 679,
+      "step": "the list scrolls to its beginning and selects \"<Separator>\"",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Navigate the available command list with the keyboard",
+      "line": 682,
+      "step": "the list scrolls to and selects \"Z Parallel\"",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Discard a pending edit from an open command category list",
+      "line": 733,
+      "step": "the user clicks Done in the Measure panel",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Discard a pending edit from an open command category list",
+      "line": 736,
+      "step": "the user removes Measure from the custom panel and clicks OK",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Discard a pending edit from an open command category list",
+      "line": 737,
+      "step": "the User Commands panel is no longer visible",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Discard a pending edit from an open command category list",
+      "line": 738,
+      "step": "the original Measure command remains visible",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Insert a command after a selected custom panel row",
+      "line": 791,
+      "step": "the user selects \"2-D Drawing\" in the available list",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Insert a command after a selected custom panel row",
+      "line": 797,
+      "step": "\"2-D Drawing\" is no longer shown in the available list",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Keep two selected staged commands in order when moving down",
+      "line": 805,
+      "step": "the user has staged these commands in order:",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Keep two selected staged commands in order when moving down",
+      "line": 809,
+      "step": "the user selects \"2-D Drawing\" and extends the selection down to \"2D Sketches\"",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Keep two selected staged commands in order when moving down",
+      "line": 815,
+      "step": "the first two rows remain selected",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Press a key on a selected staged command row",
+      "line": 878,
+      "step": "\"2D Sketches\" is staged with Large and Text unchecked",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Press a key on a selected staged command row",
+      "line": 879,
+      "step": "the user clicks the command name in the target row",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Press a key on a selected staged command row",
+      "line": 880,
+      "step": "the user presses Space",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Press a key on a selected staged command row",
+      "line": 881,
+      "step": "the command row remains selected",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Press a key on a selected staged command row",
+      "line": 882,
+      "step": "its Large and Text checkboxes remain unchecked",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Press a key on a selected staged command row",
+      "line": 883,
+      "step": "the Part Tools target retains its pending-change marker",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Press a key on a selected staged command row",
+      "line": 878,
+      "step": "\"2D Sketches\" is staged with Large and Text unchecked",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Press a key on a selected staged command row",
+      "line": 879,
+      "step": "the user clicks the command name in the target row",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Press a key on a selected staged command row",
+      "line": 881,
+      "step": "the command row remains selected",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Press a key on a selected staged command row",
+      "line": 882,
+      "step": "its Large and Text checkboxes remain unchecked",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Press a key on a selected staged command row",
+      "line": 883,
+      "step": "the Part Tools target retains its pending-change marker",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Press a key on a selected staged command row",
+      "line": 878,
+      "step": "\"2D Sketches\" is staged with Large and Text unchecked",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Press a key on a selected staged command row",
+      "line": 879,
+      "step": "the user clicks the command name in the target row",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Press a key on a selected staged command row",
+      "line": 880,
+      "step": "the user presses Delete",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Press a key on a selected staged command row",
+      "line": 881,
+      "step": "the command row remains selected",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Press a key on a selected staged command row",
+      "line": 882,
+      "step": "its Large and Text checkboxes remain unchecked",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Press a key on a selected staged command row",
+      "line": 883,
+      "step": "the Part Tools target retains its pending-change marker",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Stage the same command for two ribbon tabs",
+      "line": 912,
+      "step": "the ribbon customization dialog has empty Part Tools and Part Manage targets",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Stage the same command for two ribbon tabs",
+      "line": 914,
+      "step": "the user double-clicks 2D Sketches in the source list for Part Tools",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Stage the same command for two ribbon tabs",
+      "line": 915,
+      "step": "the command appears in the Part Tools target and the target is marked as changed",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Stage the same command for two ribbon tabs",
+      "line": 917,
+      "step": "the target is empty and 2D Sketches is available in the source list",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Stage the same command for two ribbon tabs",
+      "line": 919,
+      "step": "the command appears in the Part Manage target and that target is marked as changed",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Stage the same command for two ribbon tabs",
+      "line": 921,
+      "step": "its staged 2D Sketches command remains present",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Stage the same command for two ribbon tabs",
+      "line": 922,
+      "step": "the Part Tools target is marked as changed",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Open customization from the View ribbon context menu",
+      "line": 957,
+      "step": "the View ribbon tab is selected",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Open customization from the View ribbon context menu",
+      "line": 958,
+      "step": "the Part | View custom target is empty",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Open customization from the View ribbon context menu",
+      "line": 959,
+      "step": "the user opens the context menu on the Windows panel title",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Open customization from the View ribbon context menu",
+      "line": 960,
+      "step": "the user chooses Customize User Commands",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Open customization from the View ribbon context menu",
+      "line": 961,
+      "step": "the ribbon customization dialog opens",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Open customization from the View ribbon context menu",
+      "line": 962,
+      "step": "the target is \"Part | View\"",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Cancel a staged command on the View ribbon target",
+      "line": 970,
+      "step": "the View ribbon tab is selected",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Cancel a staged command on the View ribbon target",
+      "line": 971,
+      "step": "the Part | View custom target is empty",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Cancel a staged command on the View ribbon target",
+      "line": 972,
+      "step": "the user opens Customize User Commands from the Windows panel context menu",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Cancel a staged command on the View ribbon target",
+      "line": 973,
+      "step": "the user double-clicks \"2D Sketches\" in All Commands",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Cancel a staged command on the View ribbon target",
+      "line": 974,
+      "step": "\"2D Sketches\" appears in the Part | View target",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Cancel a staged command on the View ribbon target",
+      "line": 977,
+      "step": "the user reopens Customize User Commands from the Windows panel context menu",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Cancel a staged command on the View ribbon target",
+      "line": 978,
+      "step": "the Part | View target is empty",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Cancel a staged command on the View ribbon target",
+      "line": 979,
+      "step": "\"2D Sketches\" is available in All Commands",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Jump to a command by its initial letter",
+      "line": 988,
+      "step": "the user presses the Z key while the available commands list has focus",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Jump to a command by its initial letter",
+      "line": 989,
+      "step": "the available commands list scrolls to and selects \"Z Parallel\"",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Stage commands for part and assembly targets from a part document",
+      "line": 1029,
+      "step": "the Part | Tools and Assembly | Design custom targets are empty",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Stage commands for part and assembly targets from a part document",
+      "line": 1031,
+      "step": "the Part | Tools target is marked as changed",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Stage commands for part and assembly targets from a part document",
+      "line": 1032,
+      "step": "the user selects the Assembly | Design target",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Stage commands for part and assembly targets from a part document",
+      "line": 1033,
+      "step": "the assembly target list is empty",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Stage commands for part and assembly targets from a part document",
+      "line": 1035,
+      "step": "the user adds \"2D Sketches\" to the Assembly | Design target",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Stage commands for part and assembly targets from a part document",
+      "line": 1036,
+      "step": "\"2D Sketches\" appears in the assembly target list",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Stage commands for part and assembly targets from a part document",
+      "line": 1037,
+      "step": "the Assembly | Design target is marked as changed",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Stage commands for part and assembly targets from a part document",
+      "line": 1039,
+      "step": "\"2D Sketches\" remains in the part target list",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Stage commands for part and assembly targets from a part document",
+      "line": 1040,
+      "step": "the Part | Tools target remains marked as changed",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Stage commands for part and assembly targets from a part document",
+      "line": 1043,
+      "step": "the part document remains active",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Stage commands for part and assembly targets from a part document",
+      "line": 1045,
+      "step": "the Part | Tools target is empty",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Stage commands for part and assembly targets from a part document",
+      "line": 1047,
+      "step": "the user selects the Assembly | Design target",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Stage commands for part and assembly targets from a part document",
+      "line": 1048,
+      "step": "the assembly target is empty",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Stage commands for part and assembly targets from a part document",
+      "line": 1051,
+      "step": "the part document remains active",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Navigate the descending available command list to its endpoints",
+      "line": 1057,
+      "step": "the Part Tools custom target is empty",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Navigate the descending available command list to its endpoints",
+      "line": 1058,
+      "step": "the available commands are sorted in descending name order",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Navigate the descending available command list to its endpoints",
+      "line": 1059,
+      "step": "the user selects \"Zoom Window\" in the available commands list",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Navigate the descending available command list to its endpoints",
+      "line": 1061,
+      "step": "the list scrolls to its end and selects the unlabeled entry below \"2-D Drawing\"",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Navigate the descending available command list to its endpoints",
+      "line": 1065,
+      "step": "the list scrolls to its beginning and selects \"<Separator>\"",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Navigate the descending available command list to its endpoints",
+      "line": 1066,
+      "step": "\"Zoom Window\" appears immediately below the separator",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Navigate the descending available command list to its endpoints",
+      "line": 1069,
+      "step": "the user restores ascending name order and closes customization",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Reorder a staged target row after selecting a source command",
+      "line": 1170,
+      "step": "the user selects \"3D Annotations\" in the target list",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Reorder a staged target row after selecting a source command",
+      "line": 1171,
+      "step": "the user selects \"2-D Drawing\" in the available commands list",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Reorder a staged target row after selecting a source command",
+      "line": 1176,
+      "step": "\"2-D Drawing\" remains available in the source list",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Reorder a staged target row after selecting a source command",
+      "line": 1177,
+      "step": "the target has a pending-change marker",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Return a staged command after selecting another source row",
+      "line": 1187,
+      "step": "the user selects \"2-D Drawing\" in the available commands list",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Return a staged command after selecting another source row",
+      "line": 1193,
+      "step": "\"2D Sketches\" appears in the target list again",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Return a staged command after selecting another source row",
+      "line": 1194,
+      "step": "\"2-D Drawing\" remains available in the source list",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Transfer consecutive available commands with repeated clicks",
+      "line": 1243,
+      "step": "2D Sketches is selected in the available commands list",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Transfer consecutive available commands with repeated clicks",
+      "line": 1244,
+      "step": "the user clicks the add command button twice",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Transfer consecutive available commands with repeated clicks",
+      "line": 1245,
+      "step": "the target list contains 2D Sketches followed by 3D Annotations",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Transfer consecutive available commands with repeated clicks",
+      "line": 1246,
+      "step": "3D PDF is highlighted in the available commands list",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Transfer consecutive available commands with repeated clicks",
+      "line": 1247,
+      "step": "the user clicks the add command button once more",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Transfer consecutive available commands with repeated clicks",
+      "line": 1248,
+      "step": "the target list contains 2D Sketches, 3D Annotations and 3D PDF in that order",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Transfer consecutive available commands with repeated clicks",
+      "line": 1249,
+      "step": "the next visible 3D PDF export entry is highlighted in the available commands list",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Remove successive staged commands without reselecting",
+      "line": 1258,
+      "step": "2D Sketches, 3D Annotations and 3D PDF have been staged in that order",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Remove successive staged commands without reselecting",
+      "line": 1259,
+      "step": "the 2D Sketches target row is selected",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Remove successive staged commands without reselecting",
+      "line": 1261,
+      "step": "2D Sketches returns to the available commands list",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Remove successive staged commands without reselecting",
+      "line": 1262,
+      "step": "3D Annotations is highlighted in the target list above 3D PDF",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Remove successive staged commands without reselecting",
+      "line": 1263,
+      "step": "the user clicks the remove command button again",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Remove successive staged commands without reselecting",
+      "line": 1264,
+      "step": "3D Annotations returns to the available commands list",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Remove successive staged commands without reselecting",
+      "line": 1265,
+      "step": "3D PDF is highlighted as the only target row",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Remove successive staged commands without reselecting",
+      "line": 1266,
+      "step": "the user clicks the remove command button again",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Remove successive staged commands without reselecting",
+      "line": 1268,
+      "step": "3D PDF returns to the available commands list",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Remove successive staged commands without reselecting",
+      "line": 1269,
+      "step": "the target still shows a pending-change marker",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Cancel a file chooser while a ribbon edit is pending",
+      "line": 1311,
+      "step": "the user clicks Import",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Cancel a file chooser while a ribbon edit is pending",
+      "line": 1312,
+      "step": "the Import Customization Settings file chooser opens",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Cancel a file chooser while a ribbon edit is pending",
+      "line": 1313,
+      "step": "the user clicks Cancel in the file chooser",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Cancel a file chooser while a ribbon edit is pending",
+      "line": 1314,
+      "step": "the file chooser closes",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Cancel a file chooser while a ribbon edit is pending",
+      "line": 1315,
+      "step": "2D Sketches remains in the Part Tools target list",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Cancel a file chooser while a ribbon edit is pending",
+      "line": 1317,
+      "step": "Apply and cancels are available in the customization dialog",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Cancel a file chooser while a ribbon edit is pending",
+      "line": 1318,
+      "step": "the user clicks Cancel in the customization dialog",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Cancel a file chooser while a ribbon edit is pending",
+      "line": 1311,
+      "step": "the user clicks Export",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Cancel a file chooser while a ribbon edit is pending",
+      "line": 1312,
+      "step": "the Export Customization Settings file chooser opens",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Cancel a file chooser while a ribbon edit is pending",
+      "line": 1313,
+      "step": "the user clicks Cancel in the file chooser",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Cancel a file chooser while a ribbon edit is pending",
+      "line": 1314,
+      "step": "the file chooser closes",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Cancel a file chooser while a ribbon edit is pending",
+      "line": 1315,
+      "step": "2D Sketches remains in the Part Tools target list",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Cancel a file chooser while a ribbon edit is pending",
+      "line": 1317,
+      "step": "Apply and cancels are available in the customization dialog",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Cancel a file chooser while a ribbon edit is pending",
+      "line": 1318,
+      "step": "the user clicks Cancel in the customization dialog",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Export an unapplied custom ribbon command",
+      "line": 1330,
+      "step": "2D Sketches has been staged with Large and Text unchecked",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Export an unapplied custom ribbon command",
+      "line": 1331,
+      "step": "the target shows a pending-change marker",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Export an unapplied custom ribbon command",
+      "line": 1332,
+      "step": "the user exports customization to a new XML file",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Export an unapplied custom ribbon command",
+      "line": 1333,
+      "step": "the export chooser closes",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Export an unapplied custom ribbon command",
+      "line": 1334,
+      "step": "the customization dialog still shows 2D Sketches in the target list",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Export an unapplied custom ribbon command",
+      "line": 1335,
+      "step": "the target still shows a pending-change marker",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Export an unapplied custom ribbon command",
+      "line": 1336,
+      "step": "the exported settings do not contain the staged 2D Sketches command in Part Tools",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Export an unapplied custom ribbon command",
+      "line": 1337,
+      "step": "the user clicks Cancel in the customization dialog",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Import settings while another command is staged on the same target",
+      "line": 1343,
+      "step": "ribbon customization shows 2D Sketches applied to the Part Tools target",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Import settings while another command is staged on the same target",
+      "line": 1344,
+      "step": "a settings file contains 2D Sketches on Part Tools with Large and Text unchecked",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Import settings while another command is staged on the same target",
+      "line": 1345,
+      "step": "3D Annotations is staged after 2D Sketches on Part Tools but has not been applied",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Import settings while another command is staged on the same target",
+      "line": 1346,
+      "step": "the user imports the settings file",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Import settings while another command is staged on the same target",
+      "line": 1347,
+      "step": "the import chooser closes",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Import settings while another command is staged on the same target",
+      "line": 1348,
+      "step": "the Part Tools target shows only 2D Sketches with Large and Text unchecked",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Import settings while another command is staged on the same target",
+      "line": 1349,
+      "step": "3D Annotations is available in the source list",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Import settings while another command is staged on the same target",
+      "line": 1351,
+      "step": "Apply and cancels are available",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Import settings while another command is staged on the same target",
+      "line": 1352,
+      "step": "the user clicks Cancel in the customization dialog",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Import settings with edits staged on two ribbon targets",
+      "line": 1358,
+      "step": "ribbon customization shows All Commands and initially empty Part Tools and Part Manage targets",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Import settings with edits staged on two ribbon targets",
+      "line": 1359,
+      "step": "a settings file contains 2D Sketches on Part Tools and no custom entries for Part Manage",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Import settings with edits staged on two ribbon targets",
+      "line": 1360,
+      "step": "3D Annotations is staged on Part Tools",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Import settings with edits staged on two ribbon targets",
+      "line": 1361,
+      "step": "2D Sketches is staged on Part Manage",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Import settings with edits staged on two ribbon targets",
+      "line": 1362,
+      "step": "Part Manage is the selected target",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Import settings with edits staged on two ribbon targets",
+      "line": 1363,
+      "step": "the user imports the settings file",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Import settings with edits staged on two ribbon targets",
+      "line": 1364,
+      "step": "the import chooser closes",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Import settings with edits staged on two ribbon targets",
+      "line": 1365,
+      "step": "the Part Manage target list is empty",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Import settings with edits staged on two ribbon targets",
+      "line": 1366,
+      "step": "Part Manage shows a pending-change marker",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Import settings with edits staged on two ribbon targets",
+      "line": 1368,
+      "step": "the target contains 2D Sketches with Large and Text unchecked",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Import settings with edits staged on two ribbon targets",
+      "line": 1369,
+      "step": "3D Annotations is available in the source list",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Import settings with edits staged on two ribbon targets",
+      "line": 1370,
+      "step": "Part Tools shows a pending-change marker",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Import settings with edits staged on two ribbon targets",
+      "line": 1371,
+      "step": "the user clicks Cancel in the customization dialog",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Transfer a selected category containing commands and a separator",
+      "line": 1402,
+      "step": "ribbon customization shows an empty Part Tools target",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Transfer a selected category containing commands and a separator",
+      "line": 1403,
+      "step": "the available command category is Exit 2D Sketch Tab",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Transfer a selected category containing commands and a separator",
+      "line": 1404,
+      "step": "the source list shows Separator, Cancel Sketch, and Finish Sketch in that order",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Transfer a selected category containing commands and a separator",
+      "line": 1405,
+      "step": "the user clicks Cancel Sketch in the source list",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Transfer a selected category containing commands and a separator",
+      "line": 1406,
+      "step": "the user presses Ctrl+A while the source list has focus",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Transfer a selected category containing commands and a separator",
+      "line": 1407,
+      "step": "all three source entries are highlighted",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Transfer a selected category containing commands and a separator",
+      "line": 1408,
+      "step": "the user clicks the transfer-to-target button",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Transfer a selected category containing commands and a separator",
+      "line": 1409,
+      "step": "the target contains Cancel Sketch, Separator, and Finish Sketch in that order",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Transfer a selected category containing commands and a separator",
+      "line": 1410,
+      "step": "the source list still contains Separator",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Transfer a selected category containing commands and a separator",
+      "line": 1411,
+      "step": "the two commands have Large and Text unchecked",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Transfer a selected category containing commands and a separator",
+      "line": 1412,
+      "step": "Part Tools is marked as having pending changes",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Page through visible available commands",
+      "line": 1418,
+      "step": "ribbon customization is open for an empty Part Tools custom panel",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Page through visible available commands",
+      "line": 1419,
+      "step": "the available command category is \"All Commands\" in ascending name order",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Page through visible available commands",
+      "line": 1420,
+      "step": "the available list is at the top in the observed dialog size",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Page through visible available commands",
+      "line": 1421,
+      "step": "its first page shows \"2D Sketches\" and the separator",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Page through visible available commands",
+      "line": 1423,
+      "step": "the user presses Page Down",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Page through visible available commands",
+      "line": 1424,
+      "step": "\"Adjust Orientation(Adjust Orientation)\" is highlighted at the bottom of the available list",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Page through visible available commands",
+      "line": 1427,
+      "step": "the separator at the top of the available list is highlighted",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Page through visible available commands",
+      "line": 1429,
+      "step": "the user closes customization without changes",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Page through a short filtered command list",
+      "line": 1433,
+      "step": "ribbon customization is open in the MCAD Software for an empty Part Tools custom panel",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Page through a short filtered command list",
+      "line": 1434,
+      "step": "the source category is \"Exit 2D Sketch Tab\"",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Page through a short filtered command list",
+      "line": 1435,
+      "step": "the source list shows the separator, \"Cancel Sketch\", and \"Finish Sketch\"",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Page through a short filtered command list",
+      "line": 1436,
+      "step": "the user selects \"Cancel Sketch\" and presses Page Down",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Page through a short filtered command list",
+      "line": 1437,
+      "step": "\"Finish Sketch\" is highlighted",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Page through a short filtered command list",
+      "line": 1440,
+      "step": "the separator is highlighted",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Page through a short filtered command list",
+      "line": 1442,
+      "step": "the user closes customization without changes",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Navigate to the ends of a staged target list",
+      "line": 1460,
+      "step": "\"2-D Drawing\", \"2D Sketches\" and \"3D Annotations\" are staged in that order",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Navigate to the ends of a staged target list",
+      "line": 1461,
+      "step": "all three staged rows have Large and Text unchecked",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Navigate to the ends of a staged target list",
+      "line": 1462,
+      "step": "the user selects \"3D Annotations\" in the target list and presses Home",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Navigate to the ends of a staged target list",
+      "line": 1463,
+      "step": "\"2-D Drawing\" is highlighted",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Navigate to the ends of a staged target list",
+      "line": 1466,
+      "step": "the three rows remain in their original order with their display options unchecked",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Navigate through a staged separator with arrow keys",
+      "line": 1472,
+      "step": "the target contains \"Cancel Sketch\", a separator, and \"Finish Sketch\" in that order",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Navigate through a staged separator with arrow keys",
+      "line": 1473,
+      "step": "the user selects \"Cancel Sketch\" in the target list",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Navigate through a staged separator with arrow keys",
+      "line": 1475,
+      "step": "the separator is highlighted",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Navigate through a staged separator with arrow keys",
+      "line": 1476,
+      "step": "the user presses Down again",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Navigate through a staged separator with arrow keys",
+      "line": 1477,
+      "step": "\"Finish Sketch\" is highlighted",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Navigate through a staged separator with arrow keys",
+      "line": 1479,
+      "step": "the separator is highlighted",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Navigate through a staged separator with arrow keys",
+      "line": 1480,
+      "step": "the staged rows remain in their original order",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Navigate through a staged separator with arrow keys",
+      "line": 1482,
+      "step": "the customization dialog closes without applying the staged entries",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Cancel staged commands on two ribbon targets",
+      "line": 1486,
+      "step": "the Part Tools and Part Manage custom panel lists are empty",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Cancel staged commands on two ribbon targets",
+      "line": 1487,
+      "step": "ribbon customization is open with All Commands as the source",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Cancel staged commands on two ribbon targets",
+      "line": 1488,
+      "step": "the user adds \"2D Sketches\" to Part Tools",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Cancel staged commands on two ribbon targets",
+      "line": 1489,
+      "step": "the user selects Part Manage as the target",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Cancel staged commands on two ribbon targets",
+      "line": 1490,
+      "step": "the user adds \"3D Annotations\" to Part Manage",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Cancel staged commands on two ribbon targets",
+      "line": 1491,
+      "step": "Part Manage is marked as having pending changes",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Cancel staged commands on two ribbon targets",
+      "line": 1492,
+      "step": "its target list contains \"3D Annotations\"",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Cancel staged commands on two ribbon targets",
+      "line": 1493,
+      "step": "the user clicks Cancel without applying the changes",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Cancel staged commands on two ribbon targets",
+      "line": 1495,
+      "step": "Part Tools is selected and its target list is empty",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Cancel staged commands on two ribbon targets",
+      "line": 1496,
+      "step": "\"2D Sketches\" and \"3D Annotations\" are available in the source list",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Cancel staged commands on two ribbon targets",
+      "line": 1497,
+      "step": "the user selects Part Manage as the target",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Cancel staged commands on two ribbon targets",
+      "line": 1498,
+      "step": "its target list is empty",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Cancel staged commands on two ribbon targets",
+      "line": 1499,
+      "step": "the target selector has no pending-change marker",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Press Space after checking a staged command size option",
+      "line": 1504,
+      "step": "ribbon customization is open in the MCAD Software for an empty Part Tools custom panel",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Press Space after checking a staged command size option",
+      "line": 1505,
+      "step": "the available command category is All Commands in ascending name order",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Press Space after checking a staged command size option",
+      "line": 1506,
+      "step": "the user selects 2-D Drawing and clicks the add button",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Press Space after checking a staged command size option",
+      "line": 1507,
+      "step": "2-D Drawing is staged and 2D Sketches is selected in the available list",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Press Space after checking a staged command size option",
+      "line": 1508,
+      "step": "the user clicks the staged 2-D Drawing Large checkbox",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Press Space after checking a staged command size option",
+      "line": 1509,
+      "step": "Large is checked and Text is unchecked for 2-D Drawing",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Press Space after checking a staged command size option",
+      "line": 1510,
+      "step": "the user presses Space",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Press Space after checking a staged command size option",
+      "line": 1511,
+      "step": "2D Sketches is added after 2-D Drawing",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Press Space after checking a staged command size option",
+      "line": 1512,
+      "step": "Large remains checked for 2-D Drawing",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Press Space after checking a staged command size option",
+      "line": 1513,
+      "step": "3D Annotations is selected in the available list",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Press Space after checking a staged command size option",
+      "line": 1514,
+      "step": "the user presses Space again",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Press Space after checking a staged command size option",
+      "line": 1515,
+      "step": "3D Annotations is added after 2D Sketches",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Press Space after checking a staged command size option",
+      "line": 1516,
+      "step": "2-D Drawing still has Large checked",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Press Space after checking a staged command size option",
+      "line": 1517,
+      "step": "the user cancels customization and reopens it for Part Tools",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Move and reopens the ribbon customization dialog",
+      "line": 1522,
+      "step": "ribbon customization is open without pending edits",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Move and reopens the ribbon customization dialog",
+      "line": 1523,
+      "step": "the user drags the dialog title bar to another visible position",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Move and reopens the ribbon customization dialog",
+      "line": 1524,
+      "step": "the dialog moves to the new position",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Move and reopens the ribbon customization dialog",
+      "line": 1525,
+      "step": "its Ribbon tab, command lists and target selector remain visible",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Move and reopens the ribbon customization dialog",
+      "line": 1526,
+      "step": "the user closes customization and reopens it from Tools in the same session",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Move and reopens the ribbon customization dialog",
+      "line": 1527,
+      "step": "the dialog reopens at the moved position",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Move and reopens the ribbon customization dialog",
+      "line": 1528,
+      "step": "its Ribbon tab and Part Tools target are displayed",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Retain command sort order across category switches until the dialog closes",
+      "line": 1532,
+      "step": "ribbon customization is open in the MCAD Software with All Commands selected",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Retain command sort order across category switches until the dialog closes",
+      "line": 1533,
+      "step": "the available commands are in ascending name order",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Retain command sort order across category switches until the dialog closes",
+      "line": 1534,
+      "step": "the user clicks the available-command Name header",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Retain command sort order across category switches until the dialog closes",
+      "line": 1535,
+      "step": "the separator remains first and the commands appear in descending name order",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Retain command sort order across category switches until the dialog closes",
+      "line": 1536,
+      "step": "the user selects the Sketch Tab command category",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Retain command sort order across category switches until the dialog closes",
+      "line": 1537,
+      "step": "the separator remains first and the Sketch commands appear in descending name order",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Retain command sort order across category switches until the dialog closes",
+      "line": 1538,
+      "step": "the user selects All Commands again",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Retain command sort order across category switches until the dialog closes",
+      "line": 1539,
+      "step": "the available commands remain in descending name order",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Retain command sort order across category switches until the dialog closes",
+      "line": 1540,
+      "step": "the user closes customization without making an edit and reopens it from Tools",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Retain command sort order across category switches until the dialog closes",
+      "line": 1541,
+      "step": "All Commands is selected and the available commands are in ascending name order",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Retain command sort order across category switches until the dialog closes",
+      "line": 1542,
+      "step": "the custom-panel target remains empty",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Resize ribbon customization while a command is staged",
+      "line": 1546,
+      "step": "ribbon customization is open in the MCAD Software with an empty Part Tools target",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Resize ribbon customization while a command is staged",
+      "line": 1547,
+      "step": "All Commands is shown in the available-command list",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Resize ribbon customization while a command is staged",
+      "line": 1548,
+      "step": "the user drags the lower-right dialog corner outward",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Resize ribbon customization while a command is staged",
+      "line": 1549,
+      "step": "the dialog and both command lists become wider and taller",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Resize ribbon customization while a command is staged",
+      "line": 1550,
+      "step": "more available-command rows are visible",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Resize ribbon customization while a command is staged",
+      "line": 1551,
+      "step": "the user adds 2D Sketches to the custom-panel target",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Resize ribbon customization while a command is staged",
+      "line": 1552,
+      "step": "the target shows 2D Sketches with Large and Text unchecked",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Resize ribbon customization while a command is staged",
+      "line": 1554,
+      "step": "the user drags the lower-right dialog corner inward",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Resize ribbon customization while a command is staged",
+      "line": 1555,
+      "step": "the dialog and both command lists become smaller",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Resize ribbon customization while a command is staged",
+      "line": 1556,
+      "step": "the staged 2D Sketches row and its unchecked options remain visible",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Resize ribbon customization while a command is staged",
+      "line": 1557,
+      "step": "the target selector still indicates a pending change",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Resize ribbon customization while a command is staged",
+      "line": 1559,
+      "step": "the dialog closes without applying the staged command",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Reopen ribbon customization at its default size after resizing",
+      "line": 1563,
+      "step": "ribbon customization is open in the MCAD Software with no pending edits",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Reopen ribbon customization at its default size after resizing",
+      "line": 1564,
+      "step": "the user drags the lower-right dialog corner outward",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Reopen ribbon customization at its default size after resizing",
+      "line": 1565,
+      "step": "the dialog and its command lists become wider and taller",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Reopen ribbon customization at its default size after resizing",
+      "line": 1567,
+      "step": "the user reopens customization from the Tools ribbon in the same session",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Reopen ribbon customization at its default size after resizing",
+      "line": 1568,
+      "step": "the dialog reopens at its default size",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Reopen ribbon customization at its default size after resizing",
+      "line": 1569,
+      "step": "the available-command and custom-panel lists remain visible",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Retain an individual large button when ribbon text is turned off",
+      "line": 1573,
+      "step": "a part is active in the MCAD Software with the full 3D Model ribbon in Normal appearance",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Retain an individual large button when ribbon text is turned off",
+      "line": 1574,
+      "step": "Shell is displayed at Standard button size in the Modify panel",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Retain an individual large button when ribbon text is turned off",
+      "line": 1575,
+      "step": "the user changes the Shell button size to Large",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Retain an individual large button when ribbon text is turned off",
+      "line": 1576,
+      "step": "Shell appears as a large labeled button",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Retain an individual large button when ribbon text is turned off",
+      "line": 1577,
+      "step": "the user selects Text Off from Ribbon Appearance",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Retain an individual large button when ribbon text is turned off",
+      "line": 1578,
+      "step": "command labels are hidden and the Modify panel title remains visible",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Retain an individual large button when ribbon text is turned off",
+      "line": 1579,
+      "step": "Shell appears as a large icon without its label",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Retain an individual large button when ribbon text is turned off",
+      "line": 1580,
+      "step": "the user opens the Shell button size submenu",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Retain an individual large button when ribbon text is turned off",
+      "line": 1581,
+      "step": "Large is checked",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Retain an individual large button when ribbon text is turned off",
+      "line": 1582,
+      "step": "the user selects Standard for Shell",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Retain an individual large button when ribbon text is turned off",
+      "line": 1583,
+      "step": "the user restores Normal ribbon appearance",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Retain an individual large button when ribbon text is turned off",
+      "line": 1584,
+      "step": "Shell returns to its standard labeled presentation",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Cancel a staged ribbon customization during a modeling command",
+      "line": 1588,
+      "step": "a part containing a solid block is active in the MCAD Software",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Cancel a staged ribbon customization during a modeling command",
+      "line": 1591,
+      "step": "the user starts Shell from Modify",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Cancel a staged ribbon customization during a modeling command",
+      "line": 1593,
+      "step": "the user opens the Options panel title context menu",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Cancel a staged ribbon customization during a modeling command",
+      "line": 1595,
+      "step": "the Ribbon customization dialog opens with Part Tools as the target",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Cancel a staged ribbon customization during a modeling command",
+      "line": 1596,
+      "step": "the Shell properties and model preview remain visible behind the dialog",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Cancel a staged ribbon customization during a modeling command",
+      "line": 1597,
+      "step": "the user adds 2D Sketches to the target list",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Cancel a staged ribbon customization during a modeling command",
+      "line": 1599,
+      "step": "the target list contains 2D Sketches",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Cancel a staged ribbon customization during a modeling command",
+      "line": 1601,
+      "step": "the customization dialog closes without adding a User Commands panel",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Cancel a staged ribbon customization during a modeling command",
+      "line": 1602,
+      "step": "the Shell properties and model preview remain visible",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Cancel a staged ribbon customization during a modeling command",
+      "line": 1603,
+      "step": "the user selects a face of the block",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Cancel a staged ribbon customization during a modeling command",
+      "line": 1604,
+      "step": "the Shell Remove field reports 1 Face",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Cancel a staged ribbon customization during a modeling command",
+      "line": 1605,
+      "step": "the model preview shows the selected face removed",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Cancel a staged ribbon customization during a modeling command",
+      "line": 1606,
+      "step": "the user cancels Shell",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Cancel a staged ribbon customization during a modeling command",
+      "line": 1607,
+      "step": "the Shell properties and preview close",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Cancel a staged ribbon customization during a modeling command",
+      "line": 1608,
+      "step": "the original solid block remains visible",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Apply a ribbon customization during a modeling command",
+      "line": 1612,
+      "step": "a part containing a solid block is active in the MCAD Software",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Apply a ribbon customization during a modeling command",
+      "line": 1615,
+      "step": "the user starts Shell from Modify",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Apply a ribbon customization during a modeling command",
+      "line": 1617,
+      "step": "the user opens the Options panel title context menu",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Apply a ribbon customization during a modeling command",
+      "line": 1622,
+      "step": "the target list retains 2D Sketches without a pending marker",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Apply a ribbon customization during a modeling command",
+      "line": 1623,
+      "step": "the User Commands panel is visible behind the dialog",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Apply a ribbon customization during a modeling command",
+      "line": 1624,
+      "step": "the Shell properties and model preview remain visible behind the dialog",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Apply a ribbon customization during a modeling command",
+      "line": 1627,
+      "step": "the Part Tools target is empty without a pending marker",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Apply a ribbon customization during a modeling command",
+      "line": 1628,
+      "step": "the User Commands panel remains visible behind the dialog",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Apply a ribbon customization during a modeling command",
+      "line": 1629,
+      "step": "the Shell properties and model preview remain visible behind the dialog",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Apply a ribbon customization during a modeling command",
+      "line": 1632,
+      "step": "the Shell properties and model preview remain visible",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Apply a ribbon customization during a modeling command",
+      "line": 1633,
+      "step": "the user cancels Shell",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Apply a ribbon customization during a modeling command",
+      "line": 1634,
+      "step": "the command properties and preview close",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Apply a ribbon customization during a modeling command",
+      "line": 1635,
+      "step": "the original solid block remains visible",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Open and close customization while one face is selected",
+      "line": 1656,
+      "step": "one face is selected",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Open and close customization while one face is selected",
+      "line": 1658,
+      "step": "the user opens Customize from the Tools ribbon",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Open and close customization while one face is selected",
+      "line": 1660,
+      "step": "the command category is All Commands",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Open and close customization while one face is selected",
+      "line": 1661,
+      "step": "the target is Part Tools with an empty custom panel list",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Open and close customization while one face is selected",
+      "line": 1662,
+      "step": "Close is available while Cancel and Apply are disabled",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Open and close customization while one face is selected",
+      "line": 1665,
+      "step": "the selection indicator reports one face",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Export customization settings covering multiple interface areas",
+      "line": 1670,
+      "step": "the current customization has no staged changes",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Export customization settings covering multiple interface areas",
+      "line": 1671,
+      "step": "the user exports the current settings to a new XML file",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Export customization settings covering multiple interface areas",
+      "line": 1672,
+      "step": "the XML file parses as a customization settings document",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Export customization settings covering multiple interface areas",
+      "line": 1673,
+      "step": "it contains ribbon state, custom panel, and quick access toolbar settings",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Export customization settings covering multiple interface areas",
+      "line": 1674,
+      "step": "it contains keyboard mapping settings",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Export customization settings covering multiple interface areas",
+      "line": 1675,
+      "step": "it contains marking menu and mini-toolbar settings",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Open Ribbon customization from the Sketch panel title",
+      "line": 1680,
+      "step": "the user opens Customize User Commands from the Create panel title context menu",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Open Ribbon customization from the Sketch panel title",
+      "line": 1681,
+      "step": "the Customize dialog opens on the Ribbon tab",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Open Ribbon customization from the Sketch panel title",
+      "line": 1682,
+      "step": "Ribbon, Keyboard and Marking Menu tabs are available",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Open Ribbon customization from the Sketch panel title",
+      "line": 1683,
+      "step": "the command source is All Commands",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Open Ribbon customization from the Sketch panel title",
+      "line": 1684,
+      "step": "the target is Part | Sketch",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Open Ribbon customization from the Sketch panel title",
+      "line": 1686,
+      "step": "the user closes the dialog without making changes",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Inspect marking-menu sub-environment choices without changing selection",
+      "line": 1709,
+      "step": "the customization dialog is open on the Marking Menu tab in the MCAD Software",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Inspect marking-menu sub-environment choices without changing selection",
+      "line": 1710,
+      "step": "Environment is \"2D Sketch\"",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Inspect marking-menu sub-environment choices without changing selection",
+      "line": 1711,
+      "step": "Sub-Environment is \"None Selected\"",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Inspect marking-menu sub-environment choices without changing selection",
+      "line": 1712,
+      "step": "the user opens the Sub-Environment selector",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Inspect marking-menu sub-environment choices without changing selection",
+      "line": 1713,
+      "step": "the available choices include \"Arc\", \"Circle\", \"Dimension\", \"Line\", \"Point\", \"Sketch Block\", \"Sketch Pattern\", \"Spline\" and \"Text\"",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Inspect marking-menu sub-environment choices without changing selection",
+      "line": 1714,
+      "step": "\"None Selected\" remains highlighted",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Inspect marking-menu sub-environment choices without changing selection",
+      "line": 1715,
+      "step": "the user dismisses the selector without choosing an option",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Inspect marking-menu environments without changing selection",
+      "line": 1720,
+      "step": "the customization dialog is open on the Marking Menu tab in the MCAD Software",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Inspect marking-menu environments without changing selection",
+      "line": 1721,
+      "step": "Environment is \"2D Sketch\"",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Inspect marking-menu environments without changing selection",
+      "line": 1722,
+      "step": "the user opens the Environment selector",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Inspect marking-menu environments without changing selection",
+      "line": 1723,
+      "step": "the available choices include \"2D Sketch\", \"3D Sketch\", \"Assembly\", \"Drawing\", \"Part\", \"Presentation\" and \"Sheet Metal\"",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Inspect marking-menu environments without changing selection",
+      "line": 1724,
+      "step": "\"2D Sketch\" remains selected",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Inspect marking-menu environments without changing selection",
+      "line": 1725,
+      "step": "the user dismisses the selector without choosing an option",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Inspect marking-menu presentation choices without changing settings",
+      "line": 1730,
+      "step": "the customization dialog is open on the Marking Menu tab in the MCAD Software",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Inspect marking-menu presentation choices without changing settings",
+      "line": 1731,
+      "step": "Marking Menu Style is \"Show Icon and Text\"",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Inspect marking-menu presentation choices without changing settings",
+      "line": 1732,
+      "step": "Overflow Menu is \"Full Menu\"",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Inspect marking-menu presentation choices without changing settings",
+      "line": 1733,
+      "step": "the user opens the Marking Menu Style selector",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Inspect marking-menu presentation choices without changing settings",
+      "line": 1734,
+      "step": "the available styles include \"Show Icon and Text\", \"Show Icon Only\" and \"Show Text Only\"",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Inspect marking-menu presentation choices without changing settings",
+      "line": 1735,
+      "step": "\"Show Icon and Text\" remains selected",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Inspect marking-menu presentation choices without changing settings",
+      "line": 1736,
+      "step": "the user dismisses the selector without choosing an option",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Inspect marking-menu presentation choices without changing settings",
+      "line": 1737,
+      "step": "the user opens the Overflow Menu selector",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Inspect marking-menu presentation choices without changing settings",
+      "line": 1738,
+      "step": "the available overflow choices include \"Full Menu\", \"Radial Menu Only\" and \"Short Menu\"",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Inspect marking-menu presentation choices without changing settings",
+      "line": 1739,
+      "step": "\"Full Menu\" remains selected",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Inspect marking-menu presentation choices without changing settings",
+      "line": 1740,
+      "step": "the user dismisses the selector without choosing an option",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Cancel a staged classic context-menu setting",
+      "line": 1744,
+      "step": "the customization dialog is open on the Marking Menu tab in the MCAD Software",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Cancel a staged classic context-menu setting",
+      "line": 1745,
+      "step": "\"Use Classic Context Menu\" is unchecked",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Cancel a staged classic context-menu setting",
+      "line": 1746,
+      "step": "no customization change is pending",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Cancel a staged classic context-menu setting",
+      "line": 1747,
+      "step": "the user checks \"Use Classic Context Menu\"",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Cancel a staged classic context-menu setting",
+      "line": 1748,
+      "step": "the option is checked",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Cancel a staged classic context-menu setting",
+      "line": 1749,
+      "step": "\"OK\", \"Cancel\" and \"Apply\" are available",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Cancel a staged classic context-menu setting",
+      "line": 1752,
+      "step": "the user reopens customization on the Marking Menu tab",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Cancel a staged classic context-menu setting",
+      "line": 1753,
+      "step": "\"Use Classic Context Menu\" is unchecked",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "View 3D Sketch marking-menu locations and sub-environments",
+      "line": 1757,
+      "step": "the customization dialog is open on the Marking Menu tab in the MCAD Software",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "View 3D Sketch marking-menu locations and sub-environments",
+      "line": 1758,
+      "step": "Environment is \"2D Sketch\"",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "View 3D Sketch marking-menu locations and sub-environments",
+      "line": 1759,
+      "step": "the user selects \"3D Sketch\" in the Environment selector",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "View 3D Sketch marking-menu locations and sub-environments",
+      "line": 1760,
+      "step": "the menu-location layout shows \"Bend\", \"Three Point Arc\", \"Undo\", \"Helical Curve\", \"General Dimension\", \"Include Geometry\" and \"Finish 3D Sketch\"",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "View 3D Sketch marking-menu locations and sub-environments",
+      "line": 1761,
+      "step": "Sub-Environment is \"None Selected\"",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "View 3D Sketch marking-menu locations and sub-environments",
+      "line": 1763,
+      "step": "the user opens the Sub-Environment selector",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "View 3D Sketch marking-menu locations and sub-environments",
+      "line": 1764,
+      "step": "the available choices include \"3D Line, 3D Arc\", \"3D Point\", \"Equation Curve\", \"Helical Curve\", \"Projected Curves\" and \"Spline\"",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "View 3D Sketch marking-menu locations and sub-environments",
+      "line": 1765,
+      "step": "\"None Selected\" remains highlighted",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "View 3D Sketch marking-menu locations and sub-environments",
+      "line": 1766,
+      "step": "the user dismisses the selector without choosing an option",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "View 3D Sketch marking-menu locations and sub-environments",
+      "line": 1767,
+      "step": "Environment remains \"3D Sketch\"",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Select adjacent available commands with Shift and Down",
+      "line": 1771,
+      "step": "Ribbon customization is open in the MCAD Software",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Select adjacent available commands with Shift and Down",
+      "line": 1772,
+      "step": "All Commands is selected",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Select adjacent available commands with Shift and Down",
+      "line": 1773,
+      "step": "the Part | Tools custom panel list is empty",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Select adjacent available commands with Shift and Down",
+      "line": 1776,
+      "step": "\"2D Sketches\" and \"3D Annotations\" are both highlighted in the available-command list",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Select adjacent available commands with Shift and Down",
+      "line": 1779,
+      "step": "the user closes customization with \"Cancel\"",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature",
+      "scenario": "Select adjacent available commands with Shift and Down",
+      "line": 1780,
+      "step": "the customization dialog closes without changing the target",
+      "cause": "undefined step"
+    }
+  ],
+  "source_revision": {
+    "root": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout",
+    "commit": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+    "dirty": false
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "tested_code_commit": "6cc545b25",
+  "integrated_commit": "4d85755be",
+  "feature": "features/application/model-browser/model-browser.feature",
+  "feature_sha256": "603382ec4009d73a74e960c5981d255c4ca9ac5489b94fcf57193c7b09458b2e",
+  "scenario": "Toggle camera autosave for an inactive copied view",
+  "result": "passed",
+  "scope": "Focused scenario only; not a full-feature run. Source was unversioned."
+}

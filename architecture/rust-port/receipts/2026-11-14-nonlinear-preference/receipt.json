@@ -1,0 +1,21 @@
+{
+  "kind": "focused-implementation-evidence",
+  "application_commit": "1d106f07b",
+  "checks": [
+    {
+      "command": "cargo test --locked -p oblikovati-solve",
+      "exit_code": 0,
+      "path": "architecture/rust-port/receipts/2026-11-14-nonlinear-preference/test.log.gz",
+      "sha256": "b57f4d21749f10c6d892c5a4b53dea5715835a5305b680a31f8629352f7b3cc7"
+    },
+    {
+      "command": "cargo clippy --locked -p oblikovati-solve --all-targets -- -D warnings",
+      "exit_code": 0,
+      "path": "architecture/rust-port/receipts/2026-11-14-nonlinear-preference/clippy.log.gz",
+      "sha256": "2252ef2ea16bde12a3b5aebdb452ddddfdfd978b6c1498f1bf899ab47f954d6b"
+    }
+  ],
+  "limitations": [
+    "Preference optimization is local and reports unavailable or stalled outcomes. It is not connected to sketch authoring, and the native Coincident regression still fails."
+  ]
+}

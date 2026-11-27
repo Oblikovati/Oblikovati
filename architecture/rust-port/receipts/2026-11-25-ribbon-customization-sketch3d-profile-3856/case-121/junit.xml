@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T05:54:18.578707064Z" time="32.847392946"><testcase name="Scenario: View 3D Sketch marking-menu locations and sub-environments: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature:1984:3" time="32.847392946"><system-out><![CDATA[  Scenario: View 3D Sketch marking-menu locations and sub-environments
+   ✔> Given the MCAD Software starts with a writable copy of `fixtures/preferences/ribbon-normal` as its configuration directory
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And the customization dialog is open on the Marking Menu tab in the MCAD Software
+   ✔  And Environment is "2D Sketch"
+   ✔  When the user selects "3D Sketch" in the Environment selector
+   ✔  Then the menu-location layout shows "Bend", "Three Point Arc", "Undo", "Helical Curve", "General Dimension", "Include Geometry" and "Finish 3D Sketch"
+   ✔  And Sub-Environment is "None Selected"
+   ✔  And no customization change is pending
+   ✔  When the user opens the Sub-Environment selector
+   ✔  Then the available choices include "3D Line, 3D Arc", "3D Point", "Equation Curve", "Helical Curve", "Projected Curves" and "Spline"
+   ✔  And "None Selected" remains highlighted
+   ✔  When the user dismisses the selector without choosing an option
+   ✔  Then Environment remains "3D Sketch"
+   ✔  And no customization change is pending
+]]></system-out></testcase></testsuite></testsuites>

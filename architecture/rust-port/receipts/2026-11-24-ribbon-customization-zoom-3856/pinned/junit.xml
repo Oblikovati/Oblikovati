@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T12:40:59.731693149Z" time="20.797910235"><testcase name="Scenario: Transfer a selected command after reversing the source list: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature:616:3" time="20.797910235"><system-out><![CDATA[  Scenario: Transfer a selected command after reversing the source list
+   ✔  Given a part is active in the MCAD Software with the Tools ribbon visible
+   ✔  And the Ribbon customization dialog shows All Commands in ascending order for an empty Part Tools custom panel
+   ✔  When the user selects "2D Sketches" in the available command list
+   ✔  And the user clicks the available command list Name header
+   ✔  Then the visible source list begins with the separator and descending Zoom commands
+   ✔  And the add transfer button remains enabled
+   ✔  When the user clicks the add transfer button
+   ✔  Then "2D Sketches" appears in the custom panel list
+   ✔  And the target indicates a pending change
+   ✔  When the user clicks Cancel
+   ✔  Then the customization dialog closes
+   ✔  And no User Commands panel is displayed on the Tools ribbon
+]]></system-out></testcase></testsuite></testsuites>

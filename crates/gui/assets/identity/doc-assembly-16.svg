@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" role="img" aria-label="Assembly Document">
+  <title>Oblikovati Assembly Document (.oad)</title>
+  <!-- Lower-left neutral component -->
+  <polygon points="5.5,6.5 9.5,8.5 5.5,10.5 1.5,8.5" fill="var(--icon-body-top, #D2D7E2)" stroke="var(--icon-body-stroke, #181B22)" stroke-width="0.95" stroke-linejoin="round"/>
+  <polygon points="1.5,8.5 5.5,10.5 5.5,14.5 1.5,12.5" fill="var(--icon-body-front, #9EA6B8)" stroke="var(--icon-body-stroke, #181B22)" stroke-width="0.95" stroke-linejoin="round"/>
+  <polygon points="9.5,8.5 5.5,10.5 5.5,14.5 9.5,12.5" fill="var(--icon-body-side, #677084)" stroke="var(--icon-body-stroke, #181B22)" stroke-width="0.95" stroke-linejoin="round"/>
+  <!-- Upper-right mated Teal component -->
+  <polygon points="10.5,1.5 14.5,3.5 10.5,5.5 6.5,3.5" fill="var(--icon-sel-top, #74EFE0)" stroke="var(--icon-sel-stroke, #0B2926)" stroke-width="0.95" stroke-linejoin="round"/>
+  <polygon points="6.5,3.5 10.5,5.5 10.5,9.5 6.5,7.5" fill="var(--icon-sel-front, #14B8A6)" stroke="var(--icon-sel-stroke, #0B2926)" stroke-width="0.95" stroke-linejoin="round"/>
+  <polygon points="14.5,3.5 10.5,5.5 10.5,9.5 14.5,7.5" fill="var(--icon-sel-side, #0D877A)" stroke="var(--icon-sel-stroke, #0B2926)" stroke-width="0.95" stroke-linejoin="round"/>
+</svg>

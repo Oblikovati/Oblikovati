@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Save and reopen part documents: tmp/obk-edge-check-hOKIqPaw/checkout/features/application/document-saving/document-saving.feature" package="testsuite/Feature: Save and reopen part documents: tmp/obk-edge-check-hOKIqPaw/checkout/features/application/document-saving/document-saving.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T09:55:23.119988051Z" time="11.340525629"><testcase name="Scenario: Save changes to an existing part and reopen its sketch: tmp/obk-edge-check-hOKIqPaw/checkout/features/application/document-saving/document-saving.feature:34:3" time="11.340525629"><system-out><![CDATA[  Scenario: Save changes to an existing part and reopen its sketch
+   ✔  Given a saved empty part is open in the MCAD Software
+   ✔  When the user creates a planar sketch with a rectangular profile
+   ✔  And the user finishes the sketch
+   ✔  And the user presses Control+S
+   ✔  Then the existing document remains open without a Save As dialog
+   ✔  When the user closes the document tab
+   ✔  And the user opens the file-opening dialog in the same session
+   ✔  And the user selects the saved part
+   ✔  And the user opens the selected part
+   ✔  Then the model browser contains the sketch
+   ✔  And the rectangular sketch profile is visible in the viewport
+]]></system-out></testcase></testsuite></testsuites>

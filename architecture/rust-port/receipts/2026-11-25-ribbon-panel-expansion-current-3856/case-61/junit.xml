@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" package="testsuite/Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" tests="1" errors="0" failures="1" hostname="localhost" timestamp="2026-11-25T03:28:32.571786496Z" time="17.956997339"><testcase name="Scenario: Focus a command property while a pinned panel is expanded: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:854:3" time="17.956997339"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Focus a command property while a pinned panel is expanded
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open and active
+   ✔  And the full 3D Model ribbon displays the Modify panel
+   ✔  When the user starts Shell from Modify
+   ✘  And the user opens and pins the Modify additional-command area
+      Step failed:
+      Defined: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:858:5
+      Step doesn't match any function
+]]></system-out></testcase></testsuite></testsuites>

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon docking: target/native-scratch.HSqCy5/current-ribbon-docking-source/features/application/ribbon-docking/ribbon-docking.feature" package="testsuite/Feature: Ribbon docking: target/native-scratch.HSqCy5/current-ribbon-docking-source/features/application/ribbon-docking/ribbon-docking.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T00:00:36.529858595Z" time="29.609577888"><testcase name="Scenario: Switch compact command groups in the left-docked ribbon: target/native-scratch.HSqCy5/current-ribbon-docking-source/features/application/ribbon-docking/ribbon-docking.feature:94:3" time="29.609577888"><system-out><![CDATA[  Scenario: Switch compact command groups in the left-docked ribbon
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part is active in the MCAD Software
+   ✔  And the 3D Model ribbon is docked on the left with Modify and Work Features buttons visible
+   ✔  And no adjacent group panel is open
+   ✔  When the user selects the Work Features group button
+   ✔  Then Work Features is highlighted blue
+   ✔  And an adjacent panel lists Plane, Axis, Point, and UCS
+   ✔  When the user selects the Modify group button
+   ✔  Then the Work Features panel closes
+   ✔  And Modify is highlighted blue
+   ✔  And an adjacent panel lists Hole, Slot, Fillet, Chamfer, Shell, Draft, and other Modify commands
+   ✔  When the user clicks empty workspace outside the part
+   ✔  Then the Modify panel closes
+   ✔  And the ribbon remains docked on the left
+   ✔  And the part remains active
+]]></system-out></testcase></testsuite></testsuites>

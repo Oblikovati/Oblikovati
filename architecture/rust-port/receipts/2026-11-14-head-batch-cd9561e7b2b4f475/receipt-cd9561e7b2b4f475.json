@@ -1,0 +1,27 @@
+{
+  "kind": "native-acceptance",
+  "scenario_id": "scenario:cd9561e7b2b4f47522f44782c6ecc97307e4b18dd114f958c8b625807a9af6bb",
+  "scenario_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+  "source_sha256": "e4011485e2cfe78197b73450bea0d26ba2b0dbc54f2307d3b27364ffe9d9a20d",
+  "application_commit": "2628ab064e8f78757d0682bab5083c348d3c2fb4",
+  "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+  "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+  "runner": "sketch_scenarios_use_the_native_window",
+  "exit_code": 0,
+  "environment": {
+    "os": "Linux",
+    "renderer": "Vulkan with Lavapipe under Xvfb"
+  },
+  "cucumber": {
+    "path": "architecture/rust-port/receipts/2026-11-14-head-batch-cd9561e7b2b4f475/cucumber.json",
+    "sha256": "24dc1434f28a52c2e6f715831273f280abbcaf46382190f0b159caec33ae90e1"
+  },
+  "source_report": {
+    "path": "architecture/rust-port/receipts/2026-11-14-head-batch-cd9561e7b2b4f475/source-revision.json",
+    "sha256": "c22f4fd5eb8e7cf8d2198dc1d835be0f486315682b3bb4a8164ef555c94fc1cb"
+  },
+  "capture": {
+    "path": "architecture/rust-port/receipts/2026-11-14-head-batch-cd9561e7b2b4f475/new-sketch-04-Creation-and-finishing-have-distinct-history-transactions.png",
+    "sha256": "9c4684a2f49bdda58f0c1fbe8db6d6290d64668bfc1e9149c62283f569451be6"
+  }
+}

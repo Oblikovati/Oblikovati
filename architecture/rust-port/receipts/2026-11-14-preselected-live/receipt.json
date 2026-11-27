@@ -1,0 +1,21 @@
+{
+  "kind": "foreground-ui-check",
+  "application_commit": "d52f9fa53d2d74817f711451cae0f2f43ddbe08f",
+  "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+  "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+  "bridge_binary_sha256": "2942bdba7a756d20ea17f24fb18e9eb41f495e20b1d259caf9d28d77e237b20b",
+  "environment": "Linux, Xvfb 1440x900, Vulkan Lavapipe; X11 XTest input and MCPBridge.",
+  "result": "passed",
+  "scope": "Created a part through the UI, selected YZ Plane in the browser, and invoked Start 2D Sketch with no other support click. MCPBridge reported an active healthy YZ sketch with DOF zero.",
+  "limitations": [
+    "Fixed-coordinate driver is retained as a historical record, not a portable test.",
+    "The pre-existing bridge binary was not rebuilt from the checked-out source.",
+    "This run covers one origin plane; work planes and planar faces are not covered."
+  ],
+  "sha256": {
+    "driver.py.gz": "c1966bc15c5f0db123ce6dc0b5856daffcee7ba7d1b365c13eae4d97ce22eb83",
+    "preselected-yz-sketch.json": "14c316e68b32ec9fb1419354bf9167794223a6b5362cb28e5b98f11f617b9750",
+    "preselected-yz.png": "b32c8d9a9caecaa84fbea54c8e17d3d14bf9604291e01b163f7f04c53cf9e27c",
+    "run.log.gz": "eb93bfc59387cd739ef99782267bbca4c462b19f0188e432b6a16748e7f57dd1"
+  }
+}

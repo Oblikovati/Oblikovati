@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" package="testsuite/Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:20:18.736032156Z" time="41.793312084"><testcase name="Scenario: Retain a custom command in its expanded area across a ribbon tab switch: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:898:3" time="41.793312084"><system-out><![CDATA[  Scenario: Retain a custom command in its expanded area across a ribbon tab switch
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open and active
+   ✔  And the full Tools ribbon is visible
+   ✔  And the Part Tools custom panel target is initially empty
+   ✔  And 2D Sketches has been added to the Part Tools custom panel
+   ✔  And 2D Sketches has been moved into the User Commands expanded area
+   ✔  When the user opens the User Commands expanded area
+   ✔  Then the 2D Sketches icon is visible in that area
+   ✔  When the user selects the 3D Model ribbon tab
+   ✔  Then the Tools expanded area is no longer visible
+   ✔  When the user selects the Tools ribbon tab again
+   ✔  Then the User Commands panel is collapsed and offers an expansion control
+   ✔  And the 2D Sketches icon is absent from its main area
+   ✔  When the user opens the User Commands expanded area
+   ✔  Then the 2D Sketches icon is visible in that area
+]]></system-out></testcase></testsuite></testsuites>

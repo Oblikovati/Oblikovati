@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Workspace layout and panel visibility: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature" package="testsuite/Feature: Workspace layout and panel visibility: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-19T15:12:43.025897488Z" time="3.773701643"><testcase name="Scenario: Show the main regions of an active part workspace: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:8:3" time="3.773701643"><system-out><![CDATA[  Scenario: Show the main regions of an active part workspace
+   ✔  Given a part document is active in the MCAD Software
+   ✔  And the model browser is docked at the left
+   ✔  And the 3D Model ribbon is expanded at the top
+   ✔  Then the application controls occupy the top row
+   ✔  And the ribbon tabs appear below the application controls
+   ✔  And the active ribbon tab displays grouped commands below the tab row
+   ✔  And the model browser and viewport occupy the workspace below the ribbon
+   ✔  And the model browser shows the part hierarchy at the left
+   ✔  And the viewport displays the part to the right of the browser
+   ✔  And the document tab strip shows Home and the active part below the workspace
+   ✔  And the status area is visible along the bottom
+]]></system-out></testcase></testsuite></testsuites>

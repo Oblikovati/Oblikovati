@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Text: mnt/vininas-projects/MCAD-Scenarios/features/sketch/text/scenario.feature" package="testsuite/Feature: Text: mnt/vininas-projects/MCAD-Scenarios/features/sketch/text/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-20T18:25:29.150996203Z" time="13.982793137"><testcase name="Scenario: text-08 Canceled new text does not populate the next text editor: mnt/vininas-projects/MCAD-Scenarios/features/sketch/text/scenario.feature:69:3" time="13.982793137"><system-out><![CDATA[  Scenario: text-08 Canceled new text does not populate the next text editor
+   ✔  Given the user canceled new text containing lowercase a without accepting it
+   ✔  When the user starts Text again and choose a new insertion location
+   ✔  Then Format Text opens with an empty content editor
+   ✔  And the user records the retained formatting defaults separately from content
+]]></system-out></testcase></testsuite></testsuites>

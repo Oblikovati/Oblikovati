@@ -1,0 +1,12 @@
+{
+  "kind": "unsealed full-feature diagnostic",
+  "application_commit": "257cf6ebb",
+  "feature_sha256": "3a0703dc9df2a77830b6b90402210ba9dffd10a0e370763015a46904744fbfce",
+  "scenarios_total": 11,
+  "scenarios_passed": 10,
+  "scenarios_failed": 1,
+  "steps_passed": 99,
+  "steps_failed": 1,
+  "failure": "The live dock-menu Given names the deferred Inventor fixture and remains undefined.",
+  "limitations": "Live scenario source and build are unsealed. This is not verified feature evidence."
+}

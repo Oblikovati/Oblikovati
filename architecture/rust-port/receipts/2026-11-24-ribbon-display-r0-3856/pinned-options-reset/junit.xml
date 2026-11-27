@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Expand a ribbon panel: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" package="testsuite/Feature: Expand a ribbon panel: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T08:19:31.554069357Z" time="11.138527529"><testcase name="Scenario: Cancel the layout reset from the Options expansion: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:563:3" time="11.138527529"><system-out><![CDATA[  Scenario: Cancel the layout reset from the Options expansion
+   ✔  Given a part is active in the MCAD Software with the full Tools ribbon visible
+   ✔  And the Options panel displays its additional commands
+   ✔  When the user activates Reset UI Layout
+   ✔  Then a confirmation dialog warns that the UI layout will be reset to its default
+   ✔  And the dialog offers Yes and No
+   ✔  When the user clicks No
+   ✔  Then the confirmation dialog closes
+   ✔  And the Tools ribbon remains visible
+   ✔  And the Options additional-command area is closed
+]]></system-out></testcase></testsuite></testsuites>

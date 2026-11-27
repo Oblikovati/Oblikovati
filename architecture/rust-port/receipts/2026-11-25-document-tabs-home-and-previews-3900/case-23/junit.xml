@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Open document tabs: target/native-scratch.HSqCy5/current-document-tabs-source/features/application/document-tabs/document-tabs.feature" package="testsuite/Feature: Open document tabs: target/native-scratch.HSqCy5/current-document-tabs-source/features/application/document-tabs/document-tabs.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T00:41:49.191406776Z" time="30.163937073"><testcase name="Scenario: Cancel the extended window selection: target/native-scratch.HSqCy5/current-document-tabs-source/features/application/document-tabs/document-tabs.feature:253:3" time="30.163937073"><system-out><![CDATA[  Scenario: Cancel the extended window selection
+   ✔  Given `fixtures/cad/quick-access-toolbar/PartOne.opd`, `fixtures/cad/quick-access-toolbar/PartTwo.opd` and `fixtures/cad/blank-drawing.odd` are open
+   ✔  And PartOne is active
+   ✔  And the user opens View Switch, chooses More Windows and highlights PartTwo in Select Window
+   ✔  When the user chooses Cancel
+   ✔  Then the Select Window dialog closes
+   ✔  And the original part remains displayed in the workspace
+]]></system-out></testcase></testsuite></testsuites>

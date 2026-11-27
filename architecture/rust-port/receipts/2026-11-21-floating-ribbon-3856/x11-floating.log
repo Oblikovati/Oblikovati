@@ -1,0 +1,6 @@
+
+running 2 tests
+test native::gui_loop_tests::application_bdd::ribbon_docking::floating_groups::x11_floating_start_sketch_selects_a_plane_directly ... ok
+test native::gui_loop_tests::application_bdd::ribbon_docking::floating_title::x11_floating_title_docks_right_and_the_active_tab_restores_top ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 1615 filtered out; finished in 31.95s

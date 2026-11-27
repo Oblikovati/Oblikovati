@@ -1,0 +1,27 @@
+Wayland application bar Close and modal Cancel
+[04:30:04.719426] wl_pointer#18.motion(371074991, 1417.00000000, 16.00000000)
+[04:30:04.924597] wl_pointer#18.button(11, 371075144, 272, 1)
+[04:30:05.032448] wl_pointer#18.button(13, 371075304, 272, 0)
+[04:30:05.614274] wl_pointer#18.motion(371075850, 795.00000000, 480.00000000)
+[04:30:05.803301] wl_pointer#18.button(18, 371076018, 272, 1)
+[04:30:05.993049] wl_pointer#18.button(20, 371076208, 272, 0)
+7 steps (7 passed)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1733 filtered out; finished in 8.67s
+
+X11 custom Close
+7 steps (7 passed)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1733 filtered out; finished in 8.40s
+
+Wayland clean application Close
+[04:30:16.281063] wl_pointer#18.button(11, 371086522, 272, 1)
+[04:30:16.350979] wl_pointer#18.button(13, 371086622, 272, 0)
+3 steps (3 passed)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1733 filtered out; finished in 4.06s
+
+Wayland compositor Close regression
+[04:30:19.457309] xdg_toplevel#12.close()
+7 steps (7 passed)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1733 filtered out; finished in 8.10s
+
+Workspace Clippy
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 57.51s

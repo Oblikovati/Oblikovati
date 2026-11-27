@@ -1,0 +1,209 @@
+dbus-daemon[3203827]: [session uid=1000 pid=3203827] Activating service name='org.a11y.Bus' requested by ':1.0' (uid=1000 pid=3203852 comm="gdbus call --session --dest org.a11y.Bus --object-" label="unconfined")
+dbus-daemon[3203827]: [session uid=1000 pid=3203827] Successfully activated service 'org.a11y.Bus'
+dbus-daemon[3203827]: [session uid=1000 pid=3203827] Activating service name='org.freedesktop.systemd1' requested by ':1.2' (uid=1000 pid=3203864 comm="/usr/bin/dbus-broker-launch --config-file=/usr/sha" label="unconfined")
+dbus-daemon[3203827]: [session uid=1000 pid=3203827] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.12s
+     Running unittests src/lib.rs (target/debug/deps/oblikovati_head-1fb37c8960265374)
+
+running 1 test
+test native::gui_loop_tests::application_bdd::application_scenarios_use_the_native_window ... Feature: Main application window frame
+  Scenario Outline: Display the application bar as the top of the main window
+   ✔  Given the MCAD Software is open in a restored window showing Home
+   ✔  And the quick access toolbar is configured to appear above the ribbon
+   ✔  Then the application bar forms the top of the window with no separate system title bar
+   ✔  And quick access command icons sit at the leading side of the application bar
+   ✔  And the application or active document title occupies the same bar
+   ✔  And Minimize, Maximize and Close sit at the trailing edge in that order
+   ✘  And the controls are distinguishable by their icons and accessible names
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/main-window-frame/main-window-frame.feature:12:5
+      Matched: crates/head/src/../tests/application/main_window_frame_accessibility.rs:6:1
+      Step panicked. Captured output: AT-SPI client failed: Traceback (most recent call last):
+        File "/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/main-frame-fixture-4063/crates/head/tests/accessibility_atspi/assert_names.py", line 32, in <module>
+          raise AssertionError('the application process did not expose the named frame buttons through AT-SPI')
+      AssertionError: the application process did not expose the named frame buttons through AT-SPI
+  Scenario Outline: Display the application bar as the top of the main window
+   ✔  Given the MCAD Software is open in a restored window showing an active part
+   ✔  And the quick access toolbar is configured to appear above the ribbon
+   ✔  Then the application bar forms the top of the window with no separate system title bar
+   ✔  And quick access command icons sit at the leading side of the application bar
+   ✘  And the application or active document title occupies the same bar
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/main-window-frame/main-window-frame.feature:10:5
+      Matched: crates/head/src/../tests/application/main-window-frame/steps.rs:324:1
+      Step panicked. Captured output: assertion failed: world.frame.runs.iter().any(|run|
+              run.text == title && run.center()[1] < file.minimum[1])
+  Scenario: Keep the ribbon below the application bar
+   ✔  Given a part document is active in the MCAD Software
+   ✔  And the quick access toolbar is configured to appear above the ribbon
+   ✔  And the ribbon is docked at the top in its expanded Normal appearance
+   ✔  Then File and the ribbon tabs appear on a separate row beneath the application bar
+   ✔  And the active tab's command panels are below the ribbon tab row
+   ✔  And the window controls remain in the application bar
+  Scenario Outline: Minimize and return from the taskbar
+   ✔  Given a part document is active in the MCAD Software
+   ✔  And the main window is restored
+   ✔  When the user selects Minimize in the application bar
+   ✔  Then the main window is minimized and its taskbar entry remains available
+   ✔  When the user activates the application from the taskbar
+   ✔  Then the main window returns in the restored state
+   ✔  And the same part and ribbon tab are active
+   ✔  And the displayed part retains its view orientation
+  Scenario Outline: Minimize and return from the taskbar
+   ✔  Given a part document is active in the MCAD Software
+   ✔  And the main window is maximized
+   ✔  When the user selects Minimize in the application bar
+   ✔  Then the main window is minimized and its taskbar entry remains available
+   ✔  When the user activates the application from the taskbar
+   ✔  Then the main window returns in the maximized state
+   ✔  And the same part and ribbon tab are active
+   ✔  And the displayed part retains its view orientation
+  Scenario: Maximize and restore using the application bar
+   ✔  Given a part document is active in the MCAD Software
+   ✔  And the restored main window occupies a known size and position within the desktop work area
+   ✔  When the user selects Maximize in the application bar
+   ✔  Then the window fills the monitor's work area and respects the taskbar
+   ✔  And Restore replaces Maximize in the same position
+   ✔  And the ribbon and viewport lay out within the enlarged window
+   ✔  When the user selects Restore in the application bar
+   ✔  Then the window returns to its previous size and position
+   ✔  And Maximize replaces Restore in the same position
+   ✔  And the same part remains active
+  Scenario: Move the main window using the application bar
+   ✔  Given a part document is active in the MCAD Software
+   ✔  And the main window is restored within the desktop work area
+   ✔  When the user drags an empty region of the application bar within the work area
+   ✔  Then the entire window follows the drag without changing size
+   ✔  And the same part remains active in the viewport
+  Scenario: Double-click the application bar to maximize and restore
+   ✔  Given the MCAD Software is open in a restored window
+   ✔  When the user double-clicks an empty region of the application bar
+   ✔  Then the main window is maximized
+   ✔  And the window controls show Restore
+   ✔  When the user double-clicks an empty region of the application bar again
+   ✔  Then the main window returns to its previous size and position
+   ✔  And the window controls show Maximize
+  Scenario Outline: Resize the restored main window from its perimeter
+   ✔  Given a part document is active in the MCAD Software
+   ✔  And the main window is restored with space to grow within the desktop work area
+   ✔  When the user moves the pointer onto the left edge of the main window
+   ✔  Then the pointer shows a horizontal resize cursor
+   ✔  When the user drags that resize handle outward and releases it
+   ✔  Then the window grows along the horizontal axes of that handle
+   ✔  And the opposite boundary stays fixed
+   ✔  And the viewport and visible ribbon fit within the resized window
+   ✔  And all application window controls remain reachable
+  Scenario Outline: Resize the restored main window from its perimeter
+   ✔  Given a part document is active in the MCAD Software
+   ✔  And the main window is restored with space to grow within the desktop work area
+   ✔  When the user moves the pointer onto the right edge of the main window
+   ✔  Then the pointer shows a horizontal resize cursor
+   ✔  When the user drags that resize handle outward and releases it
+   ✔  Then the window grows along the horizontal axes of that handle
+   ✔  And the opposite boundary stays fixed
+   ✔  And the viewport and visible ribbon fit within the resized window
+   ✔  And all application window controls remain reachable
+  Scenario Outline: Resize the restored main window from its perimeter
+   ✔  Given a part document is active in the MCAD Software
+   ✔  And the main window is restored with space to grow within the desktop work area
+   ✔  When the user moves the pointer onto the top edge of the main window
+   ✔  Then the pointer shows a vertical resize cursor
+   ✔  When the user drags that resize handle outward and releases it
+   ✔  Then the window grows along the vertical axes of that handle
+   ✔  And the opposite boundary stays fixed
+   ✔  And the viewport and visible ribbon fit within the resized window
+   ✔  And all application window controls remain reachable
+  Scenario Outline: Resize the restored main window from its perimeter
+   ✔  Given a part document is active in the MCAD Software
+   ✔  And the main window is restored with space to grow within the desktop work area
+   ✔  When the user moves the pointer onto the bottom edge of the main window
+   ✔  Then the pointer shows a vertical resize cursor
+   ✔  When the user drags that resize handle outward and releases it
+   ✔  Then the window grows along the vertical axes of that handle
+   ✔  And the opposite boundary stays fixed
+   ✔  And the viewport and visible ribbon fit within the resized window
+   ✔  And all application window controls remain reachable
+  Scenario Outline: Resize the restored main window from its perimeter
+   ✔  Given a part document is active in the MCAD Software
+   ✔  And the main window is restored with space to grow within the desktop work area
+   ✔  When the user moves the pointer onto the top left corner of the main window
+   ✔  Then the pointer shows a northwest-southeast resize cursor
+   ✔  When the user drags that resize handle outward and releases it
+   ✔  Then the window grows along the northwest-southeast axes of that handle
+   ✔  And the opposite boundary stays fixed
+   ✔  And the viewport and visible ribbon fit within the resized window
+   ✔  And all application window controls remain reachable
+  Scenario Outline: Resize the restored main window from its perimeter
+   ✔  Given a part document is active in the MCAD Software
+   ✔  And the main window is restored with space to grow within the desktop work area
+   ✔  When the user moves the pointer onto the bottom right corner of the main window
+   ✔  Then the pointer shows a northwest-southeast resize cursor
+   ✔  When the user drags that resize handle outward and releases it
+   ✔  Then the window grows along the northwest-southeast axes of that handle
+   ✔  And the opposite boundary stays fixed
+   ✔  And the viewport and visible ribbon fit within the resized window
+   ✔  And all application window controls remain reachable
+  Scenario Outline: Resize the restored main window from its perimeter
+   ✔  Given a part document is active in the MCAD Software
+   ✔  And the main window is restored with space to grow within the desktop work area
+   ✔  When the user moves the pointer onto the top right corner of the main window
+   ✔  Then the pointer shows a northeast-southwest resize cursor
+   ✔  When the user drags that resize handle outward and releases it
+   ✔  Then the window grows along the northeast-southwest axes of that handle
+   ✔  And the opposite boundary stays fixed
+   ✔  And the viewport and visible ribbon fit within the resized window
+   ✔  And all application window controls remain reachable
+  Scenario Outline: Resize the restored main window from its perimeter
+   ✔  Given a part document is active in the MCAD Software
+   ✔  And the main window is restored with space to grow within the desktop work area
+   ✔  When the user moves the pointer onto the bottom left corner of the main window
+   ✔  Then the pointer shows a northeast-southwest resize cursor
+   ✔  When the user drags that resize handle outward and releases it
+   ✔  Then the window grows along the northeast-southwest axes of that handle
+   ✔  And the opposite boundary stays fixed
+   ✔  And the viewport and visible ribbon fit within the resized window
+   ✔  And all application window controls remain reachable
+  Scenario: Keep the application controls reachable at the minimum window size
+   ✔  Given the MCAD Software is open in a restored window with an active part
+   ✔  When the user drags the bottom right corner inward past the supported minimum size
+   ✔  Then the window stops shrinking at its minimum size
+   ✔  And Minimize, Maximize and Close remain fully visible and usable
+   ✔  And the active part remains displayed in the resized viewport
+  Scenario: Keep the maximized bounds when dragging a resize edge
+   ✔  Given the main window of the MCAD Software is maximized
+   ✔  When the user attempts to resize it from the left boundary
+   ✔  Then the window retains its maximized bounds
+   ✔  And Restore remains available in the application bar
+  Scenario: Route the custom Close control through the unsaved changes flow
+   ✔  Given the MCAD Software has an open part document with unsaved changes
+   ✔  When the user selects the application window's Close control
+   ✔  Then a save-changes prompt identifies the part document
+   ✔  When the user chooses Cancel
+   ✔  Then the main window remains open and the part retains its unsaved changes
+  Scenario: Keep the window Close action available to the desktop
+   ✔  Given the MCAD Software has an open part document with unsaved changes
+   ✔  When the user invokes the desktop window Close shortcut
+   ✔  Then a save-changes prompt identifies the part document
+   ✔  When the user chooses Cancel
+   ✔  Then the main window remains open and the part retains its unsaved changes
+[Summary]
+1 feature
+20 scenarios (18 passed, 2 failed)
+147 steps (145 passed, 2 failed)
+
+thread 'application-scenarios' (3203904) panicked at crates/head/src/../tests/application/benchmark.rs:378:5:
+scenario benchmark: expected no failed, undefined, or skipped steps
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'native::gui_loop_tests::application_bdd::application_scenarios_use_the_native_window' (3203903) panicked at crates/head/src/../tests/application/benchmark.rs:267:10:
+called `Result::unwrap()` on an `Err` value: Any { .. }
+FAILED
+
+failures:
+
+failures:
+    native::gui_loop_tests::application_bdd::application_scenarios_use_the_native_window
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 1552 filtered out; finished in 198.02s
+
+error: test failed, to rerun pass `-p oblikovati-head --lib`

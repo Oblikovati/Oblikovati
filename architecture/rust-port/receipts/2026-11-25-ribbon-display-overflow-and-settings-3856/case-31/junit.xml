@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon display modes: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature" package="testsuite/Feature: Ribbon display modes: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T02:41:52.889125559Z" time="13.651628466"><testcase name="Scenario: Open Document Settings from the full Tools ribbon: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature:460:3" time="13.651628466"><system-out><![CDATA[  Scenario: Open Document Settings from the full Tools ribbon
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is open with the full Tools ribbon displayed in the MCAD Software
+   ✔  When the user selects Document Settings
+   ✔  Then the active part's Document Settings dialog opens
+   ✔  And the dialog shows Standard, Units, Sketch, Modeling, Bill of Materials and Default Tolerance tabs
+   ✔  And Standard is the selected tab
+   ✔  And Close is available while Cancel and Apply are unavailable
+   ✔  When the user closes the dialog without changing settings
+   ✔  Then the dialog closes
+   ✔  And the Tools ribbon and active part remain visible
+]]></system-out></testcase></testsuite></testsuites>

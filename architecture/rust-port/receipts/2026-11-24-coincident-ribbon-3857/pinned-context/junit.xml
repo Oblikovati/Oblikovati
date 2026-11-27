@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Coincident: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/sketch/coincident/scenario.feature" package="testsuite/Feature: Coincident: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/sketch/coincident/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T15:16:25.59935385Z" time="56.393125342"><testcase name="Scenario: coincident-10 Inspect the shared point context without removing geometry: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/sketch/coincident/scenario.feature:82:3" time="56.393125342"><system-out><![CDATA[  Scenario: coincident-10 Inspect the shared point context without removing geometry
+   ✔  Given the joined line endpoints and visible constraints
+   ✔  When the user right-click the joint
+   ✔  Then a Point context menu opens with Repeat Coincident and general point commands
+   ✔  And marking-menu Delete is disabled
+   ✔  When the user presses Escape
+   ✔  Then the menu closes
+   ✔  When the user select the joint point and right-click it again
+   ✔  Then the point context menu appears without an identified constraint-removal command
+   ✔  When the user presses Escape
+   ✔  Then the menu closes and both joined segments remain
+]]></system-out></testcase></testsuite></testsuites>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-19T09:57:44.655064825Z" time="33.737101041"><testcase name="Scenario: Correct a duplicate view representation name: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:1082:3" time="33.737101041"><system-out><![CDATA[  Scenario: Correct a duplicate view representation name
+   ✔  Given an empty part is active in the MCAD Software
+   ✔  And an active copied view is named "Capture View"
+   ✔  And a sibling view is named "Front"
+   ✔  When the user selects the copied view and presses F2
+   ✔  And the user replaces its name with "Front" and presses Enter
+   ✔  And the user chooses Edit on the duplicate-name message
+   ✔  Then the inline name field contains "Front"
+   ✔  When the user replaces it with "Review View" and presses Enter
+   ✔  Then the copied view is named "Review View"
+   ✔  And the View branch identifies "Review View" as active
+]]></system-out></testcase></testsuite></testsuites>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T13:27:25.620016193Z" time="27.115801416"><testcase name="Scenario: Select staged commands with Ctrl+A: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature:1387:3" time="27.115801416"><system-out><![CDATA[  Scenario: Select staged commands with Ctrl+A
+   ✔  Given a part is active in the MCAD Software with the full Tools ribbon visible
+   ✔  And ribbon customization shows an initially empty Part Tools target
+   ✔  And 2D Sketches and 3D Annotations are staged on Part Tools in that order
+   ✔  And both commands have Large and Text unchecked
+   ✔  When the user clicks the 2D Sketches name in the staged target list
+   ✔  And the user presses Ctrl+A while the target list has focus
+   ✔  Then both staged command rows are highlighted
+   ✔  And both commands still have Large and Text unchecked
+   ✔  And Part Tools remains marked as having pending changes
+   ✔  When the user cancels ribbon customization
+   ✔  Then the customization dialog closes
+]]></system-out></testcase></testsuite></testsuites>

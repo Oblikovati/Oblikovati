@@ -1,0 +1,9 @@
+{
+  "kind": "gate-diagnostic",
+  "application_commit": "5eda349c7aa4e7a049f424dedfdfad12097278d2",
+  "command": "VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json XMODIFIERS=@im=none xvfb-run -a make gate BUILD_CACHE=off",
+  "environment": "Linux, Xvfb, Vulkan Lavapipe",
+  "exit_code": 2,
+  "first_failure": "behavior ledger: ledger classifications: expected all current; 0 missing, 60 stale, 0 orphaned",
+  "not_run": "Workspace build, tests, coverage, duplication, and repository checks follow the failing ledger preflight and were not run by this gate."
+}

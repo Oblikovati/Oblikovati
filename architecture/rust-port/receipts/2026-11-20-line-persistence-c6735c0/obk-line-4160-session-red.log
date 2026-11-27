@@ -1,0 +1,77 @@
+   Compiling libc v0.2.190
+   Compiling bitflags v2.13.2
+   Compiling rustix v1.1.6
+   Compiling linux-raw-sys v0.12.1
+   Compiling cfg_aliases v0.2.2
+   Compiling metallic v0.3.0
+   Compiling nix v0.31.3
+   Compiling fast_polynomial v0.4.1
+   Compiling errno v0.3.14
+   Compiling rustc_apfloat v0.2.3+llvm-462a31f5a5ab
+   Compiling smallvec v1.16.3
+   Compiling martensite-cmath v0.3.5 (https://github.com/Oblikovati/Martensite?rev=bef25f47548431c8f128f08f66a1f719bcee4982#bef25f47)
+   Compiling num-integer v0.1.47
+   Compiling bytemuck v1.25.2
+   Compiling allocator-api2 v0.4.0
+   Compiling xattr v1.7.0
+   Compiling martensite-tkernel v0.4.5 (https://github.com/Oblikovati/Martensite?rev=bef25f47548431c8f128f08f66a1f719bcee4982#bef25f47)
+   Compiling num-bigint v0.4.6
+   Compiling num-complex v0.4.6
+   Compiling crc32fast v1.5.2
+   Compiling getrandom v0.4.3
+   Compiling simd-adler32 v0.3.10
+   Compiling adler2 v2.0.1
+   Compiling miniz_oxide v0.9.1
+   Compiling twox-hash v2.1.5
+   Compiling web-time v1.1.0
+   Compiling hashbrown v0.17.1
+   Compiling equivalent v1.0.2
+   Compiling fnv v1.0.7
+   Compiling oblikovati-model v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/line-persistence-4160/crates/model)
+   Compiling martensite-tkmath v0.3.9 (https://github.com/Oblikovati/Martensite?rev=bef25f47548431c8f128f08f66a1f719bcee4982#bef25f47)
+   Compiling cfb v0.15.0
+   Compiling indexmap v2.14.2
+   Compiling ruzstd v0.9.1
+   Compiling flate2 v1.1.10
+   Compiling ryu v1.0.23
+   Compiling fastrand v2.5.0
+   Compiling unsafe-libyaml v0.2.11
+   Compiling once_cell v1.21.4
+   Compiling tempfile v3.27.0
+   Compiling serde_yaml_ng v0.10.0
+   Compiling martensite-tkg2d v0.3.7 (https://github.com/Oblikovati/Martensite?rev=bef25f47548431c8f128f08f66a1f719bcee4982#bef25f47)
+   Compiling martensite-tkg3d v0.3.9 (https://github.com/Oblikovati/Martensite?rev=bef25f47548431c8f128f08f66a1f719bcee4982#bef25f47)
+   Compiling corliss v0.1.0 (https://github.com/Oblikovati/Corliss?rev=872ff91ea0fd9ebb3ad34d0030c67bbc7b5989fb#872ff91e)
+   Compiling martensite-tkgeombase v0.3.6 (https://github.com/Oblikovati/Martensite?rev=bef25f47548431c8f128f08f66a1f719bcee4982#bef25f47)
+   Compiling oblikovati-persistence v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/line-persistence-4160/crates/persistence)
+   Compiling martensite-tkbrep v0.3.11 (https://github.com/Oblikovati/Martensite?rev=bef25f47548431c8f128f08f66a1f719bcee4982#bef25f47)
+   Compiling martensite-tkgeomalgo v0.3.8 (https://github.com/Oblikovati/Martensite?rev=bef25f47548431c8f128f08f66a1f719bcee4982#bef25f47)
+   Compiling martensite-tktopalgo v0.4.3 (https://github.com/Oblikovati/Martensite?rev=bef25f47548431c8f128f08f66a1f719bcee4982#bef25f47)
+   Compiling martensite-tkshhealing v0.3.9 (https://github.com/Oblikovati/Martensite?rev=bef25f47548431c8f128f08f66a1f719bcee4982#bef25f47)
+   Compiling martensite-tkprim v0.3.10 (https://github.com/Oblikovati/Martensite?rev=bef25f47548431c8f128f08f66a1f719bcee4982#bef25f47)
+   Compiling martensite-tkhlr v0.3.6 (https://github.com/Oblikovati/Martensite?rev=bef25f47548431c8f128f08f66a1f719bcee4982#bef25f47)
+   Compiling martensite-tkbo v0.8.2 (https://github.com/Oblikovati/Martensite?rev=bef25f47548431c8f128f08f66a1f719bcee4982#bef25f47)
+   Compiling martensite-tkmesh v0.3.8 (https://github.com/Oblikovati/Martensite?rev=bef25f47548431c8f128f08f66a1f719bcee4982#bef25f47)
+   Compiling martensite-tkbool v0.8.0 (https://github.com/Oblikovati/Martensite?rev=bef25f47548431c8f128f08f66a1f719bcee4982#bef25f47)
+   Compiling martensite-tkfillet v0.8.1 (https://github.com/Oblikovati/Martensite?rev=bef25f47548431c8f128f08f66a1f719bcee4982#bef25f47)
+   Compiling martensite-tkoffset v0.10.1 (https://github.com/Oblikovati/Martensite?rev=bef25f47548431c8f128f08f66a1f719bcee4982#bef25f47)
+   Compiling oblikovati-martensite v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/line-persistence-4160/crates/martensite)
+   Compiling oblikovati-session v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/line-persistence-4160/crates/session)
+    Finished `test` profile [unoptimized] target(s) in 1m 22s
+     Running tests/lifecycle.rs (/tmp/obk-line-4160-target/debug/deps/lifecycle-0b544e36c9420115)
+
+running 1 test
+
+thread 'sketch_primitive::inferred_line::nonpersistent_direction_aligns_line_and_stays_unsaved_after_undo_redo' (1740390) panicked at crates/session/tests/lifecycle/sketch_primitive/inferred_line.rs:150:5:
+temporary direction must not be saved
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test sketch_primitive::inferred_line::nonpersistent_direction_aligns_line_and_stays_unsaved_after_undo_redo ... FAILED
+
+failures:
+
+failures:
+    sketch_primitive::inferred_line::nonpersistent_direction_aligns_line_and_stays_unsaved_after_undo_redo
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 480 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p oblikovati-session --test lifecycle`

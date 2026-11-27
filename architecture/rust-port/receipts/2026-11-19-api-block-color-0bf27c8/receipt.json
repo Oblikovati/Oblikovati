@@ -1,0 +1,10 @@
+{
+  "repository": "https://github.com/Oblikovati/Oblikovati.API",
+  "commit": "0bf27c8",
+  "branch": "work/explode-block-310",
+  "command": "CARGO_TARGET_DIR=/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/target make gate",
+  "result": "passed",
+  "log": "architecture/rust-port/receipts/2026-11-19-api-block-color-0bf27c8/gate.log",
+  "log_sha256": "49571a8a41981b4644de9ad6ebe2d8a93203be394fc3de6888ebe6f16a7d6304",
+  "note": "The gate ran on the same tree before commit."
+}

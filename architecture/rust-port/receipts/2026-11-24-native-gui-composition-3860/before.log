@@ -1,0 +1,16 @@
+
+running 1 test
+
+thread 'native::gui_composition_tests::native_owned_imgui_packet_composes_with_the_document_after_context_destruction' (1096209) panicked at crates/head/src/../tests/native_gui_composition.rs:79:5:
+assertion `left == right` failed
+  left: 0
+ right: 23955
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test native::gui_composition_tests::native_owned_imgui_packet_composes_with_the_document_after_context_destruction ... FAILED
+
+failures:
+
+failures:
+    native::gui_composition_tests::native_owned_imgui_packet_composes_with_the_document_after_context_destruction
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 1617 filtered out; finished in 4.79s

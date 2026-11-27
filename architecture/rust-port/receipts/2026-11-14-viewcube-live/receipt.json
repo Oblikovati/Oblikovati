@@ -1,0 +1,27 @@
+{
+  "kind": "foreground-ui-check",
+  "application_commit": "36d5ff2cc4c961d5d3e9272d0354afa1963c86a6",
+  "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+  "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+  "bridge_binary_sha256": "2942bdba7a756d20ea17f24fb18e9eb41f495e20b1d259caf9d28d77e237b20b",
+  "environment": "Linux, Xvfb 1440x900, Vulkan Lavapipe; X11 XTest input and MCPBridge.",
+  "result": "passed",
+  "scope": "Create a parameter-driven XY rectangle through OS input. MCPBridge reports a healthy sketch with DOF zero and captures the Front ViewCube in the active sketch.",
+  "limitations": [
+    "Fixed-coordinate driver is retained as a historical record, not a portable test.",
+    "The pre-existing bridge binary was not rebuilt from the checked-out source.",
+    "XZ Top and control input are covered separately by native tests; this foreground run covers XY only."
+  ],
+  "sha256": {
+    "driver.py.gz": "3aa07f6d52ee890fb8fc81f3761a10344dafc16f661f327772101d08a71e0ffd",
+    "rectangle-10mm-sketch.json": "8f9c80de84203c2c4525a50cb02bdeb391522d14b287133db607e05a945896b7",
+    "rectangle-10mm.png": "2bc4d26d4046a44cb592d31b96910c4593c15c9ce1cc07199082923058ea0b13",
+    "run.log.gz": "faf4d93e18edca667f7c37900c75601db30f02bdaf6d9c96a8e8a5b1ed3bbb79",
+    "gui-serial.log.gz": "dc651b5194f67c82fe932351d4bb2526e62677e011218cf26358be037a0fde18",
+    "gui-parallel.log.gz": "7b6a0ecbf1f6d8bb8c4e5dc09f89f8442a5bee8efe0224695277caf18b923555"
+  },
+  "suite_checks": [
+    "cargo test --locked -p oblikovati-gui --lib -- --test-threads=1: 370 passed",
+    "cargo test --locked -p oblikovati-gui --lib -- --test-threads=8: failed on concurrent GUI context ownership; #3878"
+  ]
+}

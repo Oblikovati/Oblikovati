@@ -1,0 +1,27 @@
+{
+  "kind": "diagnostic_projection_comparison",
+  "base_commit": "a2bd4a32c4d338a33a7acda60c37dcadbcda7fef",
+  "source_sha256": {
+    "crates/head/src/frames/gui_dimension_labels.rs": "fd38ccdc1d6dda01b3b150a86c8477273d62e2df6f48e3ff2f1464be6e8fb3f8",
+    "crates/head/src/frames/gui_dimension_projection.rs": "10523df34e6ef720fdd0fe46aec82b831ca0d053df702937b016b015197347da",
+    "crates/head/tests/gui_dimension_projection.rs": "a2fa40b4f1824089fd5a60d31d9d41a867043d3e2529e817ee6c56f69c4c90ab",
+    "Cargo.lock": "b0695ff8c4df2279345908e21ebd90dbeadcaf4f2ab2dbda3d55c471daf245d9"
+  },
+  "device": "Xvfb 1440x900, software Vulkan llvmpipe",
+  "annotations": 200,
+  "points_per_annotation": 3,
+  "warmups": 10,
+  "samples": 40,
+  "individual_ns": {
+    "p50": 13614859,
+    "p95": 15679498,
+    "max": 17044744
+  },
+  "batch_ns": {
+    "p50": 4712038,
+    "p95": 6327887,
+    "max": 7165857
+  },
+  "command": "XMODIFIERS=@im=none VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json tools/with-xvfb.sh cargo test --locked --release -p oblikovati-head --lib measure_dimension_projection_batches -- --ignored --nocapture --test-threads=1",
+  "limits": "Both paths run in sequence on the same native window and check identical projected coordinates. Other workloads were active. This measures point projection only, not the complete GUI frame, input delivery, display scanout, or production hardware GPU performance."
+}

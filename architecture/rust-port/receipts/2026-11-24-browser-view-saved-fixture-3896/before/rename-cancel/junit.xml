@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="1" hostname="localhost" timestamp="2026-11-24T11:32:47.383652347Z" time="11.016427406"><testcase name="Scenario: Cancel a duplicate view representation name: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1156:3" time="11.016427406"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Cancel a duplicate view representation name
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is active in the MCAD Software
+   ✘  And the user copies Primary as Capture View and activates the copied view
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1158:5
+      Step doesn't match any function
+]]></system-out></testcase></testsuite></testsuites>

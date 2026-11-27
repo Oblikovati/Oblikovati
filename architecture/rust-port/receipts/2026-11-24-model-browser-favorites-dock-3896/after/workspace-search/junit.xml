@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Workspace layout and panel visibility: tmp/oblikovati-ribbon-relocated.RcZVDl/workspace-layout-dock-search-snapshot/checkout/features/application/workspace-layout/workspace-layout.feature" package="testsuite/Feature: Workspace layout and panel visibility: tmp/oblikovati-ribbon-relocated.RcZVDl/workspace-layout-dock-search-snapshot/checkout/features/application/workspace-layout/workspace-layout.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T11:03:40.590136462Z" time="208.294071288"><testcase name="Scenario: Search the Model tree from another active dock tab: tmp/oblikovati-ribbon-relocated.RcZVDl/workspace-layout-dock-search-snapshot/checkout/features/application/workspace-layout/workspace-layout.feature:177:3" time="208.294071288"><system-out><![CDATA[  Scenario: Search the Model tree from another active dock tab
+   ✔  Given `fixtures/cad/workspace-layout-points.opd` is open in the MCAD Software
+   ✔  And Model and Log occupy one dock tab bar with Log active
+   ✔  And the Model search field is closed
+   ✔  When the user clicks the search icon in that dock tab bar
+   ✔  Then Model becomes active and its empty search field has keyboard focus
+   ✔  And the Find criteria dialog remains closed
+   ✔  When the user types "InspectionPoint" without clicking another control
+   ✔  Then the Model tree shows InspectionPointA, InspectionPointB and InspectionPointC
+   ✔  And the query is highlighted in the matching tree rows
+   ✔  When the user switches to Log and clicks the dock tab bar search icon again
+   ✔  Then Model becomes active with "InspectionPoint" still in the focused search field
+]]></system-out></testcase></testsuite></testsuites>

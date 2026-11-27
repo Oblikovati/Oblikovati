@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" package="testsuite/Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:22:39.033872153Z" time="28.637666295"><testcase name="Scenario: Click the selected tab with a temporary expansion open: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:442:3" time="28.637666295"><system-out><![CDATA[  Scenario: Click the selected tab with a temporary expansion open
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open and active
+   ✔  And the top-docked ribbon is minimized to tabs with 3D Model active
+   ✔  When the user clicks the 3D Model tab
+   ✔  And the user opens the Modify additional-command area
+   ✔  When the user clicks the selected 3D Model tab
+   ✔  Then the Modify additional-command area remains visible
+   ✔  And the temporary command area remains visible
+   ✔  When the user clicks the selected 3D Model tab again
+   ✔  Then the additional-command area closes
+   ✔  And the temporary command area closes
+   ✔  And the ribbon remains minimized to tabs
+]]></system-out></testcase></testsuite></testsuites>

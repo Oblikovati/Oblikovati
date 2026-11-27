@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Properties panel for creating and editing a modeled feature: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/feature-properties/feature-properties.feature" package="testsuite/Feature: Properties panel for creating and editing a modeled feature: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/feature-properties/feature-properties.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-27T05:28:20.183837234Z" time="6.390143831"><testcase name="Rule: Dockable Properties commands reuse the Properties shell: Scenario: Inspect available preset settings: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/feature-properties/feature-properties.feature:102:5" time="6.390143831"><system-out><![CDATA[  Scenario: Inspect available preset settings
+   ✔  Given a fresh copy of `fixtures/cad/revolve/revolve-profile.opd` is open in a disposable application profile
+   ✔  And the user opens Extrude with the rectangular sketch profile selected and the preset row visible
+   ✔  When the user opens Preset Settings
+   ✔  Then the menu offers sort-order and new-command-default choices
+   ✔  When the user dismisses the menu without changing a choice
+   ✔  Then the feature Properties panel remains open
+]]></system-out></testcase></testsuite></testsuites>

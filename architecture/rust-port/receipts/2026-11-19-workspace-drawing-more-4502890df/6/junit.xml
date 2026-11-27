@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Workspace layout and panel visibility: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature" package="testsuite/Feature: Workspace layout and panel visibility: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-19T14:33:18.064935251Z" time="11.920729584"><testcase name="Scenario: Expand and collapse an extrusion&apos;s browser children: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:484:3" time="11.920729584"><system-out><![CDATA[  Scenario: Expand and collapse an extrusion's browser children
+   ✔  Given a part with an extrusion and its underlying sketch is active in the MCAD Software
+   ✔  And the extrusion branch is collapsed in the model browser
+   ✔  When the user right-clicks the extrusion and chooses Expand All Children
+   ✔  Then the extrusion branch displays its sketch child
+   ✔  And the solid remains visible in the viewport
+   ✔  When the user right-clicks the extrusion and chooses Collapse All Children
+   ✔  Then the extrusion branch still displays its direct sketch child
+   ✔  And the solid remains visible in the viewport
+]]></system-out></testcase></testsuite></testsuites>

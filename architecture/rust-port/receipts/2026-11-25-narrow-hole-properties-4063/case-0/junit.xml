@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Navigate the ribbon using key tips: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature" package="testsuite/Feature: Navigate the ribbon using key tips: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T18:02:39.545624824Z" time="4.63006964"><testcase name="Scenario: Open a command using a two-letter key tip: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature:22:3" time="4.63006964"><system-out><![CDATA[  Scenario: Open a command using a two-letter key tip
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And the 3D Model ribbon command key tips are displayed
+   ✔  And the Hole command has the key tip "HO"
+   ✔  When the user presses "H"
+   ✔  Then the visible command key tips are narrowed to matching H-prefixed entries
+   ✔  When the user presses "O"
+   ✔  Then the Hole properties panel opens
+   ✔  And the ribbon key tips disappear
+   ✔  When the user cancels the Hole command
+   ✔  Then the properties panel closes without creating a hole
+]]></system-out></testcase></testsuite></testsuites>

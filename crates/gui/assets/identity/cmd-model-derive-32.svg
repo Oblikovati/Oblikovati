@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-labelledby="t d">
+  <title id="t">Derive</title>
+  <desc id="d">Reference a source part solid into a linked Indigo-Violet derived part.</desc>
+  <g id="layer-body">
+    <polygon class="f-icon-body-top s-icon-body-stroke" points="10,7.5 16,10.5 10,13.5 4,10.5" fill="#D2D7E2" stroke="#181B22" stroke-width="1.1" stroke-linejoin="round"/>
+    <polygon class="f-icon-body-front s-icon-body-stroke" points="4,10.5 10,13.5 10,20 4,17" fill="#9EA6B8" stroke="#181B22" stroke-width="1.1" stroke-linejoin="round"/>
+    <polygon class="f-icon-body-side s-icon-body-stroke" points="16,10.5 10,13.5 10,20 16,17" fill="#677084" stroke="#181B22" stroke-width="1.1" stroke-linejoin="round"/>
+  </g>
+  <g id="layer-accent">
+    <polygon class="f-icon-mod-top s-icon-mod-stroke" points="21.5,13.8 28,17 21.5,20.2 15,17" fill="#B4AAFF" stroke="#1D1840" stroke-width="1.15" stroke-linejoin="round"/>
+    <polygon class="f-icon-mod-front s-icon-mod-stroke" points="15,17 21.5,20.2 21.5,27 15,23.8" fill="#8172FA" stroke="#1D1840" stroke-width="1.15" stroke-linejoin="round"/>
+    <polygon class="f-icon-mod-side s-icon-mod-stroke" points="28,17 21.5,20.2 21.5,27 28,23.8" fill="#5948D4" stroke="#1D1840" stroke-width="1.15" stroke-linejoin="round"/>
+    <path class="s-icon-cutout" d="M14.5,13.5 L19,16 M16,16.13 L19,16 L17.53,13.39" fill="none" stroke="#121317" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    <path class="s-accent-selection-bright" d="M14.5,13.5 L19,16 M16,16.13 L19,16 L17.53,13.39" fill="none" stroke="#2DD4BF" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

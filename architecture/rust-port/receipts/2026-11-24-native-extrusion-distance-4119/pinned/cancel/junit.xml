@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T11:59:58.308118813Z" time="34.888098983"><testcase name="Scenario: Cancel a staged model-state parameter column and value: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature:1267:3" time="34.888098983"><system-out><![CDATA[  Scenario: Cancel a staged model-state parameter column and value
+   ✔  Given The MCAD Software has a part with three model-state members
+   ✔  And an extrusion has a length parameter d0 of 1 in
+   ✔  And the model-state table does not include d0
+   ✔  And Copy State is active
+   ✔  When the user opens the model-state table
+   ✔  And selects d0 under the extrusion on the Parameters tab
+   ✔  And transfers d0 to the chosen parameters
+   ✔  Then the chosen parameters include d0
+   ✔  And the grid has a d0 column showing 1 in for each member
+   ✔  When the user changes the Copy State d0 cell to 2 in
+   ✔  Then that cell displays 2 in
+   ✔  And the other two d0 cells display 1 in
+   ✔  When the user cancels and reopens the model-state table
+   ✔  Then d0 is absent from the chosen parameters
+   ✔  And the grid has no d0 column
+]]></system-out></testcase></testsuite></testsuites>

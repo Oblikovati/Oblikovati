@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Open document tabs: tmp/oblikovati-bdd-DepRs1/checkout/features/application/document-tabs/document-tabs.feature" package="testsuite/Feature: Open document tabs: tmp/oblikovati-bdd-DepRs1/checkout/features/application/document-tabs/document-tabs.feature" tests="2" errors="0" failures="0" hostname="localhost" timestamp="2026-11-15T09:30:05.493739054Z" time="20.617164645"><testcase name="Scenario: Inspect the Home tab context menu: tmp/oblikovati-bdd-DepRs1/checkout/features/application/document-tabs/document-tabs.feature:362:3" time="10.653704014"><system-out><![CDATA[  Scenario: Inspect the Home tab context menu
+   ✔  Given the Home workspace is active in the MCAD Software
+   ✔  And documents are open in the tab strip
+   ✔  When the user right-clicks the Home tab
+   ✔  Then the context menu offers separate Close Tabs and Close All items
+   ✔  When the user presses Escape
+   ✔  Then the context menu closes
+   ✔  And the Home workspace remains active
+   ✔  And the open documents remain available in the tab strip
+]]></system-out></testcase><testcase name="Scenario: Inspect the inactive Home tab without switching documents: tmp/oblikovati-bdd-DepRs1/checkout/features/application/document-tabs/document-tabs.feature:374:3" time="9.963460631"><system-out><![CDATA[  Scenario: Inspect the inactive Home tab without switching documents
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the part is being edited in a sketch
+   ✔  And the Home tab is visible but inactive
+   ✔  When the user right-clicks the Home tab
+   ✔  Then its context menu offers separate Close Tabs and Close All items
+   ✔  And the part's sketch remains displayed and active
+   ✔  When the user presses Escape
+   ✔  Then the context menu closes
+   ✔  And the part's sketch remains active
+]]></system-out></testcase></testsuite></testsuites>

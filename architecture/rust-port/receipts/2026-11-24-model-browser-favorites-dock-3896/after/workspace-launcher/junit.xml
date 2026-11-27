@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Workspace layout and panel visibility: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/workspace-layout/workspace-layout.feature" package="testsuite/Feature: Workspace layout and panel visibility: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/workspace-layout/workspace-layout.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T11:07:52.899361831Z" time="17.329749187"><testcase name="Scenario: Close and restore the model browser while editing a sketch: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/workspace-layout/workspace-layout.feature:328:3" time="17.329749187"><system-out><![CDATA[  Scenario: Close and restore the model browser while editing a sketch
+   ✔  Given a part document is open in the MCAD Software with a sketch being edited
+   ✔  And the model browser is docked on the left
+   ✔  When the user selects the browser tab's close control
+   ✔  Then the model browser is hidden
+   ✔  And the sketch viewport extends into the freed space
+   ✔  And a panel-add control remains at the upper left of the workspace
+   ✔  When the user opens the panel-add control
+   ✔  Then the panel list offers Model Browser
+   ✔  When the user selects Model Browser
+   ✔  Then the model browser returns to the left
+   ✔  And the browser tree and sketch viewport remain visible
+]]></system-out></testcase></testsuite></testsuites>

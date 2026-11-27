@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-labelledby="t d">
+  <title id="t">Viewport Orbit</title>
+  <desc id="d">Isometric solid encircled by orthogonal Teal and Indigo orbital rotation rings.</desc>
+  <g id="layer-body">
+    <polygon points="16,9.4 22.2,12.5 16,15.6 9.8,12.5" fill="var(--icon-body-top, #D2D7E2)" stroke="var(--icon-body-stroke, #181B22)" stroke-width="1.1" stroke-linejoin="round"/>
+    <polygon points="9.8,12.5 16,15.6 16,22.1 9.8,19" fill="var(--icon-body-front, #9EA6B8)" stroke="var(--icon-body-stroke, #181B22)" stroke-width="1.1" stroke-linejoin="round"/>
+    <polygon points="22.2,12.5 16,15.6 16,22.1 22.2,19" fill="var(--icon-body-side, #677084)" stroke="var(--icon-body-stroke, #181B22)" stroke-width="1.1" stroke-linejoin="round"/>
+  </g>
+  <g id="layer-accent">
+    <ellipse cx="16" cy="16" rx="13" ry="5.5" transform="rotate(-22 16 16)" fill="none" stroke="var(--accent-selection-bright, #2DD4BF)" stroke-width="1.5"/><ellipse cx="16" cy="16" rx="5.5" ry="13" transform="rotate(14 16 16)" fill="none" stroke="var(--icon-line-active, #8172FA)" stroke-width="1.35" stroke-dasharray="3 2"/><polygon points="27.5,11 29.5,14.8 25.2,14.2" fill="var(--accent-selection-bright, #2DD4BF)"/>
+  </g>
+</svg>

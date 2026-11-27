@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:54:22.724381176Z" time="49.731279581"><testcase name="Scenario: Change the display of an applied custom command: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature:91:3" time="49.731279581"><system-out><![CDATA[  Scenario: Change the display of an applied custom command
+   ✔> Given the MCAD Software starts with a writable copy of `fixtures/preferences/ribbon-normal` as its configuration directory
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And the ribbon customization dialog has an empty custom panel for "Part | 3D Model"
+   ✔  When the user adds "2D Sketches" to the custom panel list
+   ✔  And the user selects "Text" and leaves "Large" clear for the command
+   ✔  And the user clicks "Apply"
+   ✔  Then the "User Commands" panel shows a small command icon with "2D Sketches" beside it
+   ✔  When the user selects "Large" for the same command
+   ✔  And the user clicks "Apply"
+   ✔  Then the panel shows a larger command icon with "2D Sketches" beneath it
+   ✔  And the customization dialog remains open
+]]></system-out></testcase></testsuite></testsuites>

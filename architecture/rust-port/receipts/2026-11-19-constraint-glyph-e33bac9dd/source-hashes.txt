@@ -1,0 +1,5 @@
+9fa2c5c40fafc96ad9fffde407bf8d8568e28498d20d1d88c15acff03b5008a5  /mnt/vininas-projects/MCAD-Scenarios/features/sketch/constraint-glyph-hover/BLOCKERS.md
+a0549cafcc7eafce3df322d50c390ae3b61fb12fb07009802654d18bbdbdbf62  /mnt/vininas-projects/MCAD-Scenarios/features/sketch/constraint-glyph-hover/FIXTURES.md
+c25a246a8351d5232567628aeb8c1b3d060ef5754168146b783e4ed1a777debc  /mnt/vininas-projects/MCAD-Scenarios/features/sketch/constraint-glyph-hover/FUNCTIONAL.md
+20e7dc430fe0e4df236b95923c95b49b811f0338c58866e0a59bdf5afd1d842b  /mnt/vininas-projects/MCAD-Scenarios/features/sketch/constraint-glyph-hover/VISUAL.md
+5d30dc6745bfc4bf6415c21558d7d6ff3cae1df3b50862583a87ebd4e38f2926  /mnt/vininas-projects/MCAD-Scenarios/features/sketch/constraint-glyph-hover/constraint-glyph-hover.feature

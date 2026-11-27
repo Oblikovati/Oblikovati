@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T06:29:35.392842606Z" time="39.613915229"><testcase name="Scenario: Navigate through a staged separator with arrow keys: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature:1672:3" time="39.613915229"><system-out><![CDATA[  Scenario: Navigate through a staged separator with arrow keys
+   ✔> Given the MCAD Software starts with a writable copy of `fixtures/preferences/ribbon-normal` as its configuration directory
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And ribbon customization is open in the MCAD Software for the Part Tools target
+   ✔  And the target contains "Cancel Sketch", a separator, and "Finish Sketch" in that order
+   ✔  When the user selects "Cancel Sketch" in the target list
+   ✔  And the user presses Down
+   ✔  Then the separator is highlighted
+   ✔  When the user presses Down again
+   ✔  Then "Finish Sketch" is highlighted
+   ✔  When the user presses Up
+   ✔  Then the separator is highlighted
+   ✔  And the staged rows remain in their original order
+   ✔  When the user clicks Cancel
+   ✔  Then the customization dialog closes without applying the staged entries
+]]></system-out></testcase></testsuite></testsuites>

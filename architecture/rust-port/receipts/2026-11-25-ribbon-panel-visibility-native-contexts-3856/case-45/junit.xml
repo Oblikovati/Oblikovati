@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon panel visibility: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" package="testsuite/Feature: Ribbon panel visibility: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:07:02.124623027Z" time="43.554602059"><testcase name="Scenario: Show and hides the Parameters panel during sketch editing: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:673:3" time="43.554602059"><system-out><![CDATA[  Scenario: Show and hides the Parameters panel during sketch editing
+   ✔  Given `fixtures/cad/planar-sketch-empty-xy.opd` is open with Sketch1 being edited
+   ✔  And the Sketch tab is active
+   ✔  And the Parameters panel is hidden
+   ✔  When the user opens the Create panel title context menu
+   ✔  And the user opens Show Panels
+   ✔  Then Parameters is unchecked in the panel list
+   ✔  When the user selects Parameters
+   ✔  Then the Parameters panel appears after Format and before Exit
+   ✔  And the panel displays a large parameter symbol
+   ✔  When the user opens the Create panel title context menu
+   ✔  And the user opens Show Panels
+   ✔  And the user selects Parameters
+   ✔  Then the Parameters panel is hidden again
+   ✔  And the sketch remains in edit mode
+]]></system-out></testcase></testsuite></testsuites>

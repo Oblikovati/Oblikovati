@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon appearance: target/native-scratch.HSqCy5/current-ribbon-appearance-source/features/application/ribbon-appearance/ribbon-appearance.feature" package="testsuite/Feature: Ribbon appearance: target/native-scratch.HSqCy5/current-ribbon-appearance-source/features/application/ribbon-appearance/ribbon-appearance.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T23:26:48.513273715Z" time="32.586206447"><testcase name="Scenario: Use small ribbon commands: target/native-scratch.HSqCy5/current-ribbon-appearance-source/features/application/ribbon-appearance/ribbon-appearance.feature:26:3" time="32.586206447"><system-out><![CDATA[  Scenario: Use small ribbon commands
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And the full 3D Model ribbon uses the Text Off appearance
+   ✔  When the user selects "Small" from the Ribbon Appearance submenu
+   ✔  Then the command icons are smaller and the command area is shorter
+   ✔  And the panel titles remain visible
+   ✔  When the user reopens the Ribbon Appearance submenu
+   ✔  Then "Small" is marked as selected
+]]></system-out></testcase></testsuite></testsuites>

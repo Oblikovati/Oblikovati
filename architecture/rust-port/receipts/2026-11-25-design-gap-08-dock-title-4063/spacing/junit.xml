@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Workspace layout and panel visibility: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature" package="testsuite/Feature: Workspace layout and panel visibility: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T15:49:22.858761214Z" time="5.799650699"><testcase name="Scenario: Use consistent spacing within and between workspace regions: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:51:3" time="5.799650699"><system-out><![CDATA[  Scenario: Use consistent spacing within and between workspace regions
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is active in the MCAD Software
+   ✔  And the ribbon, model browser, viewport, document tabs and status area are visible
+   ✔  When the user inspects the spacing between workspace regions and their controls
+   ✔  Then adjacent workspace regions share their intended borders without stray gutters
+   ✔  And controls within each region use a consistent inset from that region's border
+   ✔  And the ribbon command groups use even spacing between neighboring groups
+   ✔  And the browser, viewport, document tabs and status area align to their shared edges
+   ✔  And no region has an unexplained extra margin or padding
+]]></system-out></testcase></testsuite></testsuites>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Move: mnt/vininas-projects/MCAD-Scenarios/features/sketch/move/scenario.feature" package="testsuite/Feature: Move: mnt/vininas-projects/MCAD-Scenarios/features/sketch/move/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-19T03:49:00.100146478Z" time="14.359521858"><testcase name="Scenario: move-06 Enter a precise ellipse Move endpoint: mnt/vininas-projects/MCAD-Scenarios/features/sketch/move/scenario.feature:5:3" time="14.359521858"><system-out><![CDATA[  Scenario: move-06 Enter a precise ellipse Move endpoint
+   ✔  Given an editable sketch with eligible geometry
+   ✔  Given the ellipse is selected in Move with Copy off and Precise Input on
+   ✔  When the user chooses Base Point and clicks its center
+   ✔  Then the coordinate toolbar appears and the status requests an endpoint
+   ✔  When the user types 1 then 0 into X and presses Tab to Y
+   ✔  And the user types 0 and presses Enter
+   ✔  Then Move returns to geometry selection without an error dialog
+   ✔  And the ellipse appears above its original position
+   ✔  When the user clicks Done
+   ✔  Then Move closes and the displaced ellipse remains
+]]></system-out></testcase></testsuite></testsuites>

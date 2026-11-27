@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:40:09.884720505Z" time="126.675076383"><testcase name="Scenario: Change a pending Find value without replacing a listed criterion: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature:616:3" time="126.675076383"><system-out><![CDATA[  Scenario: Change a pending Find value without replacing a listed criterion
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software
+   ✔  And the MCAD Software Find dialog lists Type equals Extrusion and OR Type equals Fillet
+   ✔  And Type equals Extrusion is selected with And selected
+   ✔  When the user chooses Hole in the Value list
+   ✔  Then the Value field shows Hole and adds to list is enabled
+   ✔  And the listed Extrusion and Fillet criteria remain unchanged
+   ✔  When the user selects the Fillet criterion
+   ✔  Then the controls show Type, equals, Fillet and Or
+   ✔  When the user selects the Extrusion criterion
+   ✔  Then the controls show Type, equals, Extrusion and And
+   ✔  And adds to list is disabled
+   ✔  When the user closes the Find dialog
+   ✔  Then the part workspace is visible
+]]></system-out></testcase></testsuite></testsuites>

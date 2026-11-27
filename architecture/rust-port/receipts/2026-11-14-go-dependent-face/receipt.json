@@ -1,0 +1,25 @@
+{
+  "kind": "Go dependent-face reference fixture; not Rust import acceptance",
+  "go_application_commit": "aa8297d1b0ac33c024f19e54821536d76e8a447a",
+  "source_fixture": "architecture/rust-port/receipts/2026-11-14-go-cube-fixture/go-cube.obk",
+  "go_version": "go version go1.27.0 linux/amd64",
+  "platform": "Linux-7.2.6-76070206-generic-x86_64-with-glibc2.39",
+  "command": "Run generate.go from the Go application checkout with the source fixture and an output path.",
+  "observations": [
+    "A face-offset work plane stores side-1 face key in model.workFeatures with a 0.5 cm offset.",
+    "Go reopens the 10 mm cube, resolves the unique face and a healthy plane at x=1.5 cm, changes size to 20 mm, saves and reopens, and resolves the unique face and plane at x=2.5 cm. The face areas are 1 cm\u00b2 and 2 cm\u00b2.",
+    "Rust currently refuses workFeatures before adopting the candidate; its regression test confirms the decoded package and an encode/decode round trip remain unchanged."
+  ],
+  "limitations": [
+    "This is a Go-generated reference fixture, not evidence that Rust imports the dependent plane or resolves the face key.",
+    "The Go extrusion distance remains the saved fixed 10 mm.",
+    "Go save generates new revision identifiers, so byte identity is not expected across fixture generations."
+  ],
+  "artifacts": {
+    "cube-with-face-plane.obk": "b4374d977a1ca09b25b2c792c6e652a8638d86165c5b3d99c7360d1894ed0c06",
+    "rust-final.log.gz": "8a870b9855af3ac3033477c387115817e81935673a8fc0ced01b3a16fe6ed659",
+    "generate.go": "38e6b6d66c4005c8a9f2c27007f374f580beaf055c812cf5dfcfc03d4733771b",
+    "observations.json": "a96d9da88234df26433a5e8c9950e6fb7e9fc7a7de7010c65e06b9751fe6cd4a",
+    "clippy.log.gz": "4f96d52827acbc084e462d49695522f08ede865cc8c4eee2af1a2ce6e8c166ac"
+  }
+}

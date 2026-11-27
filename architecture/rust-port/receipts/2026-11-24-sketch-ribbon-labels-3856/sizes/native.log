@@ -1,0 +1,30 @@
+
+running 1 test
+Feature: Ribbon appearance
+  Scenario: Change ribbon command size modes while editing a sketch
+   ✔  Given a part has an active editable sketch in the MCAD Software
+   ✔  And Ribbon Appearance is set to Normal
+   ✔  When the user selects Small from the Ribbon Appearance submenu
+   ✔  Then command icons become smaller and the command area becomes shorter
+test native::gui_loop_tests::application_bdd::application_scenarios_use_the_native_window has been running for over 60 seconds
+   ✔  And panel titles remain visible
+   ✔  And the sketch remains active and unchanged
+   ✔  When the user selects Compact from the Ribbon Appearance submenu
+   ✔  Then command icons form a dense horizontal layout within the panel groups
+   ✔  And panel titles remain visible
+   ✔  And the sketch remains active and unchanged
+   ✔  When the user selects Large from the Ribbon Appearance submenu
+   ✔  Then command icons become larger and occupy multiple rows
+   ✔  And command labels are hidden
+   ✔  And panel titles remain visible
+   ✔  And the sketch remains active and unchanged
+   ✔  When the user selects Normal from the Ribbon Appearance submenu
+   ✔  Then the normal mixed-size command layout is restored
+   ✔  And the sketch remains active and unchanged
+[Summary]
+1 feature
+1 scenario (1 passed)
+18 steps (18 passed)
+test native::gui_loop_tests::application_bdd::application_scenarios_use_the_native_window ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1617 filtered out; finished in 84.57s

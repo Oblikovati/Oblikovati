@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ellipse: mnt/vininas-projects/MCAD-Scenarios/features/sketch/ellipse/scenario.feature" package="testsuite/Feature: Ellipse: mnt/vininas-projects/MCAD-Scenarios/features/sketch/ellipse/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-21T11:29:35.800602901Z" time="28.609843301"><testcase name="Scenario: ellipse-12 Observe numeric key as alias input during first-axis selection: mnt/vininas-projects/MCAD-Scenarios/features/sketch/ellipse/scenario.feature:140:3" time="28.609843301"><system-out><![CDATA[  Scenario: ellipse-12 Observe numeric key as alias input during first-axis selection
+   ✔  Given a copy of `fixtures/cad/ellipse/circle-midpoint-line.opd` is open with Sketch1 being edited in RIGHT view
+   ✔  And the fixture center is the free sketch coordinate (30, 30) mm
+   ✔  Given the fixture sketch is Ready with the retained circle and midpoint line
+   ✔  When Ellipse is selected and a free center is clicked
+   ✔  Then Select first axis point appears without a visible numeric field
+   ✔  When the 8 key is pressed
+   ✔  Then the status shows Command alias input: 8
+   ✔  When Escape is pressed
+   ✔  Then Ready appears with no added ellipse visible
+]]></system-out></testcase></testsuite></testsuites>

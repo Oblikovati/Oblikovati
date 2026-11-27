@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T11:34:03.753521517Z" time="134.893559556"><testcase name="Scenario: Cancel an inline view rename with Escape: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1199:3" time="134.893559556"><system-out><![CDATA[  Scenario: Cancel an inline view rename with Escape
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is active in the MCAD Software
+   ✔  And the user copies Primary as Capture View and activates the copied view
+   ✔  And an empty part is active in the MCAD Software
+   ✔  And an active copied view is named "Capture View"
+   ✔  When the user selects the copied view and presses F2
+   ✔  And the user replaces its name with "Temporary View"
+   ✔  And the user presses Escape
+   ✔  Then inline editing closes
+   ✔  And the active view remains named "Capture View"
+   ✔  And the View branch identifies "Capture View" as active
+]]></system-out></testcase></testsuite></testsuites>

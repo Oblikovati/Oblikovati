@@ -1,0 +1,9 @@
+{
+  "kind": "unsealed focused diagnostic",
+  "application_base_commit": "6f4fa66a6",
+  "feature_sha256": "3a0703dc9df2a77830b6b90402210ba9dffd10a0e370763015a46904744fbfce",
+  "scenario": "Join panels in one dock region as selectable tabs",
+  "result": "failed",
+  "failure": "The preview sample was [42, 42, 42], with no visible insertion target in the captured frame.",
+  "limitations": "Unversioned live scenario source; a temporary test-only trace and capture were added to the recorded run; the drag input and product behavior have not yet been distinguished."
+}

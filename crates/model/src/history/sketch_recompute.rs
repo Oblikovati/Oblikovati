@@ -1,0 +1,149 @@
+// SPDX-License-Identifier: GPL-2.0-only
+use super::{
+    DocumentSnapshot,
+    sketch_projection::{BorrowedSketchProjectionInputs, CurrentSketchProjectionInputs},
+};
+use crate::{
+    document_sketch::{DocumentSketchId, DocumentSketchSolveOutcome, SketchSolveScope},
+    sketch::SketchError,
+};
+use oblikovati_solve::{diagnostics::ConstraintStructure, nonlinear::SolveOptions};
+
+impl DocumentSnapshot {
+    /// Inspect sketch structure using projection inputs from a current part replay.
+    /// Example: `snapshot.analyze_document_sketch_with_datums(id, tolerance, &datums)?`.
+    pub fn analyze_document_sketch_with_datums(
+        &self,
+        id: DocumentSketchId,
+        rank_tolerance: f64,
+        datums: &crate::feature::work_geometry::WorkGeometryEvaluation,
+    ) -> Result<ConstraintStructure, SketchError> {
+        let placed = self.sketches.get(id)?;
+        let anchors = self.resolve_sketch_projected_points_with_datums(id, datums)?;
+        placed
+            .geometry()
+            .analyze_with_grounded_points(&self.parameters, &anchors, rank_tolerance)
+    }
+    /// Solve one sketch from a current part replay.
+    /// Example: `snapshot.solve_one_document_sketch_with_datums(id, options, || false, datums)?`.
+    pub fn solve_one_document_sketch_with_datums(
+        &self,
+        id: DocumentSketchId,
+        options: SolveOptions,
+        cancelled: impl FnMut() -> bool,
+        datums: &crate::feature::work_geometry::WorkGeometryEvaluation,
+    ) -> Result<DocumentSketchSolveOutcome, SketchError> {
+        self.sketches.get(id)?;
+        Ok(self.sketches.solve_scope(
+            &self.parameters,
+            options,
+            cancelled,
+            SketchSolveScope::One(id),
+            &BorrowedSketchProjectionInputs::from_datums(datums),
+        ))
+    }
+    /// Solve pending sketches using the current ordered part datums.
+    /// Example: `snapshot.solve_pending_document_sketches_with_datums(options, || false, &datums)`.
+    pub fn solve_pending_document_sketches_with_datums(
+        &self,
+        options: SolveOptions,
+        cancelled: impl FnMut() -> bool,
+        datums: &crate::feature::work_geometry::WorkGeometryEvaluation,
+    ) -> DocumentSketchSolveOutcome {
+        self.sketches.solve_scope(
+            &self.parameters,
+            options,
+            cancelled,
+            SketchSolveScope::Pending,
+            &BorrowedSketchProjectionInputs::from_datums(datums),
+        )
+    }
+    /// Solve one sketch with current source coordinates; example: `snapshot.solve_one_document_sketch(id, options, || false)?`.
+    pub fn solve_one_document_sketch(
+        &self,
+        id: DocumentSketchId,
+        options: SolveOptions,
+        cancelled: impl FnMut() -> bool,
+    ) -> Result<DocumentSketchSolveOutcome, SketchError> {
+        self.sketches.get(id)?;
+        Ok(self.solve_sketch_scope(options, cancelled, SketchSolveScope::One(id)))
+    }
+    /// Recompute all sketches from the current immutable source catalogue; example: `snapshot.solve_document_sketches(options, || false)`.
+    pub fn solve_document_sketches(
+        &self,
+        options: SolveOptions,
+        cancelled: impl FnMut() -> bool,
+    ) -> DocumentSketchSolveOutcome {
+        self.solve_sketch_scope(options, cancelled, SketchSolveScope::All)
+    }
+    /// Recompute changed projection and dimension readers; example: `snapshot.solve_pending_document_sketches(options, || false)`.
+    pub fn solve_pending_document_sketches(
+        &self,
+        options: SolveOptions,
+        cancelled: impl FnMut() -> bool,
+    ) -> DocumentSketchSolveOutcome {
+        self.solve_sketch_scope(options, cancelled, SketchSolveScope::Pending)
+    }
+    fn solve_sketch_scope(
+        &self,
+        options: SolveOptions,
+        cancelled: impl FnMut() -> bool,
+        scope: SketchSolveScope,
+    ) -> DocumentSketchSolveOutcome {
+        let inputs = CurrentSketchProjectionInputs::new(self);
+        self.sketches
+            .solve_scope(&self.parameters, options, cancelled, scope, &inputs)
+    }
+    /// Inspect active structure from current reference inputs without a solve or mutation.
+    /// Example: `snapshot.analyze_document_sketch(id, 1e-9)?`.
+    pub fn analyze_document_sketch(
+        &self,
+        id: DocumentSketchId,
+        rank_tolerance: f64,
+    ) -> Result<ConstraintStructure, SketchError> {
+        let placed = self.sketches.get(id)?;
+        let anchors = self.resolve_sketch_projected_points(id)?;
+        placed
+            .geometry()
+            .analyze_with_grounded_points(&self.parameters, &anchors, rank_tolerance)
+    }
+    /// Read current shapes and movement without solving or changing the document.
+    /// Example: `snapshot.inspect_document_sketch(id, Default::default())?;`.
+    pub fn inspect_document_sketch(
+        &self,
+        id: DocumentSketchId,
+        options: crate::sketch::SketchMovementOptions,
+    ) -> Result<Vec<crate::sketch::SketchEntityInspection>, SketchError> {
+        let placed = self.sketches.get(id)?;
+        let anchors = self.resolve_sketch_projected_points(id)?;
+        placed
+            .geometry()
+            .inspect_entities(&self.parameters, &anchors, options)
+    }
+}
+
+impl DocumentSnapshot {
+    /// Read verified current geometry for authoring; free variables are allowed, failed or stale solves are not.
+    /// Example: `snapshot.require_converged_sketch(sketch)?` after recompute and before preview publication.
+    pub fn require_converged_sketch(
+        &self,
+        sketch: DocumentSketchId,
+    ) -> Result<&crate::sketch::Sketch2D, crate::document_sketch::SketchReadinessError> {
+        self.require_converged_sketch_from(sketch, None)
+    }
+    pub(super) fn require_converged_sketch_from(
+        &self,
+        sketch: DocumentSketchId,
+        datums: Option<&crate::feature::work_geometry::WorkGeometryEvaluation>,
+    ) -> Result<&crate::sketch::Sketch2D, crate::document_sketch::SketchReadinessError> {
+        let placed = self.sketches.get(sketch).map_err(|cause| {
+            crate::document_sketch::SketchReadinessError {
+                sketch,
+                cause: crate::document_sketch::SketchReadinessCause::Failed(cause),
+            }
+        })?;
+        let projections = self.sketch_authoring_anchors(sketch, datums);
+        placed.require_converged_with_projection_inputs(&self.parameters, &projections)?;
+        Ok(placed.geometry())
+    }
+}

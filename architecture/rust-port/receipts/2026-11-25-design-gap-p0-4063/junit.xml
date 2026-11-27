@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon appearance: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-appearance/ribbon-appearance.feature" package="testsuite/Feature: Ribbon appearance: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-appearance/ribbon-appearance.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T09:41:56.532720541Z" time="96.155973898"><testcase name="Scenario: Change ribbon command size modes while editing a sketch: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-appearance/ribbon-appearance.feature:227:3" time="96.155973898"><system-out><![CDATA[  Scenario: Change ribbon command size modes while editing a sketch
+   ✔  Given `fixtures/cad/planar-sketch-empty-xy.opd` is open with Sketch1 being edited in the MCAD Software
+   ✔  And Ribbon Appearance is set to Normal
+   ✔  When the user selects Small from the Ribbon Appearance submenu
+   ✔  Then command icons become smaller and the command area becomes shorter
+   ✔  And panel titles remain visible
+   ✔  And the sketch remains active and unchanged
+   ✔  When the user selects Compact from the Ribbon Appearance submenu
+   ✔  Then command icons form a dense horizontal layout within the panel groups
+   ✔  And panel titles remain visible
+   ✔  And the sketch remains active and unchanged
+   ✔  When the user selects Large from the Ribbon Appearance submenu
+   ✔  Then command icons become larger and occupy multiple rows
+   ✔  And command labels are hidden
+   ✔  And panel titles remain visible
+   ✔  And the sketch remains active and unchanged
+   ✔  When the user selects Normal from the Ribbon Appearance submenu
+   ✔  Then the normal mixed-size command layout is restored
+   ✔  And the sketch remains active and unchanged
+]]></system-out></testcase></testsuite></testsuites>

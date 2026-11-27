@@ -1,0 +1,14 @@
+running 11 tests
+test native::gui_loop_tests::application_bdd::part_marking_menu::native_part_menu_chamfer_opens_and_cancels_without_model_changes ... ok
+test native::gui_loop_tests::application_bdd::part_marking_menu::native_part_menu_extrude_opens_dialog_for_finished_sketch ... ok
+test native::gui_loop_tests::application_bdd::part_marking_menu::native_part_menu_extrude_starts_sketch_when_part_has_none ... ok
+test native::gui_loop_tests::application_bdd::part_marking_menu::native_part_menu_starts_sketch_on_selected_face_and_reopens_it ... ok
+test native::gui_loop_tests::application_bdd::part_marking_menu::native_selected_face_keeps_classic_menu_linear ... ok
+test native::gui_loop_tests::application_bdd::part_marking_menu::native_selected_face_menu_measures_exact_area_and_closes ... ok
+test native::gui_loop_tests::application_bdd::part_marking_menu::native_selected_face_properties_shows_area_and_title_close ... ok
+test native::gui_loop_tests::application_bdd::ribbon_customization::native_tests::marking_menu_native::search_stages_a_marking_command_and_only_apply_saves_it ... ok
+test native::gui_loop_tests::application_bdd::ribbon_customization::tab_retention::marking_part::measure_and_undo_run_from_part_marking_menu_slots ... ok
+test native::gui_loop_tests::application_bdd::ribbon_keyboard_navigation::face_selection::native_selected_face_tools_tips_survive_escape_and_open_options ... ok
+test native::gui_loop_tests::application_bdd::workspace_layout::marking_toggle_native::marking_menu_toggle_preserves_part_commands_and_restart ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 1693 filtered out; finished in 55.66s

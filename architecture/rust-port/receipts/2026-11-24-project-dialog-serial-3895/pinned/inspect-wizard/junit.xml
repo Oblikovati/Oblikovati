@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Inspect the project dialog: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/project-dialog/project-dialog.feature" package="testsuite/Feature: Inspect the project dialog: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/project-dialog/project-dialog.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T18:06:55.973428305Z" time="22.304895676"><testcase name="Scenario: Inspect and cancels the new single-user project wizard: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/project-dialog/project-dialog.feature:35:3" time="22.304895676"><system-out><![CDATA[  Scenario: Inspect and cancels the new single-user project wizard
+   ✔  Given the Projects dialog is open in the MCAD Software
+   ✔  And an existing project is active
+   ✔  And the wizard fixture has no entries in either library list
+   ✔  When the user chooses New
+   ✔  Then the new-project wizard opens on a project-type page
+   ✔  And New Single User Project is selected
+   ✔  And the Next and cancels controls are available
+   ✔  When the user chooses Next
+   ✔  Then the wizard displays a project name, workspace folder and project file to be created
+   ✔  And it provides a folder browsing control
+   ✔  When the user chooses Next
+   ✔  Then the wizard displays a Select Libraries page
+   ✔  And the page has All Projects and New Project lists with transfer controls
+   ✔  And both library lists are empty
+   ✔  And a provisional project entry is visible in the project list behind the wizard
+   ✔  When the user chooses Cancel
+   ✔  Then the wizard closes and the Projects dialog is displayed
+   ✔  And the provisional project entry is no longer listed
+   ✔  And the original project remains marked active
+]]></system-out></testcase></testsuite></testsuites>

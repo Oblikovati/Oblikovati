@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Workspace layout and panel visibility: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature" package="testsuite/Feature: Workspace layout and panel visibility: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-19T14:28:42.372981424Z" time="9.736889179"><testcase name="Scenario: Search while the drawing browser floats: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:327:3" time="9.736889179"><system-out><![CDATA[  Scenario: Search while the drawing browser floats
+   ✔  Given a drawing with browser entries is open in the MCAD Software
+   ✔  And the drawing browser floats over the drawing sheet
+   ✔  When the user opens the floating browser search field
+   ✔  And the user enters a query that matches no drawing browser entry
+   ✔  Then the floating browser displays a no-results message instead of its tree
+   ✔  And the drawing sheet remains visible behind the browser
+   ✔  When the user clears the search text
+   ✔  Then the unfiltered drawing browser tree is displayed in the floating panel
+   ✔  When the user closes the empty search field
+   ✔  Then the search field is hidden
+   ✔  And the browser remains floating over the sheet
+]]></system-out></testcase></testsuite></testsuites>

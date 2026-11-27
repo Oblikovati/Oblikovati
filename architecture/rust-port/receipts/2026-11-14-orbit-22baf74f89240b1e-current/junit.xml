@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Viewport orbit: tmp/obk-orbit-48987af/features/application/viewport-orbit/viewport-orbit.feature" package="testsuite/Feature: Viewport orbit: tmp/obk-orbit-48987af/features/application/viewport-orbit/viewport-orbit.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T21:59:48.190630738Z" time="9.867789132"><testcase name="Scenario: Preview and reset an incremental view rotation: tmp/obk-orbit-48987af/features/application/viewport-orbit/viewport-orbit.feature:35:3" time="9.867789132"><system-out><![CDATA[  Scenario: Preview and reset an incremental view rotation
+   ✔  Given a rectangular block is visible face-on in an active part in the MCAD Software
+   ✔  When the user chooses Rotate at Angle from the orbit menu
+   ✔  Then an incremental view rotation dialog opens
+   ✔  And it contains an increment field, six direction buttons, Reset, OK and Cancel
+   ✔  And the increment field displays 10
+   ✔  When the user clicks the first direction button
+   ✔  Then the visible view changes while the dialog remains open
+   ✔  When the user clicks Reset
+   ✔  Then the original face-on view is restored
+   ✔  When the user clicks the first direction button again
+   ✔  And the user clicks Cancel
+   ✔  Then the dialog closes
+   ✔  And the original face-on view is restored
+   ✔  And the status area displays Ready
+]]></system-out></testcase></testsuite></testsuites>

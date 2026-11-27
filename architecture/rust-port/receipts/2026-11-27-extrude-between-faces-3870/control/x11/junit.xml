@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Extrude a profile in a part document: tmp/obk-midplane-region.OGYuAO/control-root/features/solid-model/extrusion/extrusion.feature" package="testsuite/Feature: Extrude a profile in a part document: tmp/obk-midplane-region.OGYuAO/control-root/features/solid-model/extrusion/extrusion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-27T03:53:28.96692011Z" time="9.130280873"><testcase name="Scenario: Extrude between two faces independent of the source sketch plane: tmp/obk-midplane-region.OGYuAO/control-root/features/solid-model/extrusion/extrusion.feature:307:3" time="9.130280873"><system-out><![CDATA[  Scenario: Extrude between two faces independent of the source sketch plane
+   ✔> Given the MCAD Software is displaying a part in the solid modeling workspace
+   ✔> And the viewport pointer is idle
+   ✔  Given a writable copy of `fixtures/cad/extrusion/midplane-circle-between-faces-candidate.opd` is open
+   ✔  And the user makes Sketch2 visible and starts Extrude with its circle selected
+   ✔  And the profile plane lies between the block's top and bottom planar faces
+   ✔  And the projected profile lies inside both face boundaries
+   ✔  When the user selects the first face as From and the second as To
+   ✔  Then the extrusion preview starts on the first face and terminates on the second
+   ✔  And neither cap lies on the original sketch plane
+]]></system-out></testcase></testsuite></testsuites>

@@ -65,3 +65,16 @@ fn execute_preserves_arguments_and_failures() {
     assert!(execute(&runner, Path::new("."), &["tool"]).is_err());
     assert_eq!(runner.calls.borrow()[0], ["tool", "path with spaces"]);
 }
+
+#[test]
+fn stream_env_preserves_child_environment_and_failure_status() {
+    let root = Path::new(".");
+    let environment = &[("GIT_CONFIG_COUNT", "invalid")];
+    SystemRunner
+        .stream_env(root, "git", &["--version"], environment)
+        .unwrap();
+    let error = SystemRunner
+        .stream_env(root, "git", &["config", "--list"], environment)
+        .unwrap_err();
+    assert!(error.contains("config") && error.contains("failed ("));
+}

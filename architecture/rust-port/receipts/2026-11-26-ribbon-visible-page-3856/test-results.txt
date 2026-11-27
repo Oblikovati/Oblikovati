@@ -1,0 +1,36 @@
+Focused GUI Ribbon Customization tests
+test result: ok. 57 passed; 0 failed; 0 ignored; 0 measured; 779 filtered out; finished in 0.12s
+
+Available-command paging baseline on wayland
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 1714 filtered out; finished in 4.98s
+
+Available-command paging after the fix on wayland
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1714 filtered out; finished in 13.22s
+
+Published short filtered list on wayland
+13 steps (13 passed)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1714 filtered out; finished in 13.70s
+
+Published short target list on wayland
+13 steps (13 passed)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1714 filtered out; finished in 16.26s
+
+Source keyboard navigation and Ctrl+A on wayland
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 1713 filtered out; finished in 16.56s
+
+Available-command paging baseline on x11
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 1714 filtered out; finished in 6.41s
+
+Available-command paging after the fix on x11
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1714 filtered out; finished in 13.80s
+
+Published short filtered list on x11
+13 steps (13 passed)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1714 filtered out; finished in 13.92s
+
+Published short target list on x11
+13 steps (13 passed)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1714 filtered out; finished in 17.27s
+
+Source keyboard navigation and Ctrl+A on x11
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 1713 filtered out; finished in 18.30s

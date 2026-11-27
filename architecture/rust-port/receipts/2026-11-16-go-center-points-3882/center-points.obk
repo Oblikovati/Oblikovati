@@ -1,0 +1,63 @@
+schemaVersion: 2
+documentType: 1
+displayName: center-points
+identity:
+    internalName: 628c5fa2-0ddf-4757-bdd1-a8687474d86e
+    revisionId: d365e058-ae16-4114-83df-e53aee6ffb45
+    databaseRevisionId: 05b7906a-6fd5-40e0-a056-0cc4c26f9b95
+    saveCounter: 1
+    versionCreated: dev
+    versionSaved: dev
+    modelDigest: edb4702018af86aa7f0aba8141913a840b766a531ebdf58aaa678a10b792e005
+model:
+    units:
+        angle: deg
+        angleFormat: decimal
+        anglePrecision: "2"
+        area: mm^2
+        length: mm
+        lengthFormat: decimal
+        lengthPrecision: "3"
+        mass: kg
+        time: s
+        volume: mm^3
+    sketches:
+        - id: 1
+          name: Sketch1
+          seq: 1
+          plane:
+            origin:
+                - 0
+                - 0
+                - 0
+            xAxis:
+                - 1
+                - 0
+                - 0
+            yAxis:
+                - 0
+                - 1
+                - 0
+          points:
+            - id: 2
+              x: 0
+              "y": 0
+              standalone: true
+              centerPoint: true
+            - id: 3
+              x: 2
+              "y": 0
+              standalone: true
+            - id: 4
+              x: 0
+              "y": 1
+              centerPoint: true
+            - id: 5
+              x: 2
+              "y": 1
+          entities:
+            - id: 6
+              kind: line
+              points:
+                - 4
+                - 5

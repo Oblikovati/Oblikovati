@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Rectangle two point: tmp/oblikovati-rect-next-source/features/sketch/rectangle-two-point/scenario.feature" package="testsuite/Feature: Rectangle two point: tmp/oblikovati-rect-next-source/features/sketch/rectangle-two-point/scenario.feature" tests="1" errors="0" failures="1" hostname="localhost" timestamp="2026-11-14T05:08:46.648424708Z" time="17.164365686"><testcase name="Scenario: rectangle-two-point-13 Accept and undo a rectangle height edit: tmp/oblikovati-rect-next-source/features/sketch/rectangle-two-point/scenario.feature:91:3" time="17.164365686"><failure type="Step Panicked" message="Step panicked. Captured output: top moved: [493, 520] to [820, 484]..[837, 520]"/><system-out><![CDATA[  Scenario: rectangle-two-point-13 Accept and undo a rectangle height edit
+   ✔  Given the numeric rectangle retains height 6 and width 4 annotations
+   ✔  When the user accept height 8 mm and exit General Dimension
+   ✘  Then the rectangle extends downward while its top edge stays in place in the recorded view
+      Step failed:
+      Defined: tmp/oblikovati-rect-next-source/features/sketch/rectangle-two-point/scenario.feature:94:5
+      Matched: crates/head/src/../tests/application/../sketch/rectangle-two-point/dimension_edits.rs:50:1
+      Step panicked. Captured output: top moved: [493, 520] to [820, 484]..[837, 520]
+      ApplicationWorld {
+          text: "8\n4\nW\nP\nZ\nv\nO\nv\nRight\nReady\n7dimensionsneeded\nModel\n+\nModel\nMenu\nSearch\nPart1<Primary>\nRepresentations\nModelState\n<Primary>\n1\nOrigin\nYZPlane\nXZPlane\nXYPlane\nXAxis\nYAxis\nZAxis\nCenterPoint\nParameters\nSketches\nSketch1\n[DOF7]\nFeatures\nEndofPart\nHome\nPart1<Primary>*\nDocuments\nFile\nTools\nNew\nOpen\nSave\nUndo\nRedo\nHome\nProjects\nUpdate\nSelect\nMaterialBrowser\nMaterials\nAppearanceBrowser\nParameters\n...\n3DModel\nSketch\nTools\nManage\nView\nAnnotate\nRibbonDisplay\nv\nv\nRectangle\nCircle\nv\nPoint\nCenterArcv\nEllipse\nCenterRect.\n3-PtRect.\nv\nLine\nCreatev\nHorizontal\nVertical\nCoincident\nFix\nParallel\nPerpendicular\nCollinear\nEqual\nConcentric\nTangent\nDimension\nConstrainv\nMove\nDelete\nModify\nRectangular\nCircular\nPattern\nConstruction\nCenterline\nCenterPoint\nPreciseInput\nFormat\nFinishSketch\nExit",
+          ..
+      }
+]]></system-out></testcase></testsuite></testsuites>

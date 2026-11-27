@@ -1,0 +1,16 @@
+{
+  "kind": "unsealed diagnostic, not verified acceptance evidence",
+  "application_base_commit": "2da9b654f",
+  "uncommitted_test_sha256": {
+    "crates/head/tests/application/docking-system/restart_scenario.rs": "0419992ca930c4218e1c90b78f7582c33aed2a67e15465bce9b2659f6ec1d1ea",
+    "tools/bdd/docking_process_restart.py": "8de6ddb96bf1931490b85d5295b2fb53d98bec6ac3fe4c67bf0b4e36d3e46e73"
+  },
+  "feature_sha256": "11567ca6f598b1b812d635e5bb7fed2eb75abd1e2b5a087c91ef962e78e679e7",
+  "fixture_sha256": "54a6f807b8084cc19061bce4079aaee3d4cefc03eaad2ac33123544997999f8a",
+  "desktop_binary_sha256": "63fc2c862820d54b554b427077e0c2192f65c2aafaabd9ca55ea280318150b96",
+  "scenarios_passed": 10,
+  "steps_passed": 96,
+  "command": "CARGO_TARGET_DIR=/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/target CARGO_BUILD_JOBS=2 CARGO_INCREMENTAL=0 OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=docking-system OBK_BDD_REPORTS=/tmp/obk-docking-process-bdd-final OBK_BDD_DESKTOP_BINARY=/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/target/debug/oblikovati VK_DRIVER_FILES=/usr/share/vulkan/icd.d/lvp_icd.json cargo test --locked --offline -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture; inside xvfb-run -a -s '-screen 0 1440x900x24' with Openbox",
+  "environment": "Linux, Xvfb 1440x900, Openbox, Vulkan Lavapipe; isolated application settings",
+  "limitations": "Live unversioned scenarios and shared, unsealed build target; provenance issue #3978."
+}

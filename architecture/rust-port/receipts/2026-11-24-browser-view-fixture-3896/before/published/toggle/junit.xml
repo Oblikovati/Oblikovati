@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="1" hostname="localhost" timestamp="2026-11-24T11:17:41.29966958Z" time="11.013690988"><testcase name="Scenario: Toggle an origin plane while the active view is locked: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1225:3" time="11.013690988"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Toggle an origin plane while the active view is locked
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is active in the MCAD Software
+   ✘  And the user copies the Primary view representation as BrowserView and activates BrowserView
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1227:5
+      Step doesn't match any function
+]]></system-out></testcase></testsuite></testsuites>

@@ -1,0 +1,22 @@
+# Total Lost Samples: 0
+# Samples: 810  of event 'cycles:u'
+ 56.02% |oblikovati
+ 33.31% |libc.so.6
+ 4.12%  |libVkLayer_khronos_validation.so
+ 1.89%  |libm.so.6
+ 1.58%  |libX11.so.6.4.0
+ 1.23%  |libstdc++.so.6.0.33
+ 1.01%  |libxcb.so.1.1.0
+ 0.83%  |[unknown]
+
+Leaf symbols with at least 1.6% of sampled cycles
+ 7.43%  |[.] oblikovati_gui::snapshot::capture_frame|oblikovati
+ 6.52%  |[.] _int_free|libc.so.6
+ 6.30%  |[.] _int_malloc|libc.so.6
+ 4.45%  |[.] malloc|libc.so.6
+ 3.71%  |[.] malloc_consolidate|libc.so.6
+ 3.11%  |[.] __memmove_avx512_unaligned_erms|libc.so.6
+ 2.46%  |[.] <<martensite_tkservice::xw::window::XwWindow as martensite_tkernel::standard::runtime_type::RuntimeTyped>::static_type::{closure#0}::{closure#1} as core::ops::function::FnOnce<(alloc::sync::Arc<dyn martensite_tkernel::standard::transient::Transient>,)>>::call_once|oblikovati
+ 1.95%  |[.] unlink_chunk.isra.0|libc.so.6
+ 1.71%  |[.] oblikovati_model::history::sketch_placement::placement_needs_datums|oblikovati
+ 1.64%  |[.] ImGuiMenuColumns::CalcNextTotalWidth(bool)|oblikovati

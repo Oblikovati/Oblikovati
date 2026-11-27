@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ellipse: tmp/obk-home-recent.74m1LY/pinned-source/features/sketch/ellipse/scenario.feature" package="testsuite/Feature: Ellipse: tmp/obk-home-recent.74m1LY/pinned-source/features/sketch/ellipse/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-21T11:30:50.517904153Z" time="66.41883533"><testcase name="Scenario: ellipse-19 Retain the dimensioned ellipse through Finish and Edit Sketch: tmp/obk-home-recent.74m1LY/pinned-source/features/sketch/ellipse/scenario.feature:197:3" time="66.41883533"><system-out><![CDATA[  Scenario: ellipse-19 Retain the dimensioned ellipse through Finish and Edit Sketch
+   ✔  Given the fixture sketch contains the ellipse with annotations 8 and 4
+   ✔  When Finish Sketch returns to 3D Model
+   ✔  Then the ellipse and its dimension annotations remain visible in the oblique view
+   ✔  When the sketch is right-clicked in the browser
+   ✔  Then Edit Sketch is available and Visibility and Dimension Visibility are checked
+   ✔  When Edit Sketch is selected
+   ✔  Then the editable sketch returns in Right view with the ellipse and annotations 8 and 4
+]]></system-out></testcase></testsuite></testsuites>

@@ -1,0 +1,14 @@
+{
+  "kind": "diagnostic",
+  "application_commit": "75a0d3345",
+  "snapshot": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+  "feature": "viewport-pan",
+  "scenarios_passed": 2,
+  "scenarios_failed": 2,
+  "environment": "Linux Xvfb and Vulkan Lavapipe; frame-loop scenario input",
+  "failure": "Active Pan context menu absent (#4059).",
+  "limitations": [
+    "Filtered feature run, not full-area acceptance.",
+    "Fixture references and build provenance remain open (#3978)."
+  ]
+}

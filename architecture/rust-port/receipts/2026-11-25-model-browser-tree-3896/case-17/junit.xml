@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:32:09.372133068Z" time="70.133097379"><testcase name="Scenario: Hide and restore work features in the model browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature:230:3" time="70.133097379"><system-out><![CDATA[  Scenario: Hide and restore work features in the model browser
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software
+   ✔  And the MCAD Software displays the single-block part fixture
+   ✔  And the Origin branch is expanded in the model browser
+   ✔  And the Hide Work Features display preference is disabled
+   ✔  When the user enables Hide Work Features in the browser display preferences
+   ✔  Then the Origin branch is absent from the model browser
+   ✔  And the solid body and extrusion entries remain visible
+   ✔  And the block remains visible in the same view
+   ✔  When the user opens the browser display preferences
+   ✔  Then Hide Work Features is checked
+   ✔  When the user disables Hide Work Features
+   ✔  Then the Origin branch returns to the model browser collapsed
+   ✔  And the block remains visible in the same view
+]]></system-out></testcase></testsuite></testsuites>

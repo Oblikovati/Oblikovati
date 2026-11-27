@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Open document tabs: target/native-scratch.HSqCy5/current-document-tabs-source/features/application/document-tabs/document-tabs.feature" package="testsuite/Feature: Open document tabs: target/native-scratch.HSqCy5/current-document-tabs-source/features/application/document-tabs/document-tabs.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T00:25:29.360241641Z" time="48.36552139"><testcase name="Scenario: Cancel the first save while closing an unsaved part: target/native-scratch.HSqCy5/current-document-tabs-source/features/application/document-tabs/document-tabs.feature:123:3" time="48.36552139"><system-out><![CDATA[  Scenario: Cancel the first save while closing an unsaved part
+   ✔  Given the user creates a new unsaved metric part, starts a sketch on its XY plane and finishes the sketch
+   ✔  And save-change prompts are configured to always show
+   ✔  When the user clicks the close button on the part's document tab
+   ✔  Then a save-changes prompt identifies the part
+   ✔  When the user chooses Yes to save changes
+   ✔  Then a Save As dialog opens with a suggested file name
+   ✔  When the user cancels the Save As dialog
+   ✔  Then the part remains open and active
+   ✔  And its sketch remains listed in the model browser
+]]></system-out></testcase></testsuite></testsuites>

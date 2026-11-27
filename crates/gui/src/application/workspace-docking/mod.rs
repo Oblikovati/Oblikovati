@@ -1,0 +1,142 @@
+// SPDX-License-Identifier: GPL-2.0-only
+//! The shared workspace dockspace and its pass-through document area.
+use crate::application::document_creation::workspaces::WorkspaceArea;
+use imgui::{Condition, Ui, WindowFlags};
+pub(crate) mod persistence;
+
+/// Draw the nested panel docks and return the document viewport.
+/// Example: `draw(ui, outer, layout, display, band, false)` once per frame.
+pub(crate) fn draw(
+    ui: &Ui,
+    outer: WorkspaceArea,
+    layout: &mut crate::application::workspace_layout::WorkspaceLayout,
+    display: [f32; 2],
+    band: f32,
+    seed_asset_dock: bool,
+) -> WorkspaceArea {
+    let size = [
+        (outer.right - outer.left).max(1.),
+        (outer.bottom - outer.top).max(1.),
+    ];
+    let _padding = crate::widget_abi::window_padding(ui, [0., 0.]);
+    crate::widget_abi::window_geometry(ui, [outer.left, outer.top], size, Condition::Always);
+    let mut host_open = true;
+    <crate::application::workspace_layout::WorkspaceLayout as crate::dockable_window::Window>::window(
+        ui,
+        "##workspace-outer-host",
+        &mut host_open,
+    )
+        .flags(host_flags())
+        .build(|| draw_inner_workspace(ui, outer, size, layout, display, band, seed_asset_dock))
+        .unwrap_or(outer)
+}
+
+fn draw_inner_workspace(
+    ui: &Ui,
+    outer: WorkspaceArea,
+    size: [f32; 2],
+    layout: &mut crate::application::workspace_layout::WorkspaceLayout,
+    display: [f32; 2],
+    band: f32,
+    seed_asset_dock: bool,
+) -> WorkspaceArea {
+    let (bounds, span) = crate::widget_abi::outer_dockspace(
+        ui,
+        size,
+        seed_asset_dock,
+        &mut layout.outer_dock_anchor,
+    )
+    .and_then(|(bounds, span)| contained_center(outer, bounds).map(|area| (area, span)))
+    .unwrap_or((outer, None));
+    layout.set_outer_center(bounds, outer);
+    layout.outer_bottom_span = span;
+    draw_inner_child(ui, outer, layout.document_area(display, band))
+}
+
+fn draw_inner_child(ui: &Ui, outer: WorkspaceArea, workspace: WorkspaceArea) -> WorkspaceArea {
+    let size = [
+        (workspace.right - workspace.left).max(1.),
+        (workspace.bottom - workspace.top).max(1.),
+    ];
+    crate::widget_abi::cursor_position(
+        ui,
+        [workspace.left - outer.left, workspace.top - outer.top],
+    );
+    let region = crate::widget_abi::child_region(
+        ui,
+        "##workspace-docking-host",
+        size,
+        0.,
+        WindowFlags::NO_BACKGROUND | WindowFlags::NO_SCROLLBAR | WindowFlags::NO_SCROLL_WITH_MOUSE,
+    );
+    if !region.visible {
+        return workspace;
+    }
+    crate::widget_abi::workspace_dockspace(ui, size)
+        .and_then(|bounds| contained_center(workspace, bounds))
+        .unwrap_or(workspace)
+}
+
+fn contained_center(workspace: WorkspaceArea, bounds: [f32; 4]) -> Option<WorkspaceArea> {
+    if !bounds.iter().all(|value| value.is_finite()) {
+        return None;
+    }
+
+    // ImGui snaps dock bounds to whole layout units at fractional display scales.
+    let [left, top, right, bottom] = bounds;
+    if left < workspace.left - 1.
+        || top < workspace.top - 1.
+        || right > workspace.right + 1.
+        || bottom > workspace.bottom + 1.
+    {
+        return None;
+    }
+    let left = left.max(workspace.left);
+    let top = top.max(workspace.top);
+    let right = right.min(workspace.right);
+    let bottom = bottom.min(workspace.bottom);
+    if left >= right || top >= bottom {
+        return None;
+    }
+    Some(WorkspaceArea {
+        left,
+        top,
+        right,
+        bottom,
+    })
+}
+
+fn host_flags() -> WindowFlags {
+    WindowFlags::NO_DECORATION
+        | WindowFlags::NO_MOVE
+        | WindowFlags::NO_DOCKING
+        | WindowFlags::NO_BACKGROUND
+        | WindowFlags::NO_SAVED_SETTINGS
+        | WindowFlags::NO_FOCUS_ON_APPEARING
+        | WindowFlags::NO_BRING_TO_FRONT_ON_FOCUS
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn center_must_be_finite_nonempty_and_inside_the_workspace() {
+        let area = WorkspaceArea {
+            left: 100.,
+            top: 50.,
+            right: 900.,
+            bottom: 700.,
+        };
+        assert_eq!(
+            contained_center(area, [300., 50., 900., 700.])
+                .unwrap()
+                .left,
+            300.
+        );
+        assert!(contained_center(area, [98.75, 50., 900., 700.]).is_none());
+        let rounded = contained_center(area, [300., 49.75, 900.5, 700.]).unwrap();
+        assert_eq!((rounded.top, rounded.right), (50., 900.));
+        assert!(contained_center(area, [300., 50., 300., 700.]).is_none());
+        assert!(contained_center(area, [f32::NAN, 50., 900., 700.]).is_none());
+    }
+}

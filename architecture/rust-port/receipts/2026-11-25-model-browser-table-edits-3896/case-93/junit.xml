@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:35:06.812482386Z" time="136.20043702"><testcase name="Scenario: Decline removal of duplicate model-state member names: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature:1541:3" time="136.20043702"><system-out><![CDATA[  Scenario: Decline removal of duplicate model-state member names
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is open in the MCAD Software
+   ✔  And the user creates an undimensioned rectangular sketch and extrudes it 1 in with zero taper
+   ✔  And the user creates model states Capture State and Copy State and activates Copy State
+   ✔  And the user creates a fourth model state named Model State1 and reactivates Copy State
+   ✔  And the user opens the model-state table
+   ✔  And The MCAD Software has a model-state table with members Capture State and Model State1
+   ✔  When the user changes the Model State1 member cell to "Capture State" and presses Enter
+   ✔  Then both matching member-name cells are highlighted yellow
+   ✔  And OK is enabled
+   ✔  When the user selects OK
+   ✔  Then a warning identifies the duplicate name and says duplicates will be removed if the user continues
+   ✔  And the warning offers Yes and No
+   ✔  When the user selects No
+   ✔  Then the table remains open with both duplicate names highlighted
+   ✔  When the user cancels the table
+   ✔  Then the table closes without accepting the rename
+]]></system-out></testcase></testsuite></testsuites>

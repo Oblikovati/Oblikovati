@@ -1,0 +1,176 @@
+# Typed drawing sheet lifecycle
+
+The API 0.166.0 file owner serves `drawing.listSheets`,
+`drawing.addSheet`, `drawing.setActiveSheet`, and `drawing.removeSheet`.
+Listing returns the authored order, the primary model reference, paper
+dimensions, border and title block state, and the active flag. New sheets
+inherit the standard border and title block. Standard sizes apply paper
+orientation and custom sizes use the supplied millimetre dimensions.
+
+The drawing history owns all three edits, including the active sheet because
+it is part of the saved drawing recipe. Removing a sheet removes its views
+with it. The active index follows the Go reference and is clamped to the last
+remaining sheet if needed. A drawing must keep at least one sheet. With
+updates deferred, the API can list the frozen recipe. Reopen with updates
+enabled before editing it because the saved display cache is keyed to that
+recipe.
+
+## Title block and sheet revision
+
+`drawing.titleBlockFields` resolves the selected sheet's bindings against
+the current referenced document. The response keeps the definition order
+and returns the property source with each value. Unset properties resolve
+to empty text. Reads use the current document snapshot, so an unsaved
+property edit is visible on the next call.
+
+`drawing.setTitleBlock` places the default title block in the requested
+corner, creating it if necessary. `drawing.setSheetRevision` edits the
+authored sheet revision separately from the model's Revision Number
+property. Both commands target the named sheet or default to the active
+sheet. Each is an undoable drawing edit, and the corner is used by the
+native canvas.
+
+The Wayland MCP run switched the drawing reference between two saved
+parts and read `PN-42` and `PN-43` with the same Part Number binding.
+It moved the native title block from bottom-right to top-left, changing
+6,095 pixels in the drawing crop. Undo and redo reproduced the earlier
+and moved crops pixel for pixel. Reopening the drawing in the same
+process retained the moved corner and revision D.
+
+The bridge currently rejects typed Variant inputs to
+`documents_set_property` during schema validation. The native fixtures
+were seeded through the CLI script host. The Rust drawing-owner test
+uses the typed property-write call to verify that live property changes
+are visible immediately. The canvas still uses the drawing name as its
+title text.
+
+## Verification
+
+The thirteen drawing owner tests cover sheet and view edits. The sheet lifecycle test checks
+standard and custom paper, invalid input, the displayed projection on the
+active sheet, last-sheet refusal, undo and redo, and native-format save and
+reopen.
+
+```sh
+cargo test --locked -p oblikovati-head --lib tests::document_creation_benchmark::drawing
+```
+
+The native Wayland desktop, with `DISPLAY` unset, served all four methods
+through MCP Bridge. The run created a drawing with two views on an A3
+landscape sheet, added an A4 portrait sheet, activated the A3 sheet,
+removed it, and checked undo and redo. A 1300 × 750 drawing crop differed
+by 350,000 pixels between A3 and A4. Switching back and restoring the A3
+sheet reproduced the original crop pixel for pixel. Removing and redoing
+the removal reproduced the A4 crop. A fresh native process reopened the
+saved drawing and reported the A4 sheet as active.
+
+## Docking during document changes
+
+The initial rapid close and reopen run triggered the ImGui
+`TabBarCalcTabID` assertion. A control run also reproduced the crash
+when switching directly from a new Part to a new Drawing. The debugger
+traced it to the Material Browser's suspension at frame start. Its dock
+node already owned a tab bar, but Dear ImGui had yet to mark the bar as
+a docking bar.
+
+The native close notification now queues removal on the docked window
+and removes the tab immediately when the tab bar has been initialized.
+The GUI regression runs the first Home, Part, and Drawing frames in
+order. The unfixed implementation aborted at the same ImGui assertion.
+
+```sh
+cargo test --locked -p oblikovati-gui --test dock_workspace_switch --test dock_idle
+cargo test --locked -p oblikovati-gui --lib dock
+```
+
+Both integration tests and 58 docking-related unit tests passed. Through
+MCP Bridge on native Wayland, the Part-to-Drawing control, 12 repeated
+same-process drawing reopen cycles, and the full sheet workflow all
+completed. The full workflow verified the surviving A4 sheet after
+closing and reopening it in the same process. The existing source
+inventory guard still reports unregistered Appearance Editor windows.
+
+## Zoned borders
+
+`drawing.addDefaultBorder` replaces the requested sheet's border with
+a zoned border. It defaults to the active sheet and alphabetical labels
+on each axis. The reply and `drawing.listSheets` report the column and
+row counts. Counts must be positive. Each axis accepts alphabetical,
+numeric, or hidden labels. Alphabetical labels continue with AA after Z.
+
+The sheet stores these settings with the Go recipe keys
+`borderHZones`, `borderVZones`, `borderHLabel`, and `borderVLabel`.
+Old drawings with a plain border still open without a grid. The edit
+has one undo step, and the canvas draws the divisions behind the views
+with labels in the margins. Dense grids retain their authored counts
+while the canvas samples divisions to stay within the available pixels.
+
+The native Wayland MCP run added a four-column by three-row border and
+switched both label modes to `none`. In the drawing crop, the labeled
+grid changed 13,209 pixels from the plain sheet. Hiding labels changed
+445 pixels with the divisions retained. Undo restored the labeled and
+plain crops pixel for pixel. Redo and save/reopen reproduced the
+labeled crop. The model tests cover Go recipe keys, invalid persisted
+grids, and alphabetical wrapping.
+
+## Reusable sheet formats
+
+`drawing.defineSheetFormat` registers or replaces a format in the
+active drawing. It returns the current sheet list and leaves the active
+sheet in place. `drawing.addSheetUsingFormat` creates and activates a
+new sheet with the format's paper dimensions, border, and title-block
+corner. Existing sheets retain the settings they received when created.
+Both commands record an undo step.
+
+The Rust drawing recipe adds an optional `sheetFormats` collection of
+named blank sheet definitions. Older drawings open with an empty
+collection. The Go application's recipe has no format collection, so a
+save from that application cannot retain the definitions. Stamped sheets
+store the usual sheet fields.
+
+The native Wayland MCP run stamped an A2 landscape sheet with a 6 × 4
+border and a lower-left title block, then redefined the format. The
+earlier drawing crop stayed pixel-identical. The redefined format
+stamped a 200 × 120 mm sheet with a 3 × 2 border and an upper-right
+title block. Stamping the saved format after reopen reproduced that
+layout, with pixel changes confined to the sheet-number caption. The
+package tests also verified that saving an empty registry clears the
+old format key and retains unrelated model fields.
+
+## Drafting style presets
+
+`drawingStyles.listStandards`, `drawingStyles.getActiveStyle`, and
+`drawingStyles.setStandard` use the drawing's ISO or ANSI preset. The API
+uses lowercase names and existing recipes keep the uppercase spellings.
+The standard is an undoable document setting. The canvas converts the
+preset's sheet-millimetre line weight into a screen width with a one-logical-pixel
+minimum. The dimension and text settings are available through the API.
+
+On native Wayland, the MCP run switched a drawing with two projected
+views from ISO 0.5 mm to ANSI 0.6 mm lines. The change affected 2,854
+pixels in the drawing crop and was confined to the view area. Undo
+reproduced the ISO crop. Redo and reopening reproduced the ANSI crop
+pixel for pixel. The API also confirmed the standard's dimension units
+and precision across these transitions.
+
+## Drawing DXF export dependency
+
+`drawing.exportDXF` needs a released Martensite writer. The current pin is
+Martensite v0.14.2 at `d463526642b7bf950ba33c7ab4a4c9bc97caffaf`.
+It has exchange toolkits for STEP, IGES, OBJ, PLY, and STL, but no DXF
+writer or acadrust dependency. ADR-0018 assigns the writer to Martensite.
+The sheet export needs an input contract for paper-space lines and text
+in millimetres, visible and hidden edge layers, border and title block
+layers, the requested DXF version, and an entity count or diagnostics.
+Martensite's open exchange result work is tracked in
+[Martensite #57](https://github.com/Oblikovati/Martensite/issues/57).
+
+## Drawing curve gap
+
+The drawing curve end-to-end reference test requires a model edge key
+for each projected box segment.
+The current HLR adapter obtains grouped output edge shapes from
+`HLRToShape::compound_of_edges`. It retains projected geometry and
+classification, while the native presentation snapshot retains sampled
+points and visibility. The typed curve route still needs a checked path from
+HLR output spans to persistent source edge identities.

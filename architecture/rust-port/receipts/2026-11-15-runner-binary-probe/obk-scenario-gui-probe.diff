@@ -1,0 +1,13 @@
+diff --git a/crates/gui/src/clear_appearance.rs b/crates/gui/src/clear_appearance.rs
+index ec7664145..7e6fc3e63 100644
+--- a/crates/gui/src/clear_appearance.rs
++++ b/crates/gui/src/clear_appearance.rs
+@@ -51,7 +51,7 @@ fn confirm_clear(
+     action: Option<GuiShellAction>,
+     actions: &mut Vec<GuiShellAction>,
+ ) -> bool {
+-    ui.text("Clear appearance overrides for the selected bodies?");
++    ui.text("Clear the selected body appearance overrides?");
+     let valid = action.as_ref().is_some_and(|value| value.enabled(state));
+     if !valid {
+         ui.text_wrapped("Select bodies with an appearance override to continue.");

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Extrude a profile in a part document: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature" package="testsuite/Feature: Extrude a profile in a part document: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T15:24:34.055212974Z" time="7.166429875"><testcase name="Scenario: extrusion-11 Termination selection displays a To reference: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature:102:3" time="7.166429875"><system-out><![CDATA[  Scenario: extrusion-11 Termination selection displays a To reference
+   ✔> Given the MCAD Software is displaying a part in the solid modeling workspace
+   ✔> And the viewport pointer is idle
+   ✔  Given a copy of `fixtures/cad/revolve/revolve-profile.opd` is open with a selected profile and numeric Distance A preview
+   ✔  When the user activates the termination control
+   ✔  Then a To reference selector appears
+   ✔  And no reference means disabled OK
+]]></system-out></testcase></testsuite></testsuites>

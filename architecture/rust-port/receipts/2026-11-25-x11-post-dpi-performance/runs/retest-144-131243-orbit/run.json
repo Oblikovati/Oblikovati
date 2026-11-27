@@ -1,0 +1,27 @@
+{
+  "mode": "orbit",
+  "app_pid": 2196959,
+  "fixture": "docking-visible-solid-current.opd",
+  "dpi": 144,
+  "validation_checks_disabled": "",
+  "load": "31.19 21.91 21.35 21/5296 2196958",
+  "cpu_pressure": "some avg10=7.83 avg60=7.74 avg300=3.96 total=2445513065\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+  "io_pressure": "some avg10=28.60 avg60=17.70 avg300=10.93 total=11277813999\nfull avg10=15.55 avg60=9.40 avg300=6.77 total=9383413237",
+  "window_size": [
+    1440,
+    900
+  ],
+  "window_origin": [
+    0,
+    0
+  ],
+  "first_row": 2,
+  "intervals": [
+    [
+      152649004347850,
+      152655000309943
+    ]
+  ],
+  "last_row": 71,
+  "total_rows": 74
+}

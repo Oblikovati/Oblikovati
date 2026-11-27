@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Body properties dialog: tmp/oblikovati-rerun-source/features/application/body-properties/body-properties.feature" package="testsuite/Feature: Body properties dialog: tmp/oblikovati-rerun-source/features/application/body-properties/body-properties.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T04:02:42.968328999Z" time="18.343777847"><testcase name="Scenario: Discard a pending appearance with Escape: tmp/oblikovati-rerun-source/features/application/body-properties/body-properties.feature:66:3" time="18.343777847"><system-out><![CDATA[  Scenario: Discard a pending appearance with Escape
+   ✔  Given a part with a visible solid body is active in the MCAD Software
+   ✔  And the body appearance is set to As Part
+   ✔  And Body Properties is open for the body
+   ✔  When the user selects Black in Body Appearance
+   ✔  And the user presses Escape
+   ✔  Then the dialog closes
+   ✔  When the user reopens Body Properties for the same body
+   ✔  Then Body Appearance displays As Part
+   ✔  When the user chooses Cancel
+   ✔  Then the dialog closes
+]]></system-out></testcase></testsuite></testsuites>

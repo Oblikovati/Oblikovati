@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon display modes: tmp/oblikovati-ribbon-relocated.RcZVDl/display-snapshot/checkout/features/application/ribbon-display/ribbon-display.feature" package="testsuite/Feature: Ribbon display modes: tmp/oblikovati-ribbon-relocated.RcZVDl/display-snapshot/checkout/features/application/ribbon-display/ribbon-display.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T08:34:02.0117783Z" time="30.18281505"><testcase name="Scenario: Open a panel compacted by a narrow application window: tmp/oblikovati-ribbon-relocated.RcZVDl/display-snapshot/checkout/features/application/ribbon-display/ribbon-display.feature:313:3" time="30.18281505"><system-out><![CDATA[  Scenario: Open a panel compacted by a narrow application window
+   ✔  Given a part is active in the MCAD Software with the full Manage ribbon displayed
+   ✔  And the Insert panel displays its commands directly at the wider window size
+   ✔  When the user narrows the application window until Insert becomes a compact panel button
+   ✔  Then the Manage tab remains active
+   ✔  And the part remains visible
+   ✔  When the user clicks the compact Insert panel button
+   ✔  Then a temporary Insert panel opens below the ribbon with its commands
+   ✔  When the user clicks empty viewport space
+   ✔  Then the temporary panel closes and the compact Insert button remains visible
+   ✔  When the user maximizes the application window
+   ✔  Then the Insert commands appear directly in the ribbon again
+   ✔  And the part remains visible
+]]></system-out></testcase></testsuite></testsuites>

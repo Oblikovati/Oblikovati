@@ -1,0 +1,4 @@
+running 1 test
+test native::gui_loop_tests::application_bdd::appearance_editor_scenarios::ceramic::duplicate::ceramic_copies_have_independent_names_and_survive_saving ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1748 filtered out; finished in 13.24s

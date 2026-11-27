@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Properties panel for creating and editing a modeled feature: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/feature-properties/feature-properties.feature" package="testsuite/Feature: Properties panel for creating and editing a modeled feature: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/feature-properties/feature-properties.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-27T05:28:11.37548915Z" time="7.865919733"><testcase name="Rule: Dockable Properties commands reuse the Properties shell: Scenario: Show and hide the preview without changing feature input: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/feature-properties/feature-properties.feature:233:5" time="7.865919733"><system-out><![CDATA[  Scenario: Show and hide the preview without changing feature input
+   ✔  Given a valid feature is being edited and its Properties breadcrumb offers preview visibility
+   ✔  When the user hides the preview using that control
+   ✔  Then the feature preview disappears while the input selections and values remain displayed
+   ✔  When the user shows the preview again
+   ✔  Then it returns using the same definition
+]]></system-out></testcase></testsuite></testsuites>

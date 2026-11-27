@@ -1,0 +1,752 @@
+[
+  {
+    "uri": "mnt/vininas-projects/MCAD-Scenarios/features/application/document-creation/document-creation-populated-layout.feature",
+    "keyword": "Feature",
+    "name": "Create a populated drawing layout",
+    "tags": [
+      {
+        "name": "application",
+        "line": 2
+      },
+      {
+        "name": "documents",
+        "line": 2
+      },
+      {
+        "name": "fixture_variation",
+        "line": 2
+      }
+    ],
+    "elements": [
+      {
+        "after": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 251433876
+            }
+          }
+        ],
+        "before": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1925433852
+            }
+          }
+        ],
+        "keyword": "Scenario",
+        "type": "scenario",
+        "id": "create-a-populated-drawing-layout/cancel-component-selection-for-a-drawing-layout",
+        "line": 7,
+        "name": "Cancel component selection for a drawing layout",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "line": 8,
+            "name": "the active document is `fixtures/cad/document-opening/OpenPart.opd` in the MCAD Software",
+            "result": {
+              "status": "passed",
+              "duration": 994651877
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 9,
+            "name": "the new-document template chooser is open",
+            "result": {
+              "status": "passed",
+              "duration": 201087138
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 10,
+            "name": "`fixtures/cad/document-creation-layout-candidate/English/Populated Layout.odd` is available as the populated inch assembly layout",
+            "result": {
+              "status": "passed",
+              "duration": 230781676
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 11,
+            "name": "the user selects the inch drawing template",
+            "result": {
+              "status": "passed",
+              "duration": 216474762
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 12,
+            "name": "the chooser displays the template sheet and available layout previews",
+            "result": {
+              "status": "passed",
+              "duration": 200228198
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 13,
+            "name": "the user selects the populated assembly layout preview",
+            "result": {
+              "status": "passed",
+              "duration": 200535917
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 14,
+            "name": "the user chooses Create",
+            "result": {
+              "status": "passed",
+              "duration": 199139672
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 15,
+            "name": "the template chooser closes",
+            "result": {
+              "status": "passed",
+              "duration": 182272509
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 16,
+            "name": "a component-selection dialog opens for a drawing view",
+            "result": {
+              "status": "passed",
+              "duration": 10507922
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 17,
+            "name": "the dialog displays a document name field and a browse control",
+            "result": {
+              "status": "passed",
+              "duration": 9445244
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 18,
+            "name": "it offers OK and Cancel",
+            "result": {
+              "status": "passed",
+              "duration": 5675245
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 19,
+            "name": "the user cancels component selection",
+            "result": {
+              "status": "passed",
+              "duration": 311406583
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 20,
+            "name": "the component-selection dialog closes",
+            "result": {
+              "status": "passed",
+              "duration": 9489446
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 21,
+            "name": "the original part document remains active",
+            "result": {
+              "status": "passed",
+              "duration": 10726406
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 22,
+            "name": "no new drawing tab is displayed",
+            "result": {
+              "status": "passed",
+              "duration": 9583911
+            }
+          }
+        ]
+      },
+      {
+        "keyword": "Background",
+        "type": "background",
+        "id": "create-a-populated-drawing-layout/cancel-component-selection-for-a-drawing-layout",
+        "line": 7,
+        "name": "Cancel component selection for a drawing layout",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "line": 5,
+            "name": "a fresh MCAD Software session loads `fixtures/cad/document-creation-layout-candidate.opj` as its active project",
+            "result": {
+              "status": "passed",
+              "duration": 25805009
+            }
+          }
+        ]
+      },
+      {
+        "after": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 283355897
+            }
+          }
+        ],
+        "before": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 2002220905
+            }
+          }
+        ],
+        "keyword": "Scenario",
+        "type": "scenario",
+        "id": "create-a-populated-drawing-layout/create-a-populated-drawing-layout-with-a-component-that-needs-updating",
+        "line": 25,
+        "name": "Create a populated drawing layout with a component that needs updating",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "line": 26,
+            "name": "a disposable copy of `fixtures/cad/document-creation-layout-candidate/English/layout-data/extrusion/extrusion-rect-8mm.opd` is active",
+            "result": {
+              "status": "passed",
+              "duration": 1172871013
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 27,
+            "name": "the active part has been updated and then edited so that it needs updating again",
+            "result": {
+              "status": "passed",
+              "duration": 94680595
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 28,
+            "name": "`fixtures/cad/document-creation-layout-candidate/English/Populated Layout.odd` is available as a drawing layout with a view and parts list",
+            "result": {
+              "status": "passed",
+              "duration": 15798795
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 29,
+            "name": "the user selects the drawing template and populated layout",
+            "result": {
+              "status": "passed",
+              "duration": 1027662393
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 30,
+            "name": "the user chooses Create",
+            "result": {
+              "status": "passed",
+              "duration": 240421290
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 31,
+            "name": "the component-selection dialog displays the proposed component",
+            "result": {
+              "status": "passed",
+              "duration": 13377313
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 32,
+            "name": "the user confirms that component in the component-selection dialog",
+            "result": {
+              "status": "passed",
+              "duration": 501915700
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 33,
+            "name": "a message identifies the component as needing an update",
+            "result": {
+              "status": "passed",
+              "duration": 10542635
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 34,
+            "name": "the message says the drawing reflects the model's non-updated state",
+            "result": {
+              "status": "passed",
+              "duration": 7818132
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 35,
+            "name": "the message includes a display preference and an OK control",
+            "result": {
+              "status": "passed",
+              "duration": 9625638
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 36,
+            "name": "the user acknowledges the message",
+            "result": {
+              "status": "passed",
+              "duration": 362300143
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 37,
+            "name": "a new drawing document becomes active",
+            "result": {
+              "status": "passed",
+              "duration": 10142155
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 38,
+            "name": "its sheet displays a border, title block and parts list",
+            "result": {
+              "status": "passed",
+              "duration": 6459487
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 39,
+            "name": "the drawing browser lists a parts list and a view referencing the component",
+            "result": {
+              "status": "passed",
+              "duration": 6471279
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 40,
+            "name": "a new document tab is visible",
+            "result": {
+              "status": "passed",
+              "duration": 8590452
+            }
+          }
+        ]
+      },
+      {
+        "keyword": "Background",
+        "type": "background",
+        "id": "create-a-populated-drawing-layout/create-a-populated-drawing-layout-with-a-component-that-needs-updating",
+        "line": 25,
+        "name": "Create a populated drawing layout with a component that needs updating",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "line": 5,
+            "name": "a fresh MCAD Software session loads `fixtures/cad/document-creation-layout-candidate.opj` as its active project",
+            "result": {
+              "status": "passed",
+              "duration": 24056342
+            }
+          }
+        ]
+      },
+      {
+        "after": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 456811897
+            }
+          }
+        ],
+        "before": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 2132862439
+            }
+          }
+        ],
+        "keyword": "Scenario",
+        "type": "scenario",
+        "id": "create-a-populated-drawing-layout/cancel-browsing-for-a-drawing-layout-component",
+        "line": 43,
+        "name": "Cancel browsing for a drawing-layout component",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "line": 44,
+            "name": "a disposable copy of `fixtures/cad/document-creation-layout-candidate/English/layout-data/extrusion/extrusion-rect-8mm.opd` is active",
+            "result": {
+              "status": "passed",
+              "duration": 936803442
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 45,
+            "name": "the active part has been updated and then edited so that it needs updating again",
+            "result": {
+              "status": "passed",
+              "duration": 87341270
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 46,
+            "name": "`fixtures/cad/document-creation-layout-candidate/English/Populated Layout.odd` is available as a drawing layout with a view and parts list",
+            "result": {
+              "status": "passed",
+              "duration": 13398031
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 47,
+            "name": "the user selects the assembly layout and opens its component-selection dialog",
+            "result": {
+              "status": "passed",
+              "duration": 1291480024
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 48,
+            "name": "the dialog displays the active part",
+            "result": {
+              "status": "passed",
+              "duration": 6075918
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 49,
+            "name": "the user chooses Browse beside the document name",
+            "result": {
+              "status": "passed",
+              "duration": 420161152
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 50,
+            "name": "a file-selection dialog opens above component selection",
+            "result": {
+              "status": "passed",
+              "duration": 8386254
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 51,
+            "name": "it displays a folder and file list, a file name field and a file-type filter",
+            "result": {
+              "status": "passed",
+              "duration": 2667288
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 52,
+            "name": "it displays a preview area and Open and Cancel controls",
+            "result": {
+              "status": "passed",
+              "duration": 1484488
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 53,
+            "name": "the user cancels the file-selection dialog",
+            "result": {
+              "status": "passed",
+              "duration": 390573511
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 54,
+            "name": "the component-selection dialog is displayed again",
+            "result": {
+              "status": "passed",
+              "duration": 9139949
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 55,
+            "name": "its previous document name remains displayed",
+            "result": {
+              "status": "passed",
+              "duration": 8832209
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 56,
+            "name": "the user cancels component selection",
+            "result": {
+              "status": "passed",
+              "duration": 327831338
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 57,
+            "name": "the original document remains active",
+            "result": {
+              "status": "passed",
+              "duration": 11665835
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 58,
+            "name": "no new drawing tab is displayed",
+            "result": {
+              "status": "passed",
+              "duration": 10428715
+            }
+          }
+        ]
+      },
+      {
+        "keyword": "Background",
+        "type": "background",
+        "id": "create-a-populated-drawing-layout/cancel-browsing-for-a-drawing-layout-component",
+        "line": 43,
+        "name": "Cancel browsing for a drawing-layout component",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "line": 5,
+            "name": "a fresh MCAD Software session loads `fixtures/cad/document-creation-layout-candidate.opj` as its active project",
+            "result": {
+              "status": "passed",
+              "duration": 25098681
+            }
+          }
+        ]
+      },
+      {
+        "after": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 269374857
+            }
+          }
+        ],
+        "before": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 2110523376
+            }
+          }
+        ],
+        "keyword": "Scenario",
+        "type": "scenario",
+        "id": "create-a-populated-drawing-layout/browse-to-a-different-component-for-a-populated-drawing-layout",
+        "line": 61,
+        "name": "Browse to a different component for a populated drawing layout",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "line": 62,
+            "name": "disposable copies of `fixtures/cad/document-creation-layout-candidate/English/layout-data/extrusion/extrusion-rect-8mm.opd` and `fixtures/cad/document-creation-layout-candidate/English/layout-data/alternate-component.opd` are open in the same session",
+            "result": {
+              "status": "passed",
+              "duration": 3092525016
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 63,
+            "name": "each part has been updated and then edited so that it needs updating again",
+            "result": {
+              "status": "passed",
+              "duration": 184701295
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 64,
+            "name": "the first part is active",
+            "result": {
+              "status": "passed",
+              "duration": 658820540
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 65,
+            "name": "`fixtures/cad/document-creation-layout-candidate/English/Populated Layout.odd` is available as a drawing layout with a view and parts list",
+            "result": {
+              "status": "passed",
+              "duration": 17752242
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 66,
+            "name": "the user selects the assembly layout and opens its component-selection dialog",
+            "result": {
+              "status": "passed",
+              "duration": 1399721171
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 67,
+            "name": "the dialog displays the active part",
+            "result": {
+              "status": "passed",
+              "duration": 6960705
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 68,
+            "name": "the file-selection dialog can access the alternate part",
+            "result": {
+              "status": "passed",
+              "duration": 5055559
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 69,
+            "name": "the user chooses Browse beside the document name",
+            "result": {
+              "status": "passed",
+              "duration": 476773157
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 70,
+            "name": "the user selects the different part file and choose Open",
+            "result": {
+              "status": "passed",
+              "duration": 1561815960
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 71,
+            "name": "the component-selection dialog displays the selected file name",
+            "result": {
+              "status": "passed",
+              "duration": 10211513
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 72,
+            "name": "the user confirms the selected component",
+            "result": {
+              "status": "passed",
+              "duration": 551935342
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 73,
+            "name": "a message identifies the selected component as needing an update",
+            "result": {
+              "status": "passed",
+              "duration": 6938344
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 74,
+            "name": "the user acknowledges the message",
+            "result": {
+              "status": "passed",
+              "duration": 369240881
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 75,
+            "name": "a new drawing becomes active",
+            "result": {
+              "status": "passed",
+              "duration": 8999930
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 76,
+            "name": "its parts list identifies the selected component",
+            "result": {
+              "status": "passed",
+              "duration": 9450904
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 77,
+            "name": "its browser contains a view referencing the selected component",
+            "result": {
+              "status": "passed",
+              "duration": 6013482
+            }
+          }
+        ]
+      },
+      {
+        "keyword": "Background",
+        "type": "background",
+        "id": "create-a-populated-drawing-layout/browse-to-a-different-component-for-a-populated-drawing-layout",
+        "line": 61,
+        "name": "Browse to a different component for a populated drawing layout",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "line": 5,
+            "name": "a fresh MCAD Software session loads `fixtures/cad/document-creation-layout-candidate.opj` as its active project",
+            "result": {
+              "status": "passed",
+              "duration": 27242119
+            }
+          }
+        ]
+      }
+    ]
+  }
+]

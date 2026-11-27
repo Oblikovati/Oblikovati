@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" package="testsuite/Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:21:17.078629528Z" time="31.571888567"><testcase name="Scenario: Dismiss the context menu of an expanded panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:634:3" time="31.571888567"><system-out><![CDATA[  Scenario: Dismiss the context menu of an expanded panel
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open and active
+   ✔  And the full 3D Model ribbon is visible
+   ✔  And the Modify additional command area is open and unpinned
+   ✔  When the user right-clicks the lower Modify title
+   ✔  Then the ribbon context menu appears and the additional commands remain visible
+   ✔  When the user presses Escape
+   ✔  Then the context menu closes
+   ✔  And the Modify additional commands remain visible
+   ✔  When the user clicks the lower Modify title
+   ✔  Then the additional command area closes
+   ✔  And the full 3D Model ribbon remains visible
+]]></system-out></testcase></testsuite></testsuites>

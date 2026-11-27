@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Viewport orbit: tmp/oblikovati-ribbon-relocated.RcZVDl/current-viewport-orbit-source/features/application/viewport-orbit/viewport-orbit.feature" package="testsuite/Feature: Viewport orbit: tmp/oblikovati-ribbon-relocated.RcZVDl/current-viewport-orbit-source/features/application/viewport-orbit/viewport-orbit.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T22:13:45.915596989Z" time="23.875275719"><testcase name="Scenario: Exit free orbit with Escape: tmp/oblikovati-ribbon-relocated.RcZVDl/current-viewport-orbit-source/features/application/viewport-orbit/viewport-orbit.feature:89:3" time="23.875275719"><system-out><![CDATA[  Scenario: Exit free orbit with Escape
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open with its rectangular solid visible in the active part in the MCAD Software
+   ✔  When the user selects Orbit on the navigation bar
+   ✔  Then the status area indicates free rotation
+   ✔  When the user presses Escape
+   ✔  Then the status area displays Ready
+   ✔  And the block remains visible in the same apparent orientation
+]]></system-out></testcase></testsuite></testsuites>

@@ -1,0 +1,14 @@
+{
+  "application_base": "ef6d9537e",
+  "source_feature_sha256": "139cea92a16ace53d22a47ba7839233d1000cbefc2ce2e51500844926651a3d0",
+  "source_revision": null,
+  "provenance": "Native X11 regression for behavior described by a capture-only scenario; this is not a BDD acceptance run.",
+  "results": [
+    "The selected Appearance Browser closed from its content and Material Browser became active.",
+    "Appearance Browser reopened in the same dock node.",
+    "A separate native docked-tab restart test passed.",
+    "Head all-target Clippy and Windows GNU cross-build passed."
+  ],
+  "remaining": "Other programmatic dockable-window close transitions require audit in #4073.",
+  "environment": "Linux Xvfb with Mesa lavapipe; Windows GNU cross-build"
+}

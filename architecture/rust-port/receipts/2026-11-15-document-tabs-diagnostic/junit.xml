@@ -1,0 +1,314 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Open document tabs: tmp/obk-tabs-full-pinned-20261115/features/application/document-tabs/document-tabs.feature" package="testsuite/Feature: Open document tabs: tmp/obk-tabs-full-pinned-20261115/features/application/document-tabs/document-tabs.feature" tests="38" errors="0" failures="29" hostname="localhost" timestamp="2026-11-14T23:51:17.129014579Z" time="208.050009926"><testcase name="Scenario: Switch between open parts: tmp/obk-tabs-full-pinned-20261115/features/application/document-tabs/document-tabs.feature:5:3" time="9.80978996"><system-out><![CDATA[  Scenario: Switch between open parts
+   ✔  Given the MCAD Software has two open part documents
+   ✔  And the first part contains an empty sketch
+   ✔  And the second part contains a rectangular sketch profile
+   ✔  And the first part is active
+   ✔  When the user selects the second part's document tab
+   ✔  Then the second part becomes active
+   ✔  And its rectangular profile appears in the viewport
+   ✔  And the model browser shows the second part
+   ✔  And the application title identifies the second part
+   ✔  When the user selects the first part's document tab
+   ✔  Then the first part becomes active
+   ✔  And its model browser and viewport are displayed
+   ✔  And the second part remains available as an open tab
+]]></system-out></testcase><testcase name="Scenario: Inspect a document tab&apos;s context menu: tmp/obk-tabs-full-pinned-20261115/features/application/document-tabs/document-tabs.feature:20:3" time="2.266895647"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Inspect a document tab's context menu
+   ✔  Given a part document is active in the MCAD Software
+   ✘  When the user opens the document tab's context menu
+      Step failed:
+      Defined: tmp/obk-tabs-full-pinned-20261115/features/application/document-tabs/document-tabs.feature:22:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Hide and restore the document tab strip: tmp/obk-tabs-full-pinned-20261115/features/application/document-tabs/document-tabs.feature:28:3" time="2.656280955"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Hide and restore the document tab strip
+   ✔  Given multiple documents are open in the MCAD Software
+   ✔  And document tabs are visible
+   ✘  When the user clears Document Tabs in the View tab's User Interface menu
+      Step failed:
+      Defined: tmp/obk-tabs-full-pinned-20261115/features/application/document-tabs/document-tabs.feature:31:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Open the extended window list when tabs are hidden: tmp/obk-tabs-full-pinned-20261115/features/application/document-tabs/document-tabs.feature:40:3" time="3.285533458"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Open the extended window list when tabs are hidden
+   ✔  Given multiple documents are open in the MCAD Software
+   ✔  And document tabs are hidden
+   ✘  When the user opens the Switch menu on the View tab
+      Step failed:
+      Defined: tmp/obk-tabs-full-pinned-20261115/features/application/document-tabs/document-tabs.feature:43:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Switch to the neighboring part with the keyboard: tmp/obk-tabs-full-pinned-20261115/features/application/document-tabs/document-tabs.feature:50:3" time="2.994995814"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Switch to the neighboring part with the keyboard
+   ✔  Given two neighboring part tabs are visible in the MCAD Software
+   ✔  And the left-hand part is active
+   ✘  When the user presses Control+Tab
+      Step failed:
+      Defined: tmp/obk-tabs-full-pinned-20261115/features/application/document-tabs/document-tabs.feature:53:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Inspect properties of an inactive document from its tab: tmp/obk-tabs-full-pinned-20261115/features/application/document-tabs/document-tabs.feature:59:3" time="4.863620389"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Inspect properties of an inactive document from its tab
+   ✔  Given the MCAD Software has two open part documents
+   ✔  And the first part is active
+   ✔  And the second part has been saved
+   ✔  When the user opens the second part's document tab context menu
+   ✔  Then the first part remains active in the workspace
+   ✘  When the user chooses Properties from the context menu
+      Step failed:
+      Defined: tmp/obk-tabs-full-pinned-20261115/features/application/document-tabs/document-tabs.feature:65:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Close a saved inactive document with its tab close button: tmp/obk-tabs-full-pinned-20261115/features/application/document-tabs/document-tabs.feature:73:3" time="4.584886222"><system-out><![CDATA[  Scenario: Close a saved inactive document with its tab close button
+   ✔  Given the MCAD Software has two open part documents
+   ✔  And the first part is active
+   ✔  And the second part is saved and has no unsaved changes
+   ✔  When the user clicks the close button on the second part's document tab
+   ✔  Then the second part's tab disappears
+   ✔  And the first part remains active in the workspace
+   ✔  And no save prompt is displayed
+]]></system-out></testcase><testcase name="Scenario: Close a newly created empty active part: tmp/obk-tabs-full-pinned-20261115/features/application/document-tabs/document-tabs.feature:83:3" time="5.332430529"><system-out><![CDATA[  Scenario: Close a newly created empty active part
+   ✔  Given a part document is active in the MCAD Software
+   ✔  And other documents are also open
+   ✔  When the user creates a new empty part from a standard metric template
+   ✔  Then the new part becomes active and has its own document tab
+   ✔  When the user clicks the close button on the new part's tab without editing it
+   ✔  Then the new part's tab disappears without a save prompt
+   ✔  And the previously active part is displayed again
+   ✔  And its model browser and viewport are restored
+]]></system-out></testcase><testcase name="Scenario: Cancel closing a part while editing its sketch: tmp/obk-tabs-full-pinned-20261115/features/application/document-tabs/document-tabs.feature:94:3" time="5.534931152"><system-out><![CDATA[  Scenario: Cancel closing a part while editing its sketch
+   ✔  Given a new part is open in the MCAD Software
+   ✔  And the user is editing a sketch in the part
+   ✔  And the environment-exit message is enabled
+   ✔  When the user clicks the close button on the part's document tab
+   ✔  Then a dialog asks whether to exit the sketch environment and continue
+   ✔  And the dialog offers OK and cancels
+   ✔  When the user chooses Cancel
+   ✔  Then the part remains open
+   ✔  And the sketch editing environment remains active
+]]></system-out></testcase><testcase name="Scenario: Cancel the save prompt after leaving sketch editing to close: tmp/obk-tabs-full-pinned-20261115/features/application/document-tabs/document-tabs.feature:106:3" time="5.717672269"><system-out><![CDATA[  Scenario: Cancel the save prompt after leaving sketch editing to close
+   ✔  Given a new part contains an unsaved sketch in the MCAD Software
+   ✔  And the user is editing that sketch
+   ✔  And the environment-exit message is enabled
+   ✔  When the user clicks the close button on the part's document tab
+   ✔  And the user chooses OK to exit the sketch environment and continue
+   ✔  Then a save-changes prompt identifies the part
+   ✔  And the prompt offers Yes, No and cancels
+   ✔  When the user chooses Cancel at the save-changes prompt
+   ✔  Then the part remains open
+   ✔  And its sketch remains listed in the model browser
+   ✔  And the part modeling environment is active
+]]></system-out></testcase><testcase name="Scenario: Cancel the first save while closing an unsaved part: tmp/obk-tabs-full-pinned-20261115/features/application/document-tabs/document-tabs.feature:120:3" time="13.166495593"><system-out><![CDATA[  Scenario: Cancel the first save while closing an unsaved part
+   ✔  Given a new part with an unsaved sketch is active in the MCAD Software
+   ✔  And the part is in the modeling environment
+   ✔  And save-change prompts are configured to always show
+   ✔  When the user clicks the close button on the part's document tab
+   ✔  Then a save-changes prompt identifies the part
+   ✔  When the user chooses Yes to save changes
+   ✔  Then a Save As dialog opens with a suggested file name
+   ✔  When the user cancels the Save As dialog
+   ✔  Then the part remains open and active
+   ✔  And its sketch remains listed in the model browser
+]]></system-out></testcase><testcase name="Scenario: Save a new part while closing its tab: tmp/obk-tabs-full-pinned-20261115/features/application/document-tabs/document-tabs.feature:133:3" time="11.942948005"><system-out><![CDATA[  Scenario: Save a new part while closing its tab
+   ✔  Given a new part with an unsaved sketch is active in the MCAD Software
+   ✔  And another part was active before the new part was created
+   ✔  And save-change prompts are configured to always show
+   ✔  And the suggested file name does not exist in the selected folder
+   ✔  When the user clicks the close button on the new part's document tab
+   ✔  And the user chooses Yes in the save-changes prompt
+   ✔  And the user accepts the suggested file name in the Save As dialog
+   ✔  Then the part file exists at the selected location
+   ✔  And the new part's tab disappears
+   ✔  And the previously active part is displayed
+   ✔  When the user reopens the saved part file
+   ✔  Then the reopened part is active
+   ✔  And its sketch is listed in the model browser
+]]></system-out></testcase><testcase name="Scenario: Close an inactive saved document from its tab menu: tmp/obk-tabs-full-pinned-20261115/features/application/document-tabs/document-tabs.feature:149:3" time="5.147594823"><system-out><![CDATA[  Scenario: Close an inactive saved document from its tab menu
+   ✔  Given multiple part documents are open in the MCAD Software
+   ✔  And the first part is active
+   ✔  And the second part is saved and has no unsaved changes
+   ✔  When the user opens the second part's document tab context menu
+   ✔  And the user chooses Close
+   ✔  Then the second part's tab disappears
+   ✔  And the first part remains active in the workspace
+   ✔  And no save prompt is displayed
+]]></system-out></testcase><testcase name="Scenario: Switch between a drawing and a part being edited: tmp/obk-tabs-full-pinned-20261115/features/application/document-tabs/document-tabs.feature:160:3" time="4.728744618"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Switch between a drawing and a part being edited
+   ✔  Given a drawing and a part are open in the MCAD Software
+   ✔  And the part has an active sketch editing environment
+   ✔  And the drawing is active with its drawing resources branch collapsed
+   ✘  When the user selects the part document tab
+      Step failed:
+      Defined: tmp/obk-tabs-full-pinned-20261115/features/application/document-tabs/document-tabs.feature:164:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Activate a document from the tab-strip window list: tmp/obk-tabs-full-pinned-20261115/features/application/document-tabs/document-tabs.feature:177:3" time="2.743292237"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Activate a document from the tab-strip window list
+   ✔  Given a drawing and a part are open in the MCAD Software
+   ✔  And the part is active
+   ✔  And document tabs are visible
+   ✘  When the user opens the document list at the end of the tab strip
+      Step failed:
+      Defined: tmp/obk-tabs-full-pinned-20261115/features/application/document-tabs/document-tabs.feature:181:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Reorder an active drawing tab: tmp/obk-tabs-full-pinned-20261115/features/application/document-tabs/document-tabs.feature:192:3" time="2.893128174"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Reorder an active drawing tab
+   ✔  Given a drawing and several other documents are open in the MCAD Software
+   ✔  And the drawing is active and its tab is visible
+   ✘  When the user drags the drawing tab left across several neighboring tabs
+      Step failed:
+      Defined: tmp/obk-tabs-full-pinned-20261115/features/application/document-tabs/document-tabs.feature:195:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Reorder an inactive part tab: tmp/obk-tabs-full-pinned-20261115/features/application/document-tabs/document-tabs.feature:204:3" time="3.041202959"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Reorder an inactive part tab
+   ✔  Given a drawing and several parts are open in the MCAD Software
+   ✔  And the drawing is active
+   ✔  And an inactive part tab is visible
+   ✘  When the user drags the inactive part tab left across several neighboring tabs
+      Step failed:
+      Defined: tmp/obk-tabs-full-pinned-20261115/features/application/document-tabs/document-tabs.feature:208:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Detach an active drawing from the tab strip: tmp/obk-tabs-full-pinned-20261115/features/application/document-tabs/document-tabs.feature:215:3" time="2.491688124"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Detach an active drawing from the tab strip
+   ✔  Given a drawing and a part are open in the MCAD Software
+   ✔  And the drawing is active in the main document tab strip
+   ✘  When the user drags the drawing tab from the strip into the workspace
+      Step failed:
+      Defined: tmp/obk-tabs-full-pinned-20261115/features/application/document-tabs/document-tabs.feature:218:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Inspect the detached drawing tab context menu: tmp/obk-tabs-full-pinned-20261115/features/application/document-tabs/document-tabs.feature:227:3" time="4.68843753"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Inspect the detached drawing tab context menu
+   ✔  Given a drawing is open in a separate window in the MCAD Software
+   ✔  And the drawing has a document tab in that window
+   ✘  When the user opens the detached drawing tab context menu
+      Step failed:
+      Defined: tmp/obk-tabs-full-pinned-20261115/features/application/document-tabs/document-tabs.feature:230:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Switch shared controls between a detached drawing and a part: tmp/obk-tabs-full-pinned-20261115/features/application/document-tabs/document-tabs.feature:237:3" time="4.503131492"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Switch shared controls between a detached drawing and a part
+   ✔  Given a drawing is open in a separate window in the MCAD Software
+   ✔  And a part is open in the main workspace
+   ✔  And the part context is active in the main workspace
+   ✘  When the user clicks the detached drawing sheet
+      Step failed:
+      Defined: tmp/obk-tabs-full-pinned-20261115/features/application/document-tabs/document-tabs.feature:241:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Switch backward and forward between neighboring part tabs: tmp/obk-tabs-full-pinned-20261115/features/application/document-tabs/document-tabs.feature:250:3" time="4.576384707"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Switch backward and forward between neighboring part tabs
+   ✔  Given two part tabs are adjacent in the MCAD Software
+   ✔  And the part on the right is active
+   ✘  When the user presses Control+Shift+Tab
+      Step failed:
+      Defined: tmp/obk-tabs-full-pinned-20261115/features/application/document-tabs/document-tabs.feature:253:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Cancel the extended window selection: tmp/obk-tabs-full-pinned-20261115/features/application/document-tabs/document-tabs.feature:262:3" time="5.503079993"><system-out><![CDATA[  Scenario: Cancel the extended window selection
+   ✔  Given several documents are open in the MCAD Software
+   ✔  And a part is displayed in the workspace
+   ✔  And the Select Window dialog is open with another part highlighted
+   ✔  When the user chooses Cancel
+   ✔  Then the Select Window dialog closes
+   ✔  And the original part remains displayed in the workspace
+]]></system-out></testcase><testcase name="Scenario: Activate an open sketch from the Switch menu: tmp/obk-tabs-full-pinned-20261115/features/application/document-tabs/document-tabs.feature:272:3" time="5.53453061"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Activate an open sketch from the Switch menu
+   ✔  Given two parts are open in the MCAD Software
+   ✔  And the first part is displayed in the workspace
+   ✔  And the second part has an active sketch editing environment
+   ✘  When the user opens the Switch menu on the View tab
+      Step failed:
+      Defined: tmp/obk-tabs-full-pinned-20261115/features/application/document-tabs/document-tabs.feature:276:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Visit Home without leaving an active sketch: tmp/obk-tabs-full-pinned-20261115/features/application/document-tabs/document-tabs.feature:285:3" time="4.702953133"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Visit Home without leaving an active sketch
+   ✔  Given a part is open in the MCAD Software
+   ✔  And the part has an active sketch editing environment
+   ✘  When the user chooses Home from the View tab's Switch menu
+      Step failed:
+      Defined: tmp/obk-tabs-full-pinned-20261115/features/application/document-tabs/document-tabs.feature:288:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Preview an inactive document from its tab: tmp/obk-tabs-full-pinned-20261115/features/application/document-tabs/document-tabs.feature:297:3" time="6.105991559"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Preview an inactive document from its tab
+   ✔  Given two part documents are open in the MCAD Software
+   ✔  And the first part is active and the second has an empty sketch visible
+   ✘  When the user hovers over the second part's document tab
+      Step failed:
+      Defined: tmp/obk-tabs-full-pinned-20261115/features/application/document-tabs/document-tabs.feature:300:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Preview Home while a part is active: tmp/obk-tabs-full-pinned-20261115/features/application/document-tabs/document-tabs.feature:310:3" time="2.45899159"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Preview Home while a part is active
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the Home workspace is available in the document tab strip
+   ✘  When the user hovers over the Home tab
+      Step failed:
+      Defined: tmp/obk-tabs-full-pinned-20261115/features/application/document-tabs/document-tabs.feature:313:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Reveal earlier tabs without changing the active document: tmp/obk-tabs-full-pinned-20261115/features/application/document-tabs/document-tabs.feature:320:3" time="8.286238843"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Reveal earlier tabs without changing the active document
+   ✔  Given many documents are open in the MCAD Software
+   ✔  And the tab strip overflows its available width
+   ✔  And a presentation is active while earlier tabs are out of view
+   ✘  When the user clicks the left navigation arrow at the end of the tab strip
+      Step failed:
+      Defined: tmp/obk-tabs-full-pinned-20261115/features/application/document-tabs/document-tabs.feature:324:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Reveal an off-screen tab when selecting its document: tmp/obk-tabs-full-pinned-20261115/features/application/document-tabs/document-tabs.feature:330:3" time="7.347279524"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Reveal an off-screen tab when selecting its document
+   ✔  Given many documents are open in the MCAD Software
+   ✔  And the tab strip overflows its available width
+   ✔  And an open part's tab is outside the visible portion of the strip
+   ✘  When the user selects that part from the View tab's Switch menu
+      Step failed:
+      Defined: tmp/obk-tabs-full-pinned-20261115/features/application/document-tabs/document-tabs.feature:334:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Show the location of a saved document in its tab preview: tmp/obk-tabs-full-pinned-20261115/features/application/document-tabs/document-tabs.feature:341:3" time="4.869475704"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Show the location of a saved document in its tab preview
+   ✔  Given two parts are open in the MCAD Software
+   ✔  And the first part is active
+   ✔  And the second part has been saved to a file
+   ✘  When the user hovers over the second part's document tab
+      Step failed:
+      Defined: tmp/obk-tabs-full-pinned-20261115/features/application/document-tabs/document-tabs.feature:345:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Preview the active saved document from its tab: tmp/obk-tabs-full-pinned-20261115/features/application/document-tabs/document-tabs.feature:352:3" time="4.955545375"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Preview the active saved document from its tab
+   ✔  Given a saved part is active in the MCAD Software
+   ✔  And the part is being edited in a sketch
+   ✘  When the user hovers over the active part's document tab
+      Step failed:
+      Defined: tmp/obk-tabs-full-pinned-20261115/features/application/document-tabs/document-tabs.feature:355:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Inspect the Home tab context menu: tmp/obk-tabs-full-pinned-20261115/features/application/document-tabs/document-tabs.feature:362:3" time="5.411526355"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Inspect the Home tab context menu
+   ✔  Given the Home workspace is active in the MCAD Software
+   ✔  And documents are open in the tab strip
+   ✘  When the user right-clicks the Home tab
+      Step failed:
+      Defined: tmp/obk-tabs-full-pinned-20261115/features/application/document-tabs/document-tabs.feature:365:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Inspect the inactive Home tab without switching documents: tmp/obk-tabs-full-pinned-20261115/features/application/document-tabs/document-tabs.feature:374:3" time="4.913913803"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Inspect the inactive Home tab without switching documents
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the part is being edited in a sketch
+   ✔  And the Home tab is visible but inactive
+   ✘  When the user right-clicks the Home tab
+      Step failed:
+      Defined: tmp/obk-tabs-full-pinned-20261115/features/application/document-tabs/document-tabs.feature:378:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Open a second window for a part and returns to the first: tmp/obk-tabs-full-pinned-20261115/features/application/document-tabs/document-tabs.feature:387:3" time="4.903044493"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Open a second window for a part and returns to the first
+   ✔  Given a saved part is active in the MCAD Software
+   ✔  And a sketch is being edited in the part
+   ✘  When the user chooses New in the View tab's Windows group
+      Step failed:
+      Defined: tmp/obk-tabs-full-pinned-20261115/features/application/document-tabs/document-tabs.feature:390:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Switch between Home and a neighboring part with the keyboard: tmp/obk-tabs-full-pinned-20261115/features/application/document-tabs/document-tabs.feature:404:3" time="4.506594485"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Switch between Home and a neighboring part with the keyboard
+   ✔  Given Home and a part window are adjacent in the MCAD Software tab strip
+   ✔  And the part window is active with a sketch being edited
+   ✘  When the user presses Control+Shift+Tab
+      Step failed:
+      Defined: tmp/obk-tabs-full-pinned-20261115/features/application/document-tabs/document-tabs.feature:407:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Wrap keyboard navigation between Home and the last window: tmp/obk-tabs-full-pinned-20261115/features/application/document-tabs/document-tabs.feature:416:3" time="3.933815724"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Wrap keyboard navigation between Home and the last window
+   ✔  Given Home and several document windows are open in the MCAD Software
+   ✔  And Home is the first tab and a part's second window is the last tab
+   ✔  And Home is active
+   ✘  When the user presses Control+Shift+Tab
+      Step failed:
+      Defined: tmp/obk-tabs-full-pinned-20261115/features/application/document-tabs/document-tabs.feature:420:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Restore distinct views of one part after switching windows: tmp/obk-tabs-full-pinned-20261115/features/application/document-tabs/document-tabs.feature:426:3" time="8.707390279"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Restore distinct views of one part after switching windows
+   ✔  Given two numbered windows of the same part are open in the MCAD Software
+   ✔  And the first window displays the sketch in an orthogonal view
+   ✔  And the second window displays the part in an isometric view
+   ✔  And the first window is active
+   ✘  When the user switches to the second window through Home
+      Step failed:
+      Defined: tmp/obk-tabs-full-pinned-20261115/features/application/document-tabs/document-tabs.feature:431:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Close an additional window without closing the part: tmp/obk-tabs-full-pinned-20261115/features/application/document-tabs/document-tabs.feature:440:3" time="8.633456393"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Close an additional window without closing the part
+   ✔  Given a part has two numbered windows in the MCAD Software
+   ✔  And the first window has an active sketch editing environment
+   ✔  And the second window is active after switching from Home
+   ✘  When the user presses Control+F4
+      Step failed:
+      Defined: tmp/obk-tabs-full-pinned-20261115/features/application/document-tabs/document-tabs.feature:444:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Retain separate zoom levels in two windows of a part: tmp/obk-tabs-full-pinned-20261115/features/application/document-tabs/document-tabs.feature:454:3" time="10.306097406"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Retain separate zoom levels in two windows of a part
+   ✔  Given two numbered windows of one part are open in the MCAD Software
+   ✔  And the first window displays an active sketch
+   ✔  And the second window is active
+   ✘  When the user scrolls to zoom in within the second window
+      Step failed:
+      Defined: tmp/obk-tabs-full-pinned-20261115/features/application/document-tabs/document-tabs.feature:458:5
+      Step doesn't match any function
+]]></system-out></testcase></testsuite></testsuites>

@@ -1,0 +1,24 @@
+{
+  "tested_commit": "48419be66",
+  "merge_commit": "7bda3bb94",
+  "environment": {
+    "display": "Xvfb 1600x1000x24",
+    "vulkan": "Lavapipe",
+    "profile": "unoptimized, debug info disabled"
+  },
+  "checks": [
+    {
+      "command": "cargo test --locked -p oblikovati-gui --test constraint_hover",
+      "result": "3 passed, 1 manual timing test ignored"
+    },
+    {
+      "command": "xvfb-run -a -s \"-screen 0 1600x1000x24\" cargo test --locked -p oblikovati-head --lib constraint_glyph_hover:: -- --nocapture --test-threads=1",
+      "result": "5 passed"
+    },
+    {
+      "command": "cargo clippy --locked -p oblikovati-gui -p oblikovati-head --tests -- -D warnings",
+      "result": "passed"
+    }
+  ],
+  "timing_scope": "1000 glyphs, GUI frame work only; excludes native rendering and is not application FPS"
+}

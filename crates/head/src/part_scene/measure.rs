@@ -1,0 +1,107 @@
+// SPDX-License-Identifier: GPL-2.0-only
+//! Analytic measurements of named subentities on the current evaluated body.
+use super::*;
+use oblikovati_model::{feature::FeatureId, history::DocumentEditHistory, identity::DocumentGuid};
+
+type NamedMeasurement<T> =
+    fn(&NamedSolid, &DocumentEditHistory, DocumentGuid, &[u8]) -> Result<T, String>;
+
+impl DesktopPartScenes {
+    /// Read the selected face's exact area; example: `scenes.face_area_mm2(files, document, feature, role)?`.
+    pub(crate) fn face_area_mm2<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+        &self,
+        files: &FileWorkspace<O, W, F>,
+        document: u64,
+        feature: FeatureId,
+        face: &[u8],
+    ) -> Result<f64, String> {
+        face_area(self.measure_named(files, document, feature, face, NamedSolid::face_area)?)
+    }
+
+    /// Read an analytic cylinder radius in mm; example: `scenes.face_cylinder_radius_mm(files, document, feature, face)?`.
+    pub(crate) fn face_cylinder_radius_mm<
+        O: TransactionObserver,
+        W: WorkspaceObserver,
+        F: DocumentFiles,
+    >(
+        &self,
+        files: &FileWorkspace<O, W, F>,
+        document: u64,
+        feature: FeatureId,
+        face: &[u8],
+    ) -> Result<Option<f64>, String> {
+        let radius = self
+            .measure_named(
+                files,
+                document,
+                feature,
+                face,
+                NamedSolid::face_cylinder_radius,
+            )?
+            .map(|radius| radius * 10.);
+        if radius.is_some_and(|radius| !radius.is_finite() || radius <= 0.) {
+            return Err(format!(
+                "cylindrical face radius {radius:?}: expected positive finite mm"
+            ));
+        }
+        Ok(radius)
+    }
+
+    /// Read the length of a selected named edge; example: `scenes.edge_length_mm(files, document, feature, key)?`.
+    pub(crate) fn edge_length_mm<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+        &self,
+        files: &FileWorkspace<O, W, F>,
+        document: u64,
+        feature: FeatureId,
+        edge: &[u8],
+    ) -> Result<f64, String> {
+        let length =
+            self.measure_named(files, document, feature, edge, NamedSolid::edge_length)? * 10.;
+        if !length.is_finite() || length <= 0. {
+            return Err(format!(
+                "edge length {length:?}: expected finite positive mm"
+            ));
+        }
+        Ok(length)
+    }
+
+    fn measure_named<T, O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+        &self,
+        files: &FileWorkspace<O, W, F>,
+        document: u64,
+        feature: FeatureId,
+        key: &[u8],
+        measure: NamedMeasurement<T>,
+    ) -> Result<T, String> {
+        let workspace = files.workspace();
+        let session = workspace
+            .session(document)
+            .map_err(|cause| cause.to_string())?;
+        let guid = workspace
+            .identity(document)
+            .map_err(|cause| cause.to_string())?
+            .internal_name;
+        let evaluated = self.current(session)?;
+        evaluated.inspect_body_reference(feature, key, |body| {
+            measure(body, session.history(), guid, key)
+        })
+    }
+}
+fn face_area(area: f64) -> Result<f64, String> {
+    let area = area * 100.;
+    if !area.is_finite() || area <= 0. {
+        return Err(format!("face area {area:?}: expected finite positive mm²"));
+    }
+    Ok(area)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn area_conversion_requires_one_finite_positive_face() {
+        assert_eq!(face_area(2.5).unwrap(), 250.);
+        assert!(face_area(f64::NAN).is_err());
+        assert!(face_area(0.).is_err());
+    }
+}

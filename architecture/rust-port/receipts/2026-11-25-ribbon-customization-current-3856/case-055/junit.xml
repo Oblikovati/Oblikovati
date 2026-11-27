@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="1" hostname="localhost" timestamp="2026-11-25T04:07:22.125566484Z" time="41.915152489"><testcase name="Scenario: Discard a pending edit from an open command category list: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature:824:3" time="41.915152489"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Discard a pending edit from an open command category list
+   ✔> Given the MCAD Software starts with a writable copy of `fixtures/preferences/ribbon-normal` as its configuration directory
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part is active in the MCAD Software
+   ✔  And the Ribbon customization dialog shows All Commands and an empty Part Tools target
+   ✔  When the user adds "2D Sketches" to the custom panel without applying
+   ✔  And the user opens the command category list and presses Down
+   ✔  Then Macros has keyboard focus in the open category list
+   ✔  When the user presses Escape
+   ✔  Then the category list and customization dialog close
+   ✔  And no User Commands panel is visible on the Tools ribbon
+   ✔  When the user reopens customization from the Tools ribbon
+   ✔  Then the category shows All Commands
+   ✔  And the Part Tools custom panel list is empty
+   ✔  And "2D Sketches" is available in the source list
+   ✔  And the target has no pending-change marker
+   ✔  When the user clicks Close
+   ✔  Then the dialog closes
+   ✘  When the user clicks Done in the Measure panel
+      Step failed:
+      Defined: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature:842:5
+      Step doesn't match any function
+]]></system-out></testcase></testsuite></testsuites>

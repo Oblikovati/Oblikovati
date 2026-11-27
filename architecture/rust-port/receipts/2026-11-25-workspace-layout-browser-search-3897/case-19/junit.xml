@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Workspace layout and panel visibility: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature" package="testsuite/Feature: Workspace layout and panel visibility: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T02:56:34.477314364Z" time="17.251972954"><testcase name="Scenario: Collapse and expands a feature branch: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature:202:3" time="17.251972954"><system-out><![CDATA[  Scenario: Collapse and expands a feature branch
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software with an expanded Extrusion1 branch
+   ✔  And the model browser shows its Sketch1 child
+   ✔  When the user collapses the Extrusion1 branch
+   ✔  Then the Sketch1 child is hidden from the browser
+   ✔  And the solid remains displayed in the viewport
+   ✔  When the user expands the Extrusion1 branch
+   ✔  Then the Sketch1 child is shown beneath Extrusion1
+   ✔  And the solid remains displayed in the viewport
+]]></system-out></testcase></testsuite></testsuites>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Text: tmp/oblikovati-bdd-ShxnTp/checkout/features/sketch/text/scenario.feature" package="testsuite/Feature: Text: tmp/oblikovati-bdd-ShxnTp/checkout/features/sketch/text/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-21T01:01:26.887107416Z" time="105.772175676"><testcase name="Scenario: text-39 Delete the preset while retaining accepted Text: tmp/oblikovati-bdd-ShxnTp/checkout/features/sketch/text/scenario.feature:400:3" time="105.772175676"><system-out><![CDATA[  Scenario: text-39 Delete the preset while retaining accepted Text
+   ✔  Given preset g exists and is selected
+   ✔  And the reopened second fraction shows g
+   ✔  When the user opens preset settings and choose Delete Current
+   ✔  Then No Preset replaces g without an additional application confirmation window
+   ✔  And the fraction content remains in the editor
+   ✔  When the user opens the preset list
+   ✔  Then g is absent and No Preset and Last Used remain
+   ✔  When the user dismisses the list and cancel the unchanged editor
+   ✔  Then both accepted fractions and the other text remain
+   ✔  And Ready shows 47 dimensions needed
+]]></system-out></testcase></testsuite></testsuites>

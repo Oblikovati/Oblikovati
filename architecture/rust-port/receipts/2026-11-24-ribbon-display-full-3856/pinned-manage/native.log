@@ -1,0 +1,23 @@
+
+running 1 test
+Feature: Ribbon display modes
+  Scenario: Open a panel compacted by a narrow application window
+   ✔  Given a part is active in the MCAD Software with the full Manage ribbon displayed
+   ✔  And the Insert panel displays its commands directly at the wider window size
+   ✔  When the user narrows the application window until Insert becomes a compact panel button
+   ✔  Then the Manage tab remains active
+   ✔  And the part remains visible
+   ✔  When the user clicks the compact Insert panel button
+   ✔  Then a temporary Insert panel opens below the ribbon with its commands
+   ✔  When the user clicks empty viewport space
+   ✔  Then the temporary panel closes and the compact Insert button remains visible
+   ✔  When the user maximizes the application window
+   ✔  Then the Insert commands appear directly in the ribbon again
+   ✔  And the part remains visible
+[Summary]
+1 feature
+1 scenario (1 passed)
+12 steps (12 passed)
+test native::gui_loop_tests::application_bdd::application_scenarios_use_the_native_window ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1617 filtered out; finished in 30.88s

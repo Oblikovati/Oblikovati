@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon display modes: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-display/ribbon-display.feature" package="testsuite/Feature: Ribbon display modes: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-display/ribbon-display.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-19T16:09:59.726380369Z" time="16.087294352"><testcase name="Scenario: Hide command labels and restore the normal ribbon appearance: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-display/ribbon-display.feature:636:3" time="16.087294352"><system-out><![CDATA[  Scenario: Hide command labels and restore the normal ribbon appearance
+   ✔  Given a part has an active editable sketch in the MCAD Software
+   ✔  And Ribbon Appearance is set to Normal
+   ✔  When the user opens Ribbon Appearance from the Create panel title context menu
+   ✔  And the user selects Text Off
+   ✔  Then command labels are hidden while command icons and panel titles remain visible
+   ✔  And the active sketch remains unchanged
+   ✔  When the user opens Ribbon Appearance again
+   ✔  And the user selects Normal
+   ✔  Then command labels return to the ribbon
+   ✔  And the active sketch remains unchanged
+]]></system-out></testcase></testsuite></testsuites>

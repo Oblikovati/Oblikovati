@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon display modes: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature" package="testsuite/Feature: Ribbon display modes: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T02:45:30.085477932Z" time="20.146743839"><testcase name="Scenario: Keep tabs-only ribbon when switching between a part and Home: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature:592:3" time="20.146743839"><system-out><![CDATA[  Scenario: Keep tabs-only ribbon when switching between a part and Home
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part is active in the MCAD Software
+   ✔  And the Tools ribbon tab is selected
+   ✔  And the ribbon display policy is "Minimize to Tabs"
+   ✔  And the ribbon is minimized to tabs
+   ✔  And the Home workspace is available as a document tab
+   ✔  When the user selects the Home document tab
+   ✔  Then the Home workspace is displayed
+   ✔  And the ribbon remains minimized to tabs
+   ✔  And the Tools ribbon tab is visible
+   ✔  When the user selects the open part document tab
+   ✔  Then the part workspace and its model browser are displayed
+   ✔  And the ribbon remains minimized to tabs
+   ✔  And the Tools ribbon tab remains selected
+]]></system-out></testcase></testsuite></testsuites>

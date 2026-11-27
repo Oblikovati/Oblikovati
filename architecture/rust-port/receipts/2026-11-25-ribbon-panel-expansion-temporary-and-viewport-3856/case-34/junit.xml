@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" package="testsuite/Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:23:08.582439539Z" time="26.744436727"><testcase name="Scenario: Restore the full ribbon while a temporary panel is expanded: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:456:3" time="26.744436727"><system-out><![CDATA[  Scenario: Restore the full ribbon while a temporary panel is expanded
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open and active
+   ✔  And the ribbon is minimized to tabs
+   ✔  And the ribbon display policy is "Minimize to Tabs"
+   ✔  And the 3D Model tab is selected
+   ✔  When the user clicks the 3D Model tab
+   ✔  Then its ribbon panels appear temporarily
+   ✔  When the user opens the Modify panel's additional commands
+   ✔  Then the additional commands appear below the temporary ribbon
+   ✔  When the user clicks the ribbon display control to restore the full ribbon
+   ✔  Then the full 3D Model ribbon is displayed
+   ✔  And the additional commands are closed
+   ✔  And the part remains visible
+]]></system-out></testcase></testsuite></testsuites>

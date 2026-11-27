@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T13:10:02.947315416Z" time="42.951474799"><testcase name="Scenario: Separate two custom ribbon commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature:117:3" time="42.951474799"><system-out><![CDATA[  Scenario: Separate two custom ribbon commands
+   ✔  Given the ribbon customization dialog has an empty custom panel for "Part | 3D Model"
+   ✔  When the user adds "2D Sketches", a separator, and "3D Annotations" in that order
+   ✔  And both commands have "Large" and "Text" clear
+   ✔  And the user clicks "Apply"
+   ✔  Then the "User Commands" panel displays the two small command icons
+   ✔  And a vertical divider appears between the icons
+]]></system-out></testcase></testsuite></testsuites>

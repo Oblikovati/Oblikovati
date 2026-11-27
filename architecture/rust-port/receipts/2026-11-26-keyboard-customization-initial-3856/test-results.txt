@@ -1,0 +1,18 @@
+GUI Ribbon Customization
+test result: ok. 56 passed; 0 failed; 0 ignored; 0 measured; 778 filtered out; finished in 0.12s
+
+Published initial state on wayland
+1 scenario (1 passed)
+16 steps (16 passed)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1712 filtered out; finished in 10.48s
+
+Staged keyboard reset on wayland
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1712 filtered out; finished in 11.00s
+
+Published initial state on x11
+1 scenario (1 passed)
+16 steps (16 passed)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1712 filtered out; finished in 9.88s
+
+Staged keyboard reset on x11
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1712 filtered out; finished in 9.20s

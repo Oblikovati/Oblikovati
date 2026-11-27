@@ -1,0 +1,29 @@
+{
+  "mode": "select",
+  "app_pid": 2015068,
+  "fixture": "docking-visible-solid-current.opd",
+  "validation_layers_disabled": "",
+  "window_size": [
+    1440,
+    900
+  ],
+  "window_origin": [
+    0,
+    0
+  ],
+  "first_row": 2,
+  "intervals": [
+    [
+      151107121434770,
+      151113117348090
+    ]
+  ],
+  "last_row": 454,
+  "total_rows": 455,
+  "validation_checks_disabled": [
+    "CORE_CHECKS",
+    "THREAD_SAFETY",
+    "API_PARAMETERS",
+    "OBJECT_LIFETIMES"
+  ]
+}

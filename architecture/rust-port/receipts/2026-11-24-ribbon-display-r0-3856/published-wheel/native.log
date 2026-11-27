@@ -1,0 +1,21 @@
+
+running 1 test
+Feature: Ribbon display modes
+  Scenario: Stop wheel navigation at the visible ends of the part ribbon
+   ✔  Given a part is active in the MCAD Software with the full ribbon visible
+   ✔  And the 3D Model tab is the first visible command tab and is active
+   ✔  When the user scrolls up over the 3D Model tab
+   ✔  Then the 3D Model tab remains active
+   ✔  And its command groups remain visible
+   ✔  When the user selects the last visible command tab
+   ✔  And the user scrolls down over the last visible command tab
+   ✔  Then the last visible command tab remains active
+   ✔  And its command groups remain visible
+   ✔  And the part remains visible
+[Summary]
+1 feature
+1 scenario (1 passed)
+10 steps (10 passed)
+test native::gui_loop_tests::application_bdd::application_scenarios_use_the_native_window ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1617 filtered out; finished in 12.84s

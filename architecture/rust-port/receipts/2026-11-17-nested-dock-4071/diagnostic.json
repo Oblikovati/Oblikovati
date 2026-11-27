@@ -1,0 +1,15 @@
+{
+  "application_base": "959bf9f6a",
+  "source_feature_sha256": "139cea92a16ace53d22a47ba7839233d1000cbefc2ce2e51500844926651a3d0",
+  "source_revision": null,
+  "legacy_fixture_sha256": "ac03e3294893497fb41aa02beb12b611dd4449dabbda2a480f49553b95490cb7",
+  "provenance": "Diagnostic against copied unversioned scenarios. The legacy fixture was saved with the previous top-level host and a programmatic inner split. Native geometry tests preceded the compile-only ImGui version guard.",
+  "results": [
+    "Three native bottom and scaled outer-target tests passed.",
+    "Previous inner-dock settings restored with matching viewport bounds.",
+    "Native face picking, shared tabs, restart, and Model-tab float/redock passed.",
+    "Docking edge scenario passed 11 steps before final helper extraction.",
+    "Head clippy all targets and Windows GNU cross-build passed after the version guard."
+  ],
+  "environment": "Linux Xvfb with Mesa lavapipe; Windows GNU cross-build"
+}

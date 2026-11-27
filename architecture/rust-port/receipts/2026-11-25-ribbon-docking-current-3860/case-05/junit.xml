@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon docking: target/native-scratch.HSqCy5/current-ribbon-docking-source/features/application/ribbon-docking/ribbon-docking.feature" package="testsuite/Feature: Ribbon docking: target/native-scratch.HSqCy5/current-ribbon-docking-source/features/application/ribbon-docking/ribbon-docking.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T23:43:09.930942365Z" time="30.329649273"><testcase name="Scenario: Undock the ribbon and returns it to the top: target/native-scratch.HSqCy5/current-ribbon-docking-source/features/application/ribbon-docking/ribbon-docking.feature:65:3" time="30.329649273"><system-out><![CDATA[  Scenario: Undock the ribbon and returns it to the top
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part is active in the MCAD Software
+   ✔  And the full 3D Model ribbon is docked at the top
+   ✔  When the user right-clicks the active 3D Model tab and chooses Undock Ribbon
+   ✔  Then the ribbon floats over the workspace in a vertical panel
+   ✔  And its tabs and 3D Model group buttons remain visible
+   ✔  When the user right-clicks the floating ribbon title
+   ✔  Then the context menu offers Dock to Top, Dock to Left and docks to Right
+   ✔  And it does not offer Undock Ribbon
+   ✔  When the user chooses Dock to Top
+   ✔  Then the ribbon returns to a horizontal position above the viewport
+   ✔  And the same part remains active
+]]></system-out></testcase></testsuite></testsuites>

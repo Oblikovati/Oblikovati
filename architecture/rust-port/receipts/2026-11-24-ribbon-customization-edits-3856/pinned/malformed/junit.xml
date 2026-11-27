@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T12:52:38.526871322Z" time="20.094504666"><testcase name="Scenario: Return to customization after selecting malformed XML: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature:447:3" time="20.094504666"><system-out><![CDATA[  Scenario: Return to customization after selecting malformed XML
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the ribbon customization dialog shows an empty Part Tools custom panel
+   ✔  And an XML file contains the incomplete text "<invalid"
+   ✔  When the user selects the file through the customization Import dialog
+   ✔  Then the file picker closes
+   ✔  And the customization dialog remains open
+   ✔  And the Part Tools custom panel list remains empty
+   ✔  And Apply and cancels are disabled
+]]></system-out></testcase></testsuite></testsuites>

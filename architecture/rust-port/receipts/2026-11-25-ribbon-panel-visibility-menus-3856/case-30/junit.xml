@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon panel visibility: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" package="testsuite/Feature: Ribbon panel visibility: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:08:43.209663736Z" time="17.282030699"><testcase name="Scenario: Open customization while the panel selector is open: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:433:3" time="17.282030699"><system-out><![CDATA[  Scenario: Open customization while the panel selector is open
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is open and active
+   ✔  And the full Tools ribbon is visible
+   ✔  And the Tools panel selector is open
+   ✔  When the user clicks Customize in the Tools ribbon
+   ✔  Then the panel selector closes
+   ✔  And the customization dialog opens on the Ribbon tab
+   ✔  And the selected target is Part Tools
+   ✔  When the user closes customization without making changes
+   ✔  Then the customization dialog closes
+   ✔  And the Tools ribbon remains visible
+]]></system-out></testcase></testsuite></testsuites>

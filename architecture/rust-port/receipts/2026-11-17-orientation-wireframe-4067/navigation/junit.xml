@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Orient a model using the viewport control: tmp/obk-orientation-4067/features/application/viewport-orientation/viewport-orientation.feature" package="testsuite/Feature: Orient a model using the viewport control: tmp/obk-orientation-4067/features/application/viewport-orientation/viewport-orientation.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-17T12:54:42.124142725Z" time="26.343501209"><testcase name="Scenario: Step between adjacent orthogonal views: tmp/obk-orientation-4067/features/application/viewport-orientation/viewport-orientation.feature:19:3" time="26.343501209"><system-out><![CDATA[  Scenario: Step between adjacent orthogonal views
+   ✔  Given a rectangular block is active in the MCAD Software
+   ✔  And the orientation control displays the Front view
+   ✔  When the user selects the right-side navigation arrow beside the orientation control
+   ✔  Then the control displays Right
+   ✔  And the block is displayed face-on from the right
+   ✔  When the user selects the left-side navigation arrow
+   ✔  Then the control displays Front
+   ✔  And the block returns to the face-on front view
+   ✔  And the same part and model browser remain active
+]]></system-out></testcase></testsuite></testsuites>

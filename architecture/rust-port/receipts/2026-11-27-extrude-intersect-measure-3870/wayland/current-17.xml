@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Extrude a profile in a part document: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature" package="testsuite/Feature: Extrude a profile in a part document: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-27T02:47:27.840746845Z" time="11.956567997"><testcase name="Scenario: extrusion-17 Measure identifies intersection diameter: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature:181:3" time="11.956567997"><system-out><![CDATA[  Scenario: extrusion-17 Measure identifies intersection diameter
+   ✔> Given the MCAD Software is displaying a part in the solid modeling workspace
+   ✔> And the viewport pointer is idle
+   ✔  Given a copy of `fixtures/cad/extrusion/extrusion-base-circle.opd` is open and the circle has been intersected with the base solid, then restored by Redo
+   ✔  When its top face and cylindrical face are selected in Measure
+   ✔  Then the top face area is 7.069 square mm
+   ✔  And the cylindrical face diameter is 3.000 mm and radius 1.500 mm
+]]></system-out></testcase></testsuite></testsuites>

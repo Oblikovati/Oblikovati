@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Open document tabs: tmp/oblikovati-bdd-q7btn9/checkout/features/application/document-tabs/document-tabs.feature" package="testsuite/Feature: Open document tabs: tmp/oblikovati-bdd-q7btn9/checkout/features/application/document-tabs/document-tabs.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-15T13:59:30.683293315Z" time="11.353961792"><testcase name="Scenario: Hide and restore the document tab strip: tmp/oblikovati-bdd-q7btn9/checkout/features/application/document-tabs/document-tabs.feature:28:3" time="11.353961792"><system-out><![CDATA[  Scenario: Hide and restore the document tab strip
+   ✔  Given multiple documents are open in the MCAD Software
+   ✔  And document tabs are visible
+   ✔  When the user clears Document Tabs in the View tab's User Interface menu
+   ✔  Then the document tab strip disappears
+   ✔  And the active document remains displayed
+   ✔  And Document Tabs is unchecked in the User Interface menu
+   ✔  When the user selects Document Tabs in the same menu
+   ✔  Then the document tab strip reappears
+   ✔  And Document Tabs is checked in the User Interface menu
+   ✔  And the open documents are available as tabs
+]]></system-out></testcase></testsuite></testsuites>

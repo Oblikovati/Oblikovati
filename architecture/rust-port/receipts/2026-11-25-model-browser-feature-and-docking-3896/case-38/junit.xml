@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:36:46.45348238Z" time="62.646432397"><testcase name="Scenario: Toggle the design view expansion preference: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature:582:3" time="62.646432397"><system-out><![CDATA[  Scenario: Toggle the design view expansion preference
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software
+   ✔  And a part is open in the MCAD Software with the model browser visible
+   ✔  And Design View Expansion is unchecked in the browser Display Preferences menu
+   ✔  When the user chooses Design View Expansion
+   ✔  And the user reopens the Display Preferences menu
+   ✔  Then Design View Expansion is checked
+   ✔  When the user chooses Design View Expansion again
+   ✔  And the user reopens the Display Preferences menu
+   ✔  Then Design View Expansion is unchecked
+   ✔  And the part remains visible in the same apparent view
+]]></system-out></testcase></testsuite></testsuites>

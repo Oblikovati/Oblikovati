@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon panel visibility: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" package="testsuite/Feature: Ribbon panel visibility: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" tests="1" errors="0" failures="1" hostname="localhost" timestamp="2026-11-25T03:15:35.06580444Z" time="11.755519419"><testcase name="Scenario: Wrap keyboard focus at the ends of the panel list: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:268:3" time="11.755519419"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Wrap keyboard focus at the ends of the panel list
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is open and active
+   ✔  And the full 3D Model ribbon is visible
+   ✔  And the ribbon panel selector is open
+   ✘  And the Sketch row is the first row and 3D Print is the last row
+      Step failed:
+      Defined: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:272:5
+      Step doesn't match any function
+]]></system-out></testcase></testsuite></testsuites>

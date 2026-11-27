@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Recent documents on Home: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature" package="testsuite/Feature: Recent documents on Home: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T01:26:14.616657176Z" time="21.786239738"><testcase name="Scenario: Apply a type filter to a mixed selection: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature:288:3" time="21.786239738"><system-out><![CDATA[  Scenario: Apply a type filter to a mixed selection
+   ✔  Given the MCAD Software starts with an isolated Recent profile prepared from a disposable copy of `fixtures/cad/home-recent-native`
+   ✔  And the Home workspace is active in the MCAD Software
+   ✔  And a recent part and a recent assembly are checked in List View
+   ✔  And no other rows are checked and no recent-document filters are active
+   ✔  When the user opens Filter and selects Part
+   ✔  Then the selected part remains checked and highlighted
+   ✔  And the assembly is not displayed
+   ✔  And Open Selected and Remove Selected remain displayed
+   ✔  When the user clears the active filter
+   ✔  Then the part remains checked
+   ✔  And the assembly is displayed again unchecked
+]]></system-out></testcase></testsuite></testsuites>

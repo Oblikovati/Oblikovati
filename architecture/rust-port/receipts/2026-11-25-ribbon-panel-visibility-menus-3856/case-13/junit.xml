@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon panel visibility: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" package="testsuite/Feature: Ribbon panel visibility: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:12:16.899850935Z" time="24.47861784"><testcase name="Scenario: Toggle a panel from the ribbon panel selector: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:181:3" time="24.47861784"><system-out><![CDATA[  Scenario: Toggle a panel from the ribbon panel selector
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is open and active
+   ✔  And the expanded 3D Model ribbon is docked at the top
+   ✔  And the Parameters panel is hidden
+   ✔  When the user clicks the panel selector at the right end of the ribbon
+   ✔  Then the panel list opens with Parameters unchecked
+   ✔  When the user selects Parameters in the list
+   ✔  Then Parameters is checked and its panel appears in the ribbon
+   ✔  And the panel list remains open
+   ✔  When the user selects Parameters again
+   ✔  Then Parameters is unchecked and its panel disappears
+   ✔  And the panel list remains open
+   ✔  When the user presses Escape
+   ✔  Then the panel list closes
+]]></system-out></testcase></testsuite></testsuites>

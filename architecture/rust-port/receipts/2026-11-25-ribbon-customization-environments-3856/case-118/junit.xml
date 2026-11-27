@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T05:46:39.161200556Z" time="25.452262413"><testcase name="Scenario: Inspect marking-menu environments without changing selection: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature:1941:3" time="25.452262413"><system-out><![CDATA[  Scenario: Inspect marking-menu environments without changing selection
+   ✔> Given the MCAD Software starts with a writable copy of `fixtures/preferences/ribbon-normal` as its configuration directory
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And the customization dialog is open on the Marking Menu tab in the MCAD Software
+   ✔  And Environment is "2D Sketch"
+   ✔  When the user opens the Environment selector
+   ✔  Then the available choices include "2D Sketch", "3D Sketch", "Assembly", "Drawing", "Part", "Presentation" and "Sheet Metal"
+   ✔  And "2D Sketch" remains selected
+   ✔  When the user dismisses the selector without choosing an option
+   ✔  Then Environment remains "2D Sketch"
+   ✔  And no customization change is pending
+]]></system-out></testcase></testsuite></testsuites>

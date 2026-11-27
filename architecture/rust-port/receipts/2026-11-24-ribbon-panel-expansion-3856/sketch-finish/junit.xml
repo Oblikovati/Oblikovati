@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Expand a ribbon panel: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" package="testsuite/Feature: Expand a ribbon panel: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T07:59:03.79735648Z" time="38.20425713"><testcase name="Scenario: Close the Constrain expansion when finishing sketch edit: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:861:3" time="38.20425713"><system-out><![CDATA[  Scenario: Close the Constrain expansion when finishing sketch edit
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` contains an existing editable `Sketch1`
+   ✔  And the full Sketch ribbon is visible outside sketch edit
+   ✔  When the user enters sketch edit from the model browser
+   ✔  Then sketch commands become available and the Exit group shows Finish
+   ✔  When the user opens the Constrain additional-command area
+   ✔  Then Edit Coordinate System and Constraint Inference Scope are visible
+   ✔  When the user selects Finish without changing sketch geometry
+   ✔  Then sketch edit ends and the part view returns
+   ✔  And the Constrain additional-command area closes
+   ✔  And the original part geometry remains visible
+]]></system-out></testcase></testsuite></testsuites>

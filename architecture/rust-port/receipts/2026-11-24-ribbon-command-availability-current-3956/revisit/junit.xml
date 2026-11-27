@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Inspect ribbon command availability: target/native-scratch.HSqCy5/current-ribbon-command-availability-source/features/application/ribbon-command-availability/ribbon-command-availability.feature" package="testsuite/Feature: Inspect ribbon command availability: target/native-scratch.HSqCy5/current-ribbon-command-availability-source/features/application/ribbon-command-availability/ribbon-command-availability.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T22:43:29.988883208Z" time="28.940842075"><testcase name="Scenario: Revisit Sketch from another ribbon tab: target/native-scratch.HSqCy5/current-ribbon-command-availability-source/features/application/ribbon-command-availability/ribbon-command-availability.feature:16:3" time="28.940842075"><system-out><![CDATA[  Scenario: Revisit Sketch from another ribbon tab
+   ✔  Given `fixtures/cad/revolve/revolve-profile.opd` is open and active in the MCAD Software
+   ✔  And sketch edit is inactive
+   ✔  And the Sketch ribbon tab is selected
+   ✔  When the user selects the 3D Model ribbon tab
+   ✔  And the user selects the Sketch ribbon tab again
+   ✔  Then Line, Circle, Arc, Rectangle, Fillet, Text and Point remain enabled in Create
+   ✔  And Project Geometry remains disabled
+   ✔  And the commands in Modify, Pattern, Constrain, Insert and Format remain disabled
+   ✔  And the active part and model browser remain visible
+]]></system-out></testcase></testsuite></testsuites>

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Create a document from a template: tmp/oblikovati-ribbon-relocated.RcZVDl/current-document-creation-endpoints-source/features/application/document-creation/document-creation.feature" package="testsuite/Feature: Create a document from a template: tmp/oblikovati-ribbon-relocated.RcZVDl/current-document-creation-endpoints-source/features/application/document-creation/document-creation.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T20:16:45.24816683Z" time="46.681599925"><testcase name="Scenario: Navigate to template group endpoints with Home and End: tmp/oblikovati-ribbon-relocated.RcZVDl/current-document-creation-endpoints-source/features/application/document-creation/document-creation.feature:9:3" time="46.681599925"><system-out><![CDATA[  Scenario: Navigate to template group endpoints with Home and End
+   ✔> Given a fresh MCAD Software session loads `fixtures/cad/document-creation-group-endpoints-candidate.opj` as its active project
+   ✔> And its native catalog contains the named part and assembly templates used below
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is active with `Sketch1` visible in the MCAD Software
+   ✔  And the template chooser shows the metric folder grouped by type using Medium icons
+   ✔  And the Part group begins with Sheet Metal (DIN) and ends with Standard (mm)
+   ✔  And the Assembly group begins with Mold Design (DIN) and ends with Weldment (JIS)
+   ✔  When the user selects Sheet Metal (mm) in the Part group
+   ✔  And the user presses Home
+   ✔  Then Sheet Metal (DIN) is selected and identified in the details pane
+   ✔  When the user presses End
+   ✔  Then Standard (mm) is selected and identified in the details pane
+   ✔  When the user selects Mold Design (mm) in the Assembly group
+   ✔  And the user presses End
+   ✔  Then Weldment (JIS) is selected and identified in the details pane
+   ✔  When the user presses Home
+   ✔  Then Mold Design (DIN) is selected and identified in the details pane
+   ✔  When the user presses Escape
+   ✔  Then the chooser closes and the original part remains active
+]]></system-out></testcase></testsuite></testsuites>

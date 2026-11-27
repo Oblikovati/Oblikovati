@@ -1,0 +1,8 @@
+npm exec --offline -- markdownlint-cli2
+markdownlint-cli2 v0.23.3 (markdownlint v0.41.1)
+Finding: **/*.md !node_modules/** !target/** !.tools/** !dist/** !stage/** !artifacts/** !test-utilities/benchmarks/MCAD-Scenarios/**
+Linting: 377 files
+Summary: 0 issues in 0 files
+"cargo" xtask docs
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s
+     Running `target/xtask/debug/oblikovati-build docs`

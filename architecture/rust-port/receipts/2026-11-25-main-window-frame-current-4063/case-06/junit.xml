@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Main application window frame: git/oblikovati-workspace/oblikovati-rust/target/native-scratch.HSqCy5/current-main-window-frame-source/features/application/main-window-frame/main-window-frame.feature" package="testsuite/Feature: Main application window frame: git/oblikovati-workspace/oblikovati-rust/target/native-scratch.HSqCy5/current-main-window-frame-source/features/application/main-window-frame/main-window-frame.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T23:18:50.558539943Z" time="13.87268572"><testcase name="Scenario: Double-click the application bar to maximize and restore: git/oblikovati-workspace/oblikovati-rust/target/native-scratch.HSqCy5/current-main-window-frame-source/features/application/main-window-frame/main-window-frame.feature:71:3" time="13.87268572"><system-out><![CDATA[  Scenario: Double-click the application bar to maximize and restore
+   ✔  Given the MCAD Software is open in a restored window
+   ✔  When the user double-clicks an empty region of the application bar
+   ✔  Then the main window is maximized
+   ✔  And the window controls show Restore
+   ✔  When the user double-clicks an empty region of the application bar again
+   ✔  Then the main window returns to its previous size and position
+   ✔  And the window controls show Maximize
+]]></system-out></testcase></testsuite></testsuites>

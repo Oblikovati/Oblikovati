@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:58:31.380736721Z" time="64.982616862"><testcase name="Scenario: Stage the same command with different display options on two targets: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature:1468:3" time="64.982616862"><system-out><![CDATA[  Scenario: Stage the same command with different display options on two targets
+   ✔> Given the MCAD Software starts with a writable copy of `fixtures/preferences/ribbon-normal` as its configuration directory
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part is active in the MCAD Software with the full Tools ribbon visible
+   ✔  And ribbon customization shows All Commands and empty Part Tools and Part Manage targets
+   ✔  When the user stages 2D Sketches on Part Tools
+   ✔  And the user checks its Large and Text options
+   ✔  And the user switches the target to Part Manage
+   ✔  And the user stages 2D Sketches on Part Manage
+   ✔  Then the Part Manage row has Large and Text unchecked
+   ✔  And the Part Manage target shows a pending-change marker
+   ✔  When the user switches the target back to Part Tools
+   ✔  Then 2D Sketches remains staged on Part Tools
+   ✔  And its Large and Text options are checked
+   ✔  And the Part Tools target shows a pending-change marker
+   ✔  When the user clicks Cancel
+   ✔  Then the customization dialog closes
+   ✔  And the Tools ribbon remains visible
+]]></system-out></testcase></testsuite></testsuites>

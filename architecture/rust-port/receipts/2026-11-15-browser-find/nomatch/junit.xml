@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: tmp/obk-browser-find-MoCBwC/source/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: tmp/obk-browser-find-MoCBwC/source/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-15T18:27:09.695845749Z" time="27.126329195"><testcase name="Scenario: Report no matching feature search results: tmp/obk-browser-find-MoCBwC/source/features/application/model-browser/model-browser.feature:376:3" time="27.126329195"><system-out><![CDATA[  Scenario: Report no matching feature search results
+   ✔  Given a part with one unsuppressed extrusion and no fillet is open in the MCAD Software
+   ✔  And the Find dialog contains Type equals Extrusion OR Type equals Fillet
+   ✔  And And is selected for additional criteria
+   ✔  When the user selects Suppress status as the property
+   ✔  Then the condition is equals and the value is Suppressed
+   ✔  When the user clicks Add to list
+   ✔  Then the criteria list includes Suppress status equals Suppressed
+   ✔  When the user clicks Find Now
+   ✔  Then an information message says that no objects matched the criteria
+   ✔  When the user acknowledges the message
+   ✔  Then the Find dialog remains open with the criteria displayed
+   ✔  When the user closes the Find dialog
+   ✔  Then the block remains visible in the same apparent view
+]]></system-out></testcase></testsuite></testsuites>

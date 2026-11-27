@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Navigate the ribbon using key tips: target/native-scratch.HSqCy5/current-ribbon-keyboard-navigation-source/features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature" package="testsuite/Feature: Navigate the ribbon using key tips: target/native-scratch.HSqCy5/current-ribbon-keyboard-navigation-source/features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T23:07:23.669795644Z" time="17.430643093"><testcase name="Scenario: Open the panel selector while top-level key tips are visible: target/native-scratch.HSqCy5/current-ribbon-keyboard-navigation-source/features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature:118:3" time="17.430643093"><system-out><![CDATA[  Scenario: Open the panel selector while top-level key tips are visible
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active with the full 3D Model ribbon visible in the MCAD Software
+   ✔  And top-level ribbon key tips are visible after pressing Alt
+   ✔  When the user clicks the direct panel visibility selector
+   ✔  Then the top-level key tips disappear
+   ✔  And the 3D Model panel visibility list opens
+   ✔  When the user presses Escape
+   ✔  Then the panel visibility list closes
+   ✔  And the full 3D Model ribbon remains visible
+]]></system-out></testcase></testsuite></testsuites>

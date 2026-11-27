@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:34:09.915700003Z" time="65.825587511"><testcase name="Scenario: Inspect and navigate sketch dependencies: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature:527:3" time="65.825587511"><system-out><![CDATA[  Scenario: Inspect and navigate sketch dependencies
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software
+   ✔  And a part in the MCAD Software contains a rectangular sketch on the XY plane used by one extrusion
+   ✔  And the sketch references the center point
+   ✔  When the user chooses Relationships from the sketch row context menu
+   ✔  Then the Relationships dialog identifies the sketch as the selected item
+   ✔  And its Parents list contains the XY plane and center point
+   ✔  And its Children list contains the extrusion
+   ✔  When the user selects the XY plane in the Parents list
+   ✔  Then the XY plane row is highlighted in the model browser
+   ✔  And the plane is highlighted in the viewport
+   ✔  When the user selects the extrusion in the Children list
+   ✔  Then the extrusion row and its solid edges are highlighted
+   ✔  When the user activates the navigation control beside the extrusion
+   ✔  Then the dialog identifies the extrusion as the selected item
+   ✔  And its Parents list contains the XY plane and the sketch
+   ✔  And its Children list is empty
+   ✔  When the user activates the navigation control beside the sketch in the Parents list
+   ✔  Then the dialog identifies the sketch as the selected item again
+   ✔  And its Children list contains the extrusion
+   ✔  When the user clicks Done
+   ✔  Then the Relationships dialog closes
+]]></system-out></testcase></testsuite></testsuites>

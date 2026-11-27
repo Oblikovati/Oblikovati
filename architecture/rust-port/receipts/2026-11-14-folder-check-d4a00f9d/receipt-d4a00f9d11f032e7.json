@@ -1,0 +1,27 @@
+{
+  "kind": "native-acceptance",
+  "scenario_id": "scenario:d4a00f9d11f032e76d0516079bb461fa58b84af5777a682fe4c697b6ea9c51e9",
+  "scenario_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+  "source_sha256": "c38e881942205983e27a3924f950a5732d2cae0e2cb09ae40a16b88e9f581f3d",
+  "application_commit": "96de4526476b08ad7398664a34c04e0b116647f7",
+  "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+  "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+  "runner": "application_scenarios_use_the_native_window",
+  "exit_code": 0,
+  "environment": {
+    "os": "Linux",
+    "renderer": "Vulkan Lavapipe on Xvfb 1920x1200"
+  },
+  "cucumber": {
+    "path": "architecture/rust-port/receipts/2026-11-14-folder-check-d4a00f9d/cucumber.json",
+    "sha256": "8f2983571f56a46f01b04babb02db5e2309a96bd008843fc711c63f1354c53d4"
+  },
+  "source_report": {
+    "path": "architecture/rust-port/receipts/2026-11-14-folder-check-d4a00f9d/source-revision.json",
+    "sha256": "5ee956e35b8dc309a9975e8f46300d21de0b548365a0cb296842aa7c80e57cbb"
+  },
+  "capture": {
+    "path": "architecture/rust-port/receipts/2026-11-14-folder-check-d4a00f9d/Cancel-browsing-for-a-project-workspace-folder.png",
+    "sha256": "99e1583b2c0968b1d198663c1ff74b0ff4a6d77762e582d79720c5095e64b656"
+  }
+}

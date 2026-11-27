@@ -1,0 +1,27 @@
+{
+  "kind": "native-acceptance",
+  "scenario_id": "scenario:dac29e7f09893d1df715332e0b2f9a58173d701cc962db26f626644246b5869a",
+  "scenario_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+  "source_sha256": "fd33924caea15cf97ba75ad3600c7244cf17592b6bdf26bdc9882f7cae71fb91",
+  "application_commit": "5738199d932b19d5112413eb04e8c65bba94bb74",
+  "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+  "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+  "runner": "application_scenarios_use_the_native_window",
+  "exit_code": 0,
+  "environment": {
+    "os": "Linux",
+    "renderer": "Vulkan with Lavapipe under Xvfb"
+  },
+  "cucumber": {
+    "path": "architecture/rust-port/receipts/2026-11-15-file-menu-rerun/cucumber.json",
+    "sha256": "978922b0675b641f1943d19ff356e83c775198e1968db8da25ab1f7b6841cd01"
+  },
+  "source_report": {
+    "path": "architecture/rust-port/receipts/2026-11-15-file-menu-rerun/source-revision.json",
+    "sha256": "fe5b3547374efd3ad9564eb77bd36a8e94eb14d49df5885a9cb017382fdb1397"
+  },
+  "capture": {
+    "path": "architecture/rust-port/receipts/2026-11-15-file-menu-rerun/Dismiss-the-file-menu-by-clicking-outside.png",
+    "sha256": "5094e20b2ceda62edc9f4ac3b475e560f271766cc438d3bb40d2ecc8f5f46b16"
+  }
+}

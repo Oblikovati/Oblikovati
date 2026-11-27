@@ -1,0 +1,15 @@
+{
+  "application_commit": "ad88234ab",
+  "feature": "features/application/model-browser/model-browser.feature",
+  "feature_sha256": "603382ec4009d73a74e960c5981d255c4ca9ac5489b94fcf57193c7b09458b2e",
+  "environment": "Linux X11, Xvfb, software Vulkan, native mouse and keyboard input",
+  "scenarios": [
+    "Hide and show a solid using the active view commands",
+    "View bulk visibility commands leave the origin plane unchanged in an empty part",
+    "Toggle an origin plane while the active view is locked",
+    "Switch locked views after showing an origin plane",
+    "Toggle the lock marker on a copied view representation"
+  ],
+  "result": "5 of 5 scenarios passed",
+  "scope": "Focused scenarios only; this is not a full-feature run. The source was unversioned."
+}

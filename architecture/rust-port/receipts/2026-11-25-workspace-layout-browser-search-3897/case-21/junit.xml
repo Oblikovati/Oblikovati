@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Workspace layout and panel visibility: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature" package="testsuite/Feature: Workspace layout and panel visibility: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T02:59:45.143919791Z" time="21.701206064"><testcase name="Scenario: Show an empty browser search result: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature:228:3" time="21.701206064"><system-out><![CDATA[  Scenario: Show an empty browser search result
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open in the MCAD Software
+   ✔  And the model browser search field is open
+   ✔  When the user enters "zzq-nomatch"
+   ✔  Then the browser shows a no-results message instead of feature rows
+   ✔  And the search query remains visible in the field
+   ✔  And the model remains displayed in the viewport
+   ✔  When the user clears the search query
+   ✔  Then the unfiltered model browser tree is shown again
+]]></system-out></testcase></testsuite></testsuites>

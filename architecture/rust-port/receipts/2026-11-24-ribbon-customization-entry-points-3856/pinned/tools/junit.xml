@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T13:36:01.417548309Z" time="13.004852885"><testcase name="Scenario: Open ribbon customization from the Tools tab in its first captured state: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature:136:3" time="13.004852885"><system-out><![CDATA[  Scenario: Open ribbon customization from the Tools tab in its first captured state
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the Tools ribbon tab is selected
+   ✔  And ribbon customization has not been opened earlier in the captured session
+   ✔  When the user clicks "Customize" in the Options panel
+   ✔  Then the customization dialog opens on the "Ribbon" tab
+   ✔  And the target selector shows "Part | Tools"
+   ✔  And the available-command category is "All Commands"
+   ✔  And the Part | Tools custom panel list is empty with no pending-change marker
+   ✔  And Close is available while Cancel and Apply are unavailable
+   ✔  When the user clicks "Close"
+   ✔  Then the dialog closes and the Tools ribbon remains visible
+]]></system-out></testcase></testsuite></testsuites>

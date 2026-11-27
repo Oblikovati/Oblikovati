@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T13:36:03.537102851Z" time="16.300971894"><testcase name="Scenario: Open customization from the View ribbon context menu: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature:955:3" time="16.300971894"><system-out><![CDATA[  Scenario: Open customization from the View ribbon context menu
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the View ribbon tab is selected
+   ✔  And the Part | View custom target is empty
+   ✔  When the user opens the context menu on the Windows panel title
+   ✔  And the user chooses Customize User Commands
+   ✔  Then the ribbon customization dialog opens
+   ✔  And the target is "Part | View"
+   ✔  And the command source is "All Commands"
+   ✔  And the target command list is empty
+   ✔  When the user closes customization
+   ✔  Then the View ribbon remains visible
+]]></system-out></testcase></testsuite></testsuites>

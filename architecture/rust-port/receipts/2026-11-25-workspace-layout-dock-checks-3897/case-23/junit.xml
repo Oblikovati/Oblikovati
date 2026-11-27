@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Workspace layout and panel visibility: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature" package="testsuite/Feature: Workspace layout and panel visibility: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T02:59:01.669918312Z" time="14.185312689"><testcase name="Scenario: Close and restore the drawing browser from its tab area: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature:250:3" time="14.185312689"><system-out><![CDATA[  Scenario: Close and restore the drawing browser from its tab area
+   ✔  Given `fixtures/cad/blank-drawing.odd` is active in the MCAD Software
+   ✔  And its model browser is docked on the left
+   ✔  When the user selects the browser tab's close control
+   ✔  Then the browser tree is hidden
+   ✔  And the drawing occupies the space previously used by the browser
+   ✔  And a plus control remains at the upper left of the workspace
+   ✔  When the user opens the plus control
+   ✔  Then the panel list offers Model Browser
+   ✔  When the user selects Model Browser
+   ✔  Then the browser returns to the left
+   ✔  And it displays the drawing resources and sheet tree
+]]></system-out></testcase></testsuite></testsuites>

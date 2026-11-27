@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-labelledby="t d">
+  <title id="t">Perpendicular Constraint</title>
+  <desc id="d">Vertical and horizontal lines locked at 90 degrees with a crisp Teal right-angle box.</desc>
+  <g id="layer-body">
+    <line x1="6" y1="24" x2="26" y2="24" stroke="var(--icon-line-general, #D2D7E2)" stroke-width="2.1" stroke-linecap="round"/><line x1="16" y1="6" x2="16" y2="24" stroke="var(--icon-line-active, #8172FA)" stroke-width="2.1" stroke-linecap="round"/>
+  </g>
+  <g id="layer-accent">
+    <polyline points="16,17.5 22.5,17.5 22.5,24" fill="none" stroke="var(--accent-selection-bright, #2DD4BF)" stroke-width="1.6"/>
+  </g>
+</svg>

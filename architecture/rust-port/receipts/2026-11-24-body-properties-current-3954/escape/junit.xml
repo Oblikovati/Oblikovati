@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Body properties dialog: target/native-scratch.HSqCy5/current-body-properties-source/features/application/body-properties/body-properties.feature" package="testsuite/Feature: Body properties dialog: target/native-scratch.HSqCy5/current-body-properties-source/features/application/body-properties/body-properties.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T22:36:31.378455906Z" time="70.853130421"><testcase name="Scenario: Discard a pending appearance with Escape: target/native-scratch.HSqCy5/current-body-properties-source/features/application/body-properties/body-properties.feature:62:3" time="70.853130421"><system-out><![CDATA[  Scenario: Discard a pending appearance with Escape
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open in the MCAD Software with its solid body visible
+   ✔  And the body appearance is set to As Part
+   ✔  And Body Properties is open for the body
+   ✔  When the user selects Black in Body Appearance
+   ✔  And the user presses Escape
+   ✔  Then the dialog closes
+   ✔  When the user reopens Body Properties for the same body
+   ✔  Then Body Appearance displays As Part
+   ✔  When the user chooses Cancel
+   ✔  Then the dialog closes
+]]></system-out></testcase></testsuite></testsuites>

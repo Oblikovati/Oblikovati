@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Create a document from a template: tmp/obk-gallery2/features/application/document-creation/document-creation.feature" package="testsuite/Feature: Create a document from a template: tmp/obk-gallery2/features/application/document-creation/document-creation.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T18:48:14.614118546Z" time="3.179777952"><testcase name="Scenario: Navigate backward and forward through template folders: tmp/obk-gallery2/features/application/document-creation/document-creation.feature:165:3" time="3.179777952"><system-out><![CDATA[  Scenario: Navigate backward and forward through template folders
+   ✔  Given the new-document template chooser is open in the MCAD Software
+   ✔  And the selected template folder is not the English folder
+   ✔  When the user selects the English template folder
+   ✔  And the user selects the metric template folder
+   ✔  And the user chooses Back in the chooser navigation bar
+   ✔  Then the English folder is selected
+   ✔  And the gallery displays its inch templates
+   ✔  When the user chooses Forward in the chooser navigation bar
+   ✔  Then the metric folder is selected
+   ✔  And the gallery displays its metric templates
+]]></system-out></testcase></testsuite></testsuites>

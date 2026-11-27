@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T04:50:35.184127494Z" time="19.550312744"><testcase name="Scenario: Open and dismisses a grouped command menu: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature:377:3" time="19.550312744"><system-out><![CDATA[  Scenario: Open and dismisses a grouped command menu
+   ✔> Given the MCAD Software starts with a writable copy of `fixtures/preferences/ribbon-normal` as its configuration directory
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part is active in the MCAD Software
+   ✔  And the 3D Model Work Features panel contains a grouped "Plane" command
+   ✔  When the user clicks the Plane drop-down arrow
+   ✔  Then a vertical menu opens beneath the control
+   ✔  And the menu contains "Plane", "Offset from Plane", and "Three Points"
+   ✔  And the menu presents icons and dividers between groups of choices
+   ✔  When the user presses Escape
+   ✔  Then the menu closes
+   ✔  And the part remains visible without a plane command being started
+]]></system-out></testcase></testsuite></testsuites>

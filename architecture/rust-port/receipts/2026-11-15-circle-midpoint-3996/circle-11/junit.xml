@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Circle center point: tmp/rust-midpoint-3996-JM1wi6AQ/scenarios/features/sketch/circle-center-point/scenario.feature" package="testsuite/Feature: Circle center point: tmp/rust-midpoint-3996-JM1wi6AQ/scenarios/features/sketch/circle-center-point/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-15T22:16:03.5715702Z" time="33.369422062"><testcase name="Scenario: circle-center-point-11 Edit diameter while retaining the measured center: tmp/rust-midpoint-3996-JM1wi6AQ/scenarios/features/sketch/circle-center-point/scenario.feature:19:3" time="33.369422062"><system-out><![CDATA[  Scenario: circle-center-point-11 Edit diameter while retaining the measured center
+   ✔  Given the recorded circle has a driving diameter dimension equal to 6 mm
+   ✔  And its displayed center is (0.000, 6.553, -12.440) mm
+   ✔  When the user open the diameter dimension and accept the value 8 mm
+   ✔  And the user exit General Dimension and measure the circle
+   ✔  Then diameter is 8.000 mm and radius is 4.000 mm
+   ✔  And its measured center remains (0.000, 6.553, -12.440) mm
+   ✔  When the user close Measure and undo the edit
+   ✔  Then the visible dimension and extent return to 6 mm
+   ✔  When the user redo the edit
+   ✔  Then the visible dimension and extent return to 8 mm
+   ✔  When the user undo once more
+   ✔  Then the 6 mm baseline is restored with the surrounding midpoint line retained
+]]></system-out></testcase></testsuite></testsuites>

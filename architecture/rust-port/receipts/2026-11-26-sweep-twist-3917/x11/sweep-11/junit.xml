@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Sweep: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/sweep/sweep.feature" package="testsuite/Feature: Sweep: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/sweep/sweep.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-26T21:24:45.025205338Z" time="16.384046133"><testcase name="Scenario: sweep-11 Correct an invalid twist expression: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/sweep/sweep.feature:122:3" time="16.384046133"><system-out><![CDATA[  Scenario: sweep-11 Correct an invalid twist expression
+   ✔  Given a disposable copy of the native fixture "fixtures/cad/sweep/circle-straight-path.opd" is open
+   ✔  And the user creates Sweep1 from its circle profile and straight path with Follow Path orientation and 5 degrees taper
+   ✔  And Sweep1 is open for editing with its profile and path selected
+   ✔  When q is entered as the Twist expression
+   ✔  Then an error indicator appears and OK is disabled
+   ✔  When the expression is replaced with 0
+   ✔  Then the error indicator disappears and OK is enabled
+]]></system-out></testcase></testsuite></testsuites>

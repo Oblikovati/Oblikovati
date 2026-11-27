@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Properties panel for creating and editing a modeled feature: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/feature-properties/feature-properties.feature" package="testsuite/Feature: Properties panel for creating and editing a modeled feature: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/feature-properties/feature-properties.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-27T05:47:06.668397216Z" time="9.480460693"><testcase name="Rule: Dockable Properties commands reuse the Properties shell: Scenario: Reuse a two-profile sketch after applying an extrusion: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/feature-properties/feature-properties.feature:131:5" time="9.480460693"><system-out><![CDATA[  Scenario: Reuse a two-profile sketch after applying an extrusion
+   ✔  Given a fresh copy of `fixtures/cad/extrusion/extrusion-dimension-pick.opd` is open
+   ✔  And the user opens Extrude with the rectangular profile selected and a valid preview
+   ✔  And Keep sketches visible on (+) is checked in Advanced Settings
+   ✔  When the user clicks Apply and create new
+   ✔  Then the first extrusion is committed
+   ✔  And the same sketch remains visible with the separate circular profile available for selection
+   ✔  When the user selects the circular profile for the next draft
+   ✔  Then the second draft uses that profile without changing the first extrusion
+]]></system-out></testcase></testsuite></testsuites>

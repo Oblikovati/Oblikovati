@@ -1,0 +1,18 @@
+WARNING: debug protocol has been enabled. This is a potential denial-of-service attack vector and information leak.
+/usr/share/weston/wayland.png: No such file or directory
+Error: Couldn't launch client '/usr/libexec/weston-keyboard'
+Error: Couldn't launch client '/usr/libexec/weston-keyboard'
+Error: Couldn't launch client '/usr/libexec/weston-keyboard'
+Error: Couldn't launch client '/usr/libexec/weston-keyboard'
+Error: Couldn't launch client '/usr/libexec/weston-keyboard'
+Error: Couldn't launch client '/usr/libexec/weston-keyboard'
+could not load cursor 'dnd-move'
+could not load cursor 'dnd-copy'
+could not load cursor 'dnd-none'
+ERROR loading icon from file '/usr/share/weston/terminal.png', error: 'file not found'
+/usr/share/weston/pattern.png: No such file or directory
+
+running 1 test
+test native::gui_loop_tests::application_bdd::model_browser::model_state_table_name_steps::native_accepting_duplicate_removal_keeps_one_existing_member ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1736 filtered out; finished in 6.22s

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Extrude a profile in a part document: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature" package="testsuite/Feature: Extrude a profile in a part document: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-27T06:16:11.631675065Z" time="7.35286537"><testcase name="Scenario: extrusion-02 Finish profile returns to waiting extrusion: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature:16:3" time="7.35286537"><system-out><![CDATA[  Scenario: extrusion-02 Finish profile returns to waiting extrusion
+   ✔> Given the MCAD Software is displaying a part in the solid modeling workspace
+   ✔> And the viewport pointer is idle
+   ✔  Given a copy of `fixtures/cad/revolve/revolve-profile.opd` is open with Sketch1 being edited
+   ✔  And its rectangular profile has been selected by Extrude
+   ✔  When Finish Sketch is clicked
+   ✔  Then the Extrusion panel shows one selected profile
+   ✔  And a solid preview displays Distance A of 10 mm
+]]></system-out></testcase></testsuite></testsuites>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: File menu: tmp/oblikovati-ribbon-relocated.RcZVDl/current-file-menu-source/features/application/file-menu/file-menu.feature" package="testsuite/Feature: File menu: tmp/oblikovati-ribbon-relocated.RcZVDl/current-file-menu-source/features/application/file-menu/file-menu.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T22:27:38.469639785Z" time="18.190965042"><testcase name="Scenario: Inspect the File menu from Home: tmp/oblikovati-ribbon-relocated.RcZVDl/current-file-menu-source/features/application/file-menu/file-menu.feature:86:3" time="18.190965042"><system-out><![CDATA[  Scenario: Inspect the File menu from Home
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` has been opened in the MCAD Software and is listed in recent documents
+   ✔  And Home is active with at least one recent document visible
+   ✔  When the user selects File
+   ✔  Then a vertical list of file commands opens over Home
+   ✔  And a recent-documents region is shown beside the command list
+   ✔  And Save As, document properties and Print appear muted
+   ✔  And the Home recent-documents view remains visible around the menu
+]]></system-out></testcase></testsuite></testsuites>

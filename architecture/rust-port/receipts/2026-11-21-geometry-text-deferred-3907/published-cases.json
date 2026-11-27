@@ -1,0 +1,266 @@
+{
+  "kind": "diagnostic only; not acceptance",
+  "source_revision": null,
+  "feature_sha256": "7a31bbb481a27ebfa66e05fff61143dfd3e56beba214c0495537606438727803",
+  "application_commit": "297d374f335af1155e5b15cd7e5ef0d0df53156f",
+  "scenarios": [
+    {
+      "line": 5,
+      "scenario": "geometry-text-01 Accept the arc direction without separate Update",
+      "classification": "unbound step",
+      "step_counts": {
+        "passed": 1,
+        "unbound": 7
+      },
+      "first_unbound": {
+        "line": 6,
+        "step": "a copy of `fixtures/cad/geometry-text/paths.opd` is open with Sketch1 being edited in RIGHT view"
+      }
+    },
+    {
+      "line": 16,
+      "scenario": "geometry-text-02 Observe a text-glyph click during path selection",
+      "classification": "unbound step",
+      "step_counts": {
+        "passed": 1,
+        "unbound": 8
+      },
+      "first_unbound": {
+        "line": 17,
+        "step": "a copy of `fixtures/cad/geometry-text/paths.opd` is open with Sketch1 being edited in RIGHT view"
+      }
+    },
+    {
+      "line": 28,
+      "scenario": "geometry-text-03 Cancel entered content before Update",
+      "classification": "unbound step",
+      "step_counts": {
+        "passed": 1,
+        "unbound": 6
+      },
+      "first_unbound": {
+        "line": 29,
+        "step": "a copy of `fixtures/cad/geometry-text/paths.opd` is open with Sketch1 being edited in RIGHT view"
+      }
+    },
+    {
+      "line": 38,
+      "scenario": "geometry-text-04 Step through arc Update history",
+      "classification": "unbound step",
+      "step_counts": {
+        "passed": 1,
+        "unbound": 8
+      },
+      "first_unbound": {
+        "line": 39,
+        "step": "a copy of `fixtures/cad/geometry-text/paths.opd` is open with Sketch1 being edited in RIGHT view"
+      }
+    },
+    {
+      "line": 50,
+      "scenario": "geometry-text-05 Start a separate arc text after editing formatted line text",
+      "classification": "unbound step",
+      "step_counts": {
+        "passed": 1,
+        "unbound": 9
+      },
+      "first_unbound": {
+        "line": 51,
+        "step": "a copy of `fixtures/cad/geometry-text/paths.opd` is open with Sketch1 being edited in RIGHT view"
+      }
+    },
+    {
+      "line": 63,
+      "scenario": "geometry-text-06 Cancel retains text already applied with Update",
+      "classification": "unbound step",
+      "step_counts": {
+        "passed": 2,
+        "unbound": 13
+      },
+      "first_unbound": {
+        "line": 64,
+        "step": "a copy of `fixtures/cad/geometry-text/paths.opd` is open with Sketch1 being edited in RIGHT view"
+      }
+    },
+    {
+      "line": 81,
+      "scenario": "geometry-text-07 Cancel new content before applying Update",
+      "classification": "unbound step",
+      "step_counts": {
+        "unbound": 11
+      },
+      "first_unbound": {
+        "line": 82,
+        "step": "a copy of `fixtures/cad/geometry-text/paths.opd` is open with Sketch1 being edited in RIGHT view"
+      }
+    },
+    {
+      "line": 95,
+      "scenario": "geometry-text-08 Apply the second Position on a straight line",
+      "classification": "unbound step",
+      "step_counts": {
+        "unbound": 13
+      },
+      "first_unbound": {
+        "line": 96,
+        "step": "a copy of `fixtures/cad/geometry-text/paths-sketch2-47.opd` is open with Sketch2 being edited in RIGHT view"
+      }
+    },
+    {
+      "line": 111,
+      "scenario": "geometry-text-09 Apply center and right alignment on a line",
+      "classification": "unbound step",
+      "step_counts": {
+        "unbound": 8
+      },
+      "first_unbound": {
+        "line": 112,
+        "step": "a copy of `fixtures/cad/geometry-text/paths.opd` is open with Sketch1 being edited in RIGHT view"
+      }
+    },
+    {
+      "line": 122,
+      "scenario": "geometry-text-10 Apply offset and manual stretch",
+      "classification": "unbound step",
+      "step_counts": {
+        "unbound": 8
+      },
+      "first_unbound": {
+        "line": 123,
+        "step": "a copy of `fixtures/cad/geometry-text/paths.opd` is open with Sketch1 being edited in RIGHT view"
+      }
+    },
+    {
+      "line": 133,
+      "scenario": "geometry-text-11 Fit text to the line and inspect retained edit settings",
+      "classification": "unbound step",
+      "step_counts": {
+        "unbound": 11
+      },
+      "first_unbound": {
+        "line": 134,
+        "step": "a copy of `fixtures/cad/geometry-text/paths.opd` is open with Sketch1 being edited in RIGHT view"
+      }
+    },
+    {
+      "line": 147,
+      "scenario": "geometry-text-12 Format selected existing content before Update",
+      "classification": "unbound step",
+      "step_counts": {
+        "unbound": 11
+      },
+      "first_unbound": {
+        "line": 148,
+        "step": "a copy of `fixtures/cad/geometry-text/paths.opd` is open with Sketch1 being edited in RIGHT view"
+      }
+    },
+    {
+      "line": 161,
+      "scenario": "geometry-text-13 Undo and redo a formatting Update retained after Cancel",
+      "classification": "unbound step",
+      "step_counts": {
+        "unbound": 10
+      },
+      "first_unbound": {
+        "line": 162,
+        "step": "a copy of `fixtures/cad/geometry-text/paths.opd` is open with Sketch1 being edited in RIGHT view"
+      }
+    },
+    {
+      "line": 174,
+      "scenario": "geometry-text-14 Insert a degree symbol at the current caret",
+      "classification": "unbound step",
+      "step_counts": {
+        "unbound": 9
+      },
+      "first_unbound": {
+        "line": 175,
+        "step": "a copy of `fixtures/cad/geometry-text/paths.opd` is open with Sketch1 being edited in RIGHT view"
+      }
+    },
+    {
+      "line": 186,
+      "scenario": "geometry-text-15 Replace the selected path during edit",
+      "classification": "unbound step",
+      "step_counts": {
+        "unbound": 7
+      },
+      "first_unbound": {
+        "line": 187,
+        "step": "a copy of `fixtures/cad/geometry-text/paths.opd` is open with Sketch1 being edited in RIGHT view"
+      }
+    },
+    {
+      "line": 196,
+      "scenario": "geometry-text-16 Open and cancel the nested Format Text editor",
+      "classification": "unbound step",
+      "step_counts": {
+        "unbound": 8
+      },
+      "first_unbound": {
+        "line": 197,
+        "step": "a copy of `fixtures/cad/geometry-text/paths.opd` is open with Sketch1 being edited in RIGHT view"
+      }
+    },
+    {
+      "line": 207,
+      "scenario": "geometry-text-17 Reject zero text size on leaving the field",
+      "classification": "unbound step",
+      "step_counts": {
+        "unbound": 9
+      },
+      "first_unbound": {
+        "line": 208,
+        "step": "a copy of `fixtures/cad/geometry-text/paths.opd` is open with Sketch1 being edited in RIGHT view"
+      }
+    },
+    {
+      "line": 219,
+      "scenario": "geometry-text-18 Retain applied text through document save and reopen",
+      "classification": "unbound step",
+      "step_counts": {
+        "unbound": 7
+      },
+      "first_unbound": {
+        "line": 220,
+        "step": "the applied red fitted ab-degree text follows the oblique line"
+      }
+    },
+    {
+      "line": 229,
+      "scenario": "geometry-text-19 Apply Arial to selected content",
+      "classification": "unbound step",
+      "step_counts": {
+        "unbound": 7
+      },
+      "first_unbound": {
+        "line": 230,
+        "step": "Geometry Text has reopened after document save"
+      }
+    },
+    {
+      "line": 239,
+      "scenario": "geometry-text-20 Update arc text Start Angle",
+      "classification": "unbound step",
+      "step_counts": {
+        "unbound": 9
+      },
+      "first_unbound": {
+        "line": 240,
+        "step": "a copy of `fixtures/cad/geometry-text/paths.opd` is open with Sketch1 being edited in RIGHT view"
+      }
+    },
+    {
+      "line": 251,
+      "scenario": "geometry-text-21 Reject zero Stretch and retain the last applied settings",
+      "classification": "unbound step",
+      "step_counts": {
+        "unbound": 10
+      },
+      "first_unbound": {
+        "line": 252,
+        "step": "a copy of `fixtures/cad/geometry-text/paths.opd` is open with Sketch1 being edited in RIGHT view"
+      }
+    }
+  ]
+}

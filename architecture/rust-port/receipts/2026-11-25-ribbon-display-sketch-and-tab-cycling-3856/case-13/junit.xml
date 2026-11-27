@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon display modes: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature" package="testsuite/Feature: Ribbon display modes: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T02:37:29.458631429Z" time="27.613894552"><testcase name="Scenario: Toggle between tabs-only and full Sketch ribbon display: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature:191:3" time="27.613894552"><system-out><![CDATA[  Scenario: Toggle between tabs-only and full Sketch ribbon display
+   ✔  Given `fixtures/cad/planar-sketch-empty-xy.opd` is open with Sketch1 being edited in the MCAD Software
+   ✔  And a part with an editable sketch is active in the MCAD Software
+   ✔  And Minimize to Tabs is the selected ribbon display mode
+   ✔  And the full Sketch command groups are visible
+   ✔  When the user activates the ribbon display control
+   ✔  Then the command groups disappear and the ribbon tabs remain visible
+   ✔  And the sketch remains in edit mode
+   ✔  When the user activates the ribbon display control again
+   ✔  Then the full Sketch command groups are visible
+   ✔  And the sketch remains in edit mode
+   ✔  When the user activates the ribbon display control again
+   ✔  Then the command groups disappear and the ribbon tabs remain visible
+   ✔  When the user activates the ribbon display control again
+   ✔  Then the full Sketch command groups are visible
+   ✔  And the sketch remains in edit mode
+]]></system-out></testcase></testsuite></testsuites>

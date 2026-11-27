@@ -1,0 +1,7 @@
+import json, math, subprocess, sys
+expected=float(sys.argv[1]); base=json.load(open('/tmp/obk-live-cube/keys10.json'))['bodies'][0]
+current=json.loads(subprocess.check_output(['go','run','/tmp/obk-live-cube/probe.go','get_reference_keys'],text=True))['bodies'][0]
+for kind in ('faces','edges','vertices'):
+ old={v['key'] for v in base[kind]};new={v['key'] for v in current[kind]};assert old==new,(kind,len(old),len(new));print(kind,len(old),'unchanged')
+for index,face in enumerate(base['faces']):
+ args=json.dumps({'type':'area','bodyIndex':0,'keyA':face['key']});measured=json.loads(subprocess.check_output(['go','run','/tmp/obk-live-cube/probe.go','analysis_measure',args],text=True));assert measured['unit']=='mm²' and math.isclose(measured['value'],expected,rel_tol=1e-7),(index,measured,expected);print('face',index,measured['value'],measured['unit'])

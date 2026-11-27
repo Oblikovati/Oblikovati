@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Interact with sketch entities in the viewport: mnt/vininas-projects/MCAD-Scenarios/features/sketch/viewport-entity-interaction/viewport-entity-interaction.feature" package="testsuite/Feature: Interact with sketch entities in the viewport: mnt/vininas-projects/MCAD-Scenarios/features/sketch/viewport-entity-interaction/viewport-entity-interaction.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-16T15:43:18.233318098Z" time="26.271902941"><testcase name="Scenario: Create geometry through a pointer-driven sketch tool: mnt/vininas-projects/MCAD-Scenarios/features/sketch/viewport-entity-interaction/viewport-entity-interaction.feature:45:3" time="26.271902941"><system-out><![CDATA[  Scenario: Create geometry through a pointer-driven sketch tool
+   ✔> Given the MCAD Software is displaying an editable sketch
+   ✔> And the viewport pointer is idle
+   ✔  Given a sketch geometry tool is active and requesting viewport input
+   ✔  When the user selects the positions required by that tool
+   ✔  Then accepted geometry appears in the sketch
+   ✔  And the tool advances to its next input or returns to Ready
+   ✔  When the user presses Escape while a later placement preview is pending
+   ✔  Then the pending preview is removed
+   ✔  And previously accepted geometry remains in the sketch
+]]></system-out></testcase></testsuite></testsuites>

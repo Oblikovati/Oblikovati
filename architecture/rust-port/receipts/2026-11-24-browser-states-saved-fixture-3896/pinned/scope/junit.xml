@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T11:39:30.839470699Z" time="16.684874553"><testcase name="Scenario: Toggle the model-state edit scope: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature:794:3" time="16.684874553"><system-out><![CDATA[  Scenario: Toggle the model-state edit scope
+   ✔  Given an empty part with Primary and a second model state is active in the MCAD Software
+   ✔  And the second state is active and the edit scope is Single Member
+   ✔  When the user clicks the edit-scope control on the Model State branch
+   ✔  Then its tooltip identifies All Members as the edit scope
+   ✔  And the browser root indicates All
+   ✔  And the second model state remains active
+   ✔  When the user clicks the edit-scope control again
+   ✔  Then its tooltip identifies Single Member as the edit scope
+   ✔  And the All indicator is removed from the browser root
+   ✔  And the second model state remains active
+   ✔  And the viewport remains empty
+]]></system-out></testcase></testsuite></testsuites>

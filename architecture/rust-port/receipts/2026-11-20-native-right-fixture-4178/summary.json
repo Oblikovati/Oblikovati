@@ -1,0 +1,8 @@
+{
+  "fixture": "test-utilities/fixtures/empty-planar-sketch-right.opd",
+  "sha256": "ca21530a916c2adce6c3ae1edf83fddb1510f46e36b2ade6f7a7eeee34e93ee9",
+  "checks": "native save/reopen of generated and checked-in fixture; Right view, projected origin, no curves, no degrees of freedom, grid snapping off",
+  "midpoint": "native typed length and angle at origin with grid snapping off; undo/redo passed",
+  "clippy": "head library and tests; warnings denied",
+  "feature": "not verified: current scenario source still names deferred Inventor fixture"
+}

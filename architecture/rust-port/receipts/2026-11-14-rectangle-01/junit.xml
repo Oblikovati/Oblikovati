@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Rectangle two point: tmp/oblikovati-rect-source/features/sketch/rectangle-two-point/scenario.feature" package="testsuite/Feature: Rectangle two point: tmp/oblikovati-rect-source/features/sketch/rectangle-two-point/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T05:01:38.525857017Z" time="7.772981888"><testcase name="Scenario: rectangle-two-point-01 Create a rectangle from opposite corners: tmp/oblikovati-rect-source/features/sketch/rectangle-two-point/scenario.feature:5:3" time="7.772981888"><system-out><![CDATA[  Scenario: rectangle-two-point-01 Create a rectangle from opposite corners
+   ✔  Given the MCAD Software is running
+   ✔  And an editable planar sketch
+   ✔  When the user select Two Point Rectangle and click diagonally opposite corners
+   ✔  Then four connected sides form an axis-aligned closed rectangle
+   ✔  When the user press Escape
+   ✔  Then the rectangle remains and the sketch is Ready
+]]></system-out></testcase></testsuite></testsuites>

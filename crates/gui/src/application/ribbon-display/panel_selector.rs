@@ -1,0 +1,153 @@
+// SPDX-License-Identifier: GPL-2.0-only
+//! The direct panel list shares visibility with the context menu but stays open on a change (#3856).
+use super::*;
+#[path = "panel_selector_help.rs"]
+mod help;
+pub(crate) const PANEL_SELECTOR_WIDTH: f32 = 32.;
+const SELECTOR_POPUP: &str = "##ribbon-panel-selector-list";
+impl RibbonDisplayState {
+    pub(crate) fn close_temporary_from_tab(&mut self) {
+        self.temporary = None;
+        self.tab_release_consumed = true;
+    }
+    /// Toggle panels without reopening the list; example: `display.panel_selector(ui, tab, commands, panels, 47.)`.
+    pub(crate) fn panel_selector(
+        &mut self,
+        ui: &Ui,
+        tab: RibbonTab,
+        commands: &crate::GuiCommandState,
+        panels: &[RibbonPanel],
+        row_center: f32,
+    ) {
+        self.selector_escape =
+            self.selector_open && ui.is_key_pressed_no_repeat(imgui::Key::Escape);
+        let temporary_tab =
+            self.mode == RibbonDisplay::Tabs && self.temporary == Some(TemporaryPanel::WholeTab);
+        if (self.mode != RibbonDisplay::Full && !temporary_tab)
+            || self.placement != RibbonPlacement::Top
+        {
+            self.selector_press.finish_frame(ui);
+            self.selector_keyboard_started = false;
+            self.selector_focused_panel = None;
+            self.selector_open = false;
+            self.selector_pointer_inside = false;
+            self.selector_trigger = None;
+            return;
+        }
+        let width = ui.window_size()[0];
+        let (clicked, hovered) = self.selector_button(ui, [width - 30., row_center - 12.]);
+        self.selector_trigger = Some([ui.item_rect_min(), ui.item_rect_max()]);
+        if temporary_tab && (clicked || self.selector_pointer_press(ui)) {
+            self.keep_temporary_on_click = true;
+        }
+        let origin = ui.window_pos();
+        crate::widget_abi::next_window_position(
+            ui,
+            [origin[0] + width - 180., origin[1] + row_center + 14.],
+        );
+        self.selector_choices(ui, tab, commands.authoring, panels);
+        help::draw(ui, hovered && !self.selector_open);
+    }
+    /// Show the same checklist at the bottom of a side ribbon.
+    /// Example: `display.side_panel_selector(ui, tab, commands, panels)`.
+    pub(crate) fn side_panel_selector(
+        &mut self,
+        ui: &Ui,
+        tab: RibbonTab,
+        commands: &crate::GuiCommandState,
+        panels: &[RibbonPanel],
+    ) {
+        self.selector_escape =
+            self.selector_open && ui.is_key_pressed_no_repeat(imgui::Key::Escape);
+        let size = ui.window_size();
+        let position = [size[0] - 30., size[1] - 32.];
+        let (clicked, hovered) = self.selector_button(ui, position);
+        self.selector_trigger = Some([ui.item_rect_min(), ui.item_rect_max()]);
+        if clicked || self.selector_pointer_press(ui) {
+            self.keep_temporary_on_click = true;
+        }
+        let origin = ui.window_pos();
+        let x = if self.placement == RibbonPlacement::Right {
+            origin[0] - 180.
+        } else {
+            origin[0] + size[0]
+        };
+        crate::widget_abi::next_window_position(ui, [x, origin[1] + position[1]]);
+        self.selector_choices(ui, tab, commands.authoring, panels);
+        help::draw(ui, hovered && !self.selector_open);
+    }
+    fn selector_choices(
+        &mut self,
+        ui: &Ui,
+        tab: RibbonTab,
+        authoring: crate::GuiAuthoringContext,
+        panels: &[RibbonPanel],
+    ) {
+        let Some(_list) = ui.begin_popup(SELECTOR_POPUP) else {
+            self.selector_keyboard_started = false;
+            self.selector_focused_panel = None;
+            self.selector_open = false;
+            self.selector_pointer_inside = false;
+            return;
+        };
+        self.selector_open = true;
+        self.selector_pointer_inside = ui.is_window_hovered();
+        let first_down =
+            !self.selector_keyboard_started && ui.is_key_pressed_no_repeat(imgui::Key::DownArrow);
+        let preserve = (ui.is_key_pressed_no_repeat(imgui::Key::Home)
+            || ui.is_key_pressed_no_repeat(imgui::Key::End))
+        .then_some(self.selector_focused_panel)
+        .flatten();
+        self.selector_keyboard_started |= first_down
+            || ui.is_key_pressed_no_repeat(imgui::Key::UpArrow)
+            || ui.is_key_pressed_no_repeat(imgui::Key::Tab);
+        // Part Tools exposes custom panel visibility in the ribbon context menu (#3856).
+        let part_tools = tab == RibbonTab::Tools && authoring == crate::GuiAuthoringContext::Part;
+        let choices = panels
+            .iter()
+            .copied()
+            .filter(|panel| !part_tools || *panel != RibbonPanel::UserCommands);
+        for (index, panel) in choices.enumerate() {
+            if (first_down && index == 0) || preserve == Some(panel) {
+                ui.set_keyboard_focus_here();
+            }
+            let mut shown = !self.hidden_panels.contains(&(tab, panel));
+            let clicked = ui.checkbox(panel.label(), &mut shown);
+            if preserve.is_none() && ui.is_item_focused() {
+                self.selector_focused_panel = Some(panel);
+            }
+            let enter = ui.is_item_focused()
+                && (ui.is_key_pressed_no_repeat(imgui::Key::Enter)
+                    || ui.is_key_pressed_no_repeat(imgui::Key::KeypadEnter));
+            if clicked || enter {
+                self.selector_keyboard_started = true;
+                self.toggle_panel(tab, panel);
+            }
+        }
+    }
+
+    fn selector_button(&mut self, ui: &Ui, position: [f32; 2]) -> (bool, bool) {
+        crate::widget_abi::cursor_position(ui, position);
+        let clicked = crate::widget_abi::button(ui, "##ribbon-panel-selector", [22., 24.]);
+        let [left, top] = ui.item_rect_min();
+        let draw = ui.get_window_draw_list();
+        let color = ui.style_color(imgui::StyleColor::Text);
+        for offset in [7., 11., 15.] {
+            draw.add_line([left + 5., top + offset], [left + 16., top + offset], color)
+                .build();
+        }
+        drop(draw);
+        let activate = if self.selector_open {
+            // The outside press closes this popup. Do not replay it as a new open.
+            self.selector_press.finish_frame(ui);
+            false
+        } else {
+            self.selector_press.button(ui, self.placement, clicked)
+        };
+        let pressed = ui.is_item_hovered() && ui.is_mouse_clicked(imgui::MouseButton::Left);
+        if activate {
+            ui.open_popup(SELECTOR_POPUP);
+        }
+        (activate || pressed, ui.is_item_hovered())
+    }
+}

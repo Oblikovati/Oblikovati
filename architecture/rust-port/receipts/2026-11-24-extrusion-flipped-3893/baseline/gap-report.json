@@ -1,0 +1,1960 @@
+{
+  "kind": "diagnostic only; not acceptance",
+  "source_files": {
+    "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/solid-model/extrusion/extrusion.feature": "@inherits_common_solid_feature_tool\r\nFeature: Extrude a profile in a part document\r\n  The MCAD Software extrudes selected sketch profiles into solid or surface features.\r\n\r\n  Background:\r\n    Given the MCAD Software is displaying a part in the solid modeling workspace\r\n    And the viewport pointer is idle\r\n\r\n  @needs_fixture\r\n  Scenario: extrusion-01 Empty part entry requests a sketch plane\r\n    Given a new Standard (mm) part with no sketch\r\n    When Extrude is clicked and a displayed origin plane is selected\r\n    Then Sketch1 opens for profile creation\r\n\r\n  @needs_fixture\r\n  Scenario: extrusion-02 Finish profile returns to waiting extrusion\r\n    Given a rectangle was drawn in the sketch requested by Extrude\r\n    When Finish Sketch is clicked\r\n    Then the Extrusion panel shows one selected profile\r\n    And a solid preview displays Distance A of 10 mm\r\n\r\n  @needs_fixture\r\n  Scenario: extrusion-03 Select Flipped direction\r\n    Given the rectangle extrusion preview is open at Default direction\r\n    When Flipped is selected in Direction\r\n    Then the preview changes its side or extent relative to Default direction\r\n\r\n  @needs_fixture\r\n  Scenario: extrusion-03a Select Symmetric direction\r\n    Given the rectangle extrusion preview is open at Default direction\r\n    When Symmetric is selected in Direction\r\n    Then the preview extends on both sides of the source plane\r\n\r\n  @needs_fixture\r\n  Scenario: extrusion-03b Select Asymmetric direction\r\n    Given the rectangle extrusion preview is open at Default direction\r\n    When Asymmetric is selected in Direction\r\n    Then the preview changes its side or extent relative to Default direction\r\n    And Distance B and Taper B controls appear\r\n\r\n  @needs_fixture\r\n  Scenario: extrusion-03c Choose named directions with the dropdown selector\r\n    Given the rectangle extrusion preview is open with icon direction controls\r\n    When the user opens the Direction menu\r\n    Then Selector Style offers Icons and Dropdown\r\n    And Icons is selected\r\n    When the user chooses Dropdown\r\n    Then the Direction field displays Default\r\n    When the user opens the Direction list\r\n    Then it offers Default, Flipped, Symmetric and Asymmetric\r\n    When the user opens the Direction menu and chooses Icons\r\n    Then the four direction icons are visible again\r\n\r\n  @needs_fixture\r\n  Scenario: extrusion-04 Cancel preserves the source sketch\r\n    Given the uncommitted rectangle extrusion preview\r\n    When Cancel is clicked\r\n    Then the shaded preview disappears and Sketch1 remains\r\n    When the user presses E\r\n    Then the extrusion panel reopens for the source sketch\r\n\r\n  @needs_fixture\r\n  Scenario: extrusion-05 Zero distance validation and recovery\r\n    Given Default direction with a selected profile\r\n    When Distance A is replaced with 0\r\n    Then a red error indicator appears and OK is disabled\r\n    When the value is replaced with 8\r\n    Then the error clears and OK becomes available\r\n\r\n  @needs_fixture\r\n  Scenario: extrusion-06 Accepted creation supports Undo and Redo\r\n    Given Distance A 8 mm and zero taper\r\n    When OK is clicked then Undo then Redo\r\n    Then Extrusion1 and Solid Bodies(1) return with the shaded solid\r\n    And the subsequent Measure result lists two extrusion edges of length 8.000 mm\r\n\r\n  @needs_fixture\r\n  Scenario: extrusion-07 Edit Feature accepts positive taper\r\n    Given the accepted untapered Extrusion1\r\n    When Edit Feature is chosen from its browser context menu\r\n    Then Distance A is retained as 8 mm and Taper A as zero degrees\r\n    When Taper A is replaced with 5 and OK is clicked\r\n    Then the edited solid visibly widens toward the far end\r\n\r\n  @needs_fixture\r\n  Scenario: extrusion-08 Taper history retains accepted value\r\n    Given Extrusion1 has accepted positive taper of 5 degrees\r\n    When Undo then Redo are invoked and Edit Feature is opened\r\n    Then the widening shape returns and Taper A shows 5 degrees\r\n\r\n  @needs_fixture\r\n  Scenario: extrusion-09 Cancel reversed taper edit\r\n    Given Edit Feature with Taper A 5 degrees\r\n    When its sign control is clicked\r\n    Then Taper A shows -5 degrees and the preview narrows\r\n    When Cancel is clicked and Edit Feature is reopened\r\n    Then the retained value is positive 5 degrees\r\n\r\n  @needs_fixture\r\n  Scenario: extrusion-10 Reference selectors require input\r\n    Given a sketch-plane start and numeric distance\r\n    When the From reference control is activated\r\n    Then missing From and To references show Select Face\r\n    And OK is disabled without a shaded solid preview\r\n    When the reference control is restored\r\n    Then Sketch Plane and the numeric distance preview return\r\n\r\n  @needs_fixture\r\n  Scenario: extrusion-11 Termination selection displays a To reference\r\n    Given the numeric Distance A extrusion preview\r\n    When the user activates the termination control\r\n    Then a To reference selector appears\r\n    And no reference means disabled OK\r\n\r\n  @needs_fixture\r\n  Scenario: extrusion-12 Distance tolerance dialog can be inspected and cancelled\r\n    Given Edit Feature with Distance A 8 mm\r\n    When Tolerance is opened from its dropdown\r\n    Then Model Value is 8.000 mm and Type is Default\r\n    And Precision, evaluated-size controls, Upper and Lower fields, Hole and Shaft fields are visible\r\n    When the Type list is opened\r\n    Then it offers Default, Basic, Symmetric, Deviation, Limits-Stacked, Limits-Linear, MAX, MIN, Limits/Fits-Stacked, Limits/Fits-Linear, Limits/Fits-Show Size Limits and Limits/Fits-Show Tolerance\r\n    When the Type list is dismissed and Cancel is clicked\r\n    Then the extrusion panel remains at Distance A 8 mm\r\n\r\n  @needs_fixture\r\n  Scenario: extrusion-12a Inspect the Distance A editor menu\r\n    Given Edit Feature is open for an existing extrusion\r\n    When the user opens the Distance A editor menu\r\n    Then it offers Measure, Select Feature Dimension, Parameters, Tolerance and List Parameters\r\n    When the user chooses List Parameters\r\n    Then a list of parameters available in the active part appears\r\n    When the user dismisses the list and clicks Cancel\r\n    Then the extrusion edit closes without changing the feature\r\n\r\n  @needs_fixture\r\n  Scenario: extrusion-12b Select Feature Dimension prompts for a feature\r\n    Given Edit Feature is open for an existing extrusion\r\n    When the user opens the Distance A editor menu and chooses Select Feature Dimension\r\n    Then the status area asks the user to select a feature and then one of its dimensions\r\n    When the user cancels the extrusion edit\r\n    Then the accepted feature remains unchanged\r\n\r\n  @needs_fixture\r\n  Scenario: extrusion-12c Parameters opens the part parameter table\r\n    Given Edit Feature is open for an existing extrusion\r\n    When the user opens the Distance A editor menu and chooses Parameters\r\n    Then a Parameters dialog opens for the active part\r\n    And the table includes parameter name, consumed-by, unit or type, equation, nominal value, tolerance and model value columns\r\n    When the user clicks Done\r\n    Then the extrusion panel remains open\r\n    When the user clicks Cancel\r\n    Then the accepted feature remains unchanged\r\n\r\n  @needs_fixture\r\n  Scenario: extrusion-13 Join adds a boss to one body\r\n    Given a diameter-3 circular sketch on the top face of the existing solid\r\n    When Extrude uses Default direction, Distance A 8 mm, zero taper and Join\r\n    And OK is clicked\r\n    Then a cylindrical boss and Extrusion2 are visible\r\n    And the browser still shows Solid Bodies(1)\r\n    When Undo is invoked\r\n    Then Sketch2 returns and the boss disappears\r\n\r\n  @needs_fixture\r\n  Scenario: extrusion-14 New Solid creates a named second body\r\n    Given the restored circular Sketch2 and existing Solid1\r\n    When Extrude uses New Solid with Distance A 8 mm and zero taper\r\n    And Body Name is replaced with b and OK is clicked\r\n    Then the browser shows Solid Bodies(2)\r\n    And expanding it shows Solid1 and b\r\n\r\n  @needs_fixture\r\n  Scenario: extrusion-15 Cut selects inward direction and supports history\r\n    Given the diameter-3 circle on the base top face\r\n    When Extrude opens in Default direction and Cut is selected\r\n    Then Direction changes to Flipped and the preview shows an opening\r\n    When OK is clicked with Distance A 8 mm and zero taper\r\n    Then Extrusion2 and the opening are retained in one solid body\r\n    When Undo then Redo are invoked\r\n    Then the opening disappears then returns\r\n\r\n  @needs_fixture\r\n  Scenario: extrusion-16 Intersect retains the circular common region\r\n    Given the base and restored circular Sketch2\r\n    When Intersect is selected in Extrude\r\n    Then Direction changes to Flipped and a cylindrical region is previewed\r\n    When OK is clicked with Distance A 8 mm and zero taper\r\n    Then the cylinder replaces the visible rectangular base result\r\n    And the browser retains one solid body\r\n    When Undo then Redo are invoked\r\n    Then the base returns then the cylinder returns\r\n\r\n  @needs_fixture\r\n  Scenario: extrusion-17 Measure identifies intersection diameter\r\n    Given the accepted Intersect result after Redo\r\n    When its top face and cylindrical face are selected in Measure\r\n    Then the top face area is 7.069 square mm\r\n    And the cylindrical face diameter is 3.000 mm and radius 1.500 mm\r\n\r\n  @needs_fixture\r\n  Scenario: extrusion-18 Auxiliary extent changes preview and accepts a cut\r\n    Given the circular profile on the existing solid\r\n    When the first auxiliary extent icon beside Distance A is clicked\r\n    Then direction shows Flipped and Boolean shows Cut\r\n    And the displayed distance is parenthesized\r\n    When OK is clicked\r\n    Then the opening is retained\r\n    When Undo is invoked\r\n    Then Sketch2 and the uncut top face return\r\n\r\n  @needs_fixture\r\n  Scenario: extrusion-19 Surface output retains separate surface entry\r\n    Given the circular extrusion preview displaying Distance A 10 mm\r\n    When the output-type icon is clicked\r\n    Then input shows 1 Curve and Body Name shows Srf1\r\n    When OK is clicked\r\n    Then ExtrusionSrf1 and Surface Bodies(1) appear beside Solid Bodies(1)\r\n    When Undo then Redo are invoked\r\n    Then the surface disappears then returns\r\n\r\n  @needs_fixture\r\n  Scenario: extrusion-20 Dimension pick can change the active distance expression\r\n    Given two disjoint closed loops and one rectangle selected for extrusion\r\n    When the user opens the Distance A editor menu and chooses Measure\r\n    Then the status area asks the user to select a dimension to reference the parameter\r\n    When the circle dimension annotation is picked\r\n    Then Distance A references d2 instead of adding another profile\r\n    And a later pick produces invalid d2d2 and disabled OK\r\n    When Cancel is clicked\r\n    Then no new extrusion is accepted\r\n\r\n  @needs_fixture\r\n  Scenario: extrusion-21 Hide Presets controls preset-row visibility\r\n    Given Extrusion with Hide Presets checked\r\n    When Hide Presets is unchecked from the panel menu\r\n    Then the No Preset row, plus and gear controls appear\r\n    When the preset gear menu is inspected and dismissed\r\n    And Hide Presets is restored\r\n    Then the preset row disappears\r\n\r\n  @needs_fixture\r\n  Scenario: extrusion-22 Change and flip an asymmetric preview\r\n    Given the extrusion is edited with Asymmetric direction\r\n    And Distance A is 8 mm and Distance B is 4 mm\r\n    When Distance B is changed to 6 mm\r\n    Then the lower preview displays a 6 mm dimension\r\n    When the flip control beside Distance B is clicked\r\n    Then Distance A displays 6 mm and Distance B displays 8 mm\r\n    And the displayed taper values exchange between A and B\r\n\r\n  @needs_fixture\r\n  Scenario: extrusion-23 Cancel a failed edit in the dependent part\r\n    Given Extrusion1 is edited in the Part9 with downstream Fillet1 and Sketch3\r\n    When Asymmetric is selected with distances 8 mm and 4 mm and OK is clicked\r\n    Then the MCAD Software reports that editing the extrusion failed\r\n    And the expanded update details list Fillet1 and Sketch3 problems\r\n    When Cancel is clicked in the error dialog\r\n    Then the dialog closes and the part is displayed again\r\n\r\n  @needs_fixture\r\n  Scenario: extrusion-24 Match Shape is disabled for the captured feature\r\n    Given Edit Feature is open for the captured solid extrusion\r\n    Then Match Shape is visible and disabled\r\n    When Cancel is clicked\r\n    Then the accepted feature remains unchanged\r\n\r\n  @needs_fixture @capture_only @capture_host_only\r\n  Scenario: extrusion-live-01 Reopen Extrusion1 and cancel its edit\r\n    Given the captured Part7 document contains Extrusion1 and one solid body\r\n    When the user double-clicks Extrusion1 in the model browser\r\n    Then the Extrusion panel restores 1 Profile from 1 Sketch Plane\r\n    And Distance A is 20 mm and the body name is Solid1\r\n    And Taper A is 0 degrees with Match Shape checked and disabled\r\n    And a 20 mm viewport preview appears\r\n    When the user cancels the edit\r\n    Then the panel closes and the committed solid remains unchanged\r\n"
+  },
+  "scenarios": [
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/solid-model/extrusion/extrusion.feature",
+      "scenario": "extrusion-01 Empty part entry requests a sketch plane",
+      "line": 10,
+      "classification": "passes",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 6,
+          "step": "the MCAD Software is displaying a part in the solid modeling workspace",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 7,
+          "step": "the viewport pointer is idle",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 11,
+          "step": "a new Standard (mm) part with no sketch",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 12,
+          "step": "Extrude is clicked and a displayed origin plane is selected",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 13,
+          "step": "Sketch1 opens for profile creation",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/solid-model/extrusion/extrusion.feature",
+      "scenario": "extrusion-02 Finish profile returns to waiting extrusion",
+      "line": 16,
+      "classification": "passes",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 6,
+          "step": "the MCAD Software is displaying a part in the solid modeling workspace",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 7,
+          "step": "the viewport pointer is idle",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 17,
+          "step": "a rectangle was drawn in the sketch requested by Extrude",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 18,
+          "step": "Finish Sketch is clicked",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 19,
+          "step": "the Extrusion panel shows one selected profile",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 20,
+          "step": "a solid preview displays Distance A of 10 mm",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/solid-model/extrusion/extrusion.feature",
+      "scenario": "extrusion-03 Select Flipped direction",
+      "line": 23,
+      "classification": "unbound step",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 6,
+          "step": "the MCAD Software is displaying a part in the solid modeling workspace",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 7,
+          "step": "the viewport pointer is idle",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 24,
+          "step": "the rectangle extrusion preview is open at Default direction",
+          "result": "unbound",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 25,
+          "step": "Flipped is selected in Direction",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 26,
+          "step": "the preview changes its side or extent relative to Default direction",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/solid-model/extrusion/extrusion.feature",
+      "scenario": "extrusion-03a Select Symmetric direction",
+      "line": 29,
+      "classification": "unbound step",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 6,
+          "step": "the MCAD Software is displaying a part in the solid modeling workspace",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 7,
+          "step": "the viewport pointer is idle",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 30,
+          "step": "the rectangle extrusion preview is open at Default direction",
+          "result": "unbound",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 31,
+          "step": "Symmetric is selected in Direction",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 32,
+          "step": "the preview extends on both sides of the source plane",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/solid-model/extrusion/extrusion.feature",
+      "scenario": "extrusion-03b Select Asymmetric direction",
+      "line": 35,
+      "classification": "unbound step",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 6,
+          "step": "the MCAD Software is displaying a part in the solid modeling workspace",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 7,
+          "step": "the viewport pointer is idle",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 36,
+          "step": "the rectangle extrusion preview is open at Default direction",
+          "result": "unbound",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 37,
+          "step": "Asymmetric is selected in Direction",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 38,
+          "step": "the preview changes its side or extent relative to Default direction",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 39,
+          "step": "Distance B and Taper B controls appear",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/solid-model/extrusion/extrusion.feature",
+      "scenario": "extrusion-03c Choose named directions with the dropdown selector",
+      "line": 42,
+      "classification": "unbound step",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 6,
+          "step": "the MCAD Software is displaying a part in the solid modeling workspace",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 7,
+          "step": "the viewport pointer is idle",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 43,
+          "step": "the rectangle extrusion preview is open with icon direction controls",
+          "result": "unbound",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 44,
+          "step": "the user opens the Direction menu",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 45,
+          "step": "Selector Style offers Icons and Dropdown",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 46,
+          "step": "Icons is selected",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 47,
+          "step": "the user chooses Dropdown",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 48,
+          "step": "the Direction field displays Default",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 49,
+          "step": "the user opens the Direction list",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 50,
+          "step": "it offers Default, Flipped, Symmetric and Asymmetric",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 51,
+          "step": "the user opens the Direction menu and chooses Icons",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 52,
+          "step": "the four direction icons are visible again",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/solid-model/extrusion/extrusion.feature",
+      "scenario": "extrusion-04 Cancel preserves the source sketch",
+      "line": 55,
+      "classification": "passes",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 6,
+          "step": "the MCAD Software is displaying a part in the solid modeling workspace",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 7,
+          "step": "the viewport pointer is idle",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 56,
+          "step": "the uncommitted rectangle extrusion preview",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 57,
+          "step": "Cancel is clicked",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 58,
+          "step": "the shaded preview disappears and Sketch1 remains",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 59,
+          "step": "the user presses E",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 60,
+          "step": "the extrusion panel reopens for the source sketch",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/solid-model/extrusion/extrusion.feature",
+      "scenario": "extrusion-05 Zero distance validation and recovery",
+      "line": 63,
+      "classification": "passes",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 6,
+          "step": "the MCAD Software is displaying a part in the solid modeling workspace",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 7,
+          "step": "the viewport pointer is idle",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 64,
+          "step": "Default direction with a selected profile",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 65,
+          "step": "Distance A is replaced with 0",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 66,
+          "step": "a red error indicator appears and OK is disabled",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 67,
+          "step": "the value is replaced with 8",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 68,
+          "step": "the error clears and OK becomes available",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/solid-model/extrusion/extrusion.feature",
+      "scenario": "extrusion-06 Accepted creation supports Undo and Redo",
+      "line": 71,
+      "classification": "passes",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 6,
+          "step": "the MCAD Software is displaying a part in the solid modeling workspace",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 7,
+          "step": "the viewport pointer is idle",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 72,
+          "step": "Distance A 8 mm and zero taper",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 73,
+          "step": "OK is clicked then Undo then Redo",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 74,
+          "step": "Extrusion1 and Solid Bodies(1) return with the shaded solid",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 75,
+          "step": "the subsequent Measure result lists two extrusion edges of length 8.000 mm",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/solid-model/extrusion/extrusion.feature",
+      "scenario": "extrusion-07 Edit Feature accepts positive taper",
+      "line": 78,
+      "classification": "unbound step",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 6,
+          "step": "the MCAD Software is displaying a part in the solid modeling workspace",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 7,
+          "step": "the viewport pointer is idle",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 79,
+          "step": "the accepted untapered Extrusion1",
+          "result": "unbound",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 80,
+          "step": "Edit Feature is chosen from its browser context menu",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 81,
+          "step": "Distance A is retained as 8 mm and Taper A as zero degrees",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 82,
+          "step": "Taper A is replaced with 5 and OK is clicked",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 83,
+          "step": "the edited solid visibly widens toward the far end",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/solid-model/extrusion/extrusion.feature",
+      "scenario": "extrusion-08 Taper history retains accepted value",
+      "line": 86,
+      "classification": "unbound step",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 6,
+          "step": "the MCAD Software is displaying a part in the solid modeling workspace",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 7,
+          "step": "the viewport pointer is idle",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 87,
+          "step": "Extrusion1 has accepted positive taper of 5 degrees",
+          "result": "unbound",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 88,
+          "step": "Undo then Redo are invoked and Edit Feature is opened",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 89,
+          "step": "the widening shape returns and Taper A shows 5 degrees",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/solid-model/extrusion/extrusion.feature",
+      "scenario": "extrusion-09 Cancel reversed taper edit",
+      "line": 92,
+      "classification": "unbound step",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 6,
+          "step": "the MCAD Software is displaying a part in the solid modeling workspace",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 7,
+          "step": "the viewport pointer is idle",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 93,
+          "step": "Edit Feature with Taper A 5 degrees",
+          "result": "unbound",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 94,
+          "step": "its sign control is clicked",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 95,
+          "step": "Taper A shows -5 degrees and the preview narrows",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 96,
+          "step": "Cancel is clicked and Edit Feature is reopened",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 97,
+          "step": "the retained value is positive 5 degrees",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/solid-model/extrusion/extrusion.feature",
+      "scenario": "extrusion-10 Reference selectors require input",
+      "line": 100,
+      "classification": "unbound step",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 6,
+          "step": "the MCAD Software is displaying a part in the solid modeling workspace",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 7,
+          "step": "the viewport pointer is idle",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 101,
+          "step": "a sketch-plane start and numeric distance",
+          "result": "unbound",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 102,
+          "step": "the From reference control is activated",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 103,
+          "step": "missing From and To references show Select Face",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 104,
+          "step": "OK is disabled without a shaded solid preview",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 105,
+          "step": "the reference control is restored",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 106,
+          "step": "Sketch Plane and the numeric distance preview return",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/solid-model/extrusion/extrusion.feature",
+      "scenario": "extrusion-11 Termination selection displays a To reference",
+      "line": 109,
+      "classification": "unbound step",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 6,
+          "step": "the MCAD Software is displaying a part in the solid modeling workspace",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 7,
+          "step": "the viewport pointer is idle",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 110,
+          "step": "the numeric Distance A extrusion preview",
+          "result": "unbound",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 111,
+          "step": "the user activates the termination control",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 112,
+          "step": "a To reference selector appears",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 113,
+          "step": "no reference means disabled OK",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/solid-model/extrusion/extrusion.feature",
+      "scenario": "extrusion-12 Distance tolerance dialog can be inspected and cancelled",
+      "line": 116,
+      "classification": "unbound step",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 6,
+          "step": "the MCAD Software is displaying a part in the solid modeling workspace",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 7,
+          "step": "the viewport pointer is idle",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 117,
+          "step": "Edit Feature with Distance A 8 mm",
+          "result": "unbound",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 118,
+          "step": "Tolerance is opened from its dropdown",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 119,
+          "step": "Model Value is 8.000 mm and Type is Default",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 120,
+          "step": "Precision, evaluated-size controls, Upper and Lower fields, Hole and Shaft fields are visible",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 121,
+          "step": "the Type list is opened",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 122,
+          "step": "it offers Default, Basic, Symmetric, Deviation, Limits-Stacked, Limits-Linear, MAX, MIN, Limits/Fits-Stacked, Limits/Fits-Linear, Limits/Fits-Show Size Limits and Limits/Fits-Show Tolerance",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 123,
+          "step": "the Type list is dismissed and Cancel is clicked",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 124,
+          "step": "the extrusion panel remains at Distance A 8 mm",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/solid-model/extrusion/extrusion.feature",
+      "scenario": "extrusion-12a Inspect the Distance A editor menu",
+      "line": 127,
+      "classification": "unbound step",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 6,
+          "step": "the MCAD Software is displaying a part in the solid modeling workspace",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 7,
+          "step": "the viewport pointer is idle",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 128,
+          "step": "Edit Feature is open for an existing extrusion",
+          "result": "unbound",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 129,
+          "step": "the user opens the Distance A editor menu",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 130,
+          "step": "it offers Measure, Select Feature Dimension, Parameters, Tolerance and List Parameters",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 131,
+          "step": "the user chooses List Parameters",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 132,
+          "step": "a list of parameters available in the active part appears",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 133,
+          "step": "the user dismisses the list and clicks Cancel",
+          "result": "failed",
+          "tainted": true,
+          "detail": "expected \"Wheel Opacity\" in rendered text \"W\\nP\\nZ\\nv\\nO\\nv\\nFRONT\\nModel\\nMaterialBrow\\u{85}\\nAppearanceBr\\u{85}\\nMenu\\nSearch\\nPart1<Primary>\\nRepresentations\\nModelState\\n<Primary>\\n1\\nView\\n<Primary>\\nOrigin\\nYZPlane\\nXZPlane\\nXYPlane\\nXAxis\\nYAxis\\nZAxis\\nCenterPoint\\nParameters\\nSketches\\nFeatures\\nEndofPart\\nABS(Black)\\nAppearance\\nAssigntopart\\nClose\\nReady\\nRibbonDisplay\\nv\\nv\\n...\\nPart1\\nFile\\n3DModel\\nSketch\\nTools\\nManage\\nView\\nAnnotate\\nStart2DSketch\\nSketch\\nExtrude\\nRevolve\\nCreate\\nHole\\nFillet\\nChamfer\\nShell\\nModifyv\\nPlane\\nv\\nAxis\\nPoint\\nUCS\\nWorkFeatures\\nRectangular\\nCircular\\nPattern\\nSimplify\\nSimplificationv\\nHome\\nPart1<Primary>*\\nDocuments\\nX\\nY\\nZ\""
+        },
+        {
+          "line": 134,
+          "step": "the extrusion edit closes without changing the feature",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/solid-model/extrusion/extrusion.feature",
+      "scenario": "extrusion-12b Select Feature Dimension prompts for a feature",
+      "line": 137,
+      "classification": "unbound step",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 6,
+          "step": "the MCAD Software is displaying a part in the solid modeling workspace",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 7,
+          "step": "the viewport pointer is idle",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 138,
+          "step": "Edit Feature is open for an existing extrusion",
+          "result": "unbound",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 139,
+          "step": "the user opens the Distance A editor menu and chooses Select Feature Dimension",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 140,
+          "step": "the status area asks the user to select a feature and then one of its dimensions",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 141,
+          "step": "the user cancels the extrusion edit",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 142,
+          "step": "the accepted feature remains unchanged",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/solid-model/extrusion/extrusion.feature",
+      "scenario": "extrusion-12c Parameters opens the part parameter table",
+      "line": 145,
+      "classification": "unbound step",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 6,
+          "step": "the MCAD Software is displaying a part in the solid modeling workspace",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 7,
+          "step": "the viewport pointer is idle",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 146,
+          "step": "Edit Feature is open for an existing extrusion",
+          "result": "unbound",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 147,
+          "step": "the user opens the Distance A editor menu and chooses Parameters",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 148,
+          "step": "a Parameters dialog opens for the active part",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 149,
+          "step": "the table includes parameter name, consumed-by, unit or type, equation, nominal value, tolerance and model value columns",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 150,
+          "step": "the user clicks Done",
+          "result": "failed",
+          "tainted": true,
+          "detail": "expected \"Done\" in rendered text \"W\\nP\\nZ\\nv\\nO\\nv\\nFRONT\\nModel\\nMaterialBrow\\u{85}\\nAppearanceBr\\u{85}\\nMenu\\nSearch\\nPart1<Primary>\\nRepresentations\\nModelState\\n<Primary>\\n1\\nView\\n<Primary>\\nOrigin\\nYZPlane\\nXZPlane\\nXYPlane\\nXAxis\\nYAxis\\nZAxis\\nCenterPoint\\nParameters\\nSketches\\nFeatures\\nEndofPart\\nABS(Black)\\nAppearance\\nAssigntopart\\nClose\\nReady\\nRibbonDisplay\\nv\\nv\\n...\\nPart1\\nFile\\n3DModel\\nSketch\\nTools\\nManage\\nView\\nAnnotate\\nStart2DSketch\\nSketch\\nExtrude\\nRevolve\\nCreate\\nHole\\nFillet\\nChamfer\\nShell\\nModifyv\\nPlane\\nv\\nAxis\\nPoint\\nUCS\\nWorkFeatures\\nRectangular\\nCircular\\nPattern\\nSimplify\\nSimplificationv\\nHome\\nPart1<Primary>*\\nDocuments\\nX\\nY\\nZ\""
+        },
+        {
+          "line": 151,
+          "step": "the extrusion panel remains open",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 152,
+          "step": "the user clicks Cancel",
+          "result": "failed",
+          "tainted": true,
+          "detail": "expected a window \"Customize\""
+        },
+        {
+          "line": 153,
+          "step": "the accepted feature remains unchanged",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/solid-model/extrusion/extrusion.feature",
+      "scenario": "extrusion-13 Join adds a boss to one body",
+      "line": 156,
+      "classification": "unbound step",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 6,
+          "step": "the MCAD Software is displaying a part in the solid modeling workspace",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 7,
+          "step": "the viewport pointer is idle",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 157,
+          "step": "a diameter-3 circular sketch on the top face of the existing solid",
+          "result": "unbound",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 158,
+          "step": "Extrude uses Default direction, Distance A 8 mm, zero taper and Join",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 159,
+          "step": "OK is clicked",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 160,
+          "step": "a cylindrical boss and Extrusion2 are visible",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 161,
+          "step": "the browser still shows Solid Bodies(1)",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 162,
+          "step": "Undo is invoked",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 163,
+          "step": "Sketch2 returns and the boss disappears",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/solid-model/extrusion/extrusion.feature",
+      "scenario": "extrusion-14 New Solid creates a named second body",
+      "line": 166,
+      "classification": "unbound step",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 6,
+          "step": "the MCAD Software is displaying a part in the solid modeling workspace",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 7,
+          "step": "the viewport pointer is idle",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 167,
+          "step": "the restored circular Sketch2 and existing Solid1",
+          "result": "unbound",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 168,
+          "step": "Extrude uses New Solid with Distance A 8 mm and zero taper",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 169,
+          "step": "Body Name is replaced with b and OK is clicked",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 170,
+          "step": "the browser shows Solid Bodies(2)",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 171,
+          "step": "expanding it shows Solid1 and b",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/solid-model/extrusion/extrusion.feature",
+      "scenario": "extrusion-15 Cut selects inward direction and supports history",
+      "line": 174,
+      "classification": "unbound step",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 6,
+          "step": "the MCAD Software is displaying a part in the solid modeling workspace",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 7,
+          "step": "the viewport pointer is idle",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 175,
+          "step": "the diameter-3 circle on the base top face",
+          "result": "unbound",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 176,
+          "step": "Extrude opens in Default direction and Cut is selected",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 177,
+          "step": "Direction changes to Flipped and the preview shows an opening",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 178,
+          "step": "OK is clicked with Distance A 8 mm and zero taper",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 179,
+          "step": "Extrusion2 and the opening are retained in one solid body",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 180,
+          "step": "Undo then Redo are invoked",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 181,
+          "step": "the opening disappears then returns",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/solid-model/extrusion/extrusion.feature",
+      "scenario": "extrusion-16 Intersect retains the circular common region",
+      "line": 184,
+      "classification": "unbound step",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 6,
+          "step": "the MCAD Software is displaying a part in the solid modeling workspace",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 7,
+          "step": "the viewport pointer is idle",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 185,
+          "step": "the base and restored circular Sketch2",
+          "result": "unbound",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 186,
+          "step": "Intersect is selected in Extrude",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 187,
+          "step": "Direction changes to Flipped and a cylindrical region is previewed",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 188,
+          "step": "OK is clicked with Distance A 8 mm and zero taper",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 189,
+          "step": "the cylinder replaces the visible rectangular base result",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 190,
+          "step": "the browser retains one solid body",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 191,
+          "step": "Undo then Redo are invoked",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 192,
+          "step": "the base returns then the cylinder returns",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/solid-model/extrusion/extrusion.feature",
+      "scenario": "extrusion-17 Measure identifies intersection diameter",
+      "line": 195,
+      "classification": "unbound step",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 6,
+          "step": "the MCAD Software is displaying a part in the solid modeling workspace",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 7,
+          "step": "the viewport pointer is idle",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 196,
+          "step": "the accepted Intersect result after Redo",
+          "result": "unbound",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 197,
+          "step": "its top face and cylindrical face are selected in Measure",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 198,
+          "step": "the top face area is 7.069 square mm",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 199,
+          "step": "the cylindrical face diameter is 3.000 mm and radius 1.500 mm",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/solid-model/extrusion/extrusion.feature",
+      "scenario": "extrusion-18 Auxiliary extent changes preview and accepts a cut",
+      "line": 202,
+      "classification": "unbound step",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 6,
+          "step": "the MCAD Software is displaying a part in the solid modeling workspace",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 7,
+          "step": "the viewport pointer is idle",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 203,
+          "step": "the circular profile on the existing solid",
+          "result": "unbound",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 204,
+          "step": "the first auxiliary extent icon beside Distance A is clicked",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 205,
+          "step": "direction shows Flipped and Boolean shows Cut",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 206,
+          "step": "the displayed distance is parenthesized",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 207,
+          "step": "OK is clicked",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 208,
+          "step": "the opening is retained",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 209,
+          "step": "Undo is invoked",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 210,
+          "step": "Sketch2 and the uncut top face return",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/solid-model/extrusion/extrusion.feature",
+      "scenario": "extrusion-19 Surface output retains separate surface entry",
+      "line": 213,
+      "classification": "unbound step",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 6,
+          "step": "the MCAD Software is displaying a part in the solid modeling workspace",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 7,
+          "step": "the viewport pointer is idle",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 214,
+          "step": "the circular extrusion preview displaying Distance A 10 mm",
+          "result": "unbound",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 215,
+          "step": "the output-type icon is clicked",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 216,
+          "step": "input shows 1 Curve and Body Name shows Srf1",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 217,
+          "step": "OK is clicked",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 218,
+          "step": "ExtrusionSrf1 and Surface Bodies(1) appear beside Solid Bodies(1)",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 219,
+          "step": "Undo then Redo are invoked",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 220,
+          "step": "the surface disappears then returns",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/solid-model/extrusion/extrusion.feature",
+      "scenario": "extrusion-20 Dimension pick can change the active distance expression",
+      "line": 223,
+      "classification": "unbound step",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 6,
+          "step": "the MCAD Software is displaying a part in the solid modeling workspace",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 7,
+          "step": "the viewport pointer is idle",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 224,
+          "step": "two disjoint closed loops and one rectangle selected for extrusion",
+          "result": "unbound",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 225,
+          "step": "the user opens the Distance A editor menu and chooses Measure",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 226,
+          "step": "the status area asks the user to select a dimension to reference the parameter",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 227,
+          "step": "the circle dimension annotation is picked",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 228,
+          "step": "Distance A references d2 instead of adding another profile",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 229,
+          "step": "a later pick produces invalid d2d2 and disabled OK",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 230,
+          "step": "Cancel is clicked",
+          "result": "failed",
+          "tainted": true,
+          "detail": "expected \"Cancel\" in rendered text \"W\\nP\\nZ\\nv\\nO\\nv\\nFRONT\\nModel\\nMaterialBrow\\u{85}\\nAppearanceBr\\u{85}\\nMenu\\nSearch\\nPart1<Primary>\\nRepresentations\\nModelState\\n<Primary>\\n1\\nView\\n<Primary>\\nOrigin\\nYZPlane\\nXZPlane\\nXYPlane\\nXAxis\\nYAxis\\nZAxis\\nCenterPoint\\nParameters\\nSketches\\nFeatures\\nEndofPart\\nABS(Black)\\nAppearance\\nAssigntopart\\nClose\\nReady\\nRibbonDisplay\\nv\\nv\\n...\\nPart1\\nFile\\n3DModel\\nSketch\\nTools\\nManage\\nView\\nAnnotate\\nStart2DSketch\\nSketch\\nExtrude\\nRevolve\\nCreate\\nHole\\nFillet\\nChamfer\\nShell\\nModifyv\\nPlane\\nv\\nAxis\\nPoint\\nUCS\\nWorkFeatures\\nRectangular\\nCircular\\nPattern\\nSimplify\\nSimplificationv\\nHome\\nPart1<Primary>*\\nDocuments\\nX\\nY\\nZ\""
+        },
+        {
+          "line": 231,
+          "step": "no new extrusion is accepted",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/solid-model/extrusion/extrusion.feature",
+      "scenario": "extrusion-21 Hide Presets controls preset-row visibility",
+      "line": 234,
+      "classification": "unbound step",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 6,
+          "step": "the MCAD Software is displaying a part in the solid modeling workspace",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 7,
+          "step": "the viewport pointer is idle",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 235,
+          "step": "Extrusion with Hide Presets checked",
+          "result": "unbound",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 236,
+          "step": "Hide Presets is unchecked from the panel menu",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 237,
+          "step": "the No Preset row, plus and gear controls appear",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 238,
+          "step": "the preset gear menu is inspected and dismissed",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 239,
+          "step": "Hide Presets is restored",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 240,
+          "step": "the preset row disappears",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/solid-model/extrusion/extrusion.feature",
+      "scenario": "extrusion-22 Change and flip an asymmetric preview",
+      "line": 243,
+      "classification": "unbound step",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 6,
+          "step": "the MCAD Software is displaying a part in the solid modeling workspace",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 7,
+          "step": "the viewport pointer is idle",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 244,
+          "step": "the extrusion is edited with Asymmetric direction",
+          "result": "unbound",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 245,
+          "step": "Distance A is 8 mm and Distance B is 4 mm",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 246,
+          "step": "Distance B is changed to 6 mm",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 247,
+          "step": "the lower preview displays a 6 mm dimension",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 248,
+          "step": "the flip control beside Distance B is clicked",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 249,
+          "step": "Distance A displays 6 mm and Distance B displays 8 mm",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 250,
+          "step": "the displayed taper values exchange between A and B",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/solid-model/extrusion/extrusion.feature",
+      "scenario": "extrusion-23 Cancel a failed edit in the dependent part",
+      "line": 253,
+      "classification": "unbound step",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 6,
+          "step": "the MCAD Software is displaying a part in the solid modeling workspace",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 7,
+          "step": "the viewport pointer is idle",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 254,
+          "step": "Extrusion1 is edited in the Part9 with downstream Fillet1 and Sketch3",
+          "result": "unbound",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 255,
+          "step": "Asymmetric is selected with distances 8 mm and 4 mm and OK is clicked",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 256,
+          "step": "the MCAD Software reports that editing the extrusion failed",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 257,
+          "step": "the expanded update details list Fillet1 and Sketch3 problems",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 258,
+          "step": "Cancel is clicked in the error dialog",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 259,
+          "step": "the dialog closes and the part is displayed again",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/solid-model/extrusion/extrusion.feature",
+      "scenario": "extrusion-24 Match Shape is disabled for the captured feature",
+      "line": 262,
+      "classification": "unbound step",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 6,
+          "step": "the MCAD Software is displaying a part in the solid modeling workspace",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 7,
+          "step": "the viewport pointer is idle",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 263,
+          "step": "Edit Feature is open for the captured solid extrusion",
+          "result": "unbound",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 264,
+          "step": "Match Shape is visible and disabled",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 265,
+          "step": "Cancel is clicked",
+          "result": "failed",
+          "tainted": true,
+          "detail": "expected \"Cancel\" in rendered text \"W\\nP\\nZ\\nv\\nO\\nv\\nFRONT\\nModel\\nMaterialBrow\\u{85}\\nAppearanceBr\\u{85}\\nMenu\\nSearch\\nPart1<Primary>\\nRepresentations\\nModelState\\n<Primary>\\n1\\nView\\n<Primary>\\nOrigin\\nYZPlane\\nXZPlane\\nXYPlane\\nXAxis\\nYAxis\\nZAxis\\nCenterPoint\\nParameters\\nSketches\\nFeatures\\nEndofPart\\nABS(Black)\\nAppearance\\nAssigntopart\\nClose\\nReady\\nRibbonDisplay\\nv\\nv\\n...\\nPart1\\nFile\\n3DModel\\nSketch\\nTools\\nManage\\nView\\nAnnotate\\nStart2DSketch\\nSketch\\nExtrude\\nRevolve\\nCreate\\nHole\\nFillet\\nChamfer\\nShell\\nModifyv\\nPlane\\nv\\nAxis\\nPoint\\nUCS\\nWorkFeatures\\nRectangular\\nCircular\\nPattern\\nSimplify\\nSimplificationv\\nHome\\nPart1<Primary>*\\nDocuments\\nX\\nY\\nZ\""
+        },
+        {
+          "line": 266,
+          "step": "the accepted feature remains unchanged",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/solid-model/extrusion/extrusion.feature",
+      "scenario": "extrusion-live-01 Reopen Extrusion1 and cancel its edit",
+      "line": 269,
+      "classification": "excluded: capture only",
+      "setup_error": "capture only",
+      "steps": [
+        {
+          "line": 6,
+          "step": "the MCAD Software is displaying a part in the solid modeling workspace",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 7,
+          "step": "the viewport pointer is idle",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 270,
+          "step": "the captured Part7 document contains Extrusion1 and one solid body",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 271,
+          "step": "the user double-clicks Extrusion1 in the model browser",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 272,
+          "step": "the Extrusion panel restores 1 Profile from 1 Sketch Plane",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 273,
+          "step": "Distance A is 20 mm and the body name is Solid1",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 274,
+          "step": "Taper A is 0 degrees with Match Shape checked and disabled",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 275,
+          "step": "a 20 mm viewport preview appears",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 276,
+          "step": "the user cancels the edit",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 277,
+          "step": "the panel closes and the committed solid remains unchanged",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    }
+  ]
+}

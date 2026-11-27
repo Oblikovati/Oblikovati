@@ -1,0 +1,4 @@
+Surface 5, Blank drawing: position: (135, 266) -> (1575, 1166)
+Surface 526, Blank drawing: position: (105, 595) -> (745, 1075)
+Surface 5, PartOne <Primary>: position: (135, 266) -> (1575, 1166)
+Surface 5, PartTwo <Primary>: position: (135, 266) -> (1575, 1166)

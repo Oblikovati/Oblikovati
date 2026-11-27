@@ -1,0 +1,24 @@
+diff --git a/crates/cli/src/main.rs b/crates/cli/src/main.rs
+index 9fc2e120c..47ad89921 100644
+--- a/crates/cli/src/main.rs
++++ b/crates/cli/src/main.rs
+@@ -17,7 +17,7 @@ fn main() -> ExitCode {
+     ) {
+         Ok(()) => ExitCode::SUCCESS,
+         Err(error) => {
+-            eprintln!("{error}");
++            eprintln!("CLI failure: {error}");
+             ExitCode::FAILURE
+         }
+     }
+@@ -27,8 +27,9 @@ fn worker_exit() -> ExitCode {
+     match oblikovati_script::worker_stdio() {
+         Ok(()) => ExitCode::SUCCESS,
+         Err(error) => {
+-            eprintln!("{error}");
++            eprintln!("CLI failure: {error}");
+             ExitCode::FAILURE
+         }
+     }
+ }
++

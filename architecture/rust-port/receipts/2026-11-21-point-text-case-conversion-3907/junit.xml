@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Text: mnt/vininas-projects/MCAD-Scenarios/features/sketch/text/scenario.feature" package="testsuite/Feature: Text: mnt/vininas-projects/MCAD-Scenarios/features/sketch/text/scenario.feature" tests="1" errors="0" failures="1" hostname="localhost" timestamp="2026-11-21T10:58:01.457958343Z" time="44.583617705"><testcase name="Scenario: text-25 Compare selected and unselected case conversion: mnt/vininas-projects/MCAD-Scenarios/features/sketch/text/scenario.feature:242:3" time="44.583617705"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: text-25 Compare selected and unselected case conversion
+   ✔  Given existing lowercase ab is unselected
+   ✔  When the user chooses UPPERCASE
+   ✔  Then the lowercase content remains
+   ✔  When the user focuses and select the content and choose UPPERCASE
+   ✔  Then AB appears in the editor and preview
+   ✘  When the user enables strike-through
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/sketch/text/scenario.feature:248:5
+      Step doesn't match any function
+]]></system-out></testcase></testsuite></testsuites>

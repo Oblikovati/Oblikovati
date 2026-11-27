@@ -1,0 +1,449 @@
+// SPDX-License-Identifier: GPL-2.0-only
+//! Document-opening scenarios on the panes around the list: its views, order and folders.
+use super::*;
+
+#[path = "folder_reopening.rs"]
+mod folder_reopening;
+
+const CHILD_FOLDER: &str = "brackets";
+const NATIVE_CHILD: &str = "NativeChild";
+const NAVIGATION_PART: &str = "Navigation-Part.opd";
+const NAVIGATION_PATH: &str =
+    "document-opening/folder-navigation/NativeParent/NativeChild/Navigation-Part.opd";
+/// Larger than the fixture's documents, for a row that sorts first by size.
+const LARGE_FILE_BYTES: usize = 500_000;
+const LARGE_FILE: &str = "archive.odd";
+const SORT_FILES: [&str; 3] = [
+    "OpenSortSmall.opd",
+    "OpenSortMedium.opd",
+    "OpenSortLarge.opd",
+];
+
+fn rows_in_order(world: &ApplicationWorld, names: &[&str]) -> Vec<String> {
+    let listing = super::super::diagnostics::child_scroll("Open", "##folder-listing")
+        .expect("expected the Open file listing")
+        .list;
+    let mut rows: Vec<_> = world
+        .frame
+        .runs
+        .iter()
+        .filter(|run| run.list == listing && names.contains(&run.text.as_str()))
+        .map(|run| (run.center()[1], run.text.clone()))
+        .collect();
+    rows.sort_by(|first, second| first.0.total_cmp(&second.0));
+    rows.into_iter().map(|(_, text)| text).collect()
+}
+// Navigation panes
+#[given("its project navigation pane shows libraries and recent folders")]
+#[then("libraries and recent folders are displayed again")]
+fn project_pane(world: &mut ApplicationWorld) {
+    world.expect_text("Libraries");
+    world.expect_text("Recent Folders");
+}
+#[when("I switch to the system folder navigation pane")]
+#[when("the user switches to the system folder navigation pane")]
+fn system_pane(world: &mut ApplicationWorld) {
+    world.click_text("Locations");
+    settle(world);
+}
+#[then("common system locations are displayed in the navigation pane")]
+fn system_rows(world: &mut ApplicationWorld) {
+    world.expect_text("System Locations");
+    world.expect_text("Computer");
+}
+#[when("I switch back to the project navigation pane")]
+#[when("the user switches back to the project navigation pane")]
+fn back_project(world: &mut ApplicationWorld) {
+    world.click_text("Recent");
+    settle(world);
+}
+// File views
+#[when("I choose the thumbnail view control")]
+#[when("the user chooses the thumbnail view control")]
+fn tiles_control(world: &mut ApplicationWorld) {
+    world.click_text("Tiles");
+    settle(world);
+}
+#[then("files are displayed as thumbnail tiles")]
+fn shown_as_tiles(world: &mut ApplicationWorld) {
+    world.expect_no_text("Date modified");
+}
+#[when("I choose the details view control")]
+#[when("the user chooses the details view control")]
+fn details_control(world: &mut ApplicationWorld) {
+    let at = world
+        .frame
+        .runs
+        .iter()
+        .find(|run| run.text == "Details")
+        .expect("expected the view control")
+        .center();
+    world.click(at.map(|value| value as i32));
+    settle(world);
+}
+#[then("files are displayed in rows with Name, Date modified, Type and Size columns")]
+fn shown_as_rows(world: &mut ApplicationWorld) {
+    for column in ["Name", "Date modified", "Type", "Size"] {
+        world.expect_text(column);
+    }
+}
+// Size order
+#[given("the detailed file list contains files of different sizes")]
+fn different_sizes(world: &mut ApplicationWorld) {
+    let folder = models_folder(world);
+    std::fs::write(folder.join(LARGE_FILE), vec![b'x'; LARGE_FILE_BYTES]).unwrap();
+}
+#[given("the file list is sorted by decreasing size")]
+fn sorted_down(world: &mut ApplicationWorld) {
+    world.click_text("Size");
+    settle(world);
+    if published_sort_name(world).is_some() {
+        assert_eq!(
+            rows_in_order(world, &SORT_FILES),
+            [SORT_FILES[2], SORT_FILES[1], SORT_FILES[0]]
+        );
+        return;
+    }
+    let rows = rows_in_order(world, &[PART_FILE, LARGE_FILE]);
+    assert_eq!(rows[0], LARGE_FILE, "largest first");
+}
+#[then("the file list is sorted by increasing size")]
+fn sorted_up(world: &mut ApplicationWorld) {
+    if published_sort_name(world).is_some() {
+        assert_eq!(rows_in_order(world, &SORT_FILES), SORT_FILES);
+        return;
+    }
+    let rows = rows_in_order(world, &[PART_FILE, LARGE_FILE]);
+    assert_eq!(rows[0], PART_FILE, "smallest first");
+}
+
+pub(super) fn published_sort_name(world: &ApplicationWorld) -> Option<&'static str> {
+    world
+        .saved_path
+        .as_ref()
+        .filter(|path| path.ends_with(SORT_FILES[2]))?;
+    Some(SORT_FILES[2])
+}
+
+#[given("OpenSortLarge.opd is selected with its file name and preview displayed")]
+fn large_sort_file_selected(world: &mut ApplicationWorld) {
+    let path = published_entry::fixture("document-opening/OpenSortLarge.opd");
+    look_in(world, path.parent().unwrap());
+    select_row(world, SORT_FILES[2]);
+    expect_name_and_preview(world, SORT_FILES[2]);
+    world.saved_path = Some(path);
+}
+
+#[given(
+    "`fixtures/cad/document-opening/OpenSortSmall.opd`, `fixtures/cad/document-opening/OpenSortMedium.opd`, and `fixtures/cad/document-opening/OpenSortLarge.opd` are visible with distinct sizes"
+)]
+fn published_sort_sizes(world: &mut ApplicationWorld) {
+    let folder = world.saved_path.as_ref().unwrap().parent().unwrap();
+    let mut last_size = 0;
+    for name in SORT_FILES {
+        let row = world.run(name);
+        let size = folder.join(name).metadata().unwrap().len();
+        assert!(size > last_size, "expected a greater size for {name}");
+        last_size = size;
+        let rendered = format!("{size}B");
+        assert!(
+            world.frame.runs.iter().any(|run| {
+                run.list == row.list
+                    && (run.center()[1] - row.center()[1]).abs() < 4.
+                    && run.text == rendered
+            }),
+            "expected {rendered} in the size column for {name}"
+        );
+    }
+}
+// Folders
+fn child_folder(world: &mut ApplicationWorld) -> PathBuf {
+    let folder = models_folder(world).join(CHILD_FOLDER);
+    std::fs::create_dir_all(&folder).unwrap();
+    folder
+}
+fn folder_row(world: &ApplicationWorld) -> String {
+    let child = if navigation_variant(world) {
+        NATIVE_CHILD
+    } else {
+        CHILD_FOLDER
+    };
+    world
+        .frame
+        .runs
+        .iter()
+        .find(|run| run.text == format!("{child}/"))
+        .expect("expected the child folder's row")
+        .text
+        .clone()
+}
+
+fn navigation_variant(world: &ApplicationWorld) -> bool {
+    world.saved_path.as_ref().is_some_and(|path| {
+        path.ends_with(NAVIGATION_PART) || path.ends_with(folder_reopening::NAVIGATION_DRAWING)
+    })
+}
+
+fn navigation_part_name(world: &ApplicationWorld) -> &'static str {
+    if navigation_variant(world) {
+        NAVIGATION_PART
+    } else {
+        PART_FILE
+    }
+}
+
+#[given(
+    "the dialog starts in `fixtures/cad/document-opening/folder-navigation/NativeParent/NativeChild` with `Navigation-Part.opd` selected"
+)]
+fn native_navigation_child(world: &mut ApplicationWorld) {
+    published_preview::select_preview_path(world, published_entry::fixture(NAVIGATION_PATH));
+}
+
+#[given(
+    "`fixtures/cad/document-opening/folder-navigation/NativeParent` contains a `NativeChild` folder with `Navigation-Part.opd`"
+)]
+fn native_navigation_parent(world: &mut ApplicationWorld) {
+    native_navigation_child(world);
+    choose_up(world);
+    parent_lists_child(world);
+    name_retained(world);
+}
+#[given("a saved part with a preview is selected in a child folder")]
+fn part_in_child(world: &mut ApplicationWorld) {
+    cancel_dialog(world);
+    let folder = child_folder(world);
+    saved_part(world, &folder);
+    open_dialog(world);
+    look_in(world, &folder);
+    select_row(world, PART_FILE);
+}
+#[when("I choose Up to the parent folder")]
+#[when("the user chooses Up to the parent folder")]
+#[when("I navigate up to its parent folder")]
+#[when("the user navigates up to its parent folder")]
+fn choose_up(world: &mut ApplicationWorld) {
+    world.click_text("Up");
+    settle(world);
+}
+#[then("the parent folder contents are displayed")]
+#[then("the parent folder contents are displayed again")]
+fn parent_shown(world: &mut ApplicationWorld) {
+    folder_row(world);
+}
+#[then("the child folder is highlighted in the list")]
+#[then("the child folder is highlighted")]
+fn child_highlighted(world: &mut ApplicationWorld) {
+    let row = folder_row(world);
+    assert!(row_lit(world, &row), "expected the folder's accent");
+}
+#[then("the file name field retains the part name")]
+fn name_retained(world: &mut ApplicationWorld) {
+    let shown = file_name_shown(world);
+    let name = navigation_part_name(world);
+    assert!(shown.contains(name), "file name {shown:?}: expected {name}");
+}
+#[then("the preview area shows a placeholder for the selected folder")]
+fn folder_placeholder(world: &mut ApplicationWorld) {
+    expect_placeholder(world);
+}
+#[when("I choose Forward")]
+#[when("the user chooses Forward")]
+fn choose_forward(world: &mut ApplicationWorld) {
+    world.click_text("Forward");
+    settle(world);
+}
+#[then("the child folder contents are displayed again")]
+fn child_shown(world: &mut ApplicationWorld) {
+    world.expect_text(navigation_part_name(world));
+}
+#[then("the file name field and preview display the previously selected part")]
+fn previous_part(world: &mut ApplicationWorld) {
+    expect_name_and_preview(world, navigation_part_name(world));
+}
+#[given("the file name field retains the name of a part in a child folder")]
+fn retained_name(world: &mut ApplicationWorld) {
+    part_in_child(world);
+    choose_up(world);
+    // What a later step counts tabs against.
+    world.parts = world.state().documents.iter().map(|row| row.id).collect();
+}
+#[given("the parent folder displays that child folder")]
+fn parent_lists_child(world: &mut ApplicationWorld) {
+    folder_row(world);
+}
+#[when("I select the child folder in the file list")]
+#[when("the user selects the child folder in the file list")]
+fn select_child(world: &mut ApplicationWorld) {
+    let row = folder_row(world);
+    select_row(world, &row);
+}
+#[then("the dialog remains open and displays the child folder contents")]
+fn in_child(world: &mut ApplicationWorld) {
+    world.expect_text("Look in");
+    child_shown(world);
+}
+#[then("the file name field still contains the part name")]
+fn name_kept(world: &mut ApplicationWorld) {
+    name_retained(world);
+}
+#[then("the part preview is displayed")]
+fn part_preview(world: &mut ApplicationWorld) {
+    world.expect_no_text("No preview image");
+}
+// Maximize
+#[given("the Open dialog is open in the MCAD Software as a restored window")]
+fn restored_window(world: &mut ApplicationWorld) {
+    dialog_open(world);
+}
+fn dialog_geometry() -> ([f32; 2], [f32; 2]) {
+    super::super::diagnostics::window_geometry("Open").expect("expected the Open dialog")
+}
+#[when("I maximize the Open dialog")]
+#[when("the user maximizes the Open dialog")]
+fn maximize(world: &mut ApplicationWorld) {
+    world.open_dialog_restore_bounds = Some(dialog_geometry());
+    world.click_text("Maximize");
+    settle(world);
+    world.pump(Vec::new());
+}
+#[then("the dialog expands to fill the available screen")]
+fn fills_screen(_: &mut ApplicationWorld) {
+    let (position, size) = dialog_geometry();
+    assert!(
+        position == [0., 0.] && size[0] >= 1400. && size[1] >= 780.,
+        "dialog {position:?} {size:?}"
+    );
+}
+#[then("the file list, navigation pane, preview and bottom actions remain visible")]
+fn all_visible(world: &mut ApplicationWorld) {
+    for row in ["Libraries", "Name", "Open", "Cancel"] {
+        world.expect_text(row);
+    }
+    world.expect_no_text("No preview image");
+}
+#[when("I restore the Open dialog")]
+#[when("the user restores the Open dialog")]
+fn restore(world: &mut ApplicationWorld) {
+    world.click_text("Restore");
+    settle(world);
+    world.pump(Vec::new());
+}
+#[then("it returns to its previous window size and position")]
+fn restored_size(world: &mut ApplicationWorld) {
+    let earlier = world
+        .open_dialog_restore_bounds
+        .expect("expected the restored bounds");
+    assert_eq!(
+        dialog_geometry(),
+        earlier,
+        "expected the original position and size"
+    );
+}
+// File types
+#[given(
+    "`fixtures/cad/extrusion/extrusion-rect-8mm.opd` is selected with the native document filter active"
+)]
+fn native_filter_selected(world: &mut ApplicationWorld) {
+    published_preview::preview_target_selected(world);
+    assert!(holds_text(world, "All Documents (*.opd;*.oad;*.odd;*.ord)"));
+}
+
+#[when("I open the file-type filter list")]
+#[when("the user opens the file-type filter list")]
+fn open_type_list(world: &mut ApplicationWorld) {
+    let label = world.run("Files of type").clone();
+    world.click([label.maximum[0] as i32 + 60, label.center()[1] as i32]);
+    settle(world);
+}
+#[then("the list offers a combined native-document filter")]
+fn combined_filter(world: &mut ApplicationWorld) {
+    world.expect_text("All Documents");
+}
+#[then("it includes separate filters for assemblies, drawings, parts and presentations")]
+fn separate_filters(world: &mut ApplicationWorld) {
+    for row in [
+        "Assembly Files",
+        "Drawing Files",
+        "Part Files",
+        "Presentation Files",
+    ] {
+        assert!(holds_text(world, row), "expected {row} in the list");
+    }
+}
+#[then("additional file-format filters are visible")]
+fn other_filters(world: &mut ApplicationWorld) {
+    assert!(
+        holds_text(world, "STEP Files"),
+        "expected an exchange format in the list"
+    );
+}
+#[when("I dismiss the list without choosing a different filter")]
+#[when("the user dismisses the list without choosing a different filter")]
+fn dismiss_types(world: &mut ApplicationWorld) {
+    world.escape();
+    settle(world);
+}
+#[then("the previous file-type filter remains displayed")]
+fn filter_kept(world: &mut ApplicationWorld) {
+    world.expect_text("All Documents");
+}
+#[then("the selected part name and preview remain displayed")]
+#[then("the part name and preview remain displayed")]
+#[then("the part name and preview remain displayed behind the menu")]
+fn part_name_kept(world: &mut ApplicationWorld) {
+    super::part_stays_selected(world);
+}
+// The display menu
+#[given("files are displayed in Details view")]
+fn in_details(world: &mut ApplicationWorld) {
+    world.expect_text("Date modified");
+}
+#[given("a part name and preview are displayed")]
+fn name_and_preview(world: &mut ApplicationWorld) {
+    saved_part_selected_here(world);
+}
+fn saved_part_selected_here(world: &mut ApplicationWorld) {
+    cancel_dialog(world);
+    let folder = models_folder(world);
+    saved_part(world, &folder);
+    open_dialog(world);
+    look_in(world, &folder);
+    select_row(world, PART_FILE);
+}
+#[when("I open the file display menu")]
+#[when("the user opens the file display menu")]
+fn open_display(world: &mut ApplicationWorld) {
+    world.click_text("Display");
+    settle(world);
+}
+#[then("the menu offers extra large, large, medium and small icon sizes")]
+fn icon_rows(world: &mut ApplicationWorld) {
+    for row in [
+        "Extra Large Icons",
+        "Large Icons",
+        "Medium Icons",
+        "Small Icons",
+    ] {
+        world.expect_text(row);
+    }
+}
+#[then("it offers List, Details, Tiles and Content views")]
+fn view_rows(world: &mut ApplicationWorld) {
+    for row in ["List", "Tiles", "Content"] {
+        world.expect_text(row);
+    }
+}
+#[then("Details is indicated as the current view")]
+fn details_marked(world: &mut ApplicationWorld) {
+    assert!(world.checked("Details"), "expected Details marked");
+}
+#[when("I dismiss the menu without choosing another view")]
+#[when("the user dismisses the menu without choosing another view")]
+fn dismiss_display(world: &mut ApplicationWorld) {
+    world.escape();
+    settle(world);
+}
+#[then("the file list remains in Details view")]
+fn stays_details(world: &mut ApplicationWorld) {
+    world.expect_text("Date modified");
+}

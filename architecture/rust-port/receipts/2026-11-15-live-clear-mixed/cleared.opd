@@ -1,0 +1,333 @@
+schemaVersion: 3
+documentType: 1
+displayName: Part1
+previewPicture:
+  width: 64
+  height: 36
+  rgb: NjlANjlANjlANjlANjlANjlANjlANjlANjlANjlANjlANjlANjlANjlANjlANjlANjlANjlANjlANjlANjlANjlANjlANjlANjlANjlANjlANjlANjlANjlANjlANjlANjlANjlANjlANjlANjlANjlANjlANjlANjlANjlANjlANjlANjlANjlANjlANjlANjlANjlANjlANjlANjlANjlANjlANjlANjlANjlANjlANjlANjlANjlANjlANjlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlAlJWWNTlANTlANTlANTlANTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/hoyWhoyWhoyWhoyWhoyWNTg/NTg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/hoyWhoyWhoyWhoyWhoyWNDg/NDg/NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+houWhouWhouWhouWhouWlJWWNDc+Mzc9Mzc9Mzc9Mzc9Mzc9Mzc9Mzc9Mzc9Mzc9Mzc9Mzc9Mzc9Mzc9Mzc9Mzc9Mzc9Mzc9Mzc9Mzc9Mzc9Mzc9Mzc9Mzc9Mzc9Mzc9Mzc9Mzc9Mzc9Mzc9Mzc9Mzc9Mzc9Mzc9Mzc9Mzc9Mzc9Mzc9Mzc9Mzc9Mzc9Mzc9Mzc9Mzc9Mzc9Mzc9Mzc9Mzc9Mzc9Mzc9Mzc9Mzc9Mzc9Mzc9Mzc9Mzc9Mzc9Mzc9houVhouVhouVhouVhouVMzc9Mzc9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9houVhouVhouVhouVhouVMzY9MzY9MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjY+MjY+MjY+MjY+MjY+MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8cXJ0MjU8MjU8MjU8MjU8MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MDQ6MDQ6MDQ6MDQ6MDQ6MDQ6MDQ6MDQ6MDQ6MDQ6MDQ6MDQ6MDQ6MDQ6MDQ6MDQ6MDQ6MDQ6MDQ6MDQ6MDQ6MDQ6MDQ6MDQ6MDQ6MDQ6MDQ6MDQ6MDQ6MDQ6MDQ6MDQ6MDQ6MDQ6MDQ6MDQ6MDQ6MDQ6MDQ6MDQ6MDQ6MDQ6MDQ6MDQ6MDQ6MDQ6MDQ6MDQ6MDQ6MDQ6MDQ6MDQ6MDQ6MDQ6MDQ6MDQ6MDQ6MDQ6MDQ6MDQ6MDQ6MDQ6KioqMDQ6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6KioqMDM6LzM5LzM5LzM5LzM5LzM5LzM5LzM5LzM5LzM5LzM5LzM5LzM5LzM5LzM5LzM5LzM5LHC9LHC9LHC9LHC9LHC9LzM5LzM5LzM5LzM5LzM5LzM5LzM5LzM5LzM5LzM5LzM5LzM5LzM5LzM5LzM5LzM5LzM5LzM5LzM5LzM5LzM5LzM5LzM5LzM5LzM5LzM5LzM5LzM5LzM5LzM5LzM5LzM5LzM5LzM5LzM5LzM5LzM5LzM5LzM5LzM5LzM5KioqLzM5LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LHC9LHC9LHC9LHC9LHC9LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4KioqLzI4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LHC9LHC9LHC9LHC9LHC9LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4KioqLjE4LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LHC9LHC9LHC9LHC9LHC9LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3KioqLjE3LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LHC9LHC9LHC9LHC9LHC9LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2KioqLTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81KioqLC81Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky4zKy4zKy4zKy4zKy4zKy4zKy4zKy4zKy4zKy4zKy4zKy4zKy4zKy4zKy4zKy4zKy4zKy4zKy4zKy4zKy4zKy4zKy4zKy4zKy4zKy4zKy4zKy4zKy4zKy4zKy4zKy4zKy4zKy4zKy4zKy4zKy4zKy4zKy4zKy4zKy4zKy4zKy4zKy4zKy4zKy4zKy4zKy4zKy4zKy4zKy4zKy4zKy4zKy4zKy4zKy4zKy4zKy4zKy4zKy4zKy4zKy4zKioqKy4zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCowKCowKCowKCowKCowKCowKCowKCowKCowKCowKCowKCowKCowKCowKCowKCowKCowKCowKCowKCowKCowKCowKCowKCowKCowKCowKCowKCowKCowKCowKCowKCowKCowKCowKCowKCowKCowKCowKCowKCowKCowKCowKCowKCowKCowKCowKCowKCowKCowKCowKCowKCowKCowKCowKCowKCowKCowKCowKCowKCowKCowKCowKCowKCowJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJikuJikuJikuJikuJikuJikuJikuJikuJikuJikuJikuJikuJikuJikuJikuJikuJikuJikuJikuJikuJikuJikuJikuJikuJikuJikuJikuJikuJikuJikuJikuJikuJikuJikuJikuJikuJikuJikuJikuJikuJikuJikuJikuJikuJikuJikuJikuJikuJikuJikuJikuJikuJikuJikuJikuJikuJikuJikuJikuJikuJikuJikuJikuJikuJigtJigtJigtJigtJigtJigtJigtJigtJigtJigtJigtJigtJigtJigtJigtJigtJigtJigtJigtJigtJigtJigtJigtJigtJigtJigtJigtJigtJigtJigtJigtJigtJigtJigtJigtJigtJigtJigtJigtJigtJigtJigtJigtJigtJigtJigtJigtJigtJigtJigtJigtJigtJigtJigtJigtJigtJigtJigtJigtJigtJigtJigtJigtJigtJScsJScsJScsJScsJScsJScsJScsJScsJScsJScsJScsJScsJScsJScsJScsJScsJScsJScsJScsJScsJScsJScsJScsJScsJScsJScsJScsJScsJScsJScsJScsJScsJScsJScsJScsJScsJScsJScsJScsJScsJScsJScsJScsJScsJScsJScsJScsJScsJScsJScsJScsJScsJScsJScsJScsJScsJScsJScsJScsJScsJScsJScsJScsJScsJCcrJCcrJCcrJCcrJCcrJCcrJCcrJCcrJCcrJCcrJCcrJCcrJCcrJCcrJCcrJCcrJCcrJCcrJCcrJCcrJCcrJCcrJCcrJCcrJCcrJCcrJCcrJCcrJCcrJCcrJCcrJCcrJCcrJCcrJCcrJCcrJCcrJCcrJCcrJCcrJCcrJCcrJCcrJCcrJCcrJCcrJCcrJCcrJCcrJCcrJCcrJCcrJCcrJCcrJCcrJCcrJCcrJCcrJCcrJCcrJCcrJCcrJCcrJCcrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoICInICInICInICInICInICInICInICInICInICInICInICInICInICInICInICInICInICInICInICInICInICInICInICInICInICInICInICInICInICInICInICInICInICInICInICInICInICInICInICInICInICInICInICInICInICInICInICInICInICInICInICInICInICInICInICInICInICInICInICInICInICInICInICIn
+partModelStates:
+  members:
+  - id: 1
+    name: Primary
+  active: 1
+  scope: SingleMember
+model:
+  workPlanes:
+    recipe:
+      version: 16
+      features:
+      - id: 1
+        name: Extrusion1
+        definition:
+          version: 11
+          definition: !SketchPrism
+            version: 1
+            sketch: 1
+            selection:
+              outer:
+              - curve: 30
+                reversed: false
+              - curve: 31
+                reversed: false
+              - curve: 32
+                reversed: false
+              - curve: 33
+                reversed: false
+              holes: []
+            displacement:
+            - !Constant 0.0
+            - !Constant 0.0
+            - !Parameter 1
+        suppressed: false
+        condition: null
+        definition_reads:
+          keys:
+          - !Parameter 1
+          - !Parameter 8
+          - !Parameter 9
+          - !Sketch 1
+          unattributed: false
+      end_of_part: null
+    featureHighWater: 1
+  planarSketches:
+    recipe:
+      version: 5
+      sketches:
+      - id: 1
+        name: Sketch1
+        visible: false
+        plane:
+          origin:
+          - 0.0
+          - 0.0
+          - 0.0
+          x_axis:
+          - 1.0
+          - 0.0
+          - 0.0
+          y_axis:
+          - 0.0
+          - 1.0
+          - 0.0
+        plane_options:
+          version: 1
+          unit_deviation: 1e-9
+          angular_deviation: 1e-9
+        point_projections:
+        - anchor: 1
+          reference: Origin
+        geometry:
+          version: 12
+          points:
+          - id: 1
+            position:
+            - 0.0
+            - 0.0
+          - id: 26
+            position:
+            - 0.0
+            - 0.0
+          - id: 27
+            position:
+            - -1.9999999999992595
+            - 6.1193597852895745e-12
+          - id: 28
+            position:
+            - -1.999999999998802
+            - -1.9999999999889722
+          - id: 29
+            position:
+            - -1.3059959583396634e-27
+            - -1.9999999999862477
+          lines:
+          - id: 30
+            endpoints:
+            - 26
+            - 27
+          - id: 31
+            endpoints:
+            - 27
+            - 28
+          - id: 32
+            endpoints:
+            - 28
+            - 29
+          - id: 33
+            endpoints:
+            - 29
+            - 26
+          circles: []
+          arcs: []
+          ellipses: []
+          splines: []
+          offset_splines: []
+          defining_points:
+          - 26
+          - 27
+          - 28
+          - 29
+          constraints:
+          - id: 19
+            relation: !line_horizontal
+              line: 30
+          - id: 20
+            relation: !line_horizontal
+              line: 32
+          - id: 21
+            relation: !line_vertical
+              line: 31
+          - id: 22
+            relation: !line_vertical
+              line: 33
+          - id: 23
+            relation: !distance
+              points:
+              - 26
+              - 27
+              measure: horizontal
+              parameter: 8
+          - id: 24
+            relation: !distance
+              points:
+              - 27
+              - 28
+              measure: vertical
+              parameter: 9
+          - id: 25
+            relation: !coincident
+              points:
+              - 26
+              - 1
+          entity_order:
+          - 1
+          - 30
+          - 31
+          - 32
+          - 33
+          construction_curves: []
+          centerlines: []
+          dimension_placements:
+          - constraint: 23
+            position:
+            - -2.2272727272727284
+            - 1.090909090909091
+          - constraint: 24
+            position:
+            - -1.5272727272727284
+            - 0.390909090909091
+          reference_dimensions: []
+          dimension_limits: []
+    sketchHighWater: 1
+    entityHighWater: 33
+    constraintHighWater:
+      1: 25
+    dimensionNameOrdinals:
+      1: 8
+  properties: []
+  units:
+    angle: deg
+    angleFormat: decimal
+    anglePrecision: '2'
+    area: mm^2
+    length: mm
+    lengthFormat: decimal
+    lengthPrecision: '3'
+    mass: kg
+    time: s
+    volume: mm^3
+  parameters:
+  - name: size
+    kind: user
+    valueType: ''
+    expression: 20 mm
+    text: ''
+    bool: false
+    value: 0.0
+    unit: ''
+    comment: ''
+    key: false
+    export: false
+    precision: 0
+    hidden: false
+    displayFormat: decimal
+    renamed: false
+    disabledActions: []
+    expressionList: []
+    allowCustomValue: false
+    sortedValueList: false
+    customProperty:
+      propertyType: text
+      units: ''
+      precision: threeDecimalPlaces
+      showLeadingZeros: true
+      showTrailingZeros: false
+      showUnitsString: true
+    tolerance: null
+    modelValueType: ''
+  - name: d6
+    kind: model
+    expressionContext:
+      version: 1
+      category: length
+      bare_unit: mm
+    valueType: ''
+    expression: size
+    text: ''
+    bool: false
+    value: 0.0
+    unit: ''
+    comment: ''
+    key: false
+    export: false
+    precision: 0
+    hidden: false
+    displayFormat: decimal
+    renamed: false
+    disabledActions: []
+    expressionList: []
+    allowCustomValue: false
+    sortedValueList: false
+    customProperty:
+      propertyType: text
+      units: ''
+      precision: threeDecimalPlaces
+      showLeadingZeros: true
+      showTrailingZeros: false
+      showUnitsString: true
+    tolerance: null
+    modelValueType: ''
+  - name: d7
+    kind: model
+    expressionContext:
+      version: 1
+      category: length
+      bare_unit: mm
+    valueType: ''
+    expression: size
+    text: ''
+    bool: false
+    value: 0.0
+    unit: ''
+    comment: ''
+    key: false
+    export: false
+    precision: 0
+    hidden: false
+    displayFormat: decimal
+    renamed: false
+    disabledActions: []
+    expressionList: []
+    allowCustomValue: false
+    sortedValueList: false
+    customProperty:
+      propertyType: text
+      units: ''
+      precision: threeDecimalPlaces
+      showLeadingZeros: true
+      showTrailingZeros: false
+      showUnitsString: true
+    tolerance: null
+    modelValueType: ''
+  parameterGroups: []
+  parameterSettings:
+    linearStandardTolerance: ''
+    angularStandardTolerance: ''
+    useStandardTolerances: false
+    exportStandardTolerances: false
+    linearDimensionPrecision: 3
+    angularDimensionPrecision: 2
+    dimensionDisplayType: value
+    displayParameterAsExpression: false
+  derivedParameterTables: []
+  parameterIds:
+    d6: 8
+    d7: 9
+    size: 1
+  parameterHighWater: 9
+  materials:
+    appearances: []
+    materials: []
+    assignments:
+      partMaterial: ''
+      partAppearance: ''
+      bodyMaterial: {}
+      bodyAppearance: {}
+      faceAppearance:
+        ? 4f4b524b0201000000000000000100000036000000eba657c8caf642ae80146155d1ce4b010c00736b657463682d707269736d040073696465020001000000000000002100000000000000
+        : abs-black
+        ? 4f4b524b020100000000000000010000002f000000eba657c8caf642ae80146155d1ce4b010c00736b657463682d707269736d0500737461727401000100000000000000
+        : abs-black
+        ? 4f4b524b0201000000000000000100000036000000eba657c8caf642ae80146155d1ce4b010c00736b657463682d707269736d040073696465020001000000000000001e00000000000000
+        : abs-black
+        ? 4f4b524b0201000000000000000100000036000000eba657c8caf642ae80146155d1ce4b010c00736b657463682d707269736d040073696465020001000000000000001f00000000000000
+        : abs-black
+        ? 4f4b524b0201000000000000000100000036000000eba657c8caf642ae80146155d1ce4b010c00736b657463682d707269736d040073696465020001000000000000002000000000000000
+        : abs-black
+identity:
+  internalName: eba657c8-caf6-42ae-8014-6155d1ce4b01
+  revisionId: 04f337bd-7f00-46c8-b969-a71eda0d3956
+  databaseRevisionId: 51fc6d3a-d7a0-4242-8efc-b38ddac00e40
+  saveCounter: 3
+  versionCreated: 0.1.0-dev
+  versionSaved: 0.1.0-dev
+  modelDigest: 8a9824b0e42965f6a15760a9d74d04ba57b308d0d5b528d518f6fefe87322b51

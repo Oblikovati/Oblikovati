@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Recent documents on Home: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature" package="testsuite/Feature: Recent documents on Home: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T01:10:39.84910343Z" time="16.087204175"><testcase name="Scenario: Filter recent documents by assembly type and clears the filter: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature:52:3" time="16.087204175"><system-out><![CDATA[  Scenario: Filter recent documents by assembly type and clears the filter
+   ✔  Given the MCAD Software starts with an isolated Recent profile prepared from a disposable copy of `fixtures/cad/home-recent-native`
+   ✔  And the Home workspace is active in the MCAD Software
+   ✔  And recent parts and assemblies are available
+   ✔  And no recent-document filters are active
+   ✔  When the user opens Filter and selects Assembly
+   ✔  Then the recent list displays assembly documents
+   ✔  And the filter control indicates one active filter
+   ✔  When the user chooses Clear filters
+   ✔  Then the Assembly filter is unchecked
+   ✔  And recent parts and assemblies are displayed again
+]]></system-out></testcase></testsuite></testsuites>

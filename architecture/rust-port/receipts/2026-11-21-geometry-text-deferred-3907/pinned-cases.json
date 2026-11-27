@@ -1,0 +1,266 @@
+{
+  "kind": "diagnostic only; not acceptance",
+  "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+  "feature_sha256": "12d091195f3105e430e7a622fea4b59a80e95edbbe27a469a2ebda39a65d225b",
+  "application_commit": "297d374f335af1155e5b15cd7e5ef0d0df53156f",
+  "scenarios": [
+    {
+      "line": 5,
+      "scenario": "geometry-text-01 Accept the arc direction without separate Update",
+      "classification": "unbound step",
+      "step_counts": {
+        "passed": 1,
+        "unbound": 5
+      },
+      "first_unbound": {
+        "line": 7,
+        "step": "an editable sketch with an eligible line or arc path"
+      }
+    },
+    {
+      "line": 14,
+      "scenario": "geometry-text-02 Observe a text-glyph click during path selection",
+      "classification": "unbound step",
+      "step_counts": {
+        "passed": 1,
+        "unbound": 6
+      },
+      "first_unbound": {
+        "line": 16,
+        "step": "an editable sketch with an eligible line or arc path"
+      }
+    },
+    {
+      "line": 24,
+      "scenario": "geometry-text-03 Cancel entered content before Update",
+      "classification": "unbound step",
+      "step_counts": {
+        "passed": 1,
+        "unbound": 4
+      },
+      "first_unbound": {
+        "line": 26,
+        "step": "an editable sketch with an eligible line or arc path"
+      }
+    },
+    {
+      "line": 32,
+      "scenario": "geometry-text-04 Step through arc Update history",
+      "classification": "unbound step",
+      "step_counts": {
+        "passed": 1,
+        "unbound": 6
+      },
+      "first_unbound": {
+        "line": 34,
+        "step": "an editable sketch with an eligible line or arc path"
+      }
+    },
+    {
+      "line": 42,
+      "scenario": "geometry-text-05 Start a separate arc text after editing formatted line text",
+      "classification": "unbound step",
+      "step_counts": {
+        "passed": 1,
+        "unbound": 7
+      },
+      "first_unbound": {
+        "line": 44,
+        "step": "an editable sketch with an eligible line or arc path"
+      }
+    },
+    {
+      "line": 53,
+      "scenario": "geometry-text-06 Cancel retains text already applied with Update",
+      "classification": "unbound step",
+      "step_counts": {
+        "passed": 2,
+        "unbound": 12
+      },
+      "first_unbound": {
+        "line": 54,
+        "step": "an editable sketch and an oblique line without Geometry Text"
+      }
+    },
+    {
+      "line": 70,
+      "scenario": "geometry-text-07 Cancel new content before applying Update",
+      "classification": "unbound step",
+      "step_counts": {
+        "unbound": 9
+      },
+      "first_unbound": {
+        "line": 71,
+        "step": "a sketch with x already applied to a separate oblique line"
+      }
+    },
+    {
+      "line": 82,
+      "scenario": "geometry-text-08 Apply the second Position on a straight line",
+      "classification": "unbound step",
+      "step_counts": {
+        "unbound": 12
+      },
+      "first_unbound": {
+        "line": 83,
+        "step": "the saved Part6 Sketch2 fixture with 47 dimensions needed"
+      }
+    },
+    {
+      "line": 97,
+      "scenario": "geometry-text-09 Apply center and right alignment on a line",
+      "classification": "unbound step",
+      "step_counts": {
+        "unbound": 6
+      },
+      "first_unbound": {
+        "line": 98,
+        "step": "the line-aligned ab with second Position applied"
+      }
+    },
+    {
+      "line": 106,
+      "scenario": "geometry-text-10 Apply offset and manual stretch",
+      "classification": "unbound step",
+      "step_counts": {
+        "unbound": 6
+      },
+      "first_unbound": {
+        "line": 107,
+        "step": "line-aligned text at offset 0 and stretch 100"
+      }
+    },
+    {
+      "line": 115,
+      "scenario": "geometry-text-11 Fit text to the line and inspect retained edit settings",
+      "classification": "unbound step",
+      "step_counts": {
+        "unbound": 9
+      },
+      "first_unbound": {
+        "line": 116,
+        "step": "text with offset 2 and stretch 50"
+      }
+    },
+    {
+      "line": 127,
+      "scenario": "geometry-text-12 Format selected existing content before Update",
+      "classification": "unbound step",
+      "step_counts": {
+        "unbound": 9
+      },
+      "first_unbound": {
+        "line": 128,
+        "step": "the existing fitted ab content is open in Geometry-Text"
+      }
+    },
+    {
+      "line": 139,
+      "scenario": "geometry-text-13 Undo and redo a formatting Update retained after Cancel",
+      "classification": "unbound step",
+      "step_counts": {
+        "unbound": 8
+      },
+      "first_unbound": {
+        "line": 140,
+        "step": "the combined red formatting was applied with Update"
+      }
+    },
+    {
+      "line": 150,
+      "scenario": "geometry-text-14 Insert a degree symbol at the current caret",
+      "classification": "unbound step",
+      "step_counts": {
+        "unbound": 7
+      },
+      "first_unbound": {
+        "line": 151,
+        "step": "the reopened editor contains ab with the caret at its end"
+      }
+    },
+    {
+      "line": 160,
+      "scenario": "geometry-text-15 Replace the selected path during edit",
+      "classification": "unbound step",
+      "step_counts": {
+        "unbound": 5
+      },
+      "first_unbound": {
+        "line": 161,
+        "step": "applied Geometry Text follows the upper horizontal line"
+      }
+    },
+    {
+      "line": 168,
+      "scenario": "geometry-text-16 Open and cancel the nested Format Text editor",
+      "classification": "unbound step",
+      "step_counts": {
+        "unbound": 6
+      },
+      "first_unbound": {
+        "line": 169,
+        "step": "the Geometry Text editor is open with ab-degree content"
+      }
+    },
+    {
+      "line": 177,
+      "scenario": "geometry-text-17 Reject zero text size on leaving the field",
+      "classification": "unbound step",
+      "step_counts": {
+        "unbound": 7
+      },
+      "first_unbound": {
+        "line": 178,
+        "step": "the Geometry Text editor is open with applied text on an oblique line"
+      }
+    },
+    {
+      "line": 187,
+      "scenario": "geometry-text-18 Retain applied text through document save and reopen",
+      "classification": "unbound step",
+      "step_counts": {
+        "unbound": 7
+      },
+      "first_unbound": {
+        "line": 188,
+        "step": "the applied red fitted ab-degree text follows the oblique line"
+      }
+    },
+    {
+      "line": 197,
+      "scenario": "geometry-text-19 Apply Arial to selected content",
+      "classification": "unbound step",
+      "step_counts": {
+        "unbound": 7
+      },
+      "first_unbound": {
+        "line": 198,
+        "step": "Geometry Text has reopened after document save"
+      }
+    },
+    {
+      "line": 207,
+      "scenario": "geometry-text-20 Update arc text Start Angle",
+      "classification": "unbound step",
+      "step_counts": {
+        "unbound": 7
+      },
+      "first_unbound": {
+        "line": 208,
+        "step": "a follows the upper arc at Start Angle zero"
+      }
+    },
+    {
+      "line": 217,
+      "scenario": "geometry-text-21 Reject zero Stretch and retain the last applied settings",
+      "classification": "unbound step",
+      "step_counts": {
+        "unbound": 8
+      },
+      "first_unbound": {
+        "line": 218,
+        "step": "the arc text is applied with angle 30 and Stretch 100"
+      }
+    }
+  ]
+}

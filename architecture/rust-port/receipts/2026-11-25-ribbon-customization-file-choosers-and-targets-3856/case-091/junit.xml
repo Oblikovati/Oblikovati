@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" tests="2" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:58:43.061099689Z" time="75.943559856"><testcase name="Scenario: Cancel a file chooser while a ribbon edit is pending: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature:1505:5" time="37.365810403"><system-out><![CDATA[  Scenario Outline: Cancel a file chooser while a ribbon edit is pending
+   ✔> Given the MCAD Software starts with a writable copy of `fixtures/preferences/ribbon-normal` as its configuration directory
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part is active in the MCAD Software with the full Tools ribbon visible
+   ✔  And ribbon customization shows All Commands and an initially empty Part Tools target
+   ✔  And 2D Sketches has been staged in the target list
+   ✔  When the user clicks Import
+   ✔  Then the Import Customization Settings file chooser opens
+   ✔  When the user clicks Cancel in the file chooser
+   ✔  Then the file chooser closes
+   ✔  And 2D Sketches remains in the Part Tools target list
+   ✔  And the target shows a pending-change marker
+   ✔  And Apply and cancels are available in the customization dialog
+   ✔  When the user clicks Cancel in the customization dialog
+   ✔  Then the customization dialog closes
+   ✔  And the Tools ribbon remains visible
+]]></system-out></testcase><testcase name="Scenario: Cancel a file chooser while a ribbon edit is pending: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature:1506:5" time="38.577749453"><system-out><![CDATA[  Scenario Outline: Cancel a file chooser while a ribbon edit is pending
+   ✔> Given the MCAD Software starts with a writable copy of `fixtures/preferences/ribbon-normal` as its configuration directory
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part is active in the MCAD Software with the full Tools ribbon visible
+   ✔  And ribbon customization shows All Commands and an initially empty Part Tools target
+   ✔  And 2D Sketches has been staged in the target list
+   ✔  When the user clicks Export
+   ✔  Then the Export Customization Settings file chooser opens
+   ✔  When the user clicks Cancel in the file chooser
+   ✔  Then the file chooser closes
+   ✔  And 2D Sketches remains in the Part Tools target list
+   ✔  And the target shows a pending-change marker
+   ✔  And Apply and cancels are available in the customization dialog
+   ✔  When the user clicks Cancel in the customization dialog
+   ✔  Then the customization dialog closes
+   ✔  And the Tools ribbon remains visible
+]]></system-out></testcase></testsuite></testsuites>

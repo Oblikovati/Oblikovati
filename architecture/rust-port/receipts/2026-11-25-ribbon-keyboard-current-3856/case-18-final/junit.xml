@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Navigate the ribbon using key tips: target/native-scratch.HSqCy5/current-ribbon-keyboard-navigation-source/features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature" package="testsuite/Feature: Navigate the ribbon using key tips: target/native-scratch.HSqCy5/current-ribbon-keyboard-navigation-source/features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T23:12:31.408299884Z" time="17.186838319"><testcase name="Scenario: Dismiss top-level key tips after Escape on Tools without a selection: target/native-scratch.HSqCy5/current-ribbon-keyboard-navigation-source/features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature:265:3" time="17.186838319"><system-out><![CDATA[  Scenario: Dismiss top-level key tips after Escape on Tools without a selection
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And the full Tools ribbon is selected
+   ✔  And no model face is selected
+   ✔  When the user presses Alt
+   ✔  Then key tips appear on the ribbon tabs and quick-access controls
+   ✔  When the user presses Escape
+   ✔  Then the top-level key tips disappear
+   ✔  And the Tools ribbon remains selected
+   ✔  And the part remains active
+]]></system-out></testcase></testsuite></testsuites>

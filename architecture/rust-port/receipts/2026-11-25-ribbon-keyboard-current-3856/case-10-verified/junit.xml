@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Navigate the ribbon using key tips: target/native-scratch.HSqCy5/current-ribbon-keyboard-navigation-source/features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature" package="testsuite/Feature: Navigate the ribbon using key tips: target/native-scratch.HSqCy5/current-ribbon-keyboard-navigation-source/features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T23:07:41.889602947Z" time="18.867695127"><testcase name="Scenario: Open temporary ribbon commands using a tab key tip: target/native-scratch.HSqCy5/current-ribbon-keyboard-navigation-source/features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature:129:3" time="18.867695127"><system-out><![CDATA[  Scenario: Open temporary ribbon commands using a tab key tip
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And the top-docked ribbon is minimized to tabs with 3D Model active
+   ✔  When the user presses Alt
+   ✔  Then key tips appear on the ribbon tabs and quick-access controls
+   ✔  And the 3D Model tab displays the key tip "M"
+   ✔  When the user presses "M"
+   ✔  Then the temporary 3D Model command area opens
+   ✔  And command key tips are visible
+   ✔  When the user presses Alt
+   ✔  Then the key tips disappear
+   ✔  And the temporary 3D Model command area remains visible
+   ✔  When the user clicks empty viewport space
+   ✔  Then the temporary command area closes and the ribbon remains minimized to tabs
+   ✔  When the user double-clicks the 3D Model tab
+   ✔  Then the full 3D Model ribbon is visible
+]]></system-out></testcase></testsuite></testsuites>

@@ -1,0 +1,25 @@
+wayland menu
+1 scenario (1 passed)
+8 steps (8 passed)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1733 filtered out; finished in 6.65s
+
+wayland focus
+1 scenario (1 passed)
+10 steps (10 passed)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1733 filtered out; finished in 9.84s
+
+x11 menu
+1 scenario (1 passed)
+8 steps (8 passed)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1733 filtered out; finished in 6.47s
+
+x11 focus
+1 scenario (1 passed)
+10 steps (10 passed)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1733 filtered out; finished in 8.51s
+
+Wayland shortcut regression
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1733 filtered out; finished in 5.07s
+
+Head Clippy
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 16.24s

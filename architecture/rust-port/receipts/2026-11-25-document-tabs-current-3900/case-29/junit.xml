@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Open document tabs: target/native-scratch.HSqCy5/current-document-tabs-source/features/application/document-tabs/document-tabs.feature" package="testsuite/Feature: Open document tabs: target/native-scratch.HSqCy5/current-document-tabs-source/features/application/document-tabs/document-tabs.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T00:52:51.096910683Z" time="96.039471392"><testcase name="Scenario: Reveal an off-screen tab when selecting its document: target/native-scratch.HSqCy5/current-document-tabs-source/features/application/document-tabs/document-tabs.feature:308:3" time="96.039471392"><system-out><![CDATA[  Scenario: Reveal an off-screen tab when selecting its document
+   ✔  Given the user opens `Window01.opd` through `Window12.opd` from `fixtures/cad/document-tabs-native/overflow` in order
+   ✔  And the tab strip overflows its available width
+   ✔  And the tab for `fixtures/cad/document-tabs-native/overflow/Window01.opd` is outside the visible portion of the strip
+   ✔  When the user selects that part from the View tab's Switch menu
+   ✔  Then the part becomes active
+   ✔  And the tab strip shifts to show its active tab
+   ✔  And the part's viewport and model browser are displayed
+]]></system-out></testcase></testsuite></testsuites>

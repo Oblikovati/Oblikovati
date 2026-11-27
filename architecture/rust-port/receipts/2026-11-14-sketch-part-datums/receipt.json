@@ -1,0 +1,16 @@
+{
+  "application_commit": "4fe26cdb27761c713c130625fcf92130565f5e98",
+  "scenario_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+  "scope": "Model sketch placement, projection and initial solve with part datums; session freshness proof.",
+  "verification": {
+    "model": "1618 tests passed in 126 suites",
+    "session": "480 tests passed in 6 suites",
+    "head": "4 passed; 1 ignored pending end-to-end recompute",
+    "clippy": "model, session and head all-targets passed"
+  },
+  "limits": [
+    "Desktop sketch creation on a face-based plane remains disabled.",
+    "Automatic solve after a parameter edit still uses datum-only inputs; an exploratory test returned ProjectionInputsChanged.",
+    "Native input, Go migration, and full make gate remain open."
+  ]
+}

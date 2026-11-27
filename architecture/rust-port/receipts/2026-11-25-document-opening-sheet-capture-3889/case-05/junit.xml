@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Inspect files before opening a document: target/native-scratch.HSqCy5/current-document-opening-source/features/application/document-opening/document-opening.feature" package="testsuite/Feature: Inspect files before opening a document: target/native-scratch.HSqCy5/current-document-opening-source/features/application/document-opening/document-opening.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T02:17:00.76167322Z" time="117.403953285"><testcase name="Scenario: Open a saved drawing alongside an existing part: target/native-scratch.HSqCy5/current-document-opening-source/features/application/document-opening/document-opening.feature:59:3" time="117.403953285"><system-out><![CDATA[  Scenario: Open a saved drawing alongside an existing part
+   ✔  Given writable copies of `fixtures/cad/document-opening/OpenDrawingA.odd`, `OpenDrawingB.odd` and `OpenPart.opd` are staged in the same working folder
+   ✔  And the user opens each drawing, inserts a base view referencing the staged OpenPart.opd, saves it and closes it
+   ✔  Given a part document is active in the MCAD Software
+   ✔  And a saved drawing with a sheet, border and view is available and not already open
+   ✔  And `OpenPart.opd` is the active part and `OpenDrawingA.odd` is closed
+   ✔  When the user presses Control+O and selects the drawing
+   ✔  And the user chooses Open
+   ✔  Then the Open dialog closes
+   ✔  And the drawing becomes active in a new document tab
+   ✔  And the drawing sheet and border are displayed
+   ✔  And the drawing browser lists the sheet and a view
+   ✔  And the part document tab remains available
+]]></system-out></testcase></testsuite></testsuites>

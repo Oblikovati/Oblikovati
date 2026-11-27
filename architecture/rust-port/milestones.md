@@ -9,6 +9,20 @@ tracks these milestones. R0 creates the remaining detailed work items.
 Do not estimate the full port from source file counts; measure representative
 work first.
 
+## Exit review and known gaps
+
+These milestones are open. The links identify known gaps and partial evidence;
+they are not an exhaustive exit audit or proof that the other checks pass.
+The required checks remain in each milestone below.
+
+| Milestone | Known gap or evidence still needed |
+| --- | --- |
+| R0 | The full gate has not passed ([#3860](https://github.com/Oblikovati/Oblikovati/issues/3860)). Scenario baseline fields and current receipts remain incomplete ([#3865](https://github.com/Oblikovati/Oblikovati/issues/3865), [status](STATUS.md)). A clean-checkout gate is still needed. |
+| R1 | Profile extrusion does not yet qualify the sketch solver precision ([#3928](https://github.com/Oblikovati/Oblikovati/issues/3928)). The rotated-ellipse closest-point parity case remains open in [Martensite #406](https://github.com/Oblikovati/Martensite/issues/406); do not infer the complete kernel proof from other passing cases. |
+| R1V | Native Linux capture and selection have partial evidence in [status](STATUS.md), but the full exit and supported-platform presentation requirements are not established. Renderer lighting and curved-surface visual behavior remain open ([#3873](https://github.com/Oblikovati/Oblikovati/issues/3873)). |
+| R2 | Focused persistence and session tests are recorded in [status](STATUS.md), but they do not prove the full exit or a cross-platform storage round trip ([#3592](https://github.com/Oblikovati/Oblikovati/issues/3592)). Legacy sketch and feature adoption remains open ([#3882](https://github.com/Oblikovati/Oblikovati/issues/3882)); unsupported content must remain a named refusal. |
+| R3 | The Rust-authored cube has partial replay and native evidence in [status](STATUS.md), but solver precision qualification ([#3928](https://github.com/Oblikovati/Oblikovati/issues/3928)) and Go recipe and face-key migration ([#3882](https://github.com/Oblikovati/Oblikovati/issues/3882)) remain open. Complete the per-face and full exit checks under [#3857](https://github.com/Oblikovati/Oblikovati/issues/3857). |
+
 ## Dependency order
 
 ```text
@@ -299,21 +313,30 @@ Work:
 
 1. Split the exchange inventory by format, direction, document kind, metadata,
    assembly handling, platform, and required external tools.
-2. Prefer Martensite readers/writers for geometry formats that it supplies.
-   Integrate missing general kernel formats upstream, including required
-   Go-kernel capabilities outside OCCT. Port application-owned
-   recipe or domain translators here; do not create a second STEP geometry
-   engine or hide a native OCCT fallback in an adapter.
-3. Cover the separate Inventor, OLE, and SolidWorks module behavior found in
-   the baseline, and the external exporter/add-in workflows they use.
-4. Test import, edit, save, reopen, and export with units, analytic face types,
+2. Consume released Martensite exchange capabilities. DWG and DXF use
+   [acadrust](https://github.com/hakanaktt/acadrust) inside the kernel. All
+   exchange parsers, writers, and format-specific translators belong to
+   RustyCADKernel, including required Go behavior outside OCCT. Do not port
+   exchange implementations in the application scope.
+3. Port application commands, dialogs, API routing, resource storage, and
+   transactional adoption of kernel results. Include the external exporter
+   and add-in workflows from the inventory; Inventor, OLE, and SolidWorks
+   format implementations remain kernel-owned. Follow
+   [ADR-0018](../decisions/ADR-0018-exchange-format-ownership.md).
+4. Treat SolidWorks (Bessemer) and Inventor (Corliss) as first-class documents
+   beside YAML: direct open, edit, history, source-format save, and reopen.
+   Follow [ADR-0040](../decisions/ADR-0040-first-class-cad-document-formats.md).
+   Test import, edit, save, reopen, and export with units, analytic face types,
    topology, names, colors, references, and assembly structure. Include the
    elliptical-arc STEP regression linked in the source map.
 5. Document formats that were already unavailable at the fixed baseline as
    roadmap work. Required baseline formats cannot be silently removed.
 
-**Exit:** the format matrix has passing round-trip and independent-oracle
-evidence for every required row. Clear errors preserve source files on failure.
+**Exit:** each required format row links to kernel release and round-trip/oracle
+evidence, plus passing application integration tests. Kernel tests and package
+releases remain the kernel repository's responsibility. Clear errors preserve
+source files on failure. Current testing is local Linux; Windows and macOS
+remain deferred.
 
 ## R9 — Prove conformance and switch releases
 

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Viewport orbit: tmp/oblikovati-ribbon-relocated.RcZVDl/current-viewport-orbit-source/features/application/viewport-orbit/viewport-orbit.feature" package="testsuite/Feature: Viewport orbit: tmp/oblikovati-ribbon-relocated.RcZVDl/current-viewport-orbit-source/features/application/viewport-orbit/viewport-orbit.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T22:10:40.133589923Z" time="64.408103266"><testcase name="Scenario: Reverse an incremental rotation with the adjacent control: tmp/oblikovati-ribbon-relocated.RcZVDl/current-viewport-orbit-source/features/application/viewport-orbit/viewport-orbit.feature:62:3" time="64.408103266"><system-out><![CDATA[  Scenario: Reverse an incremental rotation with the adjacent control
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open with its solid at an inclined orientation in the MCAD Software
+   ✔  And the incremental view rotation dialog is open with increment 10
+   ✔  When the user clicks the second direction button
+   ✔  Then the block view changes
+   ✔  When the user clicks the first direction button once
+   ✔  Then the block returns to its initial apparent orientation
+   ✔  And the dialog remains open
+   ✔  When the user clicks Cancel
+   ✔  Then the dialog closes and the status area displays Ready
+]]></system-out></testcase></testsuite></testsuites>

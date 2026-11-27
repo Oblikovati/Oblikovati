@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Workspace layout and panel visibility: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature" package="testsuite/Feature: Workspace layout and panel visibility: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-19T14:14:30.647321791Z" time="6.373508086"><testcase name="Scenario: Select an origin axis from the browser during sketch editing: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:406:3" time="6.373508086"><system-out><![CDATA[  Scenario: Select an origin axis from the browser during sketch editing
+   ✔  Given a part document is open in the MCAD Software with a sketch being edited
+   ✔  And the Origin branch is expanded in the model browser
+   ✔  When the user selects the X Axis entry in the browser
+   ✔  Then the X Axis entry is highlighted in the browser
+   ✔  And the sketch remains visible in the viewport
+]]></system-out></testcase></testsuite></testsuites>

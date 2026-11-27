@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="1" hostname="localhost" timestamp="2026-11-24T12:46:37.183893482Z" time="9.718736415"><testcase name="Scenario: Return to customization after selecting malformed XML: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature:447:3" time="9.718736415"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Return to customization after selecting malformed XML
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the ribbon customization dialog shows an empty Part Tools custom panel
+   ✘  And an XML file contains the incomplete text "<invalid"
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature:450:5
+      Step doesn't match any function
+]]></system-out></testcase></testsuite></testsuites>

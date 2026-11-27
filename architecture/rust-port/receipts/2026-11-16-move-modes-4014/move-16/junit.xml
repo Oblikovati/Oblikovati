@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Move: tmp/obk-move-modes-source/features/sketch/move/scenario.feature" package="testsuite/Feature: Move: tmp/obk-move-modes-source/features/sketch/move/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-16T04:06:14.115439723Z" time="26.461253116"><testcase name="Scenario: move-16 Inspect Relative and Absolute coordinate modes: tmp/obk-move-modes-source/features/sketch/move/scenario.feature:123:3" time="26.461253116"><system-out><![CDATA[  Scenario: move-16 Inspect Relative and Absolute coordinate modes
+   ✔  Given an editable sketch with eligible geometry
+   ✔  Given the selected ellipse is in precise Base Point mode
+   ✔  When the user opens the left toolbar dropdown
+   ✔  Then Relative and Absolute choices are visible
+   ✔  When the user chooses Absolute
+   ✔  Then the visible triad is at the sketch axes intersection
+   ✔  And the selected ellipse retains its recorded position
+   ✔  When the user reopens the dropdown and chooses Relative
+   ✔  Then the toolbar icon changes
+   ✔  And the triad remains at the axes intersection
+]]></system-out></testcase></testsuite></testsuites>

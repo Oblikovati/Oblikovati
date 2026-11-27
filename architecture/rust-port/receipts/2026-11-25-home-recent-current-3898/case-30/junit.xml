@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Recent documents on Home: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature" package="testsuite/Feature: Recent documents on Home: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T01:31:48.614098433Z" time="26.413568193"><testcase name="Scenario: Inspect and cancels opening a recent part with options: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature:388:3" time="26.413568193"><system-out><![CDATA[  Scenario: Inspect and cancels opening a recent part with options
+   ✔  Given the MCAD Software starts with an isolated Recent profile prepared from a disposable copy of `fixtures/cad/home-recent-native`
+   ✔  And the Home workspace is active in the MCAD Software
+   ✔  And Part26.opd from the disposable package is displayed in List View with a Front design-view name
+   ✔  And no recent-document checkboxes are selected
+   ✔  When the user opens the part row's actions menu
+   ✔  And the user chooses Open with options
+   ✔  Then a File Open Options dialog is displayed
+   ✔  And Model State shows the primary state
+   ✔  And Design View shows Last Active
+   ✔  When the user opens the Design View list
+   ✔  Then the list includes the primary view and the Front view
+   ✔  When the user chooses Front
+   ✔  Then Design View shows Front
+   ✔  When the user cancels the dialog
+   ✔  Then the dialog closes and the Recent list is visible
+]]></system-out></testcase></testsuite></testsuites>

@@ -1,0 +1,11 @@
+{
+  "repository": "https://github.com/Oblikovati/Oblikovati.API",
+  "commit": "57ae73ca46bfcadcc09e3ec1d0c424d803cadc44",
+  "tree": "db257b44a8afb97b827fefedd2e8491b581da7c1",
+  "branch": "work/glyph-visibility-4166",
+  "command": "GOWORK=off CARGO_TARGET_DIR=/tmp/obk-glyph-target-4166 CARGO_INCREMENTAL=0 CARGO_PROFILE_DEV_DEBUG=0 CARGO_PROFILE_TEST_DEBUG=0 CARGO_BUILD_JOBS=4 make gate",
+  "result": "passed",
+  "log": "architecture/rust-port/receipts/2026-11-19-api-glyph-visibility-57ae73c/gate.log",
+  "log_sha256": "120e52f7b252ccb6330aa2ff012f70c5f4d521d95791ffa58f886d8551e09fcc",
+  "note": "Gate ran on the same tree before commit; the branch is unreleased and supersedes 947cb7e."
+}

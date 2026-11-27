@@ -1,0 +1,8 @@
+   Compiling oblikovati-gui v0.1.0 (/git/oblikovati-workspace/oblikovati-rust/crates/gui)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.87s
+     Running tests/sketch_context_dismiss.rs (target/debug/deps/sketch_context_dismiss-be6c7c14ee0301f7)
+
+running 1 test
+test dismissing_canvas_popup_retires_its_token ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 6.28s

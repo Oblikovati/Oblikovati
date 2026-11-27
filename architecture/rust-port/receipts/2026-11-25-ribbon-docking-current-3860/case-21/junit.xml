@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon docking: target/native-scratch.HSqCy5/current-ribbon-docking-source/features/application/ribbon-docking/ribbon-docking.feature" package="testsuite/Feature: Ribbon docking: target/native-scratch.HSqCy5/current-ribbon-docking-source/features/application/ribbon-docking/ribbon-docking.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T23:53:53.371081249Z" time="24.824354669"><testcase name="Scenario: Open an Annotate command panel on the floating ribbon: target/native-scratch.HSqCy5/current-ribbon-docking-source/features/application/ribbon-docking/ribbon-docking.feature:294:3" time="24.824354669"><system-out><![CDATA[  Scenario: Open an Annotate command panel on the floating ribbon
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part is active and the ribbon is floating with 3D Model selected
+   ✔  When the user selects Annotate
+   ✔  Then the ribbon displays its annotation groups
+   ✔  When the user selects Notes
+   ✔  Then the adjacent panel lists Leader Text, General Note and General Profile Note
+   ✔  When the user selects 3D Model
+   ✔  Then the Notes panel closes
+   ✔  And the modeling groups return
+   ✔  And the part remains active
+]]></system-out></testcase></testsuite></testsuites>

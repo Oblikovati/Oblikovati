@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Save and reopen part documents: tmp/obk-save-subfolder-pinned-20261115/features/application/document-saving/document-saving.feature" package="testsuite/Feature: Save and reopen part documents: tmp/obk-save-subfolder-pinned-20261115/features/application/document-saving/document-saving.feature" tests="2" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T23:27:59.474974685Z" time="16.141057412"><testcase name="Scenario: Navigate to a subfolder and back while choosing a save location: tmp/obk-save-subfolder-pinned-20261115/features/application/document-saving/document-saving.feature:151:3" time="3.926816874"><system-out><![CDATA[  Scenario: Navigate to a subfolder and back while choosing a save location
+   ✔  Given the Save As dialog is open for a new part in the MCAD Software
+   ✔  And the initial folder contains a subfolder
+   ✔  And the dialog displays a proposed file name
+   ✔  When the user opens the subfolder
+   ✔  Then the location breadcrumb and file list show the subfolder
+   ✔  And the proposed file name remains in the file name field
+   ✔  When the user chooses Back
+   ✔  Then the initial folder and its file list are displayed
+   ✔  And the proposed file name remains in the file name field
+]]></system-out></testcase><testcase name="Scenario: Reopen first save after cancelling in a subfolder: tmp/obk-save-subfolder-pinned-20261115/features/application/document-saving/document-saving.feature:162:3" time="12.214240538"><system-out><![CDATA[  Scenario: Reopen first save after cancelling in a subfolder
+   ✔  Given the Save As dialog is open for a new part in the MCAD Software
+   ✔  And the user has navigated from the initial folder into a subfolder
+   ✔  When the user cancels the dialog
+   ✔  And the user presses Control+S again for the same part
+   ✔  Then the Save As dialog opens in the initial folder
+   ✔  And the original proposed file name is selected
+]]></system-out></testcase></testsuite></testsuites>

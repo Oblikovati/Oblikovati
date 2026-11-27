@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Create a populated drawing layout: target/native-scratch.HSqCy5/current-document-creation-populated-layout-source/features/application/document-creation/document-creation-populated-layout.feature" package="testsuite/Feature: Create a populated drawing layout: target/native-scratch.HSqCy5/current-document-creation-populated-layout-source/features/application/document-creation/document-creation-populated-layout.feature" tests="4" errors="0" failures="2" hostname="localhost" timestamp="2026-11-25T00:11:24.787522248Z" time="66.417150649"><testcase name="Scenario: Cancel component selection for a drawing layout: target/native-scratch.HSqCy5/current-document-creation-populated-layout-source/features/application/document-creation/document-creation-populated-layout.feature:7:3" time="23.564643392"><system-out><![CDATA[  Scenario: Cancel component selection for a drawing layout
+   ✔> Given a fresh MCAD Software session loads `fixtures/cad/document-creation-layout-candidate.opj` as its active project
+   ✔  Given the active document is `fixtures/cad/document-opening/OpenPart.opd` in the MCAD Software
+   ✔  And the new-document template chooser is open
+   ✔  And `fixtures/cad/document-creation-layout-candidate/English/Populated Layout.odd` is available as the populated inch assembly layout
+   ✔  When the user selects the inch drawing template
+   ✔  Then the chooser displays the template sheet and available layout previews
+   ✔  When the user selects the populated assembly layout preview
+   ✔  And the user chooses Create
+   ✔  Then the template chooser closes
+   ✔  And a component-selection dialog opens for a drawing view
+   ✔  And the dialog displays a document name field and a browse control
+   ✔  And it offers OK and Cancel
+   ✔  When the user cancels component selection
+   ✔  Then the component-selection dialog closes
+   ✔  And the original part document remains active
+   ✔  And no new drawing tab is displayed
+]]></system-out></testcase><testcase name="Scenario: Create a populated drawing layout with a component that needs updating: target/native-scratch.HSqCy5/current-document-creation-populated-layout-source/features/application/document-creation/document-creation-populated-layout.feature:25:3" time="10.496480566"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Create a populated drawing layout with a component that needs updating
+   ✔> Given a fresh MCAD Software session loads `fixtures/cad/document-creation-layout-candidate.opj` as its active project
+   ✔  Given a disposable copy of `fixtures/cad/document-creation-layout-candidate/English/layout-data/extrusion/extrusion-rect-8mm.opd` is active
+   ✔  And the active part has been updated and then edited so that it needs updating again
+   ✔  And `fixtures/cad/document-creation-layout-candidate/English/Populated Layout.odd` is available as a drawing layout with a view and parts list
+   ✘  When the user selects the drawing template and populated layout
+      Step failed:
+      Defined: target/native-scratch.HSqCy5/current-document-creation-populated-layout-source/features/application/document-creation/document-creation-populated-layout.feature:29:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Cancel browsing for a drawing-layout component: target/native-scratch.HSqCy5/current-document-creation-populated-layout-source/features/application/document-creation/document-creation-populated-layout.feature:43:3" time="28.042404123"><system-out><![CDATA[  Scenario: Cancel browsing for a drawing-layout component
+   ✔> Given a fresh MCAD Software session loads `fixtures/cad/document-creation-layout-candidate.opj` as its active project
+   ✔  Given a disposable copy of `fixtures/cad/document-creation-layout-candidate/English/layout-data/extrusion/extrusion-rect-8mm.opd` is active
+   ✔  And the active part has been updated and then edited so that it needs updating again
+   ✔  And `fixtures/cad/document-creation-layout-candidate/English/Populated Layout.odd` is available as a drawing layout with a view and parts list
+   ✔  And the user selects the assembly layout and opens its component-selection dialog
+   ✔  And the dialog displays the active part
+   ✔  When the user chooses Browse beside the document name
+   ✔  Then a file-selection dialog opens above component selection
+   ✔  And it displays a folder and file list, a file name field and a file-type filter
+   ✔  And it displays a preview area and Open and Cancel controls
+   ✔  When the user cancels the file-selection dialog
+   ✔  Then the component-selection dialog is displayed again
+   ✔  And its previous document name remains displayed
+   ✔  When the user cancels component selection
+   ✔  Then the original document remains active
+   ✔  And no new drawing tab is displayed
+]]></system-out></testcase><testcase name="Scenario: Browse to a different component for a populated drawing layout: target/native-scratch.HSqCy5/current-document-creation-populated-layout-source/features/application/document-creation/document-creation-populated-layout.feature:61:3" time="4.3136225679999995"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Browse to a different component for a populated drawing layout
+   ✔> Given a fresh MCAD Software session loads `fixtures/cad/document-creation-layout-candidate.opj` as its active project
+   ✘  Given disposable copies of `fixtures/cad/document-creation-layout-candidate/English/layout-data/extrusion/extrusion-rect-8mm.opd` and `fixtures/cad/document-creation-layout-candidate/English/layout-data/alternate-component.opd` are open in the same session
+      Step failed:
+      Defined: target/native-scratch.HSqCy5/current-document-creation-populated-layout-source/features/application/document-creation/document-creation-populated-layout.feature:62:5
+      Step doesn't match any function
+]]></system-out></testcase></testsuite></testsuites>

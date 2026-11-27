@@ -1,0 +1,8 @@
+{
+  "kind": "unsealed focused native diagnostic",
+  "application_base_commit": "72b538a9c",
+  "feature_sha256": "3a0703dc9df2a77830b6b90402210ba9dffd10a0e370763015a46904744fbfce",
+  "test_source_sha256": "ee6b6bb2ee7052aaaf219f4daf02a5ea593189258e070cf564f2eb80cc44a3dc",
+  "result": "native mouse test passed; panel tests 7 passed; action tests 1 passed",
+  "limitations": "The focused test uses the native part fixture and does not execute the Inventor-based scenario; source and build are unsealed."
+}

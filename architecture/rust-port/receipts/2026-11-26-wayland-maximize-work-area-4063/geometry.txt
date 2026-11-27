@@ -1,0 +1,32 @@
+Wayland 1x
+Output position: (0, 0) -> (1920, 1080)
+mode: 1920x1080@60.000Hz
+Panel position: (0, 0) -> (1920, 32)
+Application position: (103, 178) -> (1543, 1078)
+
+Output position: (0, 0) -> (1920, 1080)
+mode: 1920x1080@60.000Hz
+Panel position: (0, 0) -> (1920, 32)
+Application position: (0, 32) -> (1920, 1080)
+
+Output position: (0, 0) -> (1920, 1080)
+mode: 1920x1080@60.000Hz
+Panel position: (0, 0) -> (1920, 32)
+Application position: (103, 178) -> (1543, 1078)
+
+
+Wayland 4k
+Output position: (0, 0) -> (1920, 1080)
+mode: 3840x2160@60.000Hz
+Panel position: (0, 0) -> (1920, 32)
+Application position: (103, 178) -> (1543, 1078)
+
+Output position: (0, 0) -> (1920, 1080)
+mode: 3840x2160@60.000Hz
+Panel position: (0, 0) -> (1920, 32)
+Application position: (0, 32) -> (1920, 1080)
+
+Output position: (0, 0) -> (1920, 1080)
+mode: 3840x2160@60.000Hz
+Panel position: (0, 0) -> (1920, 32)
+Application position: (103, 178) -> (1543, 1078)

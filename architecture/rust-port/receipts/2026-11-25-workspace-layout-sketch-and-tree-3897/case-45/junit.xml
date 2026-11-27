@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Workspace layout and panel visibility: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature" package="testsuite/Feature: Workspace layout and panel visibility: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T02:58:05.913391268Z" time="54.511959714"><testcase name="Scenario: Inspect the context menu for an Origin plane: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature:526:3" time="54.511959714"><system-out><![CDATA[  Scenario: Inspect the context menu for an Origin plane
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is active in the MCAD Software with a visible solid
+   ✔  And the Origin branch is expanded in the model browser
+   ✔  And Auto-Resize is enabled for the YZ Plane in the captured session
+   ✔  When the user right-clicks the YZ Plane row
+   ✔  Then a context menu opens beside the plane row
+   ✔  And the menu offers New Sketch, Measure, Visibility and Auto-Resize
+   ✔  And Auto-Resize is checked in this session
+   ✔  And the plane row is highlighted
+   ✔  And the corresponding plane is highlighted as a blue translucent surface in the viewport
+   ✔  When the user clicks an empty area of the viewport outside the menu
+   ✔  Then the context menu closes
+   ✔  And the plane row and translucent plane remain highlighted
+   ✔  When the user clicks the empty viewport area again
+   ✔  Then the plane selection is cleared
+   ✔  And the highlighted plane is no longer displayed
+   ✔  And the solid remains visible
+]]></system-out></testcase></testsuite></testsuites>

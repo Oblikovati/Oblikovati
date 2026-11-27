@@ -1,0 +1,19 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.15s
+     Running unittests src/lib.rs (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/target/debug/deps/oblikovati_head-a63049949246ef13)
+
+running 1 test
+Feature: Dockable workspace panels
+  Scenario: Restore the saved panel arrangement after restarting the application
+test native::gui_loop_tests::application_bdd::application_scenarios_use_the_native_window has been running for over 60 seconds
+   ✔  Given the user has changed the workspace panel arrangement
+   ✔  And the MCAD Software has saved that arrangement
+   ✔  When the user closes and restarts the MCAD Software
+   ✔  Then the saved panel positions, sizes and tab groups are restored
+[Summary]
+1 feature
+1 scenario (1 passed)
+4 steps (4 passed)
+test native::gui_loop_tests::application_bdd::application_scenarios_use_the_native_window ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1545 filtered out; finished in 93.96s
+

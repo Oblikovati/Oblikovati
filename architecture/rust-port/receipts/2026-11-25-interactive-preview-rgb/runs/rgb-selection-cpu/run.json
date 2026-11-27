@@ -1,0 +1,32 @@
+{
+  "mode": "select",
+  "app_pid": 2765753,
+  "fixture": "docking-visible-solid-current.opd",
+  "dpi": 144,
+  "validation_checks_disabled": "",
+  "desktop_validation": null,
+  "desktop_vsync": "0",
+  "present_mode_override": false,
+  "selection_toolbar_hidden": true,
+  "load": "8.26 10.56 14.95 7/5642 2765752",
+  "cpu_pressure": "some avg10=0.08 avg60=0.16 avg300=0.45 total=2624872464\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+  "io_pressure": "some avg10=0.50 avg60=0.41 avg300=1.14 total=11804125068\nfull avg10=0.40 avg60=0.29 avg300=0.84 total=9681133272",
+  "window_size": [
+    1440,
+    900
+  ],
+  "window_origin": [
+    0,
+    0
+  ],
+  "first_row": 2,
+  "intervals": [
+    [
+      157145088483514,
+      157151084400846
+    ]
+  ],
+  "last_row": 1305,
+  "perf_exit": 0,
+  "total_rows": 1306
+}

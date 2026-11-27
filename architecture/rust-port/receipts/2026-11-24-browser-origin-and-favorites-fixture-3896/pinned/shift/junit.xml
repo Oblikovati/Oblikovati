@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T11:10:32.53843791Z" time="31.808852713"><testcase name="Scenario: Move between origin planes with Shift and Down Arrow: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature:279:3" time="31.808852713"><system-out><![CDATA[  Scenario: Move between origin planes with Shift and Down Arrow
+   ✔  Given a part with a visible block is open in the MCAD Software
+   ✔  And the Origin branch is expanded and its planes are hidden
+   ✔  And the YZ Plane row is selected and its plane is highlighted
+   ✔  When the user presses Shift and Down Arrow together
+   ✔  Then the XZ Plane row is selected and its plane is highlighted
+   ✔  And the YZ plane is no longer highlighted
+   ✔  When the user presses Shift and Down Arrow together again
+   ✔  Then the XY Plane row is selected and its plane is highlighted
+   ✔  And the XZ plane is no longer highlighted
+   ✔  When the user clicks empty viewport space
+   ✔  Then the plane highlight disappears and the block remains visible
+]]></system-out></testcase></testsuite></testsuites>

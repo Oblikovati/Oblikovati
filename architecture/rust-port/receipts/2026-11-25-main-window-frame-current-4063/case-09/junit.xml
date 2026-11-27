@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Main application window frame: git/oblikovati-workspace/oblikovati-rust/target/native-scratch.HSqCy5/current-main-window-frame-source/features/application/main-window-frame/main-window-frame.feature" package="testsuite/Feature: Main application window frame: git/oblikovati-workspace/oblikovati-rust/target/native-scratch.HSqCy5/current-main-window-frame-source/features/application/main-window-frame/main-window-frame.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T23:22:12.669812569Z" time="26.096218868"><testcase name="Scenario: Keep the maximized bounds when dragging a resize edge: git/oblikovati-workspace/oblikovati-rust/target/native-scratch.HSqCy5/current-main-window-frame-source/features/application/main-window-frame/main-window-frame.feature:113:3" time="26.096218868"><system-out><![CDATA[  Scenario: Keep the maximized bounds when dragging a resize edge
+   ✔  Given the main window of the MCAD Software is maximized
+   ✔  When the user attempts to resize it from the left boundary
+   ✔  Then the window retains its maximized bounds
+   ✔  And Restore remains available in the application bar
+]]></system-out></testcase></testsuite></testsuites>

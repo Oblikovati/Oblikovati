@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon appearance: target/native-scratch.HSqCy5/current-ribbon-appearance-source/features/application/ribbon-appearance/ribbon-appearance.feature" package="testsuite/Feature: Ribbon appearance: target/native-scratch.HSqCy5/current-ribbon-appearance-source/features/application/ribbon-appearance/ribbon-appearance.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T23:30:12.872049492Z" time="38.070219384"><testcase name="Scenario: Change appearance while additional commands are expanded: target/native-scratch.HSqCy5/current-ribbon-appearance-source/features/application/ribbon-appearance/ribbon-appearance.feature:82:3" time="38.070219384"><system-out><![CDATA[  Scenario: Change appearance while additional commands are expanded
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And the full 3D Model ribbon uses the Normal appearance
+   ✔  And the Modify additional command area is open
+   ✔  When the user selects "Text Off" from Ribbon Appearance
+   ✔  Then the Modify additional command area remains open
+   ✔  And its command icons remain visible without their text labels
+   ✔  And the expanded area becomes narrower
+   ✔  And the Modify panel title remains visible
+   ✔  When the user selects "Normal" from Ribbon Appearance
+   ✔  Then the Modify additional command area remains open
+   ✔  And its command labels are visible again
+   ✔  And the expanded area returns to its wider layout
+]]></system-out></testcase></testsuite></testsuites>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon panel visibility: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" package="testsuite/Feature: Ribbon panel visibility: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:09:42.761611196Z" time="14.842120712"><testcase name="Scenario: Expand a panel while the panel selector is open: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:474:3" time="14.842120712"><system-out><![CDATA[  Scenario: Expand a panel while the panel selector is open
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is open and active
+   ✔  And the full Tools ribbon is visible
+   ✔  And the direct panel selector is open
+   ✔  When the user clicks the Options panel title
+   ✔  Then the panel selector closes
+   ✔  And the Options panel displays its additional commands
+   ✔  And the Tools ribbon remains visible
+]]></system-out></testcase></testsuite></testsuites>

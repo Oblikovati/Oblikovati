@@ -1,0 +1,16 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-only
+# Git for Windows includes this shell; Python can be installed under either name.
+hook_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd) || exit 1
+checker="$hook_dir/../tools/git/commit_message.py"
+if command -v python3 >/dev/null 2>&1; then
+    exec python3 "$checker" "$@"
+fi
+if command -v py >/dev/null 2>&1; then
+    exec py -3 "$checker" "$@"
+fi
+if command -v python >/dev/null 2>&1; then
+    exec python "$checker" "$@"
+fi
+printf '%s\n' 'commit message: expected Python 3 on PATH' >&2
+exit 1

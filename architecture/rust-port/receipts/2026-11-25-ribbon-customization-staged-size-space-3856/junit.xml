@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T16:43:30.415138362Z" time="8.27551811"><testcase name="Scenario: Press Space after checking a staged command size option: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-customization/ribbon-customization.feature:1709:3" time="8.27551811"><system-out><![CDATA[  Scenario: Press Space after checking a staged command size option
+   ✔> Given the MCAD Software starts with a writable copy of `fixtures/preferences/ribbon-normal` as its configuration directory
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And ribbon customization is open in the MCAD Software for an empty Part Tools custom panel
+   ✔  And the available command category is All Commands in ascending name order
+   ✔  When the user selects 2-D Drawing and clicks the add button
+   ✔  Then 2-D Drawing is staged and 2D Sketches is selected in the available list
+   ✔  When the user clicks the staged 2-D Drawing Large checkbox
+   ✔  Then Large is checked and Text is unchecked for 2-D Drawing
+   ✔  When the user presses Space
+   ✔  Then 2D Sketches is added after 2-D Drawing
+   ✔  And Large remains checked for 2-D Drawing
+   ✔  And 3D Annotations is selected in the available list
+   ✔  When the user presses Space again
+   ✔  Then 3D Annotations is added after 2D Sketches
+   ✔  And 2-D Drawing still has Large checked
+   ✔  When the user cancels customization and reopens it for Part Tools
+   ✔  Then the custom panel list is empty
+]]></system-out></testcase></testsuite></testsuites>

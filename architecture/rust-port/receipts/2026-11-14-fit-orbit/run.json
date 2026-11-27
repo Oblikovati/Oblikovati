@@ -1,0 +1,19 @@
+{
+  "kind": "diagnostic-only",
+  "application_commit": "b4269cf012ac029a87aac752db0356f4f98a3a9b",
+  "scenario_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+  "scenario_id": "scenario:59bbc7159c8ea4f06a7778692656e22f14242938f0a79f1cd0ce64c305d9dac4",
+  "results": "Two example cases and 18 steps passed; the fixture corners were within the document area. The focused keyboard Home test passed.",
+  "limitations": [
+    "The final screenshot has no visible face separation; shading is tracked in issue #3873.",
+    "The screenshot records the last example final state only."
+  ],
+  "artifacts_sha256": {
+    "source-revision.json": "afdcde4b44bdbec6b08878f72ff7111f069221d84273b826035e73b15a5d3457",
+    "junit.xml": "6c4f5f413f20173fe6d9e665b8e36d7b908dda3537f1d154e548c3bb0fdffc42",
+    "cucumber.json": "901c3c2bef7313b8d71bd215025b2a70662fc176b27d05f003cb740bd606462e",
+    "native-test.log.gz": "8cb4831b8974cfc421ea06e87920c82437a373fd9caeb33e036529bece2a5889",
+    "Reverse-a-rotation-using-the-remaining-adjacent-pairs.png": "5d78b35b76a5bff46b4fa5b59f1beb094d90a56fd8a9240ca3110726e4f112d7",
+    "keyboard-test.log": "9566ef733776923d71a0b575d1da274ec73c5a0d5d3095d4ad1b208581bc7ff8"
+  }
+}

@@ -1,0 +1,255 @@
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Built-in catalog: fibre-reinforced polymers and engineered wood panels.
+#
+# Composites are anisotropic and lay-up dependent; the scalar figures are representative
+# in-plane values for the stated reinforcement and fibre fraction, NOT a design allowable.
+# Unidirectional laminates carry a `transversely-isotropic` orthotropic group (axis 1 =
+# fibre, 2 = 3 = transverse); balanced-weave and panel products carry an `orthotropic`
+# group; random-mat products (chopped strand, SMC, carbon-filled nylon, MDF) are in-plane
+# ISOTROPIC and ship the scalar group only. Orthotropic constants ready for FEA (ADR-0025).
+#
+# Property sources:
+#   - FRP laminate engineering constants (E1/E2, G12, nu12, CTE): ASM Handbook Vol. 21
+#     (Composites); CMH-17 / MIL-HDBK-17 generic carbon-epoxy & glass-epoxy lamina data;
+#     Barbero "Introduction to Composite Materials Design"; manufacturer laminate data.
+#     G23 follows the transverse-isotropy relation G23 = E2 / (2*(1+nu23)).
+#   - G10/FR4 laminate: NEMA LI-1 / manufacturer (Garolite) datasheets.
+#   - Engineered wood (plywood, OSB, MDF): APA panel design data; EN 622/EN 300.
+#     yieldStrength is the in-plane compressive/bending design-strength proxy.
+#   - Carbon laminates conduct along the fibre (low resistivity); glass/aramid laminates
+#     and wood panels are insulators.
+#
+# Appearances: carbon laminates are dark with a glossy clear-coat (low roughness, but
+# dielectric matrix so metallic = 0.0); others are matte dielectrics. Albedo is a
+# representative finished sRGB body colour (no weave/grain texture map yet).
+#
+# Units: density g/cm3 | E & G GPa | yield & UTS MPa | conductivity W/(m*K)
+#        expansionCoeff & alpha 1/K | specificHeat J/(kg*K) | resistivity ohm*m | nu, eps_r -
+
+appearances:
+    - id: plywood
+      name: Plywood
+      base:
+        weight: 1
+        color:
+            r: 0.6523701
+            g: 0.46474117
+            b: 0.23099816
+        metalness: 0
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.65
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: osb
+      name: OSB
+      base:
+        weight: 1
+        color:
+            r: 0.59243804
+            g: 0.39929333
+            b: 0.14497213
+        metalness: 0
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.7
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: mdf
+      name: MDF
+      base:
+        weight: 1
+        color:
+            r: 0.48776522
+            g: 0.30663478
+            b: 0.14497213
+        metalness: 0
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.7
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false

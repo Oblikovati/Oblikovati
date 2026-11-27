@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Workspace layout and panel visibility: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature" package="testsuite/Feature: Workspace layout and panel visibility: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T02:57:15.818647546Z" time="49.257529665"><testcase name="Scenario: Expand and collapse Origin children from its context menu: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature:514:3" time="49.257529665"><system-out><![CDATA[  Scenario: Expand and collapse Origin children from its context menu
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is active in the MCAD Software with a visible solid
+   ✔  And the Origin branch is collapsed in the model browser
+   ✔  When the user right-clicks Origin
+   ✔  Then its context menu offers Expand All Children and Collapse All Children
+   ✔  When the user chooses Expand All Children
+   ✔  Then Origin displays its plane, axis and center-point child rows
+   ✔  And the solid remains visible in the viewport
+   ✔  When the user right-clicks Origin and chooses Collapse All Children
+   ✔  Then the direct plane, axis and center-point rows remain visible under Origin
+   ✔  And the solid remains visible in the viewport
+]]></system-out></testcase></testsuite></testsuites>

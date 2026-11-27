@@ -1,0 +1,499 @@
+// SPDX-License-Identifier: GPL-2.0-only
+//! Single-owner edits over owned recipe state. Kernel handles are not snapshot contents.
+use crate::{
+    identity::{RecipeIdAllocator, RecipeIdError},
+    parameter::ParameterCollection,
+    property::DocumentProperties,
+};
+mod checkpoints;
+mod evaluation;
+pub use evaluation::{
+    EvaluationScope, EvaluationTransition, HistoryEvaluationSnapshot, PartCandidateGuard,
+};
+mod datum_delete;
+mod datum_metadata;
+mod derived_ids;
+mod extrusion_pattern_create;
+mod feature_ids;
+mod fillet_create;
+mod hole_create;
+mod loft_create;
+mod move_body_create;
+mod occurrence_ids;
+mod prism_create;
+mod scalar_ownership;
+mod shell_create;
+mod sketch_block_create;
+mod sketch_block_explode;
+mod sketch_create;
+mod sketch_current_geometry;
+mod sketch_dimension_create;
+mod sketch_dimension_delete;
+mod sketch_dimension_sources;
+mod sketch_entity_delete;
+mod sweep_create;
+pub use sketch_dimension_create::{
+    SketchDimensionCreation, SketchDimensionCreationError, SketchDimensionCreationReport,
+};
+mod sketch_dimension_edit;
+pub use sketch_dimension_edit::SketchDimensionEdit;
+mod sketch_copy;
+mod sketch_pattern_expressions;
+pub use sketch_pattern_expressions::SketchRectangularPatternRequest;
+mod sketch_corner;
+mod sketch_line;
+mod sketch_point;
+mod sketch_primitive;
+pub use sketch_corner::{SketchCornerCreation, SketchCornerCreationReport};
+mod sketch_relation_create;
+mod sketch_relation_delete;
+mod sketch_spline_handle;
+pub use sketch_create::{DocumentSketchCreation, DocumentSketchCreationError};
+pub use sketch_line::{
+    SketchAppliedLineDirection, SketchLineChainCreation, SketchLineChainCreationReport,
+    SketchLineCreation, SketchLineCreationError, SketchLineCreationReport,
+    SketchTangentArcCreation, SketchTangentArcReport,
+};
+pub use sketch_point::SketchPointPlacement;
+pub use sketch_primitive::{SketchPrimitiveCreationError, SketchPrimitiveCreationReport};
+pub use sketch_relation_create::{SketchGeometricCreationError, SketchGeometricCreationReport};
+pub use sketch_spline_handle::{SketchSplineHandleEdit, SketchSplineHandleReport};
+mod sketch_delete;
+pub use datum_delete::{DocumentDatumDeleteError, DocumentDatumDeleteReport};
+mod dimension_names;
+mod sketch_constraints;
+pub use dimension_names::SketchDimensionNameReservations;
+mod sketch_ids;
+pub use sketch_constraints::{SketchConstraintReservationError, SketchConstraintReservations};
+pub use sketch_delete::{DocumentSketchDeleteError, DocumentSketchDeleteReport};
+mod transition_kind;
+pub use transition_kind::HistoryTransitionKind;
+mod preview;
+pub(crate) mod publication;
+pub use preview::{PreparedCandidateSeal, PreparedNavigation, PreparedPrivateEdit, SnapshotReplay};
+pub use publication::{
+    PreparedChoice, PreparedMapped, PreparedPublication, PreparedValue, PublicationToken,
+    publish_prepared,
+};
+mod sketch_placement;
+mod sketch_projection;
+mod sketch_recompute;
+pub use sketch_ids::SketchReservationMarks;
+pub use sketch_placement::{
+    BoundSketchFrames, DocumentSketchPlacementError, ResolvedDocumentSketch,
+};
+pub use sketch_projection::ResolvedSketchPointProjection;
+mod error;
+mod navigation;
+mod navigation_capture;
+mod part_design_view_ids;
+mod part_view_display;
+pub use part_view_display::{PartViewDisplayState, PartViewDisplayTransition};
+mod sketch_edit_history;
+pub use sketch_edit_history::SketchEditTransition;
+mod refresh;
+mod sketch_consequence;
+pub use error::{EditError, HistoryError};
+pub use refresh::{PreparedDependentPublication, PreparedDependentRefresh, PreparedRefresh};
+use std::sync::{
+    Arc,
+    atomic::{AtomicU64, Ordering},
+};
+/// Owned document recipe and metadata; identity allocation and file identity are outside history.
+#[derive(Clone, Debug)]
+pub struct DocumentSnapshot {
+    /// Saved assembly placements owned by document history.
+    pub assembly: Option<Vec<crate::assembly::AssemblyOccurrenceRecipe>>,
+    /// Drawing content belongs to the document history, not to a GUI window.
+    pub drawing: Option<crate::drawing::DrawingDocument>,
+    pub model_states: Option<crate::model_state::ModelStateMembers>,
+    pub body_names: std::collections::BTreeMap<String, String>,
+    /// Named design views, in the order they were made.
+    pub design_views: Vec<String>,
+    /// Part view recipes use the document's permanent identity reservations.
+    pub part_design_views: Option<crate::part_design_view::PartDesignViews>,
+    pub work_geometry:
+        crate::feature::FeatureSequence<crate::feature::work_geometry::WorkGeometryDefinition>,
+    pub assets: crate::assets::DocumentAssets,
+    pub sketch_settings: Option<crate::sketch_settings::SketchSettings>,
+    pub sketches: crate::document_sketch::DocumentSketches,
+    pub attributes: crate::attribute::DocumentAttributes,
+    pub attachments: crate::attachment::DocumentAttachments,
+    pub interests: crate::interest::DocumentInterests,
+    pub resources: std::collections::BTreeMap<String, crate::resource::DocumentResource>,
+    pub parameters: ParameterCollection<u64>,
+    pub properties: DocumentProperties,
+}
+/// Bind an immutable recipe to storage before its save identity is prepared.
+pub trait DocumentSnapshotTarget: crate::identity::DocumentSaveTarget {
+    /// Prepare without replacing storage; return the exact candidate recipe digest.
+    /// Example: `let digest = target.prepare(&snapshot, table_mark, parameter_mark, sketch_marks, feature_mark)?;` before identity preparation.
+    fn prepare(
+        &mut self,
+        snapshot: &DocumentSnapshot,
+        derived_high_water: i64,
+        parameter_high_water: u64,
+        sketch_marks: SketchReservationMarks,
+        feature_high_water: u64,
+    ) -> Result<Option<crate::identity::RecipeDigest>, Self::Failure>;
+}
+
+/// A command can reserve identities but cannot replace or rewind the document allocator.
+pub struct RecipeReservations<'a> {
+    ids: &'a mut RecipeIdAllocator,
+    sketch_ids: &'a mut RecipeIdAllocator,
+    feature_ids: &'a mut RecipeIdAllocator,
+    occurrence_ids: &'a mut RecipeIdAllocator,
+    sketch_entity_ids: &'a mut RecipeIdAllocator,
+    sketch_constraint_ids: &'a mut SketchConstraintReservations,
+    dimension_names: &'a mut SketchDimensionNameReservations,
+    derived_high_water: &'a mut i64,
+}
+impl RecipeReservations<'_> {
+    /// Permanently reserve an identity; example: `let id = reservations.allocate()?;`.
+    pub fn allocate(&mut self) -> Result<u64, RecipeIdError> {
+        self.ids.allocate()
+    }
+}
+
+/// A monotonically assigned transaction handle, valid only while it is the active top frame.
+#[must_use]
+#[derive(Clone, Debug)]
+pub struct TransactionToken {
+    sequence: u64,
+    owner: Arc<()>,
+}
+impl PartialEq for TransactionToken {
+    fn eq(&self, other: &Self) -> bool {
+        self.sequence == other.sequence && Arc::ptr_eq(&self.owner, &other.owner)
+    }
+}
+impl Eq for TransactionToken {}
+
+#[derive(Debug)]
+struct OpenTransaction {
+    token: TransactionToken,
+    label: String,
+    before: DocumentSnapshot,
+    derived_baseline: Option<DocumentSnapshot>,
+    part_view_display: Option<PartViewDisplayTransition>,
+}
+#[derive(Debug)]
+struct HistoryStep {
+    kind: HistoryTransitionKind,
+    label: String,
+    saved: bool,
+    before: DocumentSnapshot,
+    after: DocumentSnapshot,
+    sketch_edit: Option<SketchEditTransition>,
+    part_view_display: Option<PartViewDisplayTransition>,
+}
+
+/// Owns current recipe state, permanent ID reservations, and nested edit history.
+#[derive(Debug)]
+pub struct DocumentEditHistory {
+    current: DocumentSnapshot,
+    ids: RecipeIdAllocator,
+    sketch_ids: RecipeIdAllocator,
+    feature_ids: RecipeIdAllocator,
+    occurrence_ids: RecipeIdAllocator,
+    sketch_entity_ids: RecipeIdAllocator,
+    sketch_constraint_ids: SketchConstraintReservations,
+    dimension_names: SketchDimensionNameReservations,
+    derived_high_water: i64,
+    open: Vec<OpenTransaction>,
+    done: Vec<HistoryStep>,
+    undone: Vec<HistoryStep>,
+    owner: Arc<()>,
+    next_token: u64,
+    generation: Arc<AtomicU64>,
+}
+
+impl DocumentEditHistory {
+    /// Take ownership of loaded state and its allocator; example: `DocumentEditHistory::new(snapshot, ids)?`.
+    pub fn new(snapshot: DocumentSnapshot, ids: RecipeIdAllocator) -> Result<Self, HistoryError> {
+        snapshot.validate_datum_metadata()?;
+        snapshot.validate_model_state_members()?;
+        snapshot.validate_part_design_views()?;
+        snapshot.validate_member_parameter_expressions()?;
+        snapshot
+            .validate_scalar_ownership()
+            .map_err(HistoryError::ScalarOwnership)?;
+        RecipeIdAllocator::restore(Some(ids.high_water()), snapshot.parameters.ids())?;
+        RecipeIdAllocator::restore(
+            Some(ids.high_water()),
+            &model_state_ids::authored_ids(&snapshot),
+        )?;
+        RecipeIdAllocator::restore(
+            Some(ids.high_water()),
+            &part_design_view_ids::authored_ids(&snapshot),
+        )?;
+        let derived_high_water = snapshot
+            .parameters
+            .derived_tables()
+            .iter()
+            .map(|table| table.id)
+            .max()
+            .unwrap_or(0);
+        let sketch_ids = RecipeIdAllocator::restore(None, &snapshot.sketches.sketch_ids())?;
+        let sketch_entity_ids = RecipeIdAllocator::restore(None, &snapshot.sketches.entity_ids())?;
+        let sketch_constraint_ids = SketchConstraintReservations::restore(
+            &snapshot.sketches,
+            sketch_ids.high_water(),
+            None,
+        )?;
+        let feature_ids =
+            RecipeIdAllocator::restore(None, &feature_ids::datum_feature_ids(&snapshot))?;
+        let occurrence_ids =
+            RecipeIdAllocator::restore(None, &occurrence_ids::authored_occurrence_ids(&snapshot))?;
+        let dimension_names = SketchDimensionNameReservations::restore(
+            &snapshot.sketches,
+            &snapshot.parameters,
+            sketch_ids.high_water(),
+            None,
+        )?;
+        Ok(Self {
+            dimension_names,
+            feature_ids,
+            occurrence_ids,
+            sketch_ids,
+            sketch_entity_ids,
+            sketch_constraint_ids,
+            current: snapshot,
+            derived_high_water,
+            ids,
+            open: Vec::new(),
+            done: Vec::new(),
+            undone: Vec::new(),
+            owner: Arc::new(()),
+            next_token: 0,
+            generation: Arc::new(AtomicU64::new(0)),
+        })
+    }
+
+    /// Inspect committed or preview state without bypassing edits; example: `history.snapshot()`.
+    pub fn snapshot(&self) -> &DocumentSnapshot {
+        &self.current
+    }
+
+    /// Read the generation used to reject stale evaluation results; example: `history.generation()`.
+    pub fn generation(&self) -> u64 {
+        self.generation.load(Ordering::Acquire)
+    }
+
+    /// Inspect permanent ID reservations; example: `history.high_water()` after undo.
+    pub fn high_water(&self) -> u64 {
+        self.ids.high_water()
+    }
+
+    /// Begin an isolated nested undo unit; example: `let token = history.begin("Edit width")?;`.
+    pub fn begin(&mut self, label: &str) -> Result<TransactionToken, HistoryError> {
+        let next = self
+            .next_token
+            .checked_add(1)
+            .ok_or(HistoryError::Exhausted("transaction tokens"))?;
+        let token = TransactionToken {
+            sequence: next,
+            owner: Arc::clone(&self.owner),
+        };
+        self.open.push(OpenTransaction {
+            token: token.clone(),
+            label: label.into(),
+            before: self.current.clone(),
+            derived_baseline: None,
+            part_view_display: None,
+        });
+        self.next_token = next;
+        Ok(token)
+    }
+
+    /// Apply a fallible edit to a candidate; allocated IDs remain reserved even on failure.
+    /// Example: `history.edit(&token, |snapshot, ids| edit_parameters(snapshot, ids))?;`.
+    pub fn edit<R, E>(
+        &mut self,
+        token: &TransactionToken,
+        edit: impl FnOnce(&mut DocumentSnapshot, &mut RecipeReservations<'_>) -> Result<R, E>,
+    ) -> Result<R, EditError<E>> {
+        self.require_top(token).map_err(EditError::History)?;
+        let generation = self.next_generation().map_err(EditError::History)?;
+        let mut candidate = self.current.clone();
+        let reserved_before = self.ids.high_water();
+        let tables_before = self.derived_high_water;
+        let sketches_before = self.sketch_reservations();
+        let features_before = self.feature_high_water();
+        let occurrences_before = self.occurrence_high_water();
+        let result = edit(
+            &mut candidate,
+            &mut RecipeReservations {
+                feature_ids: &mut self.feature_ids,
+                occurrence_ids: &mut self.occurrence_ids,
+                ids: &mut self.ids,
+                sketch_ids: &mut self.sketch_ids,
+                sketch_entity_ids: &mut self.sketch_entity_ids,
+                sketch_constraint_ids: &mut self.sketch_constraint_ids,
+                dimension_names: &mut self.dimension_names,
+                derived_high_water: &mut self.derived_high_water,
+            },
+        )
+        .map_err(EditError::Mutation)?;
+        candidate
+            .validate_snapshot_transition(&self.current)
+            .map_err(EditError::History)?;
+        self.validate_feature_ids(&candidate, features_before)
+            .map_err(EditError::History)?;
+        self.validate_occurrence_ids(&candidate, occurrences_before)
+            .map_err(EditError::History)?;
+        self.validate_candidate_ids(&candidate, reserved_before)
+            .map_err(EditError::History)?;
+        self.validate_sketch_ids(&candidate, sketches_before)
+            .map_err(EditError::History)?;
+        self.validate_derived_ids(&candidate, tables_before)
+            .map_err(EditError::History)?;
+        self.current = candidate;
+        self.generation.store(generation, Ordering::Release);
+        Ok(result)
+    }
+
+    /// Commit the active frame; nested commits fold into their parent.
+    /// Example: `history.commit(&token, false)?;`.
+    pub fn commit(
+        &mut self,
+        token: &TransactionToken,
+        merge_previous: bool,
+    ) -> Result<(), HistoryError> {
+        self.require_top(token)?;
+        let frame = self.open.pop().expect("validated frame");
+        if !self.open.is_empty() {
+            self.inherit_derived_baseline(&frame);
+            return Ok(());
+        }
+        if merge_previous
+            && let Some(previous) = self.done.last_mut().filter(|step| {
+                step.sketch_edit.is_none()
+                    && step.part_view_display.is_none()
+                    && frame.part_view_display.is_none()
+                    && step.kind == HistoryTransitionKind::Ordinary
+            })
+        {
+            previous.after = self.current.clone();
+            previous.saved = false;
+        } else {
+            self.done.push(HistoryStep {
+                kind: HistoryTransitionKind::Ordinary,
+                label: frame.label,
+                saved: false,
+                before: frame.before,
+                after: self.current.clone(),
+                sketch_edit: None,
+                part_view_display: frame.part_view_display,
+            });
+        }
+        self.undone.clear();
+        Ok(())
+    }
+
+    /// Revert the active frame without releasing IDs; example: `history.abort(&token)?;`.
+    pub fn abort(&mut self, token: &TransactionToken) -> Result<(), HistoryError> {
+        self.validate_abort(token)?;
+        let generation = self.next_generation()?;
+        self.current = self.open.pop().expect("validated frame").before;
+        self.generation.store(generation, Ordering::Release);
+        Ok(())
+    }
+
+    /// Check rollback before a vetoable event; example: `history.validate_abort(&token)?;`.
+    pub fn validate_abort(&self, token: &TransactionToken) -> Result<(), HistoryError> {
+        self.require_top(token)?;
+        self.next_generation()?;
+        Ok(())
+    }
+
+    /// Close an unchanged frame without an undo step or redo loss.
+    /// Example: `if history.discard_unchanged(&token)? { return Ok(()); }`.
+    pub fn discard_unchanged(&mut self, token: &TransactionToken) -> Result<bool, HistoryError> {
+        self.require_top(token)?;
+        let frame = self.open.last().expect("validated frame");
+        if frame.part_view_display.is_some() {
+            return Ok(false);
+        }
+        let baseline = frame.derived_baseline.as_ref().unwrap_or(&frame.before);
+        if !sketch_consequence::same_history_recipe(baseline, &self.current) {
+            return Ok(false);
+        }
+        let frame = self.open.pop().expect("validated frame");
+        self.inherit_derived_baseline(&frame);
+        Ok(true)
+    }
+
+    fn require_top(&self, token: &TransactionToken) -> Result<(), HistoryError> {
+        if !Arc::ptr_eq(&self.owner, &token.owner) {
+            return Err(HistoryError::ForeignTransaction);
+        }
+        let actual = self.open.last().map(|frame| &frame.token);
+        if actual != Some(token) {
+            return Err(HistoryError::Inactive {
+                supplied: token.clone(),
+                active: actual.cloned(),
+            });
+        }
+        Ok(())
+    }
+
+    fn next_generation(&self) -> Result<u64, HistoryError> {
+        self.generation()
+            .checked_add(1)
+            .ok_or(HistoryError::Exhausted("evaluation generations"))
+    }
+
+    fn validate_candidate_ids(
+        &self,
+        candidate: &DocumentSnapshot,
+        reserved_before: u64,
+    ) -> Result<(), HistoryError> {
+        self.validate_model_state_ids(candidate, reserved_before)?;
+        self.validate_part_design_view_ids(candidate, reserved_before)?;
+        for &id in candidate.parameters.ids() {
+            if self.current.parameters.get(id).is_none()
+                && (id <= reserved_before || id > self.ids.high_water())
+            {
+                return Err(HistoryError::UnreservedIdentity(id));
+            }
+        }
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests;
+
+mod metadata_recipe;
+mod model_state_ids;
+mod model_state_parameter_validation;
+mod model_state_suppression;
+
+mod sketch_split;
+
+mod sketch_endpoint;
+
+mod sketch_polyline;
+mod sketch_text;
+pub use sketch_polyline::{SketchPolylineCreation, SketchPolylineCreationReport};
+
+mod sketch_polygon;
+pub use sketch_polygon::{
+    SketchPolygonCreation, SketchPolygonCreationError, SketchPolygonCreationReport,
+};
+
+mod sketch_slot;
+pub use sketch_slot::{SketchSlotCreation, SketchSlotCreationReport};
+mod sketch_placement_recipe;
+pub use sketch_placement_recipe::{
+    SketchPlacementContext, SketchPlacementCreationError, SketchPlacementCreationReport,
+    SketchPlacementFieldLock,
+};
+
+mod conditional_projection;
+pub use conditional_projection::{
+    ConditionalFrameSource, ConditionalOriginProjection, ConditionalPointDisplacement,
+    ConditionalProjectedSketchRoot, ConditionalSegmentError, SketchFrameInputBounds,
+};

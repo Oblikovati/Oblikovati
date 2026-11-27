@@ -1,0 +1,113 @@
+{
+  "cucumber_sha256": "4a139459cb12d821b198ca5dc8f32b2b2bbf67c11866627d0482775e2b07115d",
+  "scenarios": [
+    {
+      "path": "features/application/workspace-layout/workspace-layout.feature",
+      "line": 158,
+      "name": "Inspect the model browser menu",
+      "background_steps": [],
+      "scenario_steps": [
+        {
+          "line": 159,
+          "name": "`fixtures/cad/docking-visible-solid-current.opd` is open in the MCAD Software"
+        },
+        {
+          "line": 160,
+          "name": "the model browser is visible"
+        },
+        {
+          "line": 161,
+          "name": "the user opens the model browser menu"
+        },
+        {
+          "line": 162,
+          "name": "the menu offers Autoscroll, Expand All and Collapse All"
+        },
+        {
+          "line": 163,
+          "name": "it offers Find, Display Preferences and Help"
+        }
+      ]
+    },
+    {
+      "path": "features/application/workspace-layout/workspace-layout.feature",
+      "line": 177,
+      "name": "Search the Model tree from another active dock tab",
+      "background_steps": [],
+      "scenario_steps": [
+        {
+          "line": 178,
+          "name": "`fixtures/cad/workspace-layout-points.opd` is open in the MCAD Software"
+        },
+        {
+          "line": 179,
+          "name": "Model and Log occupy one dock tab bar with Log active"
+        },
+        {
+          "line": 180,
+          "name": "the Model search field is closed"
+        },
+        {
+          "line": 181,
+          "name": "the user clicks the search icon in that dock tab bar"
+        },
+        {
+          "line": 182,
+          "name": "Model becomes active and its empty search field has keyboard focus"
+        },
+        {
+          "line": 183,
+          "name": "the Find criteria dialog remains closed"
+        },
+        {
+          "line": 184,
+          "name": "the user types \"InspectionPoint\" without clicking another control"
+        },
+        {
+          "line": 185,
+          "name": "the Model tree shows InspectionPointA, InspectionPointB and InspectionPointC"
+        },
+        {
+          "line": 186,
+          "name": "the query is highlighted in the matching tree rows"
+        },
+        {
+          "line": 187,
+          "name": "the user switches to Log and clicks the dock tab bar search icon again"
+        },
+        {
+          "line": 188,
+          "name": "Model becomes active with \"InspectionPoint\" still in the focused search field"
+        }
+      ]
+    },
+    {
+      "path": "features/application/workspace-layout/workspace-layout.feature",
+      "line": 279,
+      "name": "Inspect the drawing browser tree menu",
+      "background_steps": [],
+      "scenario_steps": [
+        {
+          "line": 280,
+          "name": "`fixtures/cad/blank-drawing.odd` is active in the MCAD Software"
+        },
+        {
+          "line": 281,
+          "name": "the drawing browser is visible"
+        },
+        {
+          "line": 282,
+          "name": "the user opens the drawing browser menu"
+        },
+        {
+          "line": 283,
+          "name": "the menu offers Expand All, Collapse All and Help"
+        },
+        {
+          "line": 284,
+          "name": "the drawing sheet remains visible"
+        }
+      ]
+    }
+  ]
+}

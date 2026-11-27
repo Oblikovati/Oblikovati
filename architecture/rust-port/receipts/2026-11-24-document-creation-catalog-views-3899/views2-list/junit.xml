@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Navigate the native template catalog: tmp/oblikovati-ribbon-relocated.RcZVDl/current-document-creation-catalog-source/features/application/document-creation/document-creation-catalog-basics.feature" package="testsuite/Feature: Navigate the native template catalog: tmp/oblikovati-ribbon-relocated.RcZVDl/current-document-creation-catalog-source/features/application/document-creation/document-creation-catalog-basics.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T19:53:32.16520811Z" time="29.211942385"><testcase name="Scenario: Select an assembly template in list view: tmp/oblikovati-ribbon-relocated.RcZVDl/current-document-creation-catalog-source/features/application/document-creation/document-creation-catalog-basics.feature:74:3" time="29.211942385"><system-out><![CDATA[  Scenario: Select an assembly template in list view
+   ✔> Given a fresh MCAD Software session loads `fixtures/cad/document-creation-native-candidate.opj` as its active project
+   ✔> And the native catalog contains metric and inch templates in their respective folders
+   ✔> And the catalog root has no direct template files
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And the user presses Control+N to open the new-document template chooser
+   ✔  And the new-document template chooser is open in the MCAD Software
+   ✔  And the metric template folder is selected
+   ✔  And templates are grouped by type
+   ✔  When the user chooses List in the template display menu
+   ✔  Then the gallery displays compact template entries under type headings
+   ✔  And the template details pane remains visible
+   ✔  When the user selects the standard metric assembly template in the list
+   ✔  Then the details pane identifies an assembly with millimeter units
+   ✔  When the user chooses Medium icons in the template display menu
+   ✔  Then the gallery displays medium-sized template icons
+   ✔  And the details pane continues to identify the metric assembly template
+]]></system-out></testcase></testsuite></testsuites>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon panel visibility: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" package="testsuite/Feature: Ribbon panel visibility: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T09:02:10.295028666Z" time="35.982927503"><testcase name="Scenario: Toggle Modify from Show Panels while its additional commands are open: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:737:3" time="35.982927503"><system-out><![CDATA[  Scenario: Toggle Modify from Show Panels while its additional commands are open
+   ✔  Given a part is active with the full 3D Model ribbon docked at the top
+   ✔  And the Modify additional command area is open
+   ✔  When the user opens Show Panels from the active tab context menu
+   ✔  Then Modify is checked in the panel list
+   ✔  When the user selects Modify
+   ✔  Then the menu closes
+   ✔  And the Modify panel and its additional command area are hidden
+   ✔  When the user reopens Show Panels from the active tab context menu
+   ✔  Then Modify is unchecked
+   ✔  When the user selects Modify
+   ✔  Then the menu closes
+   ✔  And the main Modify panel is visible
+   ✔  And the additional command area remains closed
+]]></system-out></testcase></testsuite></testsuites>

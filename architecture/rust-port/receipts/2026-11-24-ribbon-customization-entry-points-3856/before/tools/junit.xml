@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="1" hostname="localhost" timestamp="2026-11-24T13:31:38.360632003Z" time="8.993091294"><testcase name="Scenario: Open ribbon customization from the Tools tab in its first captured state: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature:136:3" time="8.993091294"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Open ribbon customization from the Tools tab in its first captured state
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the Tools ribbon tab is selected
+   ✘  And ribbon customization has not been opened earlier in the captured session
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature:139:5
+      Step doesn't match any function
+]]></system-out></testcase></testsuite></testsuites>

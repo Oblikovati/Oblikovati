@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-labelledby="t d">
+  <title id="t">Sketch Point</title>
+  <desc id="d">Precision sketch crosshair point node with Teal highlight.</desc>
+  <g id="layer-body">
+    <path d="M16,6 V26 M6,16 H26" stroke="var(--icon-line-general, #D2D7E2)" stroke-width="1.3" stroke-dasharray="2.5 1.5"/>
+  </g>
+  <g id="layer-accent">
+    <path d="M11,11 L21,21 M21,11 L11,21" stroke="var(--icon-line-active, #8172FA)" stroke-width="2" stroke-linecap="round"/><circle cx="16" cy="16" r="2.5" fill="var(--accent-selection-bright, #2DD4BF)" stroke="var(--icon-cutout, #121317)" stroke-width="0.7"/>
+  </g>
+</svg>

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Select entities in the 3D model viewport: target/native-scratch.HSqCy5/current-viewport-entity-selection-source/features/application/viewport-entity-selection/viewport-entity-selection.feature" package="testsuite/Feature: Select entities in the 3D model viewport: target/native-scratch.HSqCy5/current-viewport-entity-selection-source/features/application/viewport-entity-selection/viewport-entity-selection.feature" tests="1" errors="0" failures="1" hostname="localhost" timestamp="2026-11-25T00:08:50.676827285Z" time="6.183205443"><testcase name="Scenario: Pick a 3D sketch endpoint: target/native-scratch.HSqCy5/current-viewport-entity-selection-source/features/application/viewport-entity-selection/viewport-entity-selection.feature:14:3" time="6.183205443"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Pick a 3D sketch endpoint
+   ✔  Given the MCAD Software is in the part modeling workspace with no command or modal dialog active
+   ✘  And `features/application/viewport-entity-selection/spatial-line-and-point.opd` is open with 3D Sketch1 visible
+      Step failed:
+      Defined: target/native-scratch.HSqCy5/current-viewport-entity-selection-source/features/application/viewport-entity-selection/viewport-entity-selection.feature:16:5
+      Step doesn't match any function
+]]></system-out></testcase></testsuite></testsuites>

@@ -1,0 +1,30 @@
+{
+  "commits": [
+    "5b3f338fc",
+    "765b00c49"
+  ],
+  "lifecycle": "492 passed; 2 ignored",
+  "dimension_policy": "3 passed",
+  "dimension_measurement": "35 passed",
+  "placement_recipe": "28 passed",
+  "clippy": "model and session; warnings denied",
+  "measurement": "1000-line model/session preview; 30 samples per case; CPU 6 pinned; emulator active on CPU 4",
+  "median_ms": {
+    "no_pick_before": 9.6565,
+    "no_pick_after": 8.043,
+    "selected_before": 15.5345,
+    "selected_after": 14.182
+  },
+  "selected_peak_rss_kib": {
+    "before": [
+      13804,
+      14144
+    ],
+    "after": [
+      13836,
+      13992
+    ]
+  },
+  "gui_fps": "not measured",
+  "ui_consumer": "not complete"
+}

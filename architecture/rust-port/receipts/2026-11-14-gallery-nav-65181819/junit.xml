@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Create a document from a template: tmp/obk-gallery2/features/application/document-creation/document-creation.feature" package="testsuite/Feature: Create a document from a template: tmp/obk-gallery2/features/application/document-creation/document-creation.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T18:48:23.857755795Z" time="3.255769229"><testcase name="Scenario: Navigate home from a template folder: tmp/obk-gallery2/features/application/document-creation/document-creation.feature:188:3" time="3.255769229"><system-out><![CDATA[  Scenario: Navigate home from a template folder
+   ✔  Given the new-document template chooser is open in the MCAD Software
+   ✔  And the metric template folder is selected
+   ✔  And the standard metric assembly template details are displayed
+   ✔  And the template root has no templates directly in it
+   ✔  When the user selects Home in the chooser navigation bar
+   ✔  Then the template root is selected in the folder tree
+   ✔  And the gallery type sections contain no template entries
+   ✔  And the metric assembly template details remain displayed
+   ✔  When the user chooses Back in the chooser navigation bar
+   ✔  Then the metric template folder and its gallery are displayed again
+]]></system-out></testcase></testsuite></testsuites>

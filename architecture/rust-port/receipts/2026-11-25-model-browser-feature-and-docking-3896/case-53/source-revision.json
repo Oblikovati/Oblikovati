@@ -1,0 +1,13 @@
+{
+  "after": {
+    "commit": null,
+    "dirty": null,
+    "root": "/git/oblikovati-workspace/oblikovati-rust/target/native-scratch.HSqCy5/current-model-browser-source"
+  },
+  "before": {
+    "commit": null,
+    "dirty": null,
+    "root": "/git/oblikovati-workspace/oblikovati-rust/target/native-scratch.HSqCy5/current-model-browser-source"
+  },
+  "source_changed": false
+}

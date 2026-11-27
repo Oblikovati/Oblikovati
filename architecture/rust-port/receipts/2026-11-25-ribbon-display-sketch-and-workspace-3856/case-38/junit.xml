@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon display modes: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature" package="testsuite/Feature: Ribbon display modes: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T02:44:27.646304344Z" time="29.10584397"><testcase name="Scenario: Finish a sketch from a tabs-only ribbon: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature:551:3" time="29.10584397"><system-out><![CDATA[  Scenario: Finish a sketch from a tabs-only ribbon
+   ✔  Given `fixtures/cad/planar-sketch-empty-xy.opd` is open with Sketch1 being edited in the MCAD Software
+   ✔  And an existing sketch is being edited in the MCAD Software
+   ✔  And the Sketch ribbon is minimized to tabs
+   ✔  When the user clicks the Sketch tab
+   ✔  Then the Sketch command groups appear temporarily beneath the tabs
+   ✔  And the temporary ribbon includes the Finish action
+   ✔  When the user selects Finish
+   ✔  Then sketch editing ends and the part model is displayed
+   ✔  And the ribbon remains minimized to tabs
+]]></system-out></testcase></testsuite></testsuites>

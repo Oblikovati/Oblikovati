@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:34:50.855011013Z" time="84.15173947"><testcase name="Scenario: Accept a custom annotation scale: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature:1080:3" time="84.15173947"><system-out><![CDATA[  Scenario: Accept a custom annotation scale
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is active in the MCAD Software
+   ✔  And the user copies the Primary view representation as BrowserView and activates BrowserView
+   ✔  And an empty part is active in the MCAD Software
+   ✔  And a copied view representation is active with annotation scale Auto
+   ✔  When the user opens the active view's Annotation Scale submenu
+   ✔  And the user chooses Custom
+   ✔  And the user replaces the scale with "3:2"
+   ✔  And the user confirms the dialog
+   ✔  And the user reopens the active view's Annotation Scale submenu
+   ✔  Then Custom is checked
+   ✔  And the Custom entry displays the equivalent decimal value 1.50
+   ✔  When the user selects Auto
+   ✔  Then the annotation scale submenu closes
+]]></system-out></testcase></testsuite></testsuites>

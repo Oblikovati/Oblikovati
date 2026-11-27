@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Quick access toolbar customization: tmp/obk-qat-4068/features/application/quick-access-toolbar/quick-access-toolbar.feature" package="testsuite/Feature: Quick access toolbar customization: tmp/obk-qat-4068/features/application/quick-access-toolbar/quick-access-toolbar.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-17T13:22:25.130757311Z" time="27.426683954"><testcase name="Scenario: Move the quick access toolbar below and above the ribbon: tmp/obk-qat-4068/features/application/quick-access-toolbar/quick-access-toolbar.feature:49:3" time="27.426683954"><system-out><![CDATA[  Scenario: Move the quick access toolbar below and above the ribbon
+   ✔  Given a part document is active in the MCAD Software
+   ✔  And the quick access toolbar is above the ribbon
+   ✔  And Print is visible on the toolbar
+   ✔  When the user opens the quick access customization menu
+   ✔  And the user chooses Show Below the Ribbon
+   ✔  Then the quick access toolbar appears in a row below the ribbon
+   ✔  And Print remains visible on the toolbar
+   ✔  When the user reopens the customization menu
+   ✔  Then Print is checked
+   ✔  And Show Above the Ribbon is offered
+   ✔  When the user chooses Show Above the Ribbon
+   ✔  Then the quick access toolbar returns above the ribbon
+   ✔  And the same part remains active
+]]></system-out></testcase></testsuite></testsuites>

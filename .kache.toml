@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: GPL-2.0-only
+[cache]
+local_only = true
+local_max_size = "32GiB"
+# Bound cache entries even when Cargo retains their output links.
+gc_evict_shared = true
+cache_executables = true
+seed_incremental = true
+# Worktree cleanup belongs to the caller; the daemon must not delete other targets.
+auto_clean_orphaned_targets = false
+auto_share_target_files = false
+auto_recover_targets = false
+auto_clean_unused_units_days = 0
+auto_clean_idle_targets_days = 0

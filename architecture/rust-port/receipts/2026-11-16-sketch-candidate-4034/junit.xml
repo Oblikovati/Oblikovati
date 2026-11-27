@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Interact with sketch entities in the viewport: mnt/vininas-projects/MCAD-Scenarios/features/sketch/viewport-entity-interaction/viewport-entity-interaction.feature" package="testsuite/Feature: Interact with sketch entities in the viewport: mnt/vininas-projects/MCAD-Scenarios/features/sketch/viewport-entity-interaction/viewport-entity-interaction.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-16T14:52:27.805254321Z" time="23.614949507"><testcase name="Scenario: Show hover feedback for a sketch curve offered to a selection tool: mnt/vininas-projects/MCAD-Scenarios/features/sketch/viewport-entity-interaction/viewport-entity-interaction.feature:9:3" time="23.614949507"><system-out><![CDATA[  Scenario: Show hover feedback for a sketch curve offered to a selection tool
+   ✔> Given the MCAD Software is displaying an editable sketch
+   ✔> And the viewport pointer is idle
+   ✔  Given the sketch contains a curve and a sketch tool is requesting a curve selection
+   ✔  When the user hovers over a candidate curve segment
+   ✔  Then the candidate segment receives pointer highlight feedback before it is selected
+]]></system-out></testcase></testsuite></testsuites>

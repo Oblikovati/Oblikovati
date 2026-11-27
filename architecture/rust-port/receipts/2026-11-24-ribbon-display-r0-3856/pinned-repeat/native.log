@@ -1,0 +1,25 @@
+
+running 1 test
+Feature: Ribbon display modes
+  Scenario: Repeat the active compact panel button
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the Tools ribbon is minimized to panel buttons
+   ✔  When the user clicks the Options panel button
+   ✔  Then the temporary Options command panel appears below the button strip
+   ✔  And the Options panel button is highlighted
+   ✔  When the user clicks the Options panel button again
+   ✔  Then the temporary Options command panel remains visible
+   ✔  And the Options panel button remains highlighted
+   ✔  When the user opens the ribbon display-mode menu
+   ✔  Then the menu shows "Minimize to Panel Buttons" as selected
+   ✔  And the temporary Options command panel remains visible
+   ✔  When the user selects "Minimize to Tabs"
+   ✔  Then the temporary Options command panel closes
+   ✔  And the ribbon displays tabs without a permanent panel-button strip
+[Summary]
+1 feature
+1 scenario (1 passed)
+14 steps (14 passed)
+test native::gui_loop_tests::application_bdd::application_scenarios_use_the_native_window ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1617 filtered out; finished in 17.68s

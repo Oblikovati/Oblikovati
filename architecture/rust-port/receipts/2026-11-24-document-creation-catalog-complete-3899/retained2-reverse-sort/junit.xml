@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Navigate the native template catalog: tmp/oblikovati-ribbon-relocated.RcZVDl/current-document-creation-catalog-source/features/application/document-creation/document-creation-catalog-basics.feature" package="testsuite/Feature: Navigate the native template catalog: tmp/oblikovati-ribbon-relocated.RcZVDl/current-document-creation-catalog-source/features/application/document-creation/document-creation-catalog-basics.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T20:08:09.33553181Z" time="44.640147984"><testcase name="Scenario: Reverse an ascending template size sort in Details view: tmp/oblikovati-ribbon-relocated.RcZVDl/current-document-creation-catalog-source/features/application/document-creation/document-creation-catalog-basics.feature:228:3" time="44.640147984"><system-out><![CDATA[  Scenario: Reverse an ascending template size sort in Details view
+   ✔> Given a fresh MCAD Software session loads `fixtures/cad/document-creation-native-candidate.opj` as its active project
+   ✔> And the native catalog contains metric and inch templates in their respective folders
+   ✔> And the catalog root has no direct template files
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And the user presses Control+N to open the new-document template chooser
+   ✔  And the new-document template chooser is open in the MCAD Software
+   ✔  And the metric template folder is selected
+   ✔  And the gallery is grouped by template type and displayed in Details view
+   ✔  And Size is the active sort with visible part templates ordered by increasing file size
+   ✔  And the standard metric part template details are displayed
+   ✔  When the user clicks the Size column header
+   ✔  Then the visible part templates are ordered by decreasing file size
+   ✔  And the standard metric part template details remain displayed
+   ✔  And the gallery remains grouped by template type
+]]></system-out></testcase></testsuite></testsuites>

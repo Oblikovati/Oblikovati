@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T13:27:29.669454146Z" time="30.740629842"><testcase name="Scenario: Page between staged commands in a short target list: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature:1445:3" time="30.740629842"><system-out><![CDATA[  Scenario: Page between staged commands in a short target list
+   ✔  Given ribbon customization is open in the MCAD Software for the Part Tools target
+   ✔  And "2D Sketches" and "3D Annotations" are staged in that order
+   ✔  And both staged rows have Large and Text unchecked
+   ✔  When the user selects "2D Sketches" in the target list and presses Page Down
+   ✔  Then "3D Annotations" is highlighted
+   ✔  And both rows remain in their original order with their display options unchecked
+   ✔  When the user presses Page Up
+   ✔  Then "2D Sketches" is highlighted
+   ✔  And both staged rows and their display options remain unchanged
+   ✔  When the user clicks Cancel
+   ✔  Then the customization dialog closes without applying the staged commands
+]]></system-out></testcase></testsuite></testsuites>

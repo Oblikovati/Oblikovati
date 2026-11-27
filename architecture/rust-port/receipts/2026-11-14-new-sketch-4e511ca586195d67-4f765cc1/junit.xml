@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: New sketch: tmp/obk-sketch-48987af/features/sketch/new-sketch/scenario.feature" package="testsuite/Feature: New sketch: tmp/obk-sketch-48987af/features/sketch/new-sketch/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T21:08:31.111370581Z" time="6.304585952"><testcase name="Scenario: new-sketch-02 Cancel before selecting a plane: tmp/obk-sketch-48987af/features/sketch/new-sketch/scenario.feature:13:3" time="6.304585952"><system-out><![CDATA[  Scenario: new-sketch-02 Cancel before selecting a plane
+   ✔  Given Part2 has only Sketch1
+   ✔  When the user invoke Start 2D Sketch and press Escape before choosing a plane
+   ✔  Then the reference-plane previews disappear
+   ✔  And the browser still contains only Sketch1
+]]></system-out></testcase></testsuite></testsuites>

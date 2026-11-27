@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Workspace layout and panel visibility: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature" package="testsuite/Feature: Workspace layout and panel visibility: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:01:52.874101378Z" time="27.696114808"><testcase name="Scenario: Find drawing entries inside a collapsed resource branch: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature:371:3" time="27.696114808"><system-out><![CDATA[  Scenario: Find drawing entries inside a collapsed resource branch
+   ✔  Given `fixtures/cad/blank-drawing.odd` is open in the MCAD Software with a border resource and a sheet border
+   ✔  And the drawing resources branch is collapsed in the browser
+   ✔  When the user opens the drawing browser search field
+   ✔  And the user enters "Border"
+   ✔  Then the filtered tree shows the matching border resource under its parent branches
+   ✔  And the filtered tree shows the matching sheet border
+   ✔  And the matching text is highlighted
+   ✔  When the user clears the search text
+   ✔  Then the unfiltered tree is restored
+   ✔  And the drawing resources branch is collapsed
+   ✔  And the drawing sheet remains visible
+]]></system-out></testcase></testsuite></testsuites>

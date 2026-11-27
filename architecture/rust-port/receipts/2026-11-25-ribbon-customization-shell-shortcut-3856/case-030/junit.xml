@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T05:17:34.040055733Z" time="32.189652922"><testcase name="Scenario: Add and remove a ribbon command in quick access: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature:406:3" time="32.189652922"><system-out><![CDATA[  Scenario: Add and remove a ribbon command in quick access
+   ✔> Given the MCAD Software starts with a writable copy of `fixtures/preferences/ribbon-normal` as its configuration directory
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part is active in the MCAD Software
+   ✔  And "Shell" is visible in the 3D Model Modify panel
+   ✔  And "Shell" is absent from the quick-access toolbar
+   ✔  When the user right-clicks "Shell" and selects "Add to Quick Access Toolbar"
+   ✔  Then a Shell icon appears in the quick-access toolbar
+   ✔  And "Shell" remains in the Modify panel
+   ✔  When the user reopens the ribbon command context menu
+   ✔  Then "Add to Quick Access Toolbar" is unavailable
+   ✔  When the user right-clicks the added Shell icon in the quick-access toolbar
+   ✔  Then its menu offers "Remove from Quick Access Toolbar"
+   ✔  When the user selects "Remove from Quick Access Toolbar"
+   ✔  Then the added Shell icon disappears from the toolbar
+   ✔  And the ribbon command context menu offers "Add to Quick Access Toolbar" again
+]]></system-out></testcase></testsuite></testsuites>

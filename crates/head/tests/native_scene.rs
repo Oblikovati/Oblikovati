@@ -1,0 +1,493 @@
+// SPDX-License-Identifier: GPL-2.0-only
+use super::*;
+
+#[test]
+fn native_camera_ray_picks_a_visible_prism_face() {
+    let directory = tempfile::tempdir().unwrap();
+    let mut window = NativeHeadWindow::open().unwrap();
+    let mut owner = native_owner(window.wake.clone()).unwrap();
+    let document = open_native_part(&mut owner, &directory.path().join("ray-pick.opd"));
+    submit_native_scene(&mut owner, &mut window);
+    let pixel = window.view.model_pixel([2., 1.5, 2.]).unwrap();
+    let ray = window.view.view_line(pixel).unwrap();
+    assert!(owner.click_model_from_gui(document, ray).unwrap());
+    assert!(owner.gui_command_state().unwrap().model_face_chosen);
+    owner.finish().unwrap();
+    window.finish().unwrap();
+}
+use crate::HeadSketchWork;
+use crate::HeadWork;
+use crate::scene_fixture as fixture;
+use oblikovati_api::{client::Client, wire::*};
+use oblikovati_viewport::ViewportCapture;
+/// Encode the shared stored-prism fixture; example: `native_scene_package()` for live file-open tests.
+pub(super) fn native_scene_package() -> Vec<u8> {
+    let snapshot = fixture::selected_prism_document();
+    let package = oblikovati_persistence::package::DocumentPackage::decode(
+        b"schemaVersion: 2\ndocumentType: 1\n",
+    )
+    .unwrap();
+    let parameters = package
+        .with_parameters(&snapshot.parameters, Default::default())
+        .unwrap();
+    let sketches = parameters
+        .with_sketches(&snapshot.sketches, 1, 104)
+        .unwrap();
+    sketches
+        .with_work_geometry(&snapshot.work_geometry, 1)
+        .unwrap()
+        .encode()
+        .unwrap()
+}
+/// Open a real stored part through the typed API; example: `open_native_part(owner, path)` for foreground acceptance.
+pub(super) fn open_native_part(owner: &mut NativeDesktopOwner, path: &std::path::Path) -> u64 {
+    std::fs::write(path, native_scene_package()).unwrap();
+    Client::new(owner.document_host())
+        .documents()
+        .open(&OpenDocumentArgs {
+            full_document_name: path.to_str().unwrap().into(),
+            ..Default::default()
+        })
+        .unwrap()
+        .id
+}
+
+fn infer_native_sketch_from_all_geometry(owner: &mut NativeDesktopOwner) {
+    Client::new(owner.document_host())
+        .sketch()
+        .set_inference_scope(&SketchInferenceScopeView {
+            sketch_index: 0,
+            scope: oblikovati_api::types::INFERENCE_SCOPE_ALL_GEOMETRY,
+            entities: None,
+        })
+        .unwrap();
+}
+
+/// Edit a retained part parameter; example: `native_set(owner, "width", "6 cm")`.
+pub(super) fn native_set(owner: &mut NativeDesktopOwner, name: &str, expression: &str) {
+    Client::new(owner.document_host())
+        .parameters()
+        .set(&ParameterSetArgs {
+            name: name.into(),
+            expression: expression.into(),
+            ..Default::default()
+        })
+        .unwrap();
+}
+/// Publish the current owner result and verify its native title; example: `publish_native_scene(owner, window)`.
+pub(super) fn publish_native_scene(
+    owner: &mut NativeDesktopOwner,
+    window: &mut NativeHeadWindow,
+) -> ViewportCapture {
+    submit_native_scene(owner, window);
+    capture_native_scene(window)
+}
+/// Submit the current owner scene without selecting a pixel oracle; example: `submit_native_scene(owner, window)`.
+pub(super) fn submit_native_scene(owner: &mut NativeDesktopOwner, window: &mut NativeHeadWindow) {
+    if let Some(update) = owner.take_sketch_scene().unwrap() {
+        window.submit_sketch_scene(update).unwrap();
+    }
+    window
+        .submit_scene(owner.take_scene().unwrap().unwrap())
+        .unwrap();
+    assert!(
+        window
+            .view
+            .native_title()
+            .unwrap()
+            .starts_with(&window.scene_status().unwrap().title())
+    );
+}
+/// Capture a completed scene and check its X11 pixels where available; example: `capture_native_scene(window)`.
+pub(super) fn capture_native_scene(window: &mut NativeHeadWindow) -> ViewportCapture {
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(3);
+    let capture = completed_framebuffer_until(window, deadline);
+    #[cfg(target_os = "linux")]
+    verify_native_pixels(window, &capture, deadline);
+    capture
+}
+/// Capture the current completed framebuffer; example: `capture_framebuffer(window)` for GUI acceptance.
+#[cfg(target_os = "linux")]
+pub(super) fn capture_framebuffer(window: &mut NativeHeadWindow) -> ViewportCapture {
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(3);
+    completed_framebuffer_until(window, deadline)
+}
+fn completed_framebuffer_until(
+    window: &mut NativeHeadWindow,
+    deadline: std::time::Instant,
+) -> ViewportCapture {
+    loop {
+        match window.view.present().unwrap() {
+            ViewportPresentation::Completed(capture) => return capture,
+            ViewportPresentation::SurfaceChanged(_) => {
+                assert!(std::time::Instant::now() < deadline);
+                window.view.poll_events(64).unwrap();
+            }
+        }
+    }
+}
+#[cfg(target_os = "linux")]
+fn verify_native_pixels(
+    window: &NativeHeadWindow,
+    capture: &ViewportCapture,
+    deadline: std::time::Instant,
+) {
+    while window.view.native_pixels().unwrap() != capture.rgba {
+        assert!(std::time::Instant::now() < deadline);
+        std::thread::sleep(std::time::Duration::from_millis(5));
+    }
+}
+/// Count the visible fixture body pixels; example: `solid_pixels(&capture)` after native presentation.
+pub(super) fn solid_pixels(capture: &ViewportCapture) -> usize {
+    capture
+        .rgba
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .filter(|pixel| fixture_solid_pixel(pixel))
+        .count()
+}
+pub(super) fn fixture_solid_pixel(pixel: &[u8; 4]) -> bool {
+    pixel[0] > 80
+        && pixel[0] <= pixel[1]
+        && pixel[1] <= pixel[2]
+        && (2..20).contains(&(pixel[2] - pixel[0]))
+        && pixel[3] == 255
+}
+#[test]
+fn native_head_displays_owned_edits_undo_failures_and_close_without_old_geometry() {
+    let directory = tempfile::tempdir().unwrap();
+    let mut window = NativeHeadWindow::open().unwrap();
+    let mut owner = native_owner(window.wake.clone()).unwrap();
+    let document = open_native_part(&mut owner, &directory.path().join("part.opd"));
+    let first = publish_native_scene(&mut owner, &mut window);
+    assert!(solid_pixels(&first) > 0);
+    native_set(&mut owner, "width", "6 cm");
+    let edited = publish_native_scene(&mut owner, &mut window);
+    assert!(solid_pixels(&edited) > solid_pixels(&first));
+    verify_scene_undo(&mut owner, &mut window, &first, &edited);
+    verify_failed_scene(&mut owner, &mut window);
+    verify_closed_scene(&mut owner, &mut window, document);
+    owner.finish().unwrap();
+    window.finish().unwrap();
+}
+fn verify_scene_undo(
+    owner: &mut NativeDesktopOwner,
+    window: &mut NativeHeadWindow,
+    first: &ViewportCapture,
+    edited: &ViewportCapture,
+) {
+    Client::new(owner.document_host())
+        .transactions()
+        .undo()
+        .unwrap();
+    assert_eq!(publish_native_scene(owner, window).rgba, first.rgba);
+    Client::new(owner.document_host())
+        .transactions()
+        .redo()
+        .unwrap();
+    assert_eq!(publish_native_scene(owner, window).rgba, edited.rgba);
+}
+fn verify_failed_scene(owner: &mut NativeDesktopOwner, window: &mut NativeHeadWindow) {
+    native_set(owner, "depth", "0 cm");
+    let failed = publish_native_scene(owner, window);
+    assert_eq!(solid_pixels(&failed), 0);
+    assert!(
+        window
+            .view
+            .native_title()
+            .unwrap()
+            .contains("1 unavailable features")
+    );
+    assert!(matches!(
+        window.scene_status().unwrap().health[0].status,
+        oblikovati_model::feature::FeatureEvaluationStatus::Failed(_)
+    ));
+}
+
+fn verify_closed_scene(
+    owner: &mut NativeDesktopOwner,
+    window: &mut NativeHeadWindow,
+    document: u64,
+) {
+    Client::new(owner.document_host())
+        .documents()
+        .close(&CloseDocumentArgs {
+            id: document,
+            force: true,
+        })
+        .unwrap();
+    let closed = publish_native_scene(owner, window);
+    assert_eq!(solid_pixels(&closed), 0);
+    assert_eq!(window.view.native_title().unwrap(), "Oblikovati");
+}
+
+#[test]
+fn native_body_visibility_removes_and_restores_pixels_without_model_edits() {
+    let directory = tempfile::tempdir().unwrap();
+    let mut window = NativeHeadWindow::open().unwrap();
+    let mut owner = native_owner(window.wake.clone()).unwrap();
+    let document = open_native_part(&mut owner, &directory.path().join("visibility.opd"));
+    let first = publish_native_scene(&mut owner, &mut window);
+    assert!(solid_pixels(&first) > 0);
+    native_body_visibility(&mut owner, false);
+    assert_eq!(
+        solid_pixels(&publish_native_scene(&mut owner, &mut window)),
+        0
+    );
+    native_body_visibility(&mut owner, true);
+    assert_eq!(
+        publish_native_scene(&mut owner, &mut window).rgba,
+        first.rgba
+    );
+    assert!(!owner.documents().workspace().needs_save(document).unwrap());
+    owner.finish().unwrap();
+    window.finish().unwrap();
+}
+fn native_body_visibility(owner: &mut NativeDesktopOwner, visible: bool) {
+    let result = Client::new(owner.document_host())
+        .body()
+        .set_visible(&BodySetVisibleArgs {
+            body_index: 0,
+            visible,
+        })
+        .unwrap();
+    assert_eq!(result.body.visible, visible);
+}
+
+#[test]
+fn native_body_deletion_and_undo_remove_and_restore_window_pixels() {
+    let directory = tempfile::tempdir().unwrap();
+    let mut window = NativeHeadWindow::open().unwrap();
+    let mut owner = native_owner(window.wake.clone()).unwrap();
+    let document = open_native_part(&mut owner, &directory.path().join("delete.opd"));
+    let original = publish_native_scene(&mut owner, &mut window);
+    assert!(solid_pixels(&original) > 0);
+    let reply = Client::new(owner.document_host())
+        .body()
+        .delete(&BodyIndexArgs { body_index: 0 })
+        .unwrap();
+    assert!(reply.bodies.unwrap_or_default().is_empty());
+    assert_eq!(
+        solid_pixels(&publish_native_scene(&mut owner, &mut window)),
+        0
+    );
+    Client::new(owner.document_host())
+        .transactions()
+        .undo()
+        .unwrap();
+    assert_eq!(
+        publish_native_scene(&mut owner, &mut window).rgba,
+        original.rgba
+    );
+    assert!(owner.documents().workspace().needs_save(document).unwrap());
+    owner.finish().unwrap();
+    window.finish().unwrap();
+}
+#[test]
+fn native_typed_prism_failure_clears_pixels_and_recovers_exact_scene() {
+    let directory = tempfile::tempdir().unwrap();
+    let mut window = NativeHeadWindow::open().unwrap();
+    let mut owner = native_owner(window.wake.clone()).unwrap();
+    open_native_part(&mut owner, &directory.path().join("typed-failure.opd"));
+    let original = publish_native_scene(&mut owner, &mut window);
+    native_set(&mut owner, "width", "0.000000000000001 cm");
+    let failed = publish_native_scene(&mut owner, &mut window);
+    assert_eq!(solid_pixels(&failed), 0);
+    verify_typed_native_failure(window.scene_status().unwrap());
+    verify_prism_failure_through_public_api(&mut owner);
+    native_set(&mut owner, "width", "4 cm");
+    assert_eq!(
+        publish_native_scene(&mut owner, &mut window).rgba,
+        original.rgba
+    );
+    let restored = Client::new(owner.document_host())
+        .documents()
+        .update(&UpdateDocumentArgs::default())
+        .unwrap();
+    assert!(restored.errors.is_none() && !restored.requires_update);
+    owner.finish().unwrap();
+    window.finish().unwrap();
+}
+fn verify_prism_failure_through_public_api(owner: &mut NativeDesktopOwner) {
+    let strict = Client::new(owner.document_host())
+        .documents()
+        .update(&UpdateDocumentArgs::default());
+    assert!(
+        strict
+            .unwrap_err()
+            .to_string()
+            .contains("failed after recompute")
+    );
+    let report = Client::new(owner.document_host())
+        .documents()
+        .update(&UpdateDocumentArgs {
+            accept_errors_and_continue: true,
+        })
+        .unwrap();
+    let errors = report.errors.unwrap();
+    assert_eq!(errors.len(), 1);
+    assert_eq!((errors[0].id, errors[0].kind.as_str()), (1, "extrude"));
+    assert!(
+        errors[0].message.contains("DegenerateCurve"),
+        "{:?}",
+        errors[0]
+    );
+    assert!(
+        errors[0].message.contains("ProfileCurveId(101)"),
+        "{:?}",
+        errors[0]
+    );
+    assert!(!report.requires_update);
+}
+fn verify_typed_native_failure(status: &crate::HeadSceneStatus) {
+    use oblikovati_model::feature::{FeatureEvaluationStatus, part::PartFeatureFailure};
+    let FeatureEvaluationStatus::Failed(PartFeatureFailure::Kernel(cause)) =
+        &status.health[0].status
+    else {
+        panic!(
+            "collapsed edge: expected typed adapter failure, got {:?}",
+            status.health
+        );
+    };
+    assert_eq!(
+        cause.phase(),
+        oblikovati_martensite::EvaluationPhase::Profile
+    );
+    assert_eq!(
+        cause.kind(),
+        oblikovati_martensite::EvaluationFailureKind::InvalidInput
+    );
+    let source = std::error::Error::source(cause).expect("expected the kernel decline");
+    let diagnostic = source.to_string();
+    assert!(diagnostic.contains("DegenerateCurve"), "{diagnostic}");
+    assert!(diagnostic.contains("ProfileCurveId(101)"), "{diagnostic}");
+    assert_eq!(
+        cause.feature(),
+        Some(oblikovati_model::feature::FeatureId(1))
+    );
+    assert_eq!(cause.sketch(), Some(fixture::SKETCH));
+    assert!(status.title().contains("1 unavailable features"));
+}
+#[test]
+fn native_rotation_refuses_to_move_the_fixed_profile_and_keeps_the_prism() {
+    let directory = tempfile::tempdir().unwrap();
+    let mut window = NativeHeadWindow::open().unwrap();
+    let mut owner = native_owner(window.wake.clone()).unwrap();
+    let document = open_native_part(&mut owner, &directory.path().join("rotate.opd"));
+    let before = publish_native_scene(&mut owner, &mut window);
+    assert!(solid_pixels(&before) > 0);
+    let session = owner.documents().workspace().session(document).unwrap();
+    let sketches = session.snapshot().sketches.clone();
+    let generation = session.generation();
+    let rotated_origin = [
+        1. - 15_f64.to_radians().cos() + 15_f64.to_radians().sin(),
+        1. - 15_f64.to_radians().sin() - 15_f64.to_radians().cos(),
+    ];
+    assert_ne!(
+        rotated_origin, [0.; 2],
+        "the requested rotation moves the fixed corner"
+    );
+    let error = rotate_native_profile(&mut owner).unwrap_err();
+    assert!(
+        error.to_string().contains("expected a converged move"),
+        "{error}"
+    );
+    let session = owner.documents().workspace().session(document).unwrap();
+    assert_eq!(session.generation(), generation);
+    assert_eq!(session.snapshot().sketches, sketches);
+    assert!(owner.take_scene().unwrap().is_none());
+    let after = capture_native_scene(&mut window);
+    assert_eq!(after.rgba, before.rgba);
+    owner.finish().unwrap();
+    window.finish().unwrap();
+}
+fn rotate_native_profile(
+    owner: &mut NativeDesktopOwner,
+) -> Result<TransformSketchResult, oblikovati_api::Error> {
+    Client::new(owner.document_host())
+        .sketch()
+        .transform(&TransformSketchArgs {
+            op: "rotate".into(),
+            entities: Some((101..105).collect()),
+            center: Some(vec![1.0, 1.0]),
+            angle: "15 deg".into(),
+            ..Default::default()
+        })
+}
+#[path = "native_scene/certified.rs"]
+mod certified_tests;
+#[path = "native_scene/copy.rs"]
+mod copy_tests;
+#[path = "native_scene/placement_recipe.rs"]
+mod placement_recipe_tests;
+#[path = "native_scene/polygon.rs"]
+mod polygon_tests;
+#[path = "native_scene/polyline.rs"]
+mod polyline_tests;
+#[path = "native_scene/slots.rs"]
+mod slot_tests;
+#[path = "native_scene/split.rs"]
+mod split_tests;
+#[path = "native_scene/three_point.rs"]
+mod three_point_tests;
+
+#[path = "native_scene/projection.rs"]
+mod projection_tests;
+
+#[path = "native_scene/slot_input.rs"]
+mod slot_input_tests;
+
+#[path = "native_scene/sketch_edit.rs"]
+mod sketch_edit_tests;
+
+#[path = "native_scene/recipe_input.rs"]
+mod recipe_input_tests;
+
+#[path = "native_scene/chain_recipe.rs"]
+mod chain_recipe_tests;
+
+#[path = "native_scene/inferred_chain.rs"]
+mod inferred_chain_tests;
+
+/// Apply the same owner palette before recording a model-only baseline; example: `apply_application_appearance(owner, window)`.
+pub(super) fn apply_application_appearance(
+    owner: &mut dyn crate::HeadWork,
+    window: &mut NativeHeadWindow,
+) {
+    let state = owner.gui_command_state().unwrap();
+    let palette = state.color_scheme.expect("native owner palette");
+    window.view.set_background(palette.background()).unwrap();
+    let theme = state.theme.expect("native owner theme");
+    window
+        .view
+        .set_sketch_palette(theme.sketch_palette())
+        .unwrap();
+}
+/// Keep exact pixel checks bounded on failure; example: `assert_same_native_pixels(&actual, &expected)`.
+pub(super) fn assert_same_native_pixels(actual: &ViewportCapture, expected: &ViewportCapture) {
+    assert_eq!(actual.extent, expected.extent);
+    assert_eq!(actual.rgba.len(), expected.rgba.len());
+    let mismatch = actual
+        .rgba
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .zip(expected.rgba.as_chunks::<4>().0)
+        .enumerate()
+        .find(|(_, (actual, expected))| actual != expected);
+    assert!(
+        mismatch.is_none(),
+        "expected identical native pixels; first mismatch {mismatch:?}"
+    );
+}
+
+#[path = "native_scene/depth.rs"]
+mod depth;
+
+#[cfg(target_os = "linux")]
+#[path = "native_scene/normal_debug.rs"]
+mod normal_debug;
+
+#[path = "native_scene/wire_command.rs"]
+mod wire_command;

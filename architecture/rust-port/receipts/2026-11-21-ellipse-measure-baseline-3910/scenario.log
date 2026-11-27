@@ -1,0 +1,10 @@
+  Scenario: ellipse-05 Measure the restored rotated ellipse
+   ✔  Given the MCAD Software is running
+   ✔  And an editable planar sketch
+   ✔  Given the rotated ellipse is restored by Redo
+   ✔  When the user open Measure, move its panel aside and select the curve
+   ✘  Then Selection 1 is identified as Ellipse
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/sketch/ellipse/scenario.feature:36:5
+      Matched: crates/head/src/../tests/application/../sketch/ellipse/measure.rs:54:1
+      Step panicked. Captured output: expected "Selection 1: Ellipse" in Measure "Measure Selectgeometrytomeasure Done"

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="1" hostname="localhost" timestamp="2026-11-25T03:57:28.557352841Z" time="40.775939539"><testcase name="Scenario: Replace the available-command selection with a secondary click: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature:1398:3" time="40.775939539"><failure type="Step Panicked" message="Step panicked. Captured output: assertion failed: diagnostics::window_geometry(&quot;Customize&quot;).is_none()"/><system-out><![CDATA[  Scenario: Replace the available-command selection with a secondary click
+   ✔> Given the MCAD Software starts with a writable copy of `fixtures/preferences/ribbon-normal` as its configuration directory
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part is active in the MCAD Software with the full Tools ribbon visible
+   ✔  And ribbon customization shows All Commands and an empty Part Tools target
+   ✔  And "2D Sketches" is selected in the available commands list
+   ✔  When the user right-clicks "3D Annotations" in the available commands list
+   ✔  Then "3D Annotations" is highlighted instead of "2D Sketches"
+   ✔  And no context menu is visible
+   ✔  And the Part Tools target remains empty
+   ✔  When the user clicks Cancel
+   ✘  Then the customization dialog closes
+      Step failed:
+      Defined: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature:1408:5
+      Matched: crates/head/src/../tests/application/ribbon-customization/steps.rs:200:1
+      Step panicked. Captured output: assertion failed: diagnostics::window_geometry("Customize").is_none()
+      ApplicationWorld {
+          text: "W\nP\nZ\nv\nO\nv\nFRONT\nModel\nMaterialBrow\u{85}\nAppearanceBr\u{85}\nMenu\nSearch\nPart1<Primary>\nRepresentations\nModelState\n<Primary>\n1\nView\n<Primary>\nOrigin\nYZPlane\nXZPlane\nXYPlane\nXAxis\nYAxis\nZAxis\nCenterPoint\nParameters\nSketches\nFeatures\nEndofPart\nABS(Black)\nAppearance\nAssigntopart\nClose\nOpeneddocument1:/git/oblikovati-workspace/oblikovati-rust/target/native-scratch.HSqCy5/current-ribbon-customization-source/fixtures/cad/workspace-layout-native.opd\nRibbonDisplay\nv\nv\n...\nPart1\nFile\n3DModel\nSketch\nTools\nManage\nView\nAnnotate\nMeasure\nMeasure\nDefault\nMaterial\nDefault\nAppearance\nMaterialandAppearance\nCustomize\nApplicationOptions\nDocumentSettings\nOptionsv\nCopy\nClipboard\nFind\nFind\nOpenTeamWeb\nTeamWeb\nHome\ndocking-visible-solid-current<Primary>\nPart1<Primary>*\nDocuments\nX\nY\nZ\nCustomize\nRibbon\nCustomizeusercommands\nAvailablecommands\nAllCommands\nName\n>\n<\nCustompanel\nPart|Tools\nName\nLarge\nText\nUp\nDown\nKeyboard\nMarkingMenu\nOK\nCancel\nApply\nClose\nImport\nExport\n<Separator>\n2DSketches\n3DAnnotations\n3-PointArc\n3-PointCircle\n3-PtCenterRect.\n3-PtRect.\nCenterArc\nCenterRect.\nCircle(CenterPoint)\nCoincident",
+          ..
+      }
+]]></system-out></testcase></testsuite></testsuites>

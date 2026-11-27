@@ -1,0 +1,301 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Text: mnt/vininas-projects/MCAD-Scenarios/features/sketch/text/scenario.feature" package="testsuite/Feature: Text: mnt/vininas-projects/MCAD-Scenarios/features/sketch/text/scenario.feature" tests="38" errors="0" failures="9" hostname="localhost" timestamp="2026-11-21T10:31:13.563380778Z" time="1966.362335237"><testcase name="Scenario: text-01 Commit the intended result: mnt/vininas-projects/MCAD-Scenarios/features/sketch/text/scenario.feature:5:3" time="20.950389665"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: text-01 Commit the intended result
+   ✔  Given the MCAD Software is running
+   ✔  And an editable planar sketch
+   ✘  When the user selects Text, place its insertion location, enter a short string, and accept the format dialog
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/sketch/text/scenario.feature:8:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: text-02 Observe empty-content acceptance: mnt/vininas-projects/MCAD-Scenarios/features/sketch/text/scenario.feature:13:3" time="45.312099358"><system-out><![CDATA[  Scenario: text-02 Observe empty-content acceptance
+   ✔  Given the MCAD Software is running
+   ✔  And an editable planar sketch
+   ✔  Given an empty text editor is open in an editable sketch
+   ✔  When the user clicks OK
+   ✔  Then the editor closes without validation or visible text
+   ✔  And the placement prompt remains with 28 dimensions needed
+]]></system-out></testcase><testcase name="Scenario: text-04 Undo and redo a committed change: mnt/vininas-projects/MCAD-Scenarios/features/sketch/text/scenario.feature:22:3" time="51.492125178"><system-out><![CDATA[  Scenario: text-04 Undo and redo a committed change
+   ✔  Given the MCAD Software is running
+   ✔  And an editable planar sketch
+   ✔  Given the user has committed one valid change through this feature
+   ✔  And the user has exited the creation or edit command
+   ✔  When the user presses Ctrl+Z once
+   ✔  Then the last feature transaction is undone
+   ✔  When the user presses Ctrl+Y once
+   ✔  Then that transaction is restored
+   ✔  And the visible text and solver count return to their pre-undo state
+]]></system-out></testcase><testcase name="Scenario: text-05 Start another placement after content cancellation: mnt/vininas-projects/MCAD-Scenarios/features/sketch/text/scenario.feature:34:3" time="83.773795629"><system-out><![CDATA[  Scenario: text-05 Start another placement after content cancellation
+   ✔  Given the MCAD Software is running
+   ✔  And an editable planar sketch
+   ✔  Given the earlier new text containing a was canceled
+   ✔  When the user starts Text and choose another insertion point
+   ✔  Then the new editor is empty
+   ✔  And the font is Tahoma, height is 3.05 mm and width is 100
+]]></system-out></testcase><testcase name="Scenario: text-06 Cancel pending text after live preview: mnt/vininas-projects/MCAD-Scenarios/features/sketch/text/scenario.feature:43:3" time="75.96463955"><system-out><![CDATA[  Scenario: text-06 Cancel pending text after live preview
+   ✔  Given an editable sketch with 210 dimensions needed
+   ✔  When the user starts Text and select insertion location (450,650)
+   ✔  Then Format Text opens with an empty editor and Tahoma, 3.05 mm and width 100
+   ✔  When the user focuses the editor and press lowercase a
+   ✔  Then a appears in the editor and the live canvas preview
+   ✔  When the user clicks Cancel
+   ✔  Then Format Text closes and the pending text preview disappears
+   ✔  And Text remains available for placement
+   ✔  When the user presses Escape
+   ✔  Then the creation command exits without retained text or solver-count change
+]]></system-out></testcase><testcase name="Scenario: text-07 Commit text and undo and redo the creation transaction: mnt/vininas-projects/MCAD-Scenarios/features/sketch/text/scenario.feature:56:3" time="38.629873292"><system-out><![CDATA[  Scenario: text-07 Commit text and undo and redo the creation transaction
+   ✔  Given an editable sketch and Text is active
+   ✔  When the user selects insertion location (450,650)
+   ✔  And the user focuses the empty Format Text editor and press lowercase b
+   ✔  Then b appears in the editor and live canvas preview
+   ✔  When the user clicks OK and press Escape
+   ✔  Then b remains visible and the sketch returns Ready
+   ✔  When the user presses Ctrl+Z
+   ✔  Then the new b text disappears and the baseline state returns
+   ✔  When the user presses Ctrl+Y
+   ✔  Then b returns with its original visible appearance and position
+]]></system-out></testcase><testcase name="Scenario: text-08 Canceled new text does not populate the next text editor: mnt/vininas-projects/MCAD-Scenarios/features/sketch/text/scenario.feature:69:3" time="30.978976563"><system-out><![CDATA[  Scenario: text-08 Canceled new text does not populate the next text editor
+   ✔  Given the user canceled new text containing lowercase a without accepting it
+   ✔  When the user starts Text again and choose a new insertion location
+   ✔  Then Format Text opens with an empty content editor
+   ✔  And the user records the retained formatting defaults separately from content
+]]></system-out></testcase><testcase name="Scenario: text-09 Cancel replacement of existing text content: mnt/vininas-projects/MCAD-Scenarios/features/sketch/text/scenario.feature:76:3" time="43.644855346"><system-out><![CDATA[  Scenario: text-09 Cancel replacement of existing text content
+   ✔  Given committed b text and Ready sketch state
+   ✔  When the user right-clicks the glyph and choose Edit text
+   ✔  Then Format Text opens containing b and its current formatting
+   ✔  When the user focuses the editor, press Ctrl+A, and type c
+   ✔  Then c replaces b in the editor and live canvas preview
+   ✔  When the user clicks Cancel
+   ✔  Then the original b returns on the canvas
+   ✔  And the sketch returns directly to Ready with its baseline solver count
+   ✔  And no new text object is created
+]]></system-out></testcase><testcase name="Scenario: text-10 Accept replacement content and reverse the edit transaction: mnt/vininas-projects/MCAD-Scenarios/features/sketch/text/scenario.feature:88:3" time="49.594669699"><system-out><![CDATA[  Scenario: text-10 Accept replacement content and reverse the edit transaction
+   ✔  Given the b text remains after a canceled c replacement
+   ✔  When the user chooses Edit text again
+   ✔  Then Format Text contains b
+   ✔  When the user focuses the editor, press Ctrl+A, type c, and click OK
+   ✔  Then c replaces b and the sketch returns directly to Ready
+   ✔  And the solver count remains at its pre-edit value
+   ✔  When the user presses Ctrl+Z
+   ✔  Then b returns without removing the text object
+   ✔  When the user presses Ctrl+Y
+   ✔  Then c returns at the same visible location
+]]></system-out></testcase><testcase name="Scenario: text-11 Cancel bold formatting applied to selected existing content: mnt/vininas-projects/MCAD-Scenarios/features/sketch/text/scenario.feature:101:3" time="60.843329629"><system-out><![CDATA[  Scenario: text-11 Cancel bold formatting applied to selected existing content
+   ✔  Given unbolded c text and Ready sketch state
+   ✔  When the user chooses Edit text, focus the editor, and press Ctrl+A
+   ✔  And the user clicks the Bold control
+   ✔  Then Bold is highlighted and c thickens in the editor and live preview
+   ✔  And the character content remains c
+   ✔  When the user clicks Cancel
+   ✔  Then the original thinner c returns and the sketch is Ready
+   ✔  And the baseline solver count is retained
+]]></system-out></testcase><testcase name="Scenario: text-12 Observe empty-content OK: mnt/vininas-projects/MCAD-Scenarios/features/sketch/text/scenario.feature:112:3" time="27.111904111"><system-out><![CDATA[  Scenario: text-12 Observe empty-content OK
+   ✔  Given Text has opened an empty Format Text editor in the 28-dimension fixture
+   ✔  When the user clicks OK without entering content
+   ✔  Then the editor closes without a validation dialog or visible text
+   ✔  And the placement prompt remains with 28 dimensions needed
+   ✔  When the user chooses the same insertion location
+   ✔  Then the new editor is empty
+]]></system-out></testcase><testcase name="Scenario: text-13 Commit bold characters and restore creation history: mnt/vininas-projects/MCAD-Scenarios/features/sketch/text/scenario.feature:121:3" time="6.05041954"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: text-13 Commit bold characters and restore creation history
+   ✘  Given the new Text editor is empty with Tahoma and 3.05 mm
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/sketch/text/scenario.feature:122:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: text-14 Inspect retained bold formatting after Redo: mnt/vininas-projects/MCAD-Scenarios/features/sketch/text/scenario.feature:134:3" time="48.251243307"><system-out><![CDATA[  Scenario: text-14 Inspect retained bold formatting after Redo
+   ✔  Given the bold text creation was restored by Redo
+   ✔  When the user double-clicks the text in one supported gesture
+   ✔  Then Format Text shows Bold highlighted, Tahoma, 3.05 mm and both entered characters
+   ✔  When the user cancels the unchanged editor
+   ✔  Then the accepted text remains
+]]></system-out></testcase><testcase name="Scenario: text-15 Undo and redo an accepted existing-text formatting edit: mnt/vininas-projects/MCAD-Scenarios/features/sketch/text/scenario.feature:142:3" time="58.828820487"><system-out><![CDATA[  Scenario: text-15 Undo and redo an accepted existing-text formatting edit
+   ✔  Given existing bold characters
+   ✔  When the user reopens Text, focus the editor and select both characters
+   ✔  And the user applies Italic and accept
+   ✔  Then slanted bold characters remain at Ready with 33 dimensions needed
+   ✔  When the user undoes
+   ✔  Then upright bold characters remain
+   ✔  When the user redoes
+   ✔  Then the slanted appearance returns without changing the 33-dimension count
+]]></system-out></testcase><testcase name="Scenario: text-16 Insert a model parameter after supported drag placement: mnt/vininas-projects/MCAD-Scenarios/features/sketch/text/scenario.feature:153:3" time="86.467852749"><system-out><![CDATA[  Scenario: text-16 Insert a model parameter after supported drag placement
+   ✔  Given Text is active in Part6 Sketch2
+   ✔  When the user drags from 1050,800 to 1250,900 and release
+   ✔  Then an empty Format Text editor opens
+   ✔  When the user focuses the editor and insert the displayed d0 model parameter
+   ✔  Then a shaded 10.000 field appears without digit entry
+   ✔  When the user accepts and exit repeated placement
+   ✔  Then the displayed value remains at Ready with 38 dimensions needed
+]]></system-out></testcase><testcase name="Scenario: text-17 Update linked Text by changing its source dimension: mnt/vininas-projects/MCAD-Scenarios/features/sketch/text/scenario.feature:163:3" time="54.795008543"><system-out><![CDATA[  Scenario: text-17 Update linked Text by changing its source dimension
+   ✔  Given Text displays the inserted d0 value 10.000
+   ✔  When the user opens the dimension identified as d0
+   ✔  And the user enters 1 then 2 and accept
+   ✔  Then its source annotation is 12 and Text displays 12.000
+   ✔  When the user undoes the source edit
+   ✔  Then the source and Text return to 10 and 10.000 respectively
+]]></system-out></testcase><testcase name="Scenario: text-18 Observe font and height selection previews: mnt/vininas-projects/MCAD-Scenarios/features/sketch/text/scenario.feature:172:3" time="57.385927867"><system-out><![CDATA[  Scenario: text-18 Observe font and height selection previews
+   ✔  Given existing bold italic characters are selected in Format Text
+   ✔  When the user opens the font list and choose Arial
+   ✔  Then the font field shows Arial and the preview changes
+   ✔  When the user opens the height list and choose 6.10 mm
+   ✔  Then the preview enlarges and the height field shows 6.10 mm
+]]></system-out></testcase><testcase name="Scenario: text-19 Accept underline, color and width formatting: mnt/vininas-projects/MCAD-Scenarios/features/sketch/text/scenario.feature:180:3" time="5.325360287"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: text-19 Accept underline, color and width formatting
+   ✘  Given the selected Text preview and its formatting controls
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/sketch/text/scenario.feature:181:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: text-20 Inspect actual formatting after saved document reopening: mnt/vininas-projects/MCAD-Scenarios/features/sketch/text/scenario.feature:191:3" time="4.583203435"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: text-20 Inspect actual formatting after saved document reopening
+   ✘  Given the formatted Text and model-value Text were finished and saved
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/sketch/text/scenario.feature:192:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: text-21 Preview centered and middle-aligned Text with double spacing: mnt/vininas-projects/MCAD-Scenarios/features/sketch/text/scenario.feature:203:3" time="54.55160951"><system-out><![CDATA[  Scenario: text-21 Preview centered and middle-aligned Text with double spacing
+   ✔  Given the existing Text content is selected
+   ✔  When the user selects center horizontal and middle vertical alignment
+   ✔  Then the selected controls are highlighted and canvas placement changes
+   ✔  When the user opens line spacing
+   ✔  Then Single is checked and Double, 1.5 Lines, Multiple and Exactly are offered
+   ✔  When the user chooses Double
+   ✔  Then the displayed editor rows have increased separation
+]]></system-out></testcase><testcase name="Scenario: text-22 Preview numeric numbering and a diameter symbol: mnt/vininas-projects/MCAD-Scenarios/features/sketch/text/scenario.feature:213:3" time="40.339342679"><system-out><![CDATA[  Scenario: text-22 Preview numeric numbering and a diameter symbol
+   ✔  Given the selected Text preview
+   ✔  When the user opens the numbering dropdown
+   ✔  Then numeric, lower and upper alphabetic, and lower and upper Roman styles are offered
+   ✔  When the user chooses numeric numbering
+   ✔  Then a 1. prefix and indentation appear for the content
+   ✔  When the user positions the caret at the end and insert diameter from the symbol palette
+   ✔  Then the diameter symbol appears in the editor and preview
+]]></system-out></testcase><testcase name="Scenario: text-23 Cancel the combined paragraph and symbol edits: mnt/vininas-projects/MCAD-Scenarios/features/sketch/text/scenario.feature:223:3" time="5.208877241"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: text-23 Cancel the combined paragraph and symbol edits
+   ✘  Given alignment, spacing, numbering and diameter insertion are only previewed
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/sketch/text/scenario.feature:224:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: text-24 Cancel inline preset naming and inspect settings: mnt/vininas-projects/MCAD-Scenarios/features/sketch/text/scenario.feature:231:3" time="31.266469687"><system-out><![CDATA[  Scenario: text-24 Cancel inline preset naming and inspect settings
+   ✔  Given Format Text shows No Preset
+   ✔  When the user opens the preset list
+   ✔  Then No Preset and Last Used are offered
+   ✔  When the user dismisses it, click plus and press Escape
+   ✔  Then proposed inline name ab is canceled and No Preset returns
+   ✔  When the user opens preset settings
+   ✔  Then current-preset save, rename and delete are disabled
+   ✔  And Recently Used sort order and No Preset new-text default are checked
+]]></system-out></testcase><testcase name="Scenario: text-25 Compare selected and unselected case conversion: mnt/vininas-projects/MCAD-Scenarios/features/sketch/text/scenario.feature:242:3" time="4.68760436"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: text-25 Compare selected and unselected case conversion
+   ✘  Given existing lowercase ab is unselected
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/sketch/text/scenario.feature:243:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: text-26 Inspect Text Box orientation and background fill defaults: mnt/vininas-projects/MCAD-Scenarios/features/sketch/text/scenario.feature:252:3" time="4.773589585"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: text-26 Inspect Text Box orientation and background fill defaults
+   ✘  Given the identified Text Box control
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/sketch/text/scenario.feature:253:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: text-27 Commit paragraph and symbol edits and restore history: mnt/vininas-projects/MCAD-Scenarios/features/sketch/text/scenario.feature:264:3" time="4.648156244"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: text-27 Commit paragraph and symbol edits and restore history
+   ✘  Given the centered uppercase and strike-through preview
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/sketch/text/scenario.feature:265:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: text-28 Stack selected fraction input: mnt/vininas-projects/MCAD-Scenarios/features/sketch/text/scenario.feature:276:3" time="60.081926522"><system-out><![CDATA[  Scenario: text-28 Stack selected fraction input
+   ✔  Given the existing blue Text is open in Format Text
+   ✔  When the user replaces its content with the characters 1, slash, and 2
+   ✔  And the user selects the fraction and click the enabled stack control
+   ✔  Then the preview displays 1 above 2
+   ✔  When the user accepts the dialog
+   ✔  Then the stacked fraction remains and the status shows 35 dimensions needed
+]]></system-out></testcase><testcase name="Scenario: text-29 Restore fraction replacement through history: mnt/vininas-projects/MCAD-Scenarios/features/sketch/text/scenario.feature:285:3" time="101.149120607"><system-out><![CDATA[  Scenario: text-29 Restore fraction replacement through history
+   ✔  Given an accepted stacked fraction
+   ✔  When the user presses Undo
+   ✔  Then the previous AB diameter content returns
+   ✔  When the user presses Redo
+   ✔  Then the stacked fraction returns with 35 dimensions needed
+   ✔  And the linked Text remains 10.000
+]]></system-out></testcase><testcase name="Scenario: text-30 Save and apply a named content preset: mnt/vininas-projects/MCAD-Scenarios/features/sketch/text/scenario.feature:294:3" time="87.281347301"><system-out><![CDATA[  Scenario: text-30 Save and apply a named content preset
+   ✔  Given the existing stacked fraction is open in Format Text
+   ✔  When the user creates and confirm inline preset name f
+   ✔  And the user cancels the unchanged existing-text editor
+   ✔  And the user starts a fresh Text placement
+   ✔  Then the fresh editor initially shows No Preset and empty content
+   ✔  When the user selects f from the preset list
+   ✔  Then the fraction content and blue formatting appear in the fresh placement
+   ✔  And the controls show Arial, 6.10 mm, and width 50
+   ✔  When the user inspects and dismiss preset settings without changing them
+   ✔  And the user accepts the dialog and press Escape
+   ✔  Then a second fraction remains with 37 dimensions needed
+]]></system-out></testcase><testcase name="Scenario: text-31 Rename and save the modified preset: mnt/vininas-projects/MCAD-Scenarios/features/sketch/text/scenario.feature:308:3" time="85.107023591"><system-out><![CDATA[  Scenario: text-31 Rename and save the modified preset
+   ✔  Given reopened preset-derived Text shows *f
+   ✔  When the user chooses Rename Current and replace the inline name with g
+   ✔  And the user confirms the name
+   ✔  Then the selector shows *g
+   ✔  When the user chooses Save Current
+   ✔  Then the selector shows g without the leading asterisk
+]]></system-out></testcase><testcase name="Scenario: text-32 Observe and restore new Text preset defaults: mnt/vininas-projects/MCAD-Scenarios/features/sketch/text/scenario.feature:317:3" time="96.279131126"><system-out><![CDATA[  Scenario: text-32 Observe and restore new Text preset defaults
+   ✔  Given the saved preset g
+   ✔  When the user selects Use Current Preset as the new Text default and cancel the existing-text editor
+   ✔  And the user starts another placement
+   ✔  Then g and its fraction content appear automatically
+   ✔  When the user selects Last Used, cancel, and place again
+   ✔  Then the fraction preview returns with the clock-marked *g selector
+   ✔  And Last Used is checked in settings
+   ✔  When the user restores No Preset, cancel, and place again
+   ✔  Then the editor is empty with Tahoma 3.05 mm, purple and width 100
+   ✔  And the saved preset g remains listed
+]]></system-out></testcase><testcase name="Scenario: text-33 Apply bullets and sequential numbering to actual paragraphs: mnt/vininas-projects/MCAD-Scenarios/features/sketch/text/scenario.feature:330:3" time="35.712206961"><system-out><![CDATA[  Scenario: text-33 Apply bullets and sequential numbering to actual paragraphs
+   ✔  Given the restored No Preset editor is empty
+   ✔  When the user focuses the editor and press a, Return, and b
+   ✔  And the user selects both paragraphs and click Bullets
+   ✔  Then each paragraph has a bullet marker
+   ✔  When the user chooses numeric numbering
+   ✔  Then the editor shows 1. for a and 2. for b
+   ✔  When the user clicks OK and press Escape
+   ✔  Then the numbered Text remains and Ready shows 42 dimensions needed
+]]></system-out></testcase><testcase name="Scenario: text-34 Insert a standard filename property and inspect unavailable parameter sources: mnt/vininas-projects/MCAD-Scenarios/features/sketch/text/scenario.feature:341:3" time="92.323648327"><system-out><![CDATA[  Scenario: text-34 Insert a standard filename property and inspect unavailable parameter sources
+   ✔  Given a fresh empty Format Text editor in Part6
+   ✔  When the user opens Type and select Standard iProperties
+   ✔  Then Source shows the primary Part6 model and Precision is unavailable
+   ✔  When the user selects FILENAME, focus the editor, and click Insert
+   ✔  Then the editor shows a shaded FILENAME field and the canvas shows the current document filename
+   ✔  When the user selects Parameters - Finish
+   ✔  Then Source is empty and no parameter is available in this fixture
+   ✔  When the user selects Parameters - User
+   ✔  Then Source is Part6 and no parameter is available in this fixture
+   ✔  And the inserted filename field remains
+]]></system-out></testcase><testcase name="Scenario: text-35 Accept mixed fields with two-decimal model precision: mnt/vininas-projects/MCAD-Scenarios/features/sketch/text/scenario.feature:354:3" time="120.514243618"><system-out><![CDATA[  Scenario: text-35 Accept mixed fields with two-decimal model precision
+   ✔  Given the filename property remains in the fresh editor
+   ✔  When the user selects Parameters - Model and inspect Precision
+   ✔  Then zero through eight decimal examples are offered
+   ✔  When the user chooses the two-decimal example
+   ✔  And the user focuses the editor, move to its end, press Return, and insert d0
+   ✔  Then the added model field displays 10.00
+   ✔  When the user accepts Format Text and press Escape
+   ✔  Then the current document filename and 10.00 remain in separate paragraphs at Ready
+   ✔  And the earlier linked Text still displays 10.000
+   ✔  And the status shows 47 dimensions needed
+]]></system-out></testcase><testcase name="Scenario: text-36 Reject zero width and recover the formatting editor: mnt/vininas-projects/MCAD-Scenarios/features/sketch/text/scenario.feature:367:3" time="80.867114014"><system-out><![CDATA[  Scenario: text-36 Reject zero width and recover the formatting editor
+   ✔  Given the existing fraction editor shows width 50
+   ✔  When the user focuses width, select its value, enter 0, and press Tab
+   ✔  Then a separate out-of-expected-range warning appears
+   ✔  When the user acknowledges the warning
+   ✔  Then zero is selected for correction
+   ✔  When the user enters 5 then 0 and press Tab
+   ✔  Then width 50 is displayed without another warning
+]]></system-out></testcase><testcase name="Scenario: text-37 Reject zero height and cancel the edit: mnt/vininas-projects/MCAD-Scenarios/features/sketch/text/scenario.feature:377:3" time="5.155637677"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: text-37 Reject zero height and cancel the edit
+   ✘  Given the existing fraction editor shows height 6.10 mm
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/sketch/text/scenario.feature:378:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: text-38 Retain expanded Text content after saved reopening: mnt/vininas-projects/MCAD-Scenarios/features/sketch/text/scenario.feature:388:3" time="90.383598634"><system-out><![CDATA[  Scenario: text-38 Retain expanded Text content after saved reopening
+   ✔  Given Sketch2 contains both stacked fractions, numbered paragraphs, and mixed property/model Text
+   ✔  When the user finishes the sketch and save Part6
+   ✔  And the user closes and reopen the saved document in the same application session
+   ✔  And the user chooses Edit Sketch for Sketch2
+   ✔  Then both stacked fractions remain
+   ✔  And the two numbered paragraphs retain a and b with prefixes 1. and 2.
+   ✔  And the mixed field resolves to the current document filename and 10.00
+   ✔  And the earlier linked field remains 10.000
+   ✔  And Ready shows 47 dimensions needed
+]]></system-out></testcase><testcase name="Scenario: text-39 Delete the preset while retaining accepted Text: mnt/vininas-projects/MCAD-Scenarios/features/sketch/text/scenario.feature:400:3" time="116.047193318"><system-out><![CDATA[  Scenario: text-39 Delete the preset while retaining accepted Text
+   ✔  Given preset g exists and is selected
+   ✔  And the reopened second fraction shows g
+   ✔  When the user opens preset settings and choose Delete Current
+   ✔  Then No Preset replaces g without an additional application confirmation window
+   ✔  And the fraction content remains in the editor
+   ✔  When the user opens the preset list
+   ✔  Then g is absent and No Preset and Last Used remain
+   ✔  When the user dismisses the list and cancel the unchanged editor
+   ✔  Then both accepted fractions and the other text remain
+   ✔  And Ready shows 47 dimensions needed
+]]></system-out></testcase></testsuite></testsuites>

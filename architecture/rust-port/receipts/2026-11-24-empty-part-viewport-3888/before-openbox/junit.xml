@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Save and reopen part documents: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/document-saving/document-saving.feature" package="testsuite/Feature: Save and reopen part documents: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/document-saving/document-saving.feature" tests="1" errors="0" failures="1" hostname="localhost" timestamp="2026-11-24T09:06:14.484672072Z" time="27.750528277"><testcase name="Scenario: Save and reopen a newly created empty part: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/document-saving/document-saving.feature:19:3" time="27.750528277"><failure type="Step Panicked" message="Step panicked. Captured output: region x=[400, 1290] y=[250, 650]: expected viewport gradient outside GUI windows"/><system-out><![CDATA[  Scenario: Save and reopen a newly created empty part
+   ✔  Given a new unsaved empty part is active in the MCAD Software
+   ✔  And the proposed file name does not already exist in the selected folder
+   ✔  When the user presses Control+S
+   ✔  And the user accepts the proposed file name in the Save As dialog
+   ✔  Then the dialog closes
+   ✔  And the active document tab displays the saved file name
+   ✔  And the model browser root displays the saved file name
+   ✔  When the user closes that document tab
+   ✔  And the user opens the saved file from the same folder
+   ✔  Then the saved part becomes active
+   ✘  And its viewport contains no visible model geometry
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/document-saving/document-saving.feature:30:5
+      Matched: crates/head/src/../tests/application/document-creation/steps.rs:105:1
+      Step panicked. Captured output: region x=[400, 1290] y=[250, 650]: expected viewport gradient outside GUI windows
+      ApplicationWorld {
+          text: "W\nP\nZ\nv\nO\nv\nFRONT\nModel\nMaterialBrow\u{85}\nAppearanceBr\u{85}\nMenu\nSearch\nPart1<Primary>\nRepresentations\nModelState\n<Primary>\n1\nView\n<Primary>\nOrigin\nYZPlane\nXZPlane\nXYPlane\nXAxis\nYAxis\nZAxis\nCenterPoint\nParameters\nSketches\nFeatures\nEndofPart\nABS(Black)\nAppearance\nAssigntopart\nClose\nOpeneddocument2:/tmp/.tmpR21Lcg/Part1.opd\nRibbonDisplay\nv\nv\n...\nPart1\nFile\n3DModel\nSketch\nTools\nManage\nView\nAnnotate\nStart2DSketch\nSketch\nExtrude\nRevolve\nCreate\nHole\nFillet\nChamfer\nShell\nModifyv\nPlane\nv\nAxis\nPoint\nUCS\nWorkFeatures\nRectangular\nCircular\nPattern\nSimplify\nSimplificationv\nDocuments\nX\nY\nZ\nHome\nPart1<Primary>",
+          ..
+      }
+]]></system-out></testcase></testsuite></testsuites>

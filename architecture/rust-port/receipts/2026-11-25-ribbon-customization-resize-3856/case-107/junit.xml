@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T04:35:44.918263545Z" time="33.970775768"><testcase name="Scenario: Resize ribbon customization while a command is staged: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature:1754:3" time="33.970775768"><system-out><![CDATA[  Scenario: Resize ribbon customization while a command is staged
+   ✔> Given the MCAD Software starts with a writable copy of `fixtures/preferences/ribbon-normal` as its configuration directory
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is open and ribbon customization is open with an empty Part Tools target
+   ✔  And All Commands is shown in the available-command list
+   ✔  When the user drags the lower-right dialog corner outward
+   ✔  Then the dialog and both command lists become wider and taller
+   ✔  And more available-command rows are visible
+   ✔  When the user adds 2D Sketches to the custom-panel target
+   ✔  Then the target shows 2D Sketches with Large and Text unchecked
+   ✔  And the target selector indicates a pending change
+   ✔  When the user drags the lower-right dialog corner inward
+   ✔  Then the dialog and both command lists become smaller
+   ✔  And the staged 2D Sketches row and its unchecked options remain visible
+   ✔  And the target selector still indicates a pending change
+   ✔  When the user cancels customization
+   ✔  Then the dialog closes without applying the staged command
+]]></system-out></testcase></testsuite></testsuites>

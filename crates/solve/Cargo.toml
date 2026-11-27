@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: GPL-2.0-only
+[package]
+name = "oblikovati-solve"
+description = "Shared numerical constraint solving for Oblikovati"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+num-rational = "=0.4.2"
+num-traits = "=0.2.19"

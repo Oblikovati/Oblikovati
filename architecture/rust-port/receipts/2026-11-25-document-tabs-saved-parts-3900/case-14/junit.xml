@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Open document tabs: target/native-scratch.HSqCy5/current-document-tabs-source/features/application/document-tabs/document-tabs.feature" package="testsuite/Feature: Open document tabs: target/native-scratch.HSqCy5/current-document-tabs-source/features/application/document-tabs/document-tabs.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T00:22:06.843925866Z" time="29.105921614"><testcase name="Scenario: Close an inactive saved document from its tab menu: target/native-scratch.HSqCy5/current-document-tabs-source/features/application/document-tabs/document-tabs.feature:150:3" time="29.105921614"><system-out><![CDATA[  Scenario: Close an inactive saved document from its tab menu
+   ✔  Given `fixtures/cad/quick-access-toolbar/PartOne.opd` and `fixtures/cad/quick-access-toolbar/PartTwo.opd` are open in that order
+   ✔  And the first part is active
+   ✔  And the second part is saved and has no unsaved changes
+   ✔  When the user opens the second part's document tab context menu
+   ✔  And the user chooses Close
+   ✔  Then the second part's tab disappears
+   ✔  And the first part remains active in the workspace
+   ✔  And no save prompt is displayed
+]]></system-out></testcase></testsuite></testsuites>

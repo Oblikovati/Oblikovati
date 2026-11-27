@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-labelledby="t d">
+  <title id="t">Sweep</title>
+  <desc id="d">3D swept cylindrical tube curving cleanly along a Teal spline path from a base circle.</desc>
+  <g id="layer-body">
+    <path d="M9.5,24 C9.5,14 22.5,17 22.5,7.5" class="s-icon-mod-stroke" fill="none" stroke="#1D1840" stroke-width="7.6" stroke-linecap="round" />
+    <path d="M9.5,24 C9.5,14 22.5,17 22.5,7.5" class="s-icon-mod-front" fill="none" stroke="#8172FA" stroke-width="5.4" stroke-linecap="round" />
+    <path d="M8.5,22 C9,15 17,15.5 21,9" class="s-icon-mod-top" fill="none" stroke="#B4AAFF" stroke-width="1.35" stroke-linecap="round" />
+  </g>
+  <g id="layer-accent">
+    <ellipse cx="9.5" cy="24.5" rx="4.2" ry="2.2" class="f-icon-sel-top s-icon-sel-stroke" fill="#74EFE0" stroke="#0B2926" stroke-width="1.1"/>
+    <ellipse cx="22.5" cy="7.5" rx="3.4" ry="1.8" class="f-icon-mod-top s-icon-mod-stroke" fill="#B4AAFF" stroke="#1D1840" stroke-width="1.05"/>
+    <path d="M9.5,24.5 C9.5,14 22.5,17 22.5,7.5" class="s-accent-selection-bright" fill="none" stroke="#2DD4BF" stroke-width="1.2" stroke-dasharray="2.4 1.5" />
+  </g>
+</svg>

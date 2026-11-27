@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Open document tabs: mnt/vininas-projects/MCAD-Scenarios/features/application/document-tabs/document-tabs.feature" package="testsuite/Feature: Open document tabs: mnt/vininas-projects/MCAD-Scenarios/features/application/document-tabs/document-tabs.feature" tests="2" errors="0" failures="0" hostname="localhost" timestamp="2026-11-21T09:22:55.277270051Z" time="63.393315619"><testcase name="Scenario: Reorder an active drawing tab: mnt/vininas-projects/MCAD-Scenarios/features/application/document-tabs/document-tabs.feature:179:3" time="32.427875075"><system-out><![CDATA[  Scenario: Reorder an active drawing tab
+   ✔  Given a drawing and several other documents are open in the MCAD Software
+   ✔  And the drawing is active and its tab is visible
+   ✔  When the user drags the drawing tab left across several neighboring tabs
+   ✔  Then the drawing tab appears at its new position among the document tabs
+   ✔  And the drawing remains active
+   ✔  And its sheet and browser remain displayed
+   ✔  When the user drags the drawing tab back to its earlier position
+   ✔  Then the drawing tab returns to its earlier position
+   ✔  And the drawing remains active
+]]></system-out></testcase><testcase name="Scenario: Reorder an inactive part tab: mnt/vininas-projects/MCAD-Scenarios/features/application/document-tabs/document-tabs.feature:189:3" time="30.965440544"><system-out><![CDATA[  Scenario: Reorder an inactive part tab
+   ✔  Given a drawing and several parts are open in the MCAD Software
+   ✔  And the drawing is active
+   ✔  And an inactive part tab is visible
+   ✔  When the user drags the inactive part tab left across several neighboring tabs
+   ✔  Then the part tab appears at its new position among the document tabs
+   ✔  And the part becomes active
+   ✔  And the part viewport and model browser are displayed
+   ✔  And the drawing remains open
+]]></system-out></testcase></testsuite></testsuites>

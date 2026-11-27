@@ -1,0 +1,8 @@
+Color answer row at both densities
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 845 filtered out; finished in 0.01s
+
+Native resize on Wayland
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1736 filtered out; finished in 6.34s
+
+Native resize on X11
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1736 filtered out; finished in 6.09s

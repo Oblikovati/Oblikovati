@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Inspect the project dialog: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/project-dialog/project-dialog.feature" package="testsuite/Feature: Inspect the project dialog: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/project-dialog/project-dialog.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T18:08:12.072344292Z" time="27.784215589"><testcase name="Scenario: Choose the workspace folder for a new project: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/project-dialog/project-dialog.feature:90:3" time="27.784215589"><system-out><![CDATA[  Scenario: Choose the workspace folder for a new project
+   ✔  Given the new single-user project wizard is on its project-file page in the MCAD Software
+   ✔  And the project has a displayed name
+   ✔  When the user chooses the workspace folder browse control
+   ✔  And the user selects the Documents folder
+   ✔  And the user chooses OK in the folder browser
+   ✔  Then the wizard displays Documents as the workspace folder
+   ✔  And the displayed project file location is inside Documents and uses the displayed project name
+   ✔  When the user cancels the project wizard
+   ✔  Then the Projects dialog is displayed
+   ✔  And the original project remains marked active
+]]></system-out></testcase></testsuite></testsuites>

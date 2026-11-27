@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Recent documents on Home: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature" package="testsuite/Feature: Recent documents on Home: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T01:32:15.883410391Z" time="23.248653706"><testcase name="Scenario: Inspect assembly opening modes and cancels: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature:405:3" time="23.248653706"><system-out><![CDATA[  Scenario: Inspect assembly opening modes and cancels
+   ✔  Given the MCAD Software starts with an isolated Recent profile prepared from a disposable copy of `fixtures/cad/home-recent-native`
+   ✔  And the Home workspace is active in the MCAD Software
+   ✔  And a recent assembly is displayed in List View
+   ✔  And no recent-document checkboxes are selected
+   ✔  When the user opens the assembly row's actions menu
+   ✔  Then the menu offers Open Express
+   ✔  When the user chooses Open with options
+   ✔  Then File Open Options shows Full as the opening mode
+   ✔  And the dialog shows Model State, Design View and Position View fields
+   ✔  And Skip all unresolved files is unchecked
+   ✔  When the user changes the opening mode to Express
+   ✔  Then the opening mode shows Express
+   ✔  And the Design View and Position View fields are disabled
+   ✔  When the user cancels the dialog
+   ✔  Then the dialog closes and the Recent list is visible
+]]></system-out></testcase></testsuite></testsuites>

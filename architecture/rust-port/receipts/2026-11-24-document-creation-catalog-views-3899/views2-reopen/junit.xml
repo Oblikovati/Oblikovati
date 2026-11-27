@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Navigate the native template catalog: tmp/oblikovati-ribbon-relocated.RcZVDl/current-document-creation-catalog-source/features/application/document-creation/document-creation-catalog-basics.feature" package="testsuite/Feature: Navigate the native template catalog: tmp/oblikovati-ribbon-relocated.RcZVDl/current-document-creation-catalog-source/features/application/document-creation/document-creation-catalog-basics.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T19:54:28.663042858Z" time="23.786665048"><testcase name="Scenario: Reopen the chooser after canceling a selected template: tmp/oblikovati-ribbon-relocated.RcZVDl/current-document-creation-catalog-source/features/application/document-creation/document-creation-catalog-basics.feature:103:3" time="23.786665048"><system-out><![CDATA[  Scenario: Reopen the chooser after canceling a selected template
+   ✔> Given a fresh MCAD Software session loads `fixtures/cad/document-creation-native-candidate.opj` as its active project
+   ✔> And the native catalog contains metric and inch templates in their respective folders
+   ✔> And the catalog root has no direct template files
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And the user presses Control+N to open the new-document template chooser
+   ✔  And the new-document template chooser is open in the MCAD Software
+   ✔  And the metric folder and standard metric assembly template are selected
+   ✔  When the user cancels the chooser
+   ✔  And the user reopens the new-document chooser during the same session
+   ✔  Then the metric folder is selected
+   ✔  And the standard metric assembly template is selected
+   ✔  And its details identify an assembly with millimeter units
+]]></system-out></testcase></testsuite></testsuites>

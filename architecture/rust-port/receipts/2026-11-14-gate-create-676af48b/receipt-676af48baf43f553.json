@@ -1,0 +1,27 @@
+{
+  "kind": "native-acceptance",
+  "scenario_id": "scenario:676af48baf43f553b3d9ca85c0e4236e73e6fb19453f6d920d0aa1eb182e3124",
+  "scenario_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+  "source_sha256": "e9a93d4c096090667952b8080a0cad01c48f480022a4b8ac72ae210607ca138d",
+  "application_commit": "666125af565aa57a35d22b4bbe7acf6cd5e9ce3e",
+  "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+  "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+  "runner": "application_scenarios_use_the_native_window",
+  "exit_code": 0,
+  "environment": {
+    "os": "Linux",
+    "renderer": "Vulkan with Lavapipe under Xvfb"
+  },
+  "cucumber": {
+    "path": "architecture/rust-port/receipts/2026-11-14-gate-create-676af48b/cucumber.json",
+    "sha256": "89176e39c7ade26c0eb6640f8d6352c0416c91a518cade071318712f636c3a69"
+  },
+  "source_report": {
+    "path": "architecture/rust-port/receipts/2026-11-14-gate-create-676af48b/source-revision.json",
+    "sha256": "d1d6b0dad72f0d8e078d14a8676ca43e84d9c2d295c4d59b3d47524646f860d6"
+  },
+  "capture": {
+    "path": "architecture/rust-port/receipts/2026-11-14-gate-create-676af48b/Create-the-retained-template-after-changing-folders.png",
+    "sha256": "60066bfc73aa243e9e14470d10fd1e4edaecefb85d928981a0ed906ce8253335"
+  }
+}

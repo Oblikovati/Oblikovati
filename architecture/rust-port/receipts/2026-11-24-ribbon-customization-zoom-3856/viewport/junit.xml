@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Viewport zoom: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/viewport-zoom/viewport-zoom.feature" package="testsuite/Feature: Viewport zoom: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/viewport-zoom/viewport-zoom.feature" tests="7" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T12:40:57.667476778Z" time="242.852889796"><testcase name="Scenario: Change magnification with the mouse wheel: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/viewport-zoom/viewport-zoom.feature:5:3" time="17.824827761999998"><system-out><![CDATA[  Scenario: Change magnification with the mouse wheel
+   ✔  Given a rectangular block is visible in an active part in the MCAD Software
+   ✔  And no navigation command is active
+   ✔  When the user scrolls the mouse wheel over the block in the direction that zooms out
+   ✔  Then the block appears smaller in the viewport
+   ✔  And the same part and orientation remain active
+   ✔  When the user scrolls the mouse wheel over the block in the opposite direction
+   ✔  Then the block appears larger than after zooming out
+   ✔  And the same part and orientation remain active
+]]></system-out></testcase><testcase name="Scenario: Activate and cancel Zoom from the navigation bar: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/viewport-zoom/viewport-zoom.feature:16:3" time="17.925934031"><system-out><![CDATA[  Scenario: Activate and cancel Zoom from the navigation bar
+   ✔  Given a part containing a visible solid is active in the MCAD Software
+   ✔  And the viewport navigation bar is visible
+   ✔  When the user selects Zoom on the navigation bar
+   ✔  Then Zoom is active
+   ✔  And the Zoom control is highlighted
+   ✔  And the status area prompts for zooming and indicates cancellation is available
+   ✔  And the active part and solid remain visible
+   ✔  When the user presses Escape
+   ✔  Then the status area displays Ready
+   ✔  And the active part and solid remain visible
+]]></system-out></testcase><testcase name="Scenario: Fit a distant block using Zoom All: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/viewport-zoom/viewport-zoom.feature:29:3" time="37.310004434"><system-out><![CDATA[  Scenario: Fit a distant block using Zoom All
+   ✔  Given a rectangular block is active in the MCAD Software
+   ✔  And the block appears small within the viewport
+   ✔  When the user opens the Zoom menu on the navigation bar
+   ✔  Then the menu offers Zoom, Zoom All, Zoom Window and Zoom Selected
+   ✔  When the user chooses Zoom All
+   ✔  Then the block appears larger and its visible outline fits within the viewport
+   ✔  And the same part and orientation remain active
+   ✔  When the user reopens the Zoom menu
+   ✔  Then Zoom All is marked as the selected action
+   ✔  When the user selects Zoom and presses Escape
+   ✔  Then the status area displays Ready
+]]></system-out></testcase><testcase name="Scenario: Zoom into a rectangular window: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/viewport-zoom/viewport-zoom.feature:43:3" time="60.661538174"><system-out><![CDATA[  Scenario: Zoom into a rectangular window
+   ✔  Given a rectangular block is active in the MCAD Software
+   ✔  And its visible face occupies most of the viewport with its outline visible
+   ✔  When the user chooses Zoom Window from the navigation bar Zoom menu
+   ✔  Then the status area prompts for a zoom window
+   ✔  When the user clicks one corner within the visible face
+   ✔  And the user clicks an opposite corner within that face
+   ✔  Then the view zooms into the chosen area
+   ✔  And the face extends beyond the viewport
+   ✔  And the status area displays Ready
+   ✔  And the same part and orientation remain active
+   ✔  When the user reopens the Zoom menu
+   ✔  Then Zoom Window is marked as the selected action
+   ✔  When the user chooses Zoom All and then restores Zoom as the selected action
+   ✔  And the user presses Escape
+   ✔  Then the status area displays Ready
+]]></system-out></testcase><testcase name="Scenario: Fit a selected planar face: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/viewport-zoom/viewport-zoom.feature:60:3" time="47.400224922"><system-out><![CDATA[  Scenario: Fit a selected planar face
+   ✔  Given a rectangular block is active in the MCAD Software
+   ✔  And its visible planar face appears small within the viewport
+   ✔  And the face is selected
+   ✔  When the user chooses Zoom Selected from the navigation bar Zoom menu
+   ✔  Then the selected face appears larger and fills most of the viewport
+   ✔  And the face remains selected
+   ✔  And the same part and orientation remain active
+   ✔  And the status area displays Ready
+   ✔  When the user reopens the Zoom menu
+   ✔  Then Zoom Selected is marked as the selected action
+   ✔  When the user selects Zoom and presses Escape
+   ✔  Then the status area displays Ready
+]]></system-out></testcase><testcase name="Scenario: Choose a face after starting Zoom Selected: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/viewport-zoom/viewport-zoom.feature:76:3" time="28.626035561"><system-out><![CDATA[  Scenario: Choose a face after starting Zoom Selected
+   ✔  Given a rectangular block is active in the MCAD Software
+   ✔  And its visible planar face appears small within the viewport
+   ✔  And no model entity is selected
+   ✔  When the user chooses Zoom Selected from the navigation bar Zoom menu
+   ✔  Then the status area prompts the user to select an entity to zoom
+   ✔  When the user clicks the visible planar face
+   ✔  Then the face appears larger and fills most of the viewport
+   ✔  And the face is no longer highlighted as selected
+   ✔  And the status area displays Ready
+   ✔  And the same part and orientation remain active
+]]></system-out></testcase><testcase name="Scenario: Cancel a zoom window after its first corner: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/viewport-zoom/viewport-zoom.feature:89:3" time="33.104324912"><system-out><![CDATA[  Scenario: Cancel a zoom window after its first corner
+   ✔  Given a rectangular block is active in the MCAD Software
+   ✔  And its visible planar face occupies most of the viewport
+   ✔  When the user chooses Zoom Window from the navigation bar Zoom menu
+   ✔  And the user clicks a first corner within the face
+   ✔  And the user presses Escape before choosing the opposite corner
+   ✔  Then the status area displays Ready
+   ✔  And the face retains its previous apparent size and position
+   ✔  And the same part and orientation remain active
+]]></system-out></testcase></testsuite></testsuites>

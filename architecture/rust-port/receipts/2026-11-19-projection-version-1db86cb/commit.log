@@ -1,0 +1,14 @@
+   Compiling oblikovati-script v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/projection-version-4174/crates/script)
+   Compiling oblikovati-build v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/projection-version-4174/tools/build)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 5.36s
+     Running `target/xtask/debug/oblikovati-build docs`
+npm exec --offline -- markdownlint-cli2
+markdownlint-cli2 v0.23.3 (markdownlint v0.41.1)
+Finding: **/*.md !.slim/worktrees/** !node_modules/** !target/** !.tools/** !dist/** !stage/** !artifacts/** !test-utilities/benchmarks/MCAD-Scenarios/**
+Linting: 595 files
+Summary: 0 issues in 0 files
+"cargo" xtask docs
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.38s
+     Running `target/xtask/debug/oblikovati-build docs`
+[work/projection-version-4174 1db86cb68] Test projection through current sketch recipe versions
+ 1 file changed, 4 insertions(+), 3 deletions(-)

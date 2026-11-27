@@ -1,0 +1,17 @@
+{
+  "application_commit": "d4fe0bc3c",
+  "feature": "features/application/model-browser/model-browser.feature",
+  "feature_sha256": "603382ec4009d73a74e960c5981d255c4ca9ac5489b94fcf57193c7b09458b2e",
+  "environment": "Linux X11, Xvfb, software Vulkan, native mouse and keyboard input",
+  "scenarios": {
+    "autosave": {
+      "passed_steps": 17,
+      "name": "Toggle camera autosave for an inactive copied view"
+    },
+    "restore": {
+      "passed_steps": 12,
+      "name": "Restore a saved camera for an active view representation"
+    }
+  },
+  "scope": "Focused scenarios only; this is not a full-feature run. The source was unversioned."
+}

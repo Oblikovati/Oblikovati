@@ -1,0 +1,27 @@
+{
+  "kind": "native-acceptance",
+  "scenario_id": "scenario:c958310f71da6060fc96ec06b1a1f472e92cc4b966876db9962c792cb59f2f4f",
+  "scenario_revision": "8ec8d2c1e569fbc5c8cd2ec85e9b9380c62c147f",
+  "source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+  "application_commit": "67f0dba67ee61673c02824411520d00bfc06a330",
+  "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
+  "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+  "runner": "application_scenarios_use_the_native_window",
+  "exit_code": 0,
+  "environment": {
+    "os": "Linux",
+    "renderer": "Vulkan Lavapipe under Xvfb"
+  },
+  "cucumber": {
+    "path": "architecture/rust-port/receipts/2026-11-15-extrusion-r4-current-3/cucumber.json",
+    "sha256": "5a96e357c6a297f58909661d63bee5bf410c1d5c13c03e314f1ed74ce4c7fc76"
+  },
+  "source_report": {
+    "path": "architecture/rust-port/receipts/2026-11-15-extrusion-r4-current-3/source-revision.json",
+    "sha256": "af3e2b275f435c6da2b921135e66fae7ec16302fdcecfb00e3b00b9f6692e381"
+  },
+  "capture": {
+    "path": "architecture/rust-port/receipts/2026-11-15-extrusion-r4-current-3/extrusion-04-Cancel-preserves-the-source-sketch.png",
+    "sha256": "1f3ee7de3cff21668f0f3f2e5b0604c6358e809aa92ca0738ea98ecea2e27339"
+  }
+}

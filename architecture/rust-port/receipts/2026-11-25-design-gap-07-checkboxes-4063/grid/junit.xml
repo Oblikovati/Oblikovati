@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Recent documents on Home: mnt/vininas-projects/MCAD-Scenarios/features/application/home-recent-documents/home-recent-documents.feature" package="testsuite/Feature: Recent documents on Home: mnt/vininas-projects/MCAD-Scenarios/features/application/home-recent-documents/home-recent-documents.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T15:03:47.286238554Z" time="14.035189932"><testcase name="Scenario: Preserve recent-document selections between list and grid views: mnt/vininas-projects/MCAD-Scenarios/features/application/home-recent-documents/home-recent-documents.feature:249:3" time="14.035189932"><system-out><![CDATA[  Scenario: Preserve recent-document selections between list and grid views
+   ✔  Given the MCAD Software starts with an isolated Recent profile prepared from a disposable copy of `fixtures/cad/home-recent-native`
+   ✔  And the Home workspace is active in the MCAD Software
+   ✔  And two recent parts are displayed in List View
+   ✔  And the first part's row is checked
+   ✔  When the user switches to Grid View
+   ✔  Then the first part's card is checked and highlighted
+   ✔  And Open Selected and Remove Selected are displayed
+   ✔  When the user checks the second part's card
+   ✔  And the user switches back to List View
+   ✔  Then both parts' rows are checked and highlighted
+   ✔  And Open Selected and Remove Selected remain displayed
+]]></system-out></testcase></testsuite></testsuites>

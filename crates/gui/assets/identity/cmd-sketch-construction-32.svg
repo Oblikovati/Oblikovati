@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-labelledby="t d">
+  <title id="t">Construction Toggle</title>
+  <desc id="d">Solid curve transitioning into a Warm Amber dashed construction line.</desc>
+  <g id="layer-body">
+    <line x1="5" y1="24" x2="27" y2="8" stroke="var(--accent-work, #F59E0B)" stroke-width="2.1" stroke-dasharray="4 2.2" stroke-linecap="round"/>
+  </g>
+  <g id="layer-accent">
+    <circle cx="5" cy="24" r="2.2" fill="var(--accent-work, #F59E0B)" stroke="var(--icon-cutout, #121317)" stroke-width="0.7"/><circle cx="27" cy="8" r="2.2" fill="var(--accent-work, #F59E0B)" stroke="var(--icon-cutout, #121317)" stroke-width="0.7"/>
+  </g>
+</svg>

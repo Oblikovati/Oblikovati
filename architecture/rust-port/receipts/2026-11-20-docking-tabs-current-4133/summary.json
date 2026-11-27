@@ -1,0 +1,12 @@
+{
+  "kind": "unsealed focused diagnostic",
+  "application_base_commit": "001fd1485",
+  "test_source_sha256": "063e33d2ada83e0e45bcf987cc492d6f28906911c26bc9af8406723bf0682212",
+  "feature_sha256": "3a0703dc9df2a77830b6b90402210ba9dffd10a0e370763015a46904744fbfce",
+  "fixture_sha256": "54a6f807b8084cc19061bce4079aaee3d4cefc03eaad2ac33123544997999f8a",
+  "scenario": "Tab, switch, close, and restore docked browser panels",
+  "scenarios_passed": 1,
+  "steps_passed": 21,
+  "environment": "Linux Xvfb 1440x900, Openbox, Vulkan Lavapipe; live unversioned scenario source and shared target",
+  "limitations": "Focused run only; build provenance unsealed; supporting documentation hashes were not captured before the run."
+}

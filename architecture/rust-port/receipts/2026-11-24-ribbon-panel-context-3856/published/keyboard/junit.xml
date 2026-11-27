@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon panel visibility: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" package="testsuite/Feature: Ribbon panel visibility: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T09:11:33.623569979Z" time="22.907460989"><testcase name="Scenario: Home and End leave the focused panel row unchanged: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:279:3" time="22.907460989"><system-out><![CDATA[  Scenario: Home and End leave the focused panel row unchanged
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the full top-docked 3D Model ribbon is visible
+   ✔  And the direct panel selector is open with Create focused and checked
+   ✔  When the user presses Home
+   ✔  Then Create remains focused and checked
+   ✔  And the panel selector remains open
+   ✔  When the user presses End
+   ✔  Then Create remains focused and checked
+   ✔  And the panel selector remains open
+   ✔  When the user presses Escape
+   ✔  Then the panel selector closes
+]]></system-out></testcase></testsuite></testsuites>

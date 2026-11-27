@@ -1,0 +1,18 @@
+{
+  "revision": "f5d798970cc9f38cbf57e32b2358fedc3a85de8a",
+  "files": {
+    "features/application/ribbon-keyboard-navigation/BLOCKERS.md": "5360700b3610a9255ee4aa7ae7dfd9890c3ea3bea551c2ea1302b13efbbfcb81",
+    "features/application/ribbon-keyboard-navigation/FIXTURES.md": "bbcf97cb0582d791180d433ede4d68710a53084add4baea41b31510e68e3ab86",
+    "features/application/ribbon-keyboard-navigation/FUNCTIONAL.md": "0071bbdd5b8bafcd6bb65bb749f7114a5fbd26de960d08a2accd699041d035c3",
+    "features/application/ribbon-keyboard-navigation/VISUAL.md": "4455872833e235fe242c49eeab738f44cb1828033cab1b1206d8e4a72c862826",
+    "features/application/ribbon-keyboard-navigation/key-tip-states.svg": "9c2f83449e39d6ad1c8d4c04ac0504cb8aaf56bd179ee9ef4cb2568a886a3e3c",
+    "features/application/ribbon-keyboard-navigation/key-tips-face-selection.svg": "61d99e5a427f15db3c56ec986d4b189c9c80538e6cc7d8d76b18a7c75af09de5",
+    "features/application/ribbon-keyboard-navigation/key-tips-panel-selector.svg": "55771030969c53ff3c3061a9ca4d161254e2b10bf778ea9120a15a60d9e283c8",
+    "features/application/ribbon-keyboard-navigation/minimized-command-launch.svg": "f1f575402c213202925593aa80db6d34ee3e6caac67f1655e2b381d0501de29b",
+    "features/application/ribbon-keyboard-navigation/property-focus-key-tips.svg": "cd40b3e2234dfdc3b95662f0e2a6f0e7dd02a85e26d2fee8be0ed8a45b21b210",
+    "features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature": "a19716cccff808b2160a4d98164a62f04c84ee5fb761219fb73857d71ee5619b",
+    "features/application/ribbon-keyboard-navigation/side-docked-key-tips.svg": "0c1f50b5153a78bb2a587e172f249168782719b71b67d1ef43219062e102426b",
+    "features/application/ribbon-keyboard-navigation/temporary-key-tip-sequence.svg": "16de05cda3e57a95712728db21fe2a759e06aabf8482ba14ac881759f42206e2",
+    "fixtures/cad/workspace-layout-native.opd": "58aafeb5ffcba693695903b57e8541178a77e27f7e0a45c27c1f680eb225b1f9"
+  }
+}

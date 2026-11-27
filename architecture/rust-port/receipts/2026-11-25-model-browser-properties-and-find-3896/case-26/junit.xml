@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:33:29.248744719Z" time="130.704887412"><testcase name="Scenario: Group search criteria for the same feature property: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature:382:3" time="130.704887412"><system-out><![CDATA[  Scenario: Group search criteria for the same feature property
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software
+   ✔  And a part with one extrusion and no fillet is open in the MCAD Software
+   ✔  And the Find dialog contains the criterion Type equals Extrusion
+   ✔  And Features is the selected object type and And is selected for additional criteria
+   ✔  When the user chooses Type equals Fillet and clicks Add to list
+   ✔  Then a prompt says criteria using the same property must be grouped
+   ✔  And the prompt offers to add the criterion using the OR operator
+   ✔  When the user chooses Yes
+   ✔  Then the criteria list shows Type equals Extrusion
+   ✔  And the next line shows OR Type equals Fillet
+   ✔  When the user closes and reopens the Find dialog
+   ✔  Then both criteria remain in the list
+   ✔  When the user clicks Find Now
+   ✔  Then the extrusion row is selected and the block edges are highlighted
+   ✔  And the Find dialog remains open
+   ✔  When the user closes the Find dialog and clicks empty viewport space
+   ✔  Then the highlight disappears and the part remains visible
+]]></system-out></testcase></testsuite></testsuites>

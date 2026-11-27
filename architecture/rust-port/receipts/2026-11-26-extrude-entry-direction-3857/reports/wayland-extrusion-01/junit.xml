@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Extrude a profile in a part document: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature" package="testsuite/Feature: Extrude a profile in a part document: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-26T19:49:35.07103817Z" time="4.93131325"><testcase name="Scenario: extrusion-01 Empty part entry requests a sketch plane: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature:10:3" time="4.93131325"><system-out><![CDATA[  Scenario: extrusion-01 Empty part entry requests a sketch plane
+   ✔> Given the MCAD Software is displaying a part in the solid modeling workspace
+   ✔> And the viewport pointer is idle
+   ✔  Given a copy of `fixtures/cad/revolve/revolve-blank.opd` is open with no sketch
+   ✔  When Extrude is clicked and a displayed origin plane is selected
+   ✔  Then Sketch1 opens for profile creation
+]]></system-out></testcase></testsuite></testsuites>

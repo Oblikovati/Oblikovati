@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Workspace layout and panel visibility: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature" package="testsuite/Feature: Workspace layout and panel visibility: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-19T15:12:47.550818455Z" time="5.28500469"><testcase name="Scenario: Keep the default model browser dock compact: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:32:3" time="5.28500469"><system-out><![CDATA[  Scenario: Keep the default model browser dock compact
+   ✔  Given a part document is active in the MCAD Software
+   ✔  And the model browser is docked at the left with its default width
+   ✔  When the user inspects the workspace proportions
+   ✔  Then the model browser occupies about one quarter of the available workspace width
+   ✔  And the viewport occupies the remaining width beside the browser
+   ✔  And the active part remains visible
+]]></system-out></testcase></testsuite></testsuites>

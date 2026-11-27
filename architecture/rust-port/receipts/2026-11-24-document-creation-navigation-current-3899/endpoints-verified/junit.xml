@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Navigate named native part templates: tmp/oblikovati-ribbon-relocated.RcZVDl/current-document-creation-navigation-source/features/application/document-creation/document-creation-navigation-native.feature" package="testsuite/Feature: Navigate named native part templates: tmp/oblikovati-ribbon-relocated.RcZVDl/current-document-creation-navigation-source/features/application/document-creation/document-creation-navigation-native.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T19:16:51.008350248Z" time="93.968275386"><testcase name="Scenario: Use horizontal arrows at Part template group boundaries: tmp/oblikovati-ribbon-relocated.RcZVDl/current-document-creation-navigation-source/features/application/document-creation/document-creation-navigation-native.feature:45:3" time="93.968275386"><system-out><![CDATA[  Scenario: Use horizontal arrows at Part template group boundaries
+   ✔> Given a fresh MCAD Software session loads `fixtures/cad/document-creation-navigation-candidate.opj` as its active project
+   ✔> And its Metric folder contains exactly the four named native part templates used below
+   ✔> And its English folder contains the standard inch part template
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is active with `Sketch1` visible in the MCAD Software
+   ✔  And the template chooser shows the metric folder grouped by type using Medium icons
+   ✔  And the user sizes the chooser so the gallery has a horizontal scrollbar and moves it to its leftmost position
+   ✔  And the Part group begins with Sheet Metal (DIN) and ends with Standard (mm)
+   ✔  When the user selects Standard (mm) and presses Right
+   ✔  Then Standard (mm) remains selected and identified in the details pane
+   ✔  And the gallery scroll position advances within the Part group
+   ✔  When the user presses Left
+   ✔  Then Standard (DIN) is selected and identified in the details pane
+   ✔  When the user presses Home and then Left
+   ✔  Then Sheet Metal (DIN) remains selected and identified in the details pane
+   ✔  And the gallery returns to its leftmost horizontal position
+   ✔  When the user presses Escape
+   ✔  Then the chooser closes and the original part remains active
+]]></system-out></testcase></testsuite></testsuites>

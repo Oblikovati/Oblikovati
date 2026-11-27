@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Extrude a profile in a part document: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature" package="testsuite/Feature: Extrude a profile in a part document: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-26T19:50:06.534332438Z" time="6.528585371"><testcase name="Scenario: extrusion-04 Cancel preserves the source sketch: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature:51:3" time="6.528585371"><system-out><![CDATA[  Scenario: extrusion-04 Cancel preserves the source sketch
+   ✔> Given the MCAD Software is displaying a part in the solid modeling workspace
+   ✔> And the viewport pointer is idle
+   ✔  Given a copy of `fixtures/cad/revolve/revolve-profile.opd` is open with an uncommitted rectangular Extrude preview
+   ✔  When Cancel is clicked
+   ✔  Then the shaded preview disappears and Sketch1 remains
+   ✔  When the user presses E
+   ✔  Then the extrusion panel reopens for the source sketch
+]]></system-out></testcase></testsuite></testsuites>

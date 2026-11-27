@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Loft: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/loft/loft.feature" package="testsuite/Feature: Loft: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/loft/loft.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-26T23:46:22.040845062Z" time="6.104698405"><testcase name="Scenario: loft-04 Toggle automatic transition mapping: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/loft/loft.feature:33:3" time="6.104698405"><system-out><![CDATA[  Scenario: loft-04 Toggle automatic transition mapping
+   ✔  Given a disposable copy of the native fixture "fixtures/cad/loft/parallel-circles.opd" is open
+   ✔  And Loft is open with the two circular sections selected and the Transition tab has Automatic Mapping selected
+   ✔  When Automatic Mapping is cleared
+   ✔  Then the Point Set list offers Click to add
+   ✔  When Automatic Mapping is selected again
+   ✔  Then that entry is no longer shown
+]]></system-out></testcase></testsuite></testsuites>

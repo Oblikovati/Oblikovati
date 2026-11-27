@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Extrude a profile in a part document: tmp/obk-pr4184-ci-logs/pinned/features/solid-model/extrusion/extrusion.feature" package="testsuite/Feature: Extrude a profile in a part document: tmp/obk-pr4184-ci-logs/pinned/features/solid-model/extrusion/extrusion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-27T05:04:20.044116395Z" time="11.92955917"><testcase name="Scenario: extrusion-15 Cut selects inward direction and supports history: tmp/obk-pr4184-ci-logs/pinned/features/solid-model/extrusion/extrusion.feature:174:3" time="11.92955917"><system-out><![CDATA[  Scenario: extrusion-15 Cut selects inward direction and supports history
+   ✔> Given the MCAD Software is displaying a part in the solid modeling workspace
+   ✔> And the viewport pointer is idle
+   ✔  Given the diameter-3 circle on the base top face
+   ✔  When Extrude opens in Default direction and Cut is selected
+   ✔  Then Direction changes to Flipped and the preview shows an opening
+   ✔  When OK is clicked with Distance A 8 mm and zero taper
+   ✔  Then Extrusion2 and the opening are retained in one solid body
+   ✔  When Undo then Redo are invoked
+   ✔  Then the opening disappears then returns
+]]></system-out></testcase></testsuite></testsuites>

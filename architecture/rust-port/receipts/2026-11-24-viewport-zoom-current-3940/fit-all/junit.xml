@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Viewport zoom: tmp/oblikovati-ribbon-relocated.RcZVDl/current-viewport-zoom-source/features/application/viewport-zoom/viewport-zoom.feature" package="testsuite/Feature: Viewport zoom: tmp/oblikovati-ribbon-relocated.RcZVDl/current-viewport-zoom-source/features/application/viewport-zoom/viewport-zoom.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T21:56:49.000342578Z" time="36.778324822"><testcase name="Scenario: Fit a distant block using Zoom All: tmp/oblikovati-ribbon-relocated.RcZVDl/current-viewport-zoom-source/features/application/viewport-zoom/viewport-zoom.feature:27:3" time="36.778324822"><system-out><![CDATA[  Scenario: Fit a distant block using Zoom All
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open with its rectangular solid active in the MCAD Software
+   ✔  And the block appears small within the viewport
+   ✔  When the user opens the Zoom menu on the navigation bar
+   ✔  Then the menu offers Zoom, Zoom All, Zoom Window and Zoom Selected
+   ✔  When the user chooses Zoom All
+   ✔  Then the block appears larger and its visible outline fits within the viewport
+   ✔  And the same part and orientation remain active
+   ✔  When the user reopens the Zoom menu
+   ✔  Then Zoom All is marked as the selected action
+   ✔  When the user selects Zoom and presses Escape
+   ✔  Then the status area displays Ready
+]]></system-out></testcase></testsuite></testsuites>

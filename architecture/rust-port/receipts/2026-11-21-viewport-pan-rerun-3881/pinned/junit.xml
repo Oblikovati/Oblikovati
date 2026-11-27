@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Viewport pan: tmp/oblikovati-bdd-fRKfdz/checkout/features/application/viewport-pan/viewport-pan.feature" package="testsuite/Feature: Viewport pan: tmp/oblikovati-bdd-fRKfdz/checkout/features/application/viewport-pan/viewport-pan.feature" tests="4" errors="0" failures="0" hostname="localhost" timestamp="2026-11-21T10:00:44.005694716Z" time="79.610022244"><testcase name="Scenario: Activate and cancel viewport pan: tmp/oblikovati-bdd-fRKfdz/checkout/features/application/viewport-pan/viewport-pan.feature:5:3" time="16.331458429"><system-out><![CDATA[  Scenario: Activate and cancel viewport pan
+   ✔  Given a part containing a visible solid is active in the MCAD Software
+   ✔  And the viewport navigation bar is visible
+   ✔  When the user selects Pan on the navigation bar
+   ✔  Then Pan is active
+   ✔  And the Pan control is highlighted
+   ✔  And the status area prompts the user to pan the current view and indicates cancellation is available
+   ✔  And the active part and solid remain visible
+   ✔  When the user presses Escape
+   ✔  Then the status area returns to Ready
+   ✔  And the active part and solid remain visible
+]]></system-out></testcase><testcase name="Scenario: Cancel Pan by clicking the viewport: tmp/oblikovati-bdd-fRKfdz/checkout/features/application/viewport-pan/viewport-pan.feature:18:3" time="15.129141241"><system-out><![CDATA[  Scenario: Cancel Pan by clicking the viewport
+   ✔  Given a part containing a visible solid is active in the MCAD Software
+   ✔  And Pan is active from the viewport navigation bar
+   ✔  When the user clicks an empty area of the viewport without dragging
+   ✔  Then Pan ends and the status area displays Ready
+   ✔  And the same part and solid remain visible in their previous view
+]]></system-out></testcase><testcase name="Scenario: End Pan using its context menu: tmp/oblikovati-bdd-fRKfdz/checkout/features/application/viewport-pan/viewport-pan.feature:26:3" time="22.472797192"><system-out><![CDATA[  Scenario: End Pan using its context menu
+   ✔  Given a part containing a visible solid is active in the MCAD Software
+   ✔  And Pan is active from the viewport navigation bar
+   ✔  When the user right-clicks an empty area of the viewport
+   ✔  Then a contextual menu offers Done, OK, Home View, Orbit, Zoom and Previous View
+   ✔  And the status area still indicates Pan is active
+   ✔  When the user chooses Done
+   ✔  Then the contextual menu closes and the status area displays Ready
+   ✔  And the same part and solid remain visible
+]]></system-out></testcase><testcase name="Scenario: Switch from Pan to Zoom using the contextual menu: tmp/oblikovati-bdd-fRKfdz/checkout/features/application/viewport-pan/viewport-pan.feature:37:3" time="25.676625382"><system-out><![CDATA[  Scenario: Switch from Pan to Zoom using the contextual menu
+   ✔  Given a part containing a visible solid is active in the MCAD Software
+   ✔  And Pan is active from the viewport navigation bar
+   ✔  When the user right-clicks an empty area of the viewport
+   ✔  And the user chooses Zoom from the contextual menu
+   ✔  Then the contextual menu closes
+   ✔  And the status area prompts for zooming and indicates cancellation is available
+   ✔  And the same part and solid remain visible
+   ✔  When the user presses Escape
+   ✔  Then the status area returns to Ready
+]]></system-out></testcase></testsuite></testsuites>

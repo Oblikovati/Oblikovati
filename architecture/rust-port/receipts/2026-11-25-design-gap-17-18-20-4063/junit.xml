@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Open document tabs: mnt/vininas-projects/MCAD-Scenarios/features/application/document-tabs/document-tabs.feature" package="testsuite/Feature: Open document tabs: mnt/vininas-projects/MCAD-Scenarios/features/application/document-tabs/document-tabs.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T13:45:24.650805924Z" time="5.057775925"><testcase name="Scenario: Visit Home without leaving an active sketch: mnt/vininas-projects/MCAD-Scenarios/features/application/document-tabs/document-tabs.feature:271:3" time="5.057775925"><system-out><![CDATA[  Scenario: Visit Home without leaving an active sketch
+   ✔  Given `fixtures/cad/planar-sketch-empty-xy.opd` is open with Sketch1 being edited
+   ✔  When the user chooses Home from the View tab's Switch menu
+   ✔  Then the Home workspace displays its recent documents
+   ✔  And the part remains available in the document tab strip
+   ✔  When the user selects the part's document tab
+   ✔  Then the part's sketch viewport and model browser are displayed
+   ✔  And the sketch editing environment remains active
+]]></system-out></testcase></testsuite></testsuites>

@@ -1,0 +1,36 @@
+{
+  "kind": "quality-diagnostic",
+  "api_candidate_commit": "a419c6e9a982814ee6298839e22afd5e24dda9f8",
+  "base_commit": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+  "commands": [
+    "go test -cover ./...",
+    "cargo llvm-cov --manifest-path rust/Cargo.toml --locked --summary-only",
+    "jscpd 5.4.1 --reporters console --threshold 3 go rust/src"
+  ],
+  "results": [
+    "Rust line coverage 97.73%; Go package coverage varies.",
+    "Duplication 6.2% for both candidate and clean base; both fail the 3% threshold."
+  ],
+  "limitations": [
+    "The duplication scan includes Go tests and generated Rust code. The comparison is not a bisect.",
+    "The API branch is local only and cannot be treated as a released dependency."
+  ],
+  "artifacts": [
+    {
+      "path": "architecture/rust-port/receipts/2026-11-14-api-quality/coverage-go.log.gz",
+      "sha256": "5bf15a71a207640e888a155ea0cc16b5e2d538772ed2d6ea8ebefad0908b82ca"
+    },
+    {
+      "path": "architecture/rust-port/receipts/2026-11-14-api-quality/coverage-rust.log.gz",
+      "sha256": "1f5a758034d84c4ff8c93e9d084c367e478919a0cd13ad2cf2ff3a28cd4260ea"
+    },
+    {
+      "path": "architecture/rust-port/receipts/2026-11-14-api-quality/duplication.log.gz",
+      "sha256": "19ae94ae10efb09c31adfe77eff0eaba79b1fde65137d2654902dc1dc062eb7c"
+    },
+    {
+      "path": "architecture/rust-port/receipts/2026-11-14-api-quality/duplication-base.log.gz",
+      "sha256": "401f4a9917ff177ce286615d315ebae5cbc3468c44f8e31fa1add3d7c532351c"
+    }
+  ]
+}

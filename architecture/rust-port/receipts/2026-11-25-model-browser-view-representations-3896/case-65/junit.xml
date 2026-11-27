@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:33:09.795681746Z" time="99.934570194"><testcase name="Scenario: Cancel a custom annotation scale: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature:1060:3" time="99.934570194"><system-out><![CDATA[  Scenario: Cancel a custom annotation scale
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is active in the MCAD Software
+   ✔  And the user copies the Primary view representation as BrowserView and activates BrowserView
+   ✔  And an empty part is active in the MCAD Software
+   ✔  And a copied view representation is active with annotation scale Auto
+   ✔  When the user opens the active view's Annotation Scale submenu
+   ✔  And the user chooses Custom
+   ✔  Then the Edit Annotation Scale dialog opens with Auto selected
+   ✔  And OK is disabled
+   ✔  When the user replaces the scale with "3:2"
+   ✔  Then the scale field displays "3:2"
+   ✔  And OK is enabled
+   ✔  When the user cancels the dialog
+   ✔  And the user reopens the active view's Annotation Scale submenu
+   ✔  Then Auto is checked
+   ✔  When the user dismisses the menus
+   ✔  Then the copied view remains active
+]]></system-out></testcase></testsuite></testsuites>

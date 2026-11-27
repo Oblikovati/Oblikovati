@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" tests="2" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:54:22.947399312Z" time="77.746619288"><testcase name="Scenario: Cancel a customization file dialog: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature:117:5" time="39.281123926"><system-out><![CDATA[  Scenario Outline: Cancel a customization file dialog
+   ✔> Given the MCAD Software starts with a writable copy of `fixtures/preferences/ribbon-normal` as its configuration directory
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And the ribbon customization dialog is open in the MCAD Software
+   ✔  When the user clicks "Export"
+   ✔  Then a "Export Customization Settings" file dialog opens
+   ✔  And the file type is "XML Files (*.xml)"
+   ✔  And the dialog offers "Save" and "Cancel"
+   ✔  When the user clicks "Cancel"
+   ✔  Then the file dialog closes
+   ✔  And the ribbon customization dialog remains open
+]]></system-out></testcase><testcase name="Scenario: Cancel a customization file dialog: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature:118:5" time="38.465495362"><system-out><![CDATA[  Scenario Outline: Cancel a customization file dialog
+   ✔> Given the MCAD Software starts with a writable copy of `fixtures/preferences/ribbon-normal` as its configuration directory
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And the ribbon customization dialog is open in the MCAD Software
+   ✔  When the user clicks "Import"
+   ✔  Then a "Import Customization Settings" file dialog opens
+   ✔  And the file type is "XML Files (*.xml)"
+   ✔  And the dialog offers "Open" and "Cancel"
+   ✔  When the user clicks "Cancel"
+   ✔  Then the file dialog closes
+   ✔  And the ribbon customization dialog remains open
+]]></system-out></testcase></testsuite></testsuites>

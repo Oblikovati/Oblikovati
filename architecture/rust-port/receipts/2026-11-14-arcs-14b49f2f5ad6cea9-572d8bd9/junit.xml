@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Arc three point: tmp/obk-arcs-48987af/features/sketch/arc-three-point/scenario.feature" package="testsuite/Feature: Arc three point: tmp/obk-arcs-48987af/features/sketch/arc-three-point/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T21:21:01.984899751Z" time="6.964337375"><testcase name="Scenario: arc-three-point-01 Commit the intended result: tmp/obk-arcs-48987af/features/sketch/arc-three-point/scenario.feature:5:3" time="6.964337375"><system-out><![CDATA[  Scenario: arc-three-point-01 Commit the intended result
+   ✔  Given the MCAD Software is running
+   ✔  And an editable planar sketch
+   ✔  When the user select Three Point Arc and select a start, end, and noncollinear point on the arc
+   ✔  Then one arc has the chosen endpoints and passes through the third point
+   ✔  And the command requests another arc start
+]]></system-out></testcase></testsuite></testsuites>

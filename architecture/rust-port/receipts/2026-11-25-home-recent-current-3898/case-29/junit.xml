@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Recent documents on Home: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature" package="testsuite/Feature: Recent documents on Home: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T01:31:30.372433932Z" time="17.453950388"><testcase name="Scenario: Inspect actions for a recent document card: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature:374:3" time="17.453950388"><system-out><![CDATA[  Scenario: Inspect actions for a recent document card
+   ✔  Given the MCAD Software starts with an isolated Recent profile prepared from a disposable copy of `fixtures/cad/home-recent-native`
+   ✔  And the Home workspace is active in the MCAD Software
+   ✔  And recent documents are displayed in Grid View
+   ✔  And no recent-document cards are checked
+   ✔  When the user hovers over a recent part card
+   ✔  And the user opens its actions menu
+   ✔  Then the menu offers Open and opens with options
+   ✔  And the menu offers Remove from Recent
+   ✔  And the menu offers commands to open or explore the containing folder
+   ✔  And the menu offers document properties
+   ✔  When the user clicks outside the menu
+   ✔  Then the actions menu closes
+]]></system-out></testcase></testsuite></testsuites>

@@ -1,0 +1,8 @@
+   Compiling oblikovati-head v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/docking-menu-4133/crates/head)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 52.75s
+     Running unittests src/lib.rs (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/target/debug/deps/oblikovati_head-a63049949246ef13)
+
+running 1 test
+test native::gui_loop_tests::application_bdd::docking_system::dock_menu_native::native_dock_menu_opens_and_closes_log_beside_model ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1546 filtered out; finished in 8.76s

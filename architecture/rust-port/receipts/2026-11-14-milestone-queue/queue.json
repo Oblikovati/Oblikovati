@@ -1,0 +1,393 @@
+{
+  "unclassified": 2516,
+  "rows": [
+    {
+      "milestone": "R4",
+      "path": "features/sketch/rectangle-two-point/scenario.feature",
+      "area": "sketch",
+      "total": 7,
+      "verified": 6,
+      "pending": 1,
+      "implemented": 0,
+      "blocked": 0,
+      "excluded": 0,
+      "stale": 0,
+      "missing_baseline": 7,
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3857",
+        "https://github.com/Oblikovati/Oblikovati/issues/3886"
+      ]
+    },
+    {
+      "milestone": "R4",
+      "path": "features/solid-model/extrusion/extrusion.feature",
+      "area": "solid-model",
+      "total": 5,
+      "verified": 0,
+      "pending": 5,
+      "implemented": 0,
+      "blocked": 0,
+      "excluded": 0,
+      "stale": 1,
+      "missing_baseline": 5,
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3857",
+        "https://github.com/Oblikovati/Oblikovati/issues/3870"
+      ]
+    },
+    {
+      "milestone": "R5",
+      "path": "features/sketch/coincident/scenario.feature",
+      "area": "sketch",
+      "total": 7,
+      "verified": 0,
+      "pending": 7,
+      "implemented": 0,
+      "blocked": 0,
+      "excluded": 0,
+      "stale": 0,
+      "missing_baseline": 7,
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3861",
+        "https://github.com/Oblikovati/Oblikovati/issues/3885"
+      ]
+    },
+    {
+      "milestone": "R5",
+      "path": "features/sketch/dimension-expression/scenario.feature",
+      "area": "sketch",
+      "total": 15,
+      "verified": 0,
+      "pending": 15,
+      "implemented": 0,
+      "blocked": 0,
+      "excluded": 0,
+      "stale": 0,
+      "missing_baseline": 15,
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3823",
+        "https://github.com/Oblikovati/Oblikovati/issues/3855"
+      ]
+    },
+    {
+      "milestone": "R5",
+      "path": "features/sketch/dimension-linear/scenario.feature",
+      "area": "sketch",
+      "total": 24,
+      "verified": 0,
+      "pending": 24,
+      "implemented": 0,
+      "blocked": 0,
+      "excluded": 0,
+      "stale": 0,
+      "missing_baseline": 24,
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3823",
+        "https://github.com/Oblikovati/Oblikovati/issues/3855"
+      ]
+    },
+    {
+      "milestone": "R5",
+      "path": "features/sketch/horizontal/scenario.feature",
+      "area": "sketch",
+      "total": 12,
+      "verified": 0,
+      "pending": 12,
+      "implemented": 0,
+      "blocked": 0,
+      "excluded": 0,
+      "stale": 0,
+      "missing_baseline": 12,
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3861",
+        "https://github.com/Oblikovati/Oblikovati/issues/3885"
+      ]
+    },
+    {
+      "milestone": "R5",
+      "path": "features/sketch/new-sketch/scenario.feature",
+      "area": "sketch",
+      "total": 3,
+      "verified": 0,
+      "pending": 3,
+      "implemented": 0,
+      "blocked": 0,
+      "excluded": 0,
+      "stale": 0,
+      "missing_baseline": 3,
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3861",
+        "https://github.com/Oblikovati/Oblikovati/issues/3884"
+      ]
+    },
+    {
+      "milestone": "R5",
+      "path": "features/sketch/rectangle-two-point/scenario.feature",
+      "area": "sketch",
+      "total": 3,
+      "verified": 2,
+      "pending": 1,
+      "implemented": 0,
+      "blocked": 0,
+      "excluded": 0,
+      "stale": 0,
+      "missing_baseline": 3,
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3855",
+        "https://github.com/Oblikovati/Oblikovati/issues/3857",
+        "https://github.com/Oblikovati/Oblikovati/issues/3886"
+      ]
+    },
+    {
+      "milestone": "R5",
+      "path": "features/sketch/vertical/scenario.feature",
+      "area": "sketch",
+      "total": 14,
+      "verified": 0,
+      "pending": 14,
+      "implemented": 0,
+      "blocked": 0,
+      "excluded": 0,
+      "stale": 0,
+      "missing_baseline": 14,
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3861",
+        "https://github.com/Oblikovati/Oblikovati/issues/3885"
+      ]
+    },
+    {
+      "milestone": "R5",
+      "path": "features/solid-model/extrusion/extrusion.feature",
+      "area": "solid-model",
+      "total": 18,
+      "verified": 0,
+      "pending": 18,
+      "implemented": 0,
+      "blocked": 0,
+      "excluded": 0,
+      "stale": 0,
+      "missing_baseline": 18,
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3861",
+        "https://github.com/Oblikovati/Oblikovati/issues/3870"
+      ]
+    },
+    {
+      "milestone": "R7",
+      "path": "features/application/body-properties/body-properties.feature",
+      "area": "application",
+      "total": 6,
+      "verified": 0,
+      "pending": 6,
+      "implemented": 0,
+      "blocked": 0,
+      "excluded": 0,
+      "stale": 6,
+      "missing_baseline": 6,
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3859"
+      ]
+    },
+    {
+      "milestone": "R7",
+      "path": "features/application/model-browser/model-browser.feature",
+      "area": "application",
+      "total": 1,
+      "verified": 1,
+      "pending": 0,
+      "implemented": 0,
+      "blocked": 0,
+      "excluded": 0,
+      "stale": 0,
+      "missing_baseline": 1,
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3860",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ]
+    },
+    {
+      "milestone": "R7",
+      "path": "features/application/ribbon-docking/ribbon-docking.feature",
+      "area": "application",
+      "total": 1,
+      "verified": 1,
+      "pending": 0,
+      "implemented": 0,
+      "blocked": 0,
+      "excluded": 0,
+      "stale": 0,
+      "missing_baseline": 1,
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3856",
+        "https://github.com/Oblikovati/Oblikovati/issues/3860"
+      ]
+    },
+    {
+      "milestone": "R7",
+      "path": "features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature",
+      "area": "application",
+      "total": 18,
+      "verified": 0,
+      "pending": 18,
+      "implemented": 0,
+      "blocked": 0,
+      "excluded": 0,
+      "stale": 1,
+      "missing_baseline": 18,
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3856",
+        "https://github.com/Oblikovati/Oblikovati/issues/3874"
+      ]
+    },
+    {
+      "milestone": "R7",
+      "path": "features/application/viewport-navigation-wheel/viewport-navigation-wheel.feature",
+      "area": "application",
+      "total": 12,
+      "verified": 1,
+      "pending": 11,
+      "implemented": 0,
+      "blocked": 0,
+      "excluded": 0,
+      "stale": 0,
+      "missing_baseline": 12,
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3881"
+      ]
+    },
+    {
+      "milestone": "R7",
+      "path": "features/application/viewport-orbit/viewport-orbit.feature",
+      "area": "application",
+      "total": 9,
+      "verified": 0,
+      "pending": 9,
+      "implemented": 0,
+      "blocked": 0,
+      "excluded": 0,
+      "stale": 1,
+      "missing_baseline": 9,
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3872",
+        "https://github.com/Oblikovati/Oblikovati/issues/3873"
+      ]
+    },
+    {
+      "milestone": "R7",
+      "path": "features/application/viewport-orientation/viewport-orientation.feature",
+      "area": "application",
+      "total": 20,
+      "verified": 0,
+      "pending": 20,
+      "implemented": 0,
+      "blocked": 0,
+      "excluded": 0,
+      "stale": 0,
+      "missing_baseline": 20,
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3881"
+      ]
+    },
+    {
+      "milestone": "R7",
+      "path": "features/application/viewport-pan/viewport-pan.feature",
+      "area": "application",
+      "total": 4,
+      "verified": 0,
+      "pending": 4,
+      "implemented": 0,
+      "blocked": 0,
+      "excluded": 0,
+      "stale": 0,
+      "missing_baseline": 4,
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3881"
+      ]
+    },
+    {
+      "milestone": "R7",
+      "path": "features/application/viewport-zoom/viewport-zoom.feature",
+      "area": "application",
+      "total": 7,
+      "verified": 0,
+      "pending": 7,
+      "implemented": 0,
+      "blocked": 0,
+      "excluded": 0,
+      "stale": 0,
+      "missing_baseline": 7,
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3881"
+      ]
+    },
+    {
+      "milestone": "R7",
+      "path": "features/sketch/coincident/scenario.feature",
+      "area": "sketch",
+      "total": 1,
+      "verified": 0,
+      "pending": 1,
+      "implemented": 0,
+      "blocked": 0,
+      "excluded": 0,
+      "stale": 0,
+      "missing_baseline": 1,
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3861",
+        "https://github.com/Oblikovati/Oblikovati/issues/3885"
+      ]
+    },
+    {
+      "milestone": "R7",
+      "path": "features/sketch/horizontal/scenario.feature",
+      "area": "sketch",
+      "total": 2,
+      "verified": 0,
+      "pending": 2,
+      "implemented": 0,
+      "blocked": 0,
+      "excluded": 0,
+      "stale": 0,
+      "missing_baseline": 2,
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3861",
+        "https://github.com/Oblikovati/Oblikovati/issues/3885"
+      ]
+    },
+    {
+      "milestone": "R7",
+      "path": "features/sketch/new-sketch/scenario.feature",
+      "area": "sketch",
+      "total": 2,
+      "verified": 0,
+      "pending": 2,
+      "implemented": 0,
+      "blocked": 0,
+      "excluded": 0,
+      "stale": 0,
+      "missing_baseline": 2,
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ]
+    },
+    {
+      "milestone": "R7",
+      "path": "features/solid-model/extrusion/extrusion.feature",
+      "area": "solid-model",
+      "total": 7,
+      "verified": 0,
+      "pending": 7,
+      "implemented": 0,
+      "blocked": 0,
+      "excluded": 0,
+      "stale": 0,
+      "missing_baseline": 7,
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3861",
+        "https://github.com/Oblikovati/Oblikovati/issues/3870"
+      ]
+    }
+  ],
+  "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+  "application_commit": "814ac01cded62cdb434616f87cd3acdf4e11425e"
+}

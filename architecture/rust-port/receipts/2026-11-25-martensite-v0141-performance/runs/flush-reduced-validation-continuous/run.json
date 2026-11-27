@@ -1,0 +1,13 @@
+{
+  "mode": "continuous",
+  "app_pid": 2013244,
+  "fixture": "docking-visible-solid-current.opd",
+  "validation_layers_disabled": "",
+  "total_rows": 1600,
+  "validation_checks_disabled": [
+    "CORE_CHECKS",
+    "THREAD_SAFETY",
+    "API_PARAMETERS",
+    "OBJECT_LIFETIMES"
+  ]
+}

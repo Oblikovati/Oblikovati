@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Extrude a profile in a part document: tmp/obk-last-refresh/features/solid-model/extrusion/extrusion.feature" package="testsuite/Feature: Extrude a profile in a part document: tmp/obk-last-refresh/features/solid-model/extrusion/extrusion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T18:42:53.650571322Z" time="8.905476721"><testcase name="Scenario: extrusion-05 Zero distance validation and recovery: tmp/obk-last-refresh/features/solid-model/extrusion/extrusion.feature:58:3" time="8.905476721"><system-out><![CDATA[  Scenario: extrusion-05 Zero distance validation and recovery
+   ✔  Given Default direction with a selected profile
+   ✔  When Distance A is replaced with 0
+   ✔  Then a red error indicator appears and OK is disabled
+   ✔  When the value is replaced with 8
+   ✔  Then the error clears and OK becomes available
+]]></system-out></testcase></testsuite></testsuites>

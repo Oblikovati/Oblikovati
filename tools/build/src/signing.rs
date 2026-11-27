@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
+use crate::executable_names::{CLI_BINARY, GUI_BINARY};
 use crate::{
     process::{BuildResult, Runner, execute},
     tree::all_files,
@@ -52,9 +53,7 @@ pub(crate) fn sign_tree(
 ) -> BuildResult<()> {
     for file in all_files(directory)? {
         let name = file.file_name().unwrap_or_default().to_string_lossy();
-        if name.ends_with(".dylib")
-            || ["oblikovati-cli", "oblikovati-head"].contains(&name.as_ref())
-        {
+        if name.ends_with(".dylib") || [CLI_BINARY, GUI_BINARY].contains(&name.as_ref()) {
             sign_code(root, runner, &file, identity)?;
         }
     }

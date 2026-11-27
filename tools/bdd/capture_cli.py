@@ -1,0 +1,262 @@
+#!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-2.0-only
+"""Run one pinned native scenario and prepare evidence for visual review."""
+
+import argparse
+import json
+import platform
+import shutil
+import subprocess
+import sys
+import tempfile
+from pathlib import Path
+from typing import Callable, Mapping, TextIO
+
+from behavior_capture import CaptureRequest, capture_receipt
+from committed_build_source import materialize_source
+from capture_build_environment import capture_build_environment, reject_ancestor_cargo_configs
+from capture_inventory import isolated_inventory
+from capture_dependency_stage import stage_capture_dependencies, require_same_capture_lock
+from capture_source_config import read_capture_source_config, require_same_source_config
+from capture_manifest_check import read_capture_manifests, require_same_manifests
+from functools import partial
+from behavior_evidence import locked_revision
+from behavior_ledger import (
+    CLASSIFICATIONS,
+    INVENTORY,
+    ROOT,
+    application_state,
+    index_rows,
+    read_json,
+    require_object,
+    validate_classification,
+    verify_inputs,
+)
+
+
+class NativeCargoRun:
+    """Run the real native Cucumber test and retain its output; example: NativeCargoRun(root, 'application', commit)."""
+
+    def __init__(
+        self,
+        root: Path,
+        area: str,
+        commit: str,
+        launch: Callable[..., subprocess.Popen[str]] = subprocess.Popen,
+    ) -> None:
+        self.root = root
+        self.area = area
+        self.commit = commit
+        self.launch = launch
+
+    def __call__(self, reports: Path, environment: dict[str, str]) -> int:
+        log = reports / "native-test.log"
+        if log.exists() or log.is_symlink():
+            raise FileExistsError(f"native log {log}: expected a new file")
+        with tempfile.TemporaryDirectory(prefix="oblikovati-capture-build-") as folder:
+            return self._build_from_export(Path(folder), environment, log)
+
+    def _build_from_export(self, folder: Path, environment: dict[str, str], log: Path) -> int:
+        source = folder / "source"
+        materialize_source(self.root, self.commit, source)
+        reject_ancestor_cargo_configs(source)
+        source_config = read_capture_source_config(source)
+        manifests = read_capture_manifests(source)
+        build_environment = capture_build_environment(folder, environment)
+        lock = stage_capture_dependencies(source, environment, build_environment)
+        with tempfile.TemporaryFile(mode="w+", encoding="utf-8") as output:
+            status = self._stream_native(source, build_environment, output)
+            reject_ancestor_cargo_configs(source)
+            require_same_source_config(source, source_config)
+            require_same_manifests(source, manifests)
+            require_same_capture_lock(source, lock)
+            output.seek(0)
+            with log.open("x", encoding="utf-8") as destination:
+                shutil.copyfileobj(output, destination)
+        return status
+
+    def _stream_native(self, source: Path, environment: dict[str, str], output: TextIO) -> int:
+        with self.launch(
+            native_command(self.area),
+            cwd=source,
+            env=environment,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+        ) as child:
+            if child.stdout is None:
+                raise ValueError("native runner stdout: expected a readable pipe")
+            for line in child.stdout:
+                output.write(line)
+                print(line, end="", flush=True)
+            return child.wait()
+
+
+def native_command(area: str) -> list[str]:
+    """Choose the runner for the selected area; example: native_command('sketch')."""
+    if area not in ("application", "sketch", "solid-model"):
+        raise ValueError(
+            f"scenario area {area!r}: expected application, sketch, or solid-model"
+        )
+    runner = (
+        "sketch_scenarios_use_the_native_window"
+        if area == "sketch"
+        else "application_scenarios_use_the_native_window"
+    )
+    command = ["cargo", "test", "--locked", "-p", "oblikovati-head", "--lib"]
+    return command + [runner, "--", "--nocapture"]
+
+
+def find_scenario(
+    inventory: Mapping[str, object],
+    classifications: Mapping[str, object],
+    identifier: str,
+) -> dict[str, object]:
+    """Select a reviewed scenario with unchanged source; example: find_scenario(inventory, classes, 'scenario:...')."""
+    if classifications.get("version") != 1:
+        raise ValueError(
+            f"classification version {classifications.get('version')!r}: expected 1"
+        )
+    scenarios = index_rows(inventory.get("scenarios"), "inventory scenarios")
+    reviewed = index_rows(classifications.get("scenarios"), "classifications")
+    if identifier not in scenarios or identifier not in reviewed:
+        raise ValueError(
+            f"scenario {identifier!r}: expected an inventoried and reviewed classification"
+        )
+    row, classification = scenarios[identifier], reviewed[identifier]
+    require_current_classification(inventory, row, classification, identifier)
+    return dict(row)
+
+
+def require_current_classification(
+    inventory: Mapping[str, object],
+    row: Mapping[str, object],
+    classification: Mapping[str, object],
+    identifier: str,
+) -> None:
+    """Refuse blocked or stale reviewed source; example: require_current_classification(inventory, row, classification, id)."""
+    validate_classification(classification)
+    if (
+        row.get("capture_only")
+        or row.get("capture_host_only")
+        or row.get("source_error")
+        or classification["state"] in ("blocked", "excluded")
+    ):
+        raise ValueError(f"scenario {identifier!r}: expected valid, non-blocked source")
+    expected = (inventory.get("source_revision"), row.get("source_sha256"))
+    actual = (
+        classification.get("source_revision"),
+        classification.get("source_sha256"),
+    )
+    if actual != expected:
+        raise ValueError(
+            f"scenario {identifier!r} source {actual!r}: expected current {expected!r}"
+        )
+
+
+def receipt_destination(root: Path, value: Path) -> Path:
+    """Keep published receipts within their tracked directory; example: receipt_destination(root, Path('architecture/rust-port/receipts/run'))."""
+    parent = (root / "architecture/rust-port/receipts").resolve()
+    destination = (root / value).resolve()
+    if destination == parent or not destination.is_relative_to(parent):
+        raise ValueError(
+            f"receipt destination {destination}: expected a new directory under {parent}"
+        )
+    return destination
+
+
+def prepare_request(
+    checkout: Path,
+    identifier: str,
+    destination: Path,
+    renderer: str,
+    capture: str | None,
+) -> CaptureRequest:
+    """Validate the pinned inputs and construct one native run; example: prepare_request(checkout, scenario_id, dest, 'Vulkan', None)."""
+    require_renderer(renderer)
+    verified = verified_run_inputs(checkout, identifier)
+    return configured_request(checkout, destination, renderer, capture, verified)
+
+
+def configured_request(
+    checkout: Path,
+    destination: Path,
+    renderer: str,
+    capture: str | None,
+    verified: tuple[dict[str, object], dict[str, object], str],
+) -> CaptureRequest:
+    """Assemble verified run settings; example: configured_request(checkout, dest, renderer, None, verified)."""
+    inventory, row, commit = verified
+    return CaptureRequest(
+        ROOT,
+        checkout,
+        receipt_destination(ROOT, destination),
+        row,
+        str(inventory["source_revision"]),
+        commit,
+        platform.system(),
+        renderer,
+        capture,
+    )
+
+
+def require_renderer(renderer: str) -> None:
+    """Require a recorded rendering environment; example: require_renderer('Vulkan Lavapipe')."""
+    if not renderer.strip():
+        raise ValueError(
+            f"renderer {renderer!r}: expected a nonempty renderer description"
+        )
+
+
+def verified_run_inputs(
+    checkout: Path, identifier: str
+) -> tuple[dict[str, object], dict[str, object], str]:
+    """Pin source, lockfile and clean application state; example: verified_run_inputs(checkout, scenario_id)."""
+    commit, clean = application_state(ROOT)
+    if not clean:
+        raise ValueError(
+            f"application commit {commit}: expected clean application inputs before a native run"
+        )
+    inventory = require_object(read_json(INVENTORY), "inventory")
+    verify_inputs(ROOT, checkout, inventory, partial(isolated_inventory, commit=commit))
+    classifications = require_object(read_json(CLASSIFICATIONS), "classifications")
+    row = find_scenario(inventory, classifications, identifier)
+    row["api_revision"] = locked_revision(ROOT, "oblikovati-api")
+    row["kernel_revision"] = locked_revision(ROOT, "martensite-tkernel")
+    if application_state(ROOT) != (commit, True):
+        raise ValueError(f"application commit {commit}: expected unchanged clean inputs after inventory")
+    return inventory, row, commit
+
+
+def main() -> None:
+    """Run the command-line workflow; example: capture_cli.py --checkout path --scenario-id id --output path --renderer Vulkan."""
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--checkout", required=True, type=Path)
+    parser.add_argument("--scenario-id", required=True)
+    parser.add_argument("--output", required=True, type=Path)
+    parser.add_argument("--renderer", required=True)
+    parser.add_argument(
+        "--capture",
+        help="PNG filename for an ordinary scenario when the run creates multiple captures",
+    )
+    args = parser.parse_args()
+    request = prepare_request(
+        args.checkout, args.scenario_id, args.output, args.renderer, args.capture
+    )
+    result = capture_receipt(
+        request, NativeCargoRun(ROOT, str(request.row["area"]), request.application_commit), application_state
+    )
+    print(
+        json.dumps(
+            {"receipt": result, "review_required": True, "historical_only": True},
+            indent=2,
+        )
+    )
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except (OSError, ValueError, subprocess.CalledProcessError) as error:
+        print(f"native receipt: {error}", file=sys.stderr)
+        raise SystemExit(1) from error

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T04:47:46.175408644Z" time="36.541570405"><testcase name="Scenario: Stage the same command for two ribbon tabs: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature:1040:3" time="36.541570405"><system-out><![CDATA[  Scenario: Stage the same command for two ribbon tabs
+   ✔> Given the MCAD Software starts with a writable copy of `fixtures/preferences/ribbon-normal` as its configuration directory
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part is active in the MCAD Software
+   ✔  And the ribbon customization dialog has empty Part Tools and Part Manage targets
+   ✔  And the command source is All Commands
+   ✔  When the user double-clicks 2D Sketches in the source list for Part Tools
+   ✔  Then the command appears in the Part Tools target and the target is marked as changed
+   ✔  When the user selects the Part Manage target
+   ✔  Then the target is empty and 2D Sketches is available in the source list
+   ✔  When the user double-clicks 2D Sketches in the source list
+   ✔  Then the command appears in the Part Manage target and that target is marked as changed
+   ✔  When the user returns to the Part Tools target
+   ✔  Then its staged 2D Sketches command remains present
+   ✔  And the Part Tools target is marked as changed
+   ✔  When the user cancels customization
+   ✔  Then the customization dialog closes
+]]></system-out></testcase></testsuite></testsuites>

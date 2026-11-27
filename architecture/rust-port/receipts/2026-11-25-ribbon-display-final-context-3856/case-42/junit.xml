@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon display modes: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature" package="testsuite/Feature: Ribbon display modes: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T02:45:51.098156936Z" time="20.408034472"><testcase name="Scenario: Dismiss temporary Home commands when activating an open part: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature:609:3" time="20.408034472"><system-out><![CDATA[  Scenario: Dismiss temporary Home commands when activating an open part
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part is open in the MCAD Software
+   ✔  And the Home workspace is active
+   ✔  And the ribbon is minimized to tabs
+   ✔  And the Tools ribbon tab is visible
+   ✔  When the user clicks the Tools ribbon tab
+   ✔  Then the Home-context Tools commands appear temporarily
+   ✔  And Document Settings is unavailable
+   ✔  When the user selects the open part document tab
+   ✔  Then the part workspace and model browser appear
+   ✔  And the temporary Home-context commands are closed
+   ✔  And the part ribbon remains minimized to tabs
+   ✔  And the Tools ribbon tab is selected
+]]></system-out></testcase></testsuite></testsuites>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Inspect the project dialog: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/project-dialog/project-dialog.feature" package="testsuite/Feature: Inspect the project dialog: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/project-dialog/project-dialog.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T18:09:00.886444375Z" time="19.985888135"><testcase name="Scenario: Expand library groups independently in the project tree: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/project-dialog/project-dialog.feature:117:3" time="19.985888135"><system-out><![CDATA[  Scenario: Expand library groups independently in the project tree
+   ✔  Given the Projects dialog is open in the MCAD Software
+   ✔  And the selected project has collapsed Appearance Libraries and Material Libraries groups with entries
+   ✔  When the user selects Appearance Libraries and presses the Right Arrow key
+   ✔  Then the appearance library entries are visible beneath their group
+   ✔  When the user selects Material Libraries and presses the Right Arrow key
+   ✔  Then the material library entries are visible beneath their group
+   ✔  And the appearance library entries remain visible
+   ✔  When the user presses the Left Arrow key
+   ✔  Then the material library entries are hidden
+   ✔  And the appearance library entries remain visible
+   ✔  And the active project remains marked in the project list
+]]></system-out></testcase></testsuite></testsuites>

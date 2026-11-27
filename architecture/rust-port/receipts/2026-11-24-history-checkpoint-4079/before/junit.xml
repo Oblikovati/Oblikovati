@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Extrude a profile in a part document: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/solid-model/extrusion/extrusion.feature" package="testsuite/Feature: Extrude a profile in a part document: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/solid-model/extrusion/extrusion.feature" tests="1" errors="0" failures="1" hostname="localhost" timestamp="2026-11-24T15:59:16.185727102Z" time="41.412400952"><testcase name="Scenario: extrusion-06 Accepted creation supports Undo and Redo: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/solid-model/extrusion/extrusion.feature:71:3" time="41.412400952"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: extrusion-06 Accepted creation supports Undo and Redo
+   ✔> Given the MCAD Software is displaying a part in the solid modeling workspace
+   ✔> And the viewport pointer is idle
+   ✔  Given Distance A 8 mm and zero taper
+   ✔  When OK is clicked then Undo then Redo
+   ✔  Then Extrusion1 and Solid Bodies(1) return with the shaded solid
+   ✘  And the subsequent Measure result lists two extrusion edges of length 8.000 mm
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/solid-model/extrusion/extrusion.feature:75:5
+      Step doesn't match any function
+]]></system-out></testcase></testsuite></testsuites>

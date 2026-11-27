@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T13:36:03.426030742Z" time="25.517851995"><testcase name="Scenario: Cancel a staged command on the View ribbon target: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature:968:3" time="25.517851995"><system-out><![CDATA[  Scenario: Cancel a staged command on the View ribbon target
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the View ribbon tab is selected
+   ✔  And the Part | View custom target is empty
+   ✔  When the user opens Customize User Commands from the Windows panel context menu
+   ✔  And the user double-clicks "2D Sketches" in All Commands
+   ✔  Then "2D Sketches" appears in the Part | View target
+   ✔  And the target is marked as changed
+   ✔  When the user cancels customization
+   ✔  And the user reopens Customize User Commands from the Windows panel context menu
+   ✔  Then the Part | View target is empty
+   ✔  And "2D Sketches" is available in All Commands
+   ✔  When the user closes customization
+   ✔  Then the View ribbon remains visible
+]]></system-out></testcase></testsuite></testsuites>

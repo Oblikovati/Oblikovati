@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Viewport navigation wheel: tmp/oblikovati-ribbon-relocated.RcZVDl/current-viewport-wheel-source/features/application/viewport-navigation-wheel/viewport-navigation-wheel.feature" package="testsuite/Feature: Viewport navigation wheel: tmp/oblikovati-ribbon-relocated.RcZVDl/current-viewport-wheel-source/features/application/viewport-navigation-wheel/viewport-navigation-wheel.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T18:25:42.987950051Z" time="148.81424611"><testcase name="Scenario: Apply and restore the big wheel size: tmp/oblikovati-ribbon-relocated.RcZVDl/current-viewport-wheel-source/features/application/viewport-navigation-wheel/viewport-navigation-wheel.feature:87:3" time="148.81424611"><system-out><![CDATA[  Scenario: Apply and restore the big wheel size
+   ✔  Given `fixtures/cad/main-window-frame-start.opd` is open and active in the MCAD Software
+   ✔  And the full navigation wheel is visible in the MCAD Software
+   ✔  And its big wheel size preference is Normal
+   ✔  When the user opens the wheel options and chooses Large for big wheel size
+   ✔  And the user clicks OK
+   ✔  Then the options dialog closes
+   ✔  And the full wheel appears larger than before
+   ✔  When the user reopens wheel options
+   ✔  Then the big wheel size field displays Large
+   ✔  When the user chooses Normal for big wheel size and clicks OK
+   ✔  Then the full wheel returns to its previous apparent size
+   ✔  When the user presses Escape
+   ✔  Then the wheel closes
+]]></system-out></testcase></testsuite></testsuites>

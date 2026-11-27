@@ -1,7 +1,7 @@
 name: Rust CI
 on:
   push:
-    branches: [rust]
+    branches: [rust, rust-work]
   pull_request:
     branches: [rust]
   workflow_call:
@@ -9,14 +9,27 @@ on:
       revision:
         type: string
         default: ''
+concurrency:
+  # Package checks target an explicit revision and must retain their own run.
+  group: rust-ci-${{ inputs.revision != '' && github.run_id || github.ref }}
+  cancel-in-progress: ${{ inputs.revision == '' }}
 permissions:
   contents: read
+env:
+  # Windows needs this before checkout to admit the benchmark evidence paths.
+  GIT_CONFIG_COUNT: '1'
+  GIT_CONFIG_KEY_0: core.longpaths
+  GIT_CONFIG_VALUE_0: 'true'
+  # Keep every check, but avoid retaining full type debug data on ephemeral runners.
+  CARGO_INCREMENTAL: '0'
+  CARGO_PROFILE_DEV_DEBUG: line-tables-only
+  CARGO_PROFILE_TEST_DEBUG: line-tables-only
 defaults:
   run:
     shell: bash
 jobs:
   gate:
-    runs-on: ubuntu-26.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -26,7 +39,7 @@ jobs:
       - uses: ./.github/actions/setup
         with:
           quality: 'true'
-      - run: xvfb-run -a make gate
+      - run: make gate-xvfb
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         if: always()
         with:
@@ -34,7 +47,7 @@ jobs:
           path: target/quality/
           retention-days: 14
   matrix:
-    runs-on: ubuntu-26.04
+    runs-on: ubuntu-24.04
     outputs:
       platforms: ${{ steps.matrix.outputs.platforms }}
     steps:
@@ -50,17 +63,65 @@ jobs:
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON(needs.matrix.outputs.platforms) }}
-    runs-on: ${{ matrix.runner }}
+    # Ubuntu 26.04 provides ARM64 validation layers with VK_EXT_layer_settings.
+    # The separate package matrix still builds against the Ubuntu 24.04 ABI.
+    runs-on: ${{ matrix.target == 'aarch64-unknown-linux-gnu' && 'ubuntu-26.04-arm' || matrix.runner }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: ${{ inputs.revision || github.sha }}
           persist-credentials: false
       - uses: ./.github/actions/setup
+      - name: Install the Windows Vulkan test runtime
+        if: runner.os == 'Windows'
+        id: windows-vulkan
+        uses: msys2/setup-msys2@3c51bf698df1e37b2261f53cb67797b97761185c # v2.34.0
+        with:
+          # SwiftShader traps at vkCreatePipelineLayout when rendering the native document test.
+          msystem: ${{ runner.arch == 'ARM64' && 'CLANGARM64' || 'CLANG64' }}
+          update: true
+          pacboy: mesa:p vulkan-loader:p vulkan-validation-layers:p
+      - name: Register Windows Lavapipe and validation
+        if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          MSYS2_LOCATION: ${{ steps.windows-vulkan.outputs.msys2-location }}
+        run: |
+          $system = if ($env:RUNNER_ARCH -eq 'ARM64') { 'clangarm64' } else { 'clang64' }
+          $architecture = if ($env:RUNNER_ARCH -eq 'ARM64') { 'aarch64' } else { 'x86_64' }
+          $runtime = Join-Path $env:MSYS2_LOCATION $system
+          $binary = Join-Path $runtime 'bin'
+          $driver = Join-Path $runtime "share/vulkan/icd.d/lvp_icd.$architecture.json"
+          $validation = Join-Path $binary 'VkLayer_khronos_validation.json'
+          ./tools/bootstrap/windows_vulkan_registry.ps1 -DriverManifest $driver -ValidationManifest $validation
+          Add-Content -LiteralPath $env:GITHUB_PATH -Value $binary -Encoding utf8
       - name: Build and test every discovered Cargo workspace
+        id: native-workspaces
         run: |
           if [ "$RUNNER_OS" = Linux ]; then
-            xvfb-run -a cargo xtask native
+            if [ "$RUNNER_ARCH" = ARM64 ]; then
+              export VK_LAYER_PATH=/usr/share/vulkan/explicit_layer.d
+              export VK_DRIVER_FILES=/usr/share/vulkan/icd.d/lvp_icd.json
+              export OBLIKOVATI_VULKAN_VALIDATION=1
+              dpkg-query -W vulkan-validationlayers mesa-vulkan-drivers
+            fi
+            ./tools/with-xvfb.sh --window-manager cargo xtask native
+          elif [ "$RUNNER_OS" = Windows ]; then
+            if [ "$RUNNER_ARCH" = X64 ]; then
+              # A later native abort must not hide an earlier test's panic output.
+              export RUST_TEST_NOCAPTURE=1
+            fi
+            cargo xtask native 2>&1 | tee "$(cygpath -u "$RUNNER_TEMP")/oblikovati-native.log"
           else
             cargo xtask native
           fi
+      - name: Capture Windows ARM64 GUI assertion stack
+        if: failure() && matrix.target == 'aarch64-pc-windows-msvc' && steps.native-workspaces.conclusion == 'failure'
+        timeout-minutes: 6
+        shell: pwsh
+        run: ./tools/bootstrap/windows_gui_debug.ps1 -Architecture arm64 -NativeLog (Join-Path $env:RUNNER_TEMP 'oblikovati-native.log')
+      - name: Capture Windows x64 native GUI composition crash stack
+        if: failure() && matrix.target == 'x86_64-pc-windows-msvc' && steps.native-workspaces.conclusion == 'failure'
+        timeout-minutes: 6
+        shell: pwsh
+        run: ./tools/bootstrap/windows_gui_debug.ps1 -Architecture x64 -NativeLog (Join-Path $env:RUNNER_TEMP 'oblikovati-native.log')

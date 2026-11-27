@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Extrude a profile in a part document: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature" package="testsuite/Feature: Extrude a profile in a part document: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature" tests="12" errors="0" failures="0" hostname="localhost" timestamp="2026-11-27T04:20:05.691517041Z" time="93.236191413"><testcase name="Scenario: Inspect each supported Distance A tolerance type: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature:512:5" time="7.871113373"><system-out><![CDATA[  Scenario Outline: Inspect each supported Distance A tolerance type
+   ✔> Given the MCAD Software is displaying a part in the solid modeling workspace
+   ✔> And the viewport pointer is idle
+   ✔  Given Extrusion1 in `fixtures/cad/extrusion/extrusion-rect-8mm.opd` is open for editing
+   ✔  When the user opens Tolerance from the Distance A editor menu
+   ✔  And the user opens the Type choices
+   ✔  Then Default is available
+   ✔  When the user cancels Tolerance
+   ✔  Then Distance A still shows 8 mm
+]]></system-out></testcase><testcase name="Scenario: Inspect each supported Distance A tolerance type: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature:513:5" time="7.8365417090000005"><system-out><![CDATA[  Scenario Outline: Inspect each supported Distance A tolerance type
+   ✔> Given the MCAD Software is displaying a part in the solid modeling workspace
+   ✔> And the viewport pointer is idle
+   ✔  Given Extrusion1 in `fixtures/cad/extrusion/extrusion-rect-8mm.opd` is open for editing
+   ✔  When the user opens Tolerance from the Distance A editor menu
+   ✔  And the user opens the Type choices
+   ✔  Then Basic is available
+   ✔  When the user cancels Tolerance
+   ✔  Then Distance A still shows 8 mm
+]]></system-out></testcase><testcase name="Scenario: Inspect each supported Distance A tolerance type: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature:514:5" time="8.103510756"><system-out><![CDATA[  Scenario Outline: Inspect each supported Distance A tolerance type
+   ✔> Given the MCAD Software is displaying a part in the solid modeling workspace
+   ✔> And the viewport pointer is idle
+   ✔  Given Extrusion1 in `fixtures/cad/extrusion/extrusion-rect-8mm.opd` is open for editing
+   ✔  When the user opens Tolerance from the Distance A editor menu
+   ✔  And the user opens the Type choices
+   ✔  Then Symmetric is available
+   ✔  When the user cancels Tolerance
+   ✔  Then Distance A still shows 8 mm
+]]></system-out></testcase><testcase name="Scenario: Inspect each supported Distance A tolerance type: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature:515:5" time="8.176825091"><system-out><![CDATA[  Scenario Outline: Inspect each supported Distance A tolerance type
+   ✔> Given the MCAD Software is displaying a part in the solid modeling workspace
+   ✔> And the viewport pointer is idle
+   ✔  Given Extrusion1 in `fixtures/cad/extrusion/extrusion-rect-8mm.opd` is open for editing
+   ✔  When the user opens Tolerance from the Distance A editor menu
+   ✔  And the user opens the Type choices
+   ✔  Then Deviation is available
+   ✔  When the user cancels Tolerance
+   ✔  Then Distance A still shows 8 mm
+]]></system-out></testcase><testcase name="Scenario: Inspect each supported Distance A tolerance type: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature:516:5" time="8.058927787"><system-out><![CDATA[  Scenario Outline: Inspect each supported Distance A tolerance type
+   ✔> Given the MCAD Software is displaying a part in the solid modeling workspace
+   ✔> And the viewport pointer is idle
+   ✔  Given Extrusion1 in `fixtures/cad/extrusion/extrusion-rect-8mm.opd` is open for editing
+   ✔  When the user opens Tolerance from the Distance A editor menu
+   ✔  And the user opens the Type choices
+   ✔  Then Limits-Stacked is available
+   ✔  When the user cancels Tolerance
+   ✔  Then Distance A still shows 8 mm
+]]></system-out></testcase><testcase name="Scenario: Inspect each supported Distance A tolerance type: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature:517:5" time="7.775917716"><system-out><![CDATA[  Scenario Outline: Inspect each supported Distance A tolerance type
+   ✔> Given the MCAD Software is displaying a part in the solid modeling workspace
+   ✔> And the viewport pointer is idle
+   ✔  Given Extrusion1 in `fixtures/cad/extrusion/extrusion-rect-8mm.opd` is open for editing
+   ✔  When the user opens Tolerance from the Distance A editor menu
+   ✔  And the user opens the Type choices
+   ✔  Then Limits-Linear is available
+   ✔  When the user cancels Tolerance
+   ✔  Then Distance A still shows 8 mm
+]]></system-out></testcase><testcase name="Scenario: Inspect each supported Distance A tolerance type: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature:518:5" time="7.70110024"><system-out><![CDATA[  Scenario Outline: Inspect each supported Distance A tolerance type
+   ✔> Given the MCAD Software is displaying a part in the solid modeling workspace
+   ✔> And the viewport pointer is idle
+   ✔  Given Extrusion1 in `fixtures/cad/extrusion/extrusion-rect-8mm.opd` is open for editing
+   ✔  When the user opens Tolerance from the Distance A editor menu
+   ✔  And the user opens the Type choices
+   ✔  Then MAX is available
+   ✔  When the user cancels Tolerance
+   ✔  Then Distance A still shows 8 mm
+]]></system-out></testcase><testcase name="Scenario: Inspect each supported Distance A tolerance type: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature:519:5" time="7.745787301"><system-out><![CDATA[  Scenario Outline: Inspect each supported Distance A tolerance type
+   ✔> Given the MCAD Software is displaying a part in the solid modeling workspace
+   ✔> And the viewport pointer is idle
+   ✔  Given Extrusion1 in `fixtures/cad/extrusion/extrusion-rect-8mm.opd` is open for editing
+   ✔  When the user opens Tolerance from the Distance A editor menu
+   ✔  And the user opens the Type choices
+   ✔  Then MIN is available
+   ✔  When the user cancels Tolerance
+   ✔  Then Distance A still shows 8 mm
+]]></system-out></testcase><testcase name="Scenario: Inspect each supported Distance A tolerance type: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature:520:5" time="7.426653555"><system-out><![CDATA[  Scenario Outline: Inspect each supported Distance A tolerance type
+   ✔> Given the MCAD Software is displaying a part in the solid modeling workspace
+   ✔> And the viewport pointer is idle
+   ✔  Given Extrusion1 in `fixtures/cad/extrusion/extrusion-rect-8mm.opd` is open for editing
+   ✔  When the user opens Tolerance from the Distance A editor menu
+   ✔  And the user opens the Type choices
+   ✔  Then Limits/Fits-Stacked is available
+   ✔  When the user cancels Tolerance
+   ✔  Then Distance A still shows 8 mm
+]]></system-out></testcase><testcase name="Scenario: Inspect each supported Distance A tolerance type: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature:521:5" time="7.099642503"><system-out><![CDATA[  Scenario Outline: Inspect each supported Distance A tolerance type
+   ✔> Given the MCAD Software is displaying a part in the solid modeling workspace
+   ✔> And the viewport pointer is idle
+   ✔  Given Extrusion1 in `fixtures/cad/extrusion/extrusion-rect-8mm.opd` is open for editing
+   ✔  When the user opens Tolerance from the Distance A editor menu
+   ✔  And the user opens the Type choices
+   ✔  Then Limits/Fits-Linear is available
+   ✔  When the user cancels Tolerance
+   ✔  Then Distance A still shows 8 mm
+]]></system-out></testcase><testcase name="Scenario: Inspect each supported Distance A tolerance type: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature:522:5" time="7.826327808"><system-out><![CDATA[  Scenario Outline: Inspect each supported Distance A tolerance type
+   ✔> Given the MCAD Software is displaying a part in the solid modeling workspace
+   ✔> And the viewport pointer is idle
+   ✔  Given Extrusion1 in `fixtures/cad/extrusion/extrusion-rect-8mm.opd` is open for editing
+   ✔  When the user opens Tolerance from the Distance A editor menu
+   ✔  And the user opens the Type choices
+   ✔  Then Limits/Fits-Show Size Limits is available
+   ✔  When the user cancels Tolerance
+   ✔  Then Distance A still shows 8 mm
+]]></system-out></testcase><testcase name="Scenario: Inspect each supported Distance A tolerance type: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature:523:5" time="7.613843574"><system-out><![CDATA[  Scenario Outline: Inspect each supported Distance A tolerance type
+   ✔> Given the MCAD Software is displaying a part in the solid modeling workspace
+   ✔> And the viewport pointer is idle
+   ✔  Given Extrusion1 in `fixtures/cad/extrusion/extrusion-rect-8mm.opd` is open for editing
+   ✔  When the user opens Tolerance from the Distance A editor menu
+   ✔  And the user opens the Type choices
+   ✔  Then Limits/Fits-Show Tolerance is available
+   ✔  When the user cancels Tolerance
+   ✔  Then Distance A still shows 8 mm
+]]></system-out></testcase></testsuite></testsuites>

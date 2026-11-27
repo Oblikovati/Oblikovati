@@ -1,0 +1,22 @@
+wayland-final
+2 scenarios (2 passed)
+20 steps (20 passed)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1733 filtered out; finished in 8.84s
+
+x11-final
+2 scenarios (2 passed)
+20 steps (20 passed)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1733 filtered out; finished in 8.83s
+
+wayland-docking
+1 scenario (1 passed)
+11 steps (11 passed)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1733 filtered out; finished in 5.75s
+
+x11-docking
+1 scenario (1 passed)
+11 steps (11 passed)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1733 filtered out; finished in 5.79s
+
+Head Clippy
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 29.06s

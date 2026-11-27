@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Create a document from a template: tmp/obk-bdd-template-m1iAUYjQ/checkout/features/application/document-creation/document-creation.feature" package="testsuite/Feature: Create a document from a template: tmp/obk-bdd-template-m1iAUYjQ/checkout/features/application/document-creation/document-creation.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T14:44:43.048152979Z" time="10.613349841"><testcase name="Scenario: Select templates with the secondary mouse button: tmp/obk-bdd-template-m1iAUYjQ/checkout/features/application/document-creation/document-creation.feature:523:3" time="10.613349841"><system-out><![CDATA[  Scenario: Select templates with the secondary mouse button
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the template chooser shows the English folder grouped by type using Medium icons
+   ✔  And the Part group contains Standard (in) and Sheet Metal (in)
+   ✔  When the user right-clicks the Standard (in) part template
+   ✔  Then Standard (in) is selected and its details show inch units
+   ✔  And no context menu is visible
+   ✔  When the user right-clicks the Sheet Metal (in) part template
+   ✔  Then Sheet Metal (in) is selected and its details show inch units
+   ✔  And no context menu is visible
+   ✔  When the user right-clicks empty space in the Part gallery
+   ✔  Then Sheet Metal (in) remains selected and its details remain displayed
+   ✔  And no context menu is visible
+   ✔  When the user presses Escape
+   ✔  Then the chooser closes and the original part remains active
+]]></system-out></testcase></testsuite></testsuites>

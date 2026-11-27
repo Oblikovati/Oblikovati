@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Save and reopen part documents: target/native-scratch.HSqCy5/current-document-saving-source/features/application/document-saving/document-saving.feature" package="testsuite/Feature: Save and reopen part documents: target/native-scratch.HSqCy5/current-document-saving-source/features/application/document-saving/document-saving.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T02:27:52.672914087Z" time="18.612563631"><testcase name="Scenario: Cancel a change to the preview source: target/native-scratch.HSqCy5/current-document-saving-source/features/application/document-saving/document-saving.feature:208:3" time="18.612563631"><system-out><![CDATA[  Scenario: Cancel a change to the preview source
+   ✔  Given the user creates a new unsaved metric part in the MCAD Software
+   ✔  And the user presses Control+S to open Save As
+   ✔  And the Save As dialog is open for a new part in the MCAD Software
+   ✔  And Save Preview Picture is selected
+   ✔  And Active Component Iso View on Save is selected
+   ✔  When the user chooses Active Window on Save
+   ✔  And the user cancels the dialog
+   ✔  And the user presses Control+S again for the same part
+   ✔  Then Active Component Iso View on Save is selected
+   ✔  And Active Window on Save is not selected
+]]></system-out></testcase></testsuite></testsuites>

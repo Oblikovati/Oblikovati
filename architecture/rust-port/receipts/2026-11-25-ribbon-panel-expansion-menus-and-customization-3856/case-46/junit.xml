@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" package="testsuite/Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:20:38.631108034Z" time="37.500731886"><testcase name="Scenario: Open customization from an expanded panel title: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:617:3" time="37.500731886"><system-out><![CDATA[  Scenario: Open customization from an expanded panel title
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open and active
+   ✔  And the full 3D Model ribbon is at the top
+   ✔  And the Modify additional command area is open and unpinned
+   ✔  When the user right-clicks the lower Modify title
+   ✔  Then the ribbon context menu is displayed
+   ✔  And the Modify additional commands remain visible
+   ✔  And the context menu offers "Customize User Commands"
+   ✔  When the user chooses "Customize User Commands"
+   ✔  Then the customization dialog opens on its Ribbon tab
+   ✔  And the target is "Part | 3D Model"
+   ✔  And the Modify additional command area is closed
+   ✔  When the user closes the customization dialog without making changes
+   ✔  Then the dialog closes and the full 3D Model ribbon remains visible
+   ✔  And the Modify additional command area remains closed
+]]></system-out></testcase></testsuite></testsuites>

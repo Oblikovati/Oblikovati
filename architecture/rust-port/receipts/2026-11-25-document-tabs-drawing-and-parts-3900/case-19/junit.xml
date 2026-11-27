@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Open document tabs: target/native-scratch.HSqCy5/current-document-tabs-source/features/application/document-tabs/document-tabs.feature" package="testsuite/Feature: Open document tabs: target/native-scratch.HSqCy5/current-document-tabs-source/features/application/document-tabs/document-tabs.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T00:39:14.155165714Z" time="32.960922816"><testcase name="Scenario: Detach an active drawing from the tab strip: target/native-scratch.HSqCy5/current-document-tabs-source/features/application/document-tabs/document-tabs.feature:210:3" time="32.960922816"><system-out><![CDATA[  Scenario: Detach an active drawing from the tab strip
+   ✔  Given `fixtures/cad/quick-access-toolbar/PartOne.opd`, `fixtures/cad/quick-access-toolbar/PartTwo.opd` and `fixtures/cad/blank-drawing.odd` are open
+   ✔  And the drawing is active in the main document tab strip
+   ✔  When the user drags the drawing tab from the strip into the workspace
+   ✔  Then the drawing is displayed in a separate window with its own document tab
+   ✔  And the drawing sheet remains visible in that window
+   ✔  And the part remains open in the main workspace
+   ✔  When the user selects another open part tab in the main workspace
+   ✔  Then that part becomes active in the main workspace
+   ✔  And the drawing remains open in its separate window
+]]></system-out></testcase></testsuite></testsuites>

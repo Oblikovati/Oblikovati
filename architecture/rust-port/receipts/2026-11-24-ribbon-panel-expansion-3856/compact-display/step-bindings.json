@@ -1,0 +1,273 @@
+{
+  "features": 1,
+  "scenarios": 50,
+  "excluded_capture_only": 0,
+  "blocked_capture_host_only": 0,
+  "steps": 537,
+  "unresolved": [
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/display-snapshot/checkout/features/application/ribbon-display/ribbon-display.feature",
+      "scenario": "Access a ribbon tab in tabs-only mode",
+      "line": 52,
+      "step": "the ribbon displays compact group buttons",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/display-snapshot/checkout/features/application/ribbon-display/ribbon-display.feature",
+      "scenario": "Stop wheel navigation at the visible ends of the part ribbon",
+      "line": 282,
+      "step": "the user scrolls down over the last visible command tab",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/display-snapshot/checkout/features/application/ribbon-display/ribbon-display.feature",
+      "scenario": "Open a panel compacted by a narrow application window",
+      "line": 314,
+      "step": "a part is active in the MCAD Software with the full Manage ribbon displayed",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/display-snapshot/checkout/features/application/ribbon-display/ribbon-display.feature",
+      "scenario": "Open a panel compacted by a narrow application window",
+      "line": 315,
+      "step": "the Insert panel displays its commands directly at the wider window size",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/display-snapshot/checkout/features/application/ribbon-display/ribbon-display.feature",
+      "scenario": "Open a panel compacted by a narrow application window",
+      "line": 316,
+      "step": "the user narrows the application window until Insert becomes a compact panel button",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/display-snapshot/checkout/features/application/ribbon-display/ribbon-display.feature",
+      "scenario": "Open a panel compacted by a narrow application window",
+      "line": 317,
+      "step": "the Manage tab remains active",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/display-snapshot/checkout/features/application/ribbon-display/ribbon-display.feature",
+      "scenario": "Open a panel compacted by a narrow application window",
+      "line": 319,
+      "step": "the user clicks the compact Insert panel button",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/display-snapshot/checkout/features/application/ribbon-display/ribbon-display.feature",
+      "scenario": "Open a panel compacted by a narrow application window",
+      "line": 320,
+      "step": "a temporary Insert panel opens below the ribbon with its commands",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/display-snapshot/checkout/features/application/ribbon-display/ribbon-display.feature",
+      "scenario": "Open a panel compacted by a narrow application window",
+      "line": 322,
+      "step": "the temporary panel closes and the compact Insert button remains visible",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/display-snapshot/checkout/features/application/ribbon-display/ribbon-display.feature",
+      "scenario": "Open a panel compacted by a narrow application window",
+      "line": 324,
+      "step": "the Insert commands appear directly in the ribbon again",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/display-snapshot/checkout/features/application/ribbon-display/ribbon-display.feature",
+      "scenario": "Open Document Settings from the full Tools ribbon",
+      "line": 403,
+      "step": "`fixtures/cad/blank-metric-part.opd` is open with the full Tools ribbon displayed in the MCAD Software",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/display-snapshot/checkout/features/application/ribbon-display/ribbon-display.feature",
+      "scenario": "Open Document Settings from the full Tools ribbon",
+      "line": 407,
+      "step": "Standard is the selected tab",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/display-snapshot/checkout/features/application/ribbon-display/ribbon-display.feature",
+      "scenario": "Open Document Settings from the full Tools ribbon",
+      "line": 408,
+      "step": "Close is available while Cancel and Apply are unavailable",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/display-snapshot/checkout/features/application/ribbon-display/ribbon-display.feature",
+      "scenario": "Continue a modeling command after switching ribbon tabs",
+      "line": 578,
+      "step": "a part containing a solid block is active in the MCAD Software",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/display-snapshot/checkout/features/application/ribbon-display/ribbon-display.feature",
+      "scenario": "Continue a modeling command after switching ribbon tabs",
+      "line": 580,
+      "step": "the user selects the 3D Model tab and opens Shell from the Modify group",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/display-snapshot/checkout/features/application/ribbon-display/ribbon-display.feature",
+      "scenario": "Continue a modeling command after switching ribbon tabs",
+      "line": 581,
+      "step": "the Shell properties panel and model preview appear",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/display-snapshot/checkout/features/application/ribbon-display/ribbon-display.feature",
+      "scenario": "Continue a modeling command after switching ribbon tabs",
+      "line": 584,
+      "step": "the Shell properties panel and model preview remain visible",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/display-snapshot/checkout/features/application/ribbon-display/ribbon-display.feature",
+      "scenario": "Continue a modeling command after switching ribbon tabs",
+      "line": 585,
+      "step": "the user cancels Shell",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/display-snapshot/checkout/features/application/ribbon-display/ribbon-display.feature",
+      "scenario": "Continue a modeling command after switching ribbon tabs",
+      "line": 586,
+      "step": "the Shell properties panel and preview close",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/display-snapshot/checkout/features/application/ribbon-display/ribbon-display.feature",
+      "scenario": "Continue a modeling command after switching ribbon tabs",
+      "line": 587,
+      "step": "the original solid block remains visible",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/display-snapshot/checkout/features/application/ribbon-display/ribbon-display.feature",
+      "scenario": "Minimize and restore the ribbon during a modeling preview",
+      "line": 591,
+      "step": "`fixtures/cad/docking-visible-solid-current.opd` with its solid block is active in the MCAD Software",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/display-snapshot/checkout/features/application/ribbon-display/ribbon-display.feature",
+      "scenario": "Minimize and restore the ribbon during a modeling preview",
+      "line": 593,
+      "step": "the ribbon display control toggles between full display and tabs only",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/display-snapshot/checkout/features/application/ribbon-display/ribbon-display.feature",
+      "scenario": "Minimize and restore the ribbon during a modeling preview",
+      "line": 594,
+      "step": "the user starts Shell",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/display-snapshot/checkout/features/application/ribbon-display/ribbon-display.feature",
+      "scenario": "Minimize and restore the ribbon during a modeling preview",
+      "line": 595,
+      "step": "the Shell properties panel and model preview appear",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/display-snapshot/checkout/features/application/ribbon-display/ribbon-display.feature",
+      "scenario": "Minimize and restore the ribbon during a modeling preview",
+      "line": 597,
+      "step": "only the ribbon tabs remain visible",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/display-snapshot/checkout/features/application/ribbon-display/ribbon-display.feature",
+      "scenario": "Minimize and restore the ribbon during a modeling preview",
+      "line": 598,
+      "step": "the Shell properties panel and model preview remain visible",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/display-snapshot/checkout/features/application/ribbon-display/ribbon-display.feature",
+      "scenario": "Minimize and restore the ribbon during a modeling preview",
+      "line": 601,
+      "step": "the Shell properties panel and model preview remain visible",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/display-snapshot/checkout/features/application/ribbon-display/ribbon-display.feature",
+      "scenario": "Minimize and restore the ribbon during a modeling preview",
+      "line": 602,
+      "step": "the user cancels Shell",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/display-snapshot/checkout/features/application/ribbon-display/ribbon-display.feature",
+      "scenario": "Minimize and restore the ribbon during a modeling preview",
+      "line": 603,
+      "step": "the Shell properties panel and preview close",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/display-snapshot/checkout/features/application/ribbon-display/ribbon-display.feature",
+      "scenario": "Minimize and restore the ribbon during a modeling preview",
+      "line": 604,
+      "step": "the original solid block remains visible",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/display-snapshot/checkout/features/application/ribbon-display/ribbon-display.feature",
+      "scenario": "Inspect ribbon appearance choices without changing the display mode",
+      "line": 617,
+      "step": "ribbon appearance is set to Normal",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/display-snapshot/checkout/features/application/ribbon-display/ribbon-display.feature",
+      "scenario": "Inspect ribbon appearance choices without changing the display mode",
+      "line": 619,
+      "step": "Normal is checked",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/display-snapshot/checkout/features/application/ribbon-display/ribbon-display.feature",
+      "scenario": "Inspect ribbon appearance choices without changing the display mode",
+      "line": 620,
+      "step": "Text Off, Small, Compact, Large and Reset Ribbon are listed",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/display-snapshot/checkout/features/application/ribbon-display/ribbon-display.feature",
+      "scenario": "Inspect ribbon appearance choices without changing the display mode",
+      "line": 622,
+      "step": "the Ribbon Appearance submenu remains open",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/display-snapshot/checkout/features/application/ribbon-display/ribbon-display.feature",
+      "scenario": "Inspect ribbon appearance choices without changing the display mode",
+      "line": 623,
+      "step": "the user clicks in the viewport outside the menu",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/display-snapshot/checkout/features/application/ribbon-display/ribbon-display.feature",
+      "scenario": "Inspect ribbon appearance choices without changing the display mode",
+      "line": 625,
+      "step": "the ribbon remains in Normal appearance",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/display-snapshot/checkout/features/application/ribbon-display/ribbon-display.feature",
+      "scenario": "Dismiss the ribbon appearance submenu with Escape",
+      "line": 630,
+      "step": "`fixtures/cad/blank-metric-part.opd` is open with the full 3D Model ribbon displayed in the MCAD Software",
+      "cause": "undefined step"
+    }
+  ],
+  "source_revision": {
+    "root": "/tmp/oblikovati-ribbon-relocated.RcZVDl/display-snapshot/checkout",
+    "commit": "9241d437e7cad18412942240d25f9e58c0fde911",
+    "dirty": false
+  }
+}

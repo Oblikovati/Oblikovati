@@ -1,0 +1,27 @@
+{
+  "kind": "native-acceptance",
+  "scenario_id": "scenario:adfaa180b248a09493b79b65698c97167d4d8d53f4c3a763453aecd7d8b420e2",
+  "scenario_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+  "source_sha256": "e4011485e2cfe78197b73450bea0d26ba2b0dbc54f2307d3b27364ffe9d9a20d",
+  "application_commit": "3bea8bfad760d8cbcc6b3ffac3c728ac970c96e0",
+  "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+  "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+  "runner": "sketch_scenarios_use_the_native_window",
+  "exit_code": 0,
+  "environment": {
+    "os": "Linux",
+    "renderer": "Vulkan with Lavapipe under Xvfb"
+  },
+  "cucumber": {
+    "path": "architecture/rust-port/receipts/2026-11-14-outline-adfaa180b248a094/cucumber.json",
+    "sha256": "650079241f9a23b1f099267a368a455565f7bcb32ba637fc0922ce0abdc43c32"
+  },
+  "source_report": {
+    "path": "architecture/rust-port/receipts/2026-11-14-outline-adfaa180b248a094/source-revision.json",
+    "sha256": "7aa36291ae75cb0f5d1db6d8956de4c7d24256ae449c2e8d32a9e2f3caaf43d7"
+  },
+  "capture": {
+    "path": "architecture/rust-port/receipts/2026-11-14-outline-adfaa180b248a094/new-sketch-03-Escape-after-accepting-the-support-plane.png",
+    "sha256": "7a6cc17a2f71586564d1b658494f4314805115f03c73716512d17d2c18a4ccbe"
+  }
+}

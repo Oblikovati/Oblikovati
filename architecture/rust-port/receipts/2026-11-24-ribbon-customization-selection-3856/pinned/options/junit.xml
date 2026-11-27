@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T13:02:11.345242467Z" time="32.336437822"><testcase name="Scenario: Retain display options when re-adding a staged command: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature:1274:3" time="32.336437822"><system-out><![CDATA[  Scenario: Retain display options when re-adding a staged command
+   ✔  Given a part is active in the MCAD Software with the full Tools ribbon visible
+   ✔  And ribbon customization shows All Commands and an initially empty Part Tools target
+   ✔  And 2D Sketches has been staged in the target list
+   ✔  And its Large and Text options are checked
+   ✔  When the user selects the 2D Sketches target row and clicks the remove command button
+   ✔  Then the target list is empty
+   ✔  And 2D Sketches is highlighted in the available commands list
+   ✔  And the target shows a pending-change marker
+   ✔  When the user clicks the add command button
+   ✔  Then 2D Sketches appears in the target list
+   ✔  And its Large and Text options are checked
+   ✔  When the user clicks Cancel
+   ✔  Then the customization dialog closes
+   ✔  And the Tools ribbon remains visible
+]]></system-out></testcase></testsuite></testsuites>

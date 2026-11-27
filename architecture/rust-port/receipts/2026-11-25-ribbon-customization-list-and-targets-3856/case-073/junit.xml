@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T04:08:05.058580944Z" time="46.822984471"><testcase name="Scenario: Retain staged command display options when switching targets: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature:1153:3" time="46.822984471"><system-out><![CDATA[  Scenario: Retain staged command display options when switching targets
+   ✔> Given the MCAD Software starts with a writable copy of `fixtures/preferences/ribbon-normal` as its configuration directory
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part is active in the MCAD Software
+   ✔  And ribbon customization is open with "All Commands" selected
+   ✔  And the Part | Tools and Part | Manage custom targets are empty
+   ✔  When the user adds "2D Sketches" to the Part | Tools target without applying
+   ✔  And the user checks Large and Text for that command
+   ✔  And the user selects the Part | Manage target
+   ✔  Then the Part | Manage target list is empty
+   ✔  And "2D Sketches" is available in the source list
+   ✔  When the user returns to the Part | Tools target
+   ✔  Then "2D Sketches" remains in the target list
+   ✔  And its Large and Text options are checked
+   ✔  And the target is marked as changed
+   ✔  And Apply and cancels are enabled
+   ✔  When the user cancels customization
+   ✔  Then the customization dialog closes
+]]></system-out></testcase></testsuite></testsuites>

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Extrude a profile in a part document: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature" package="testsuite/Feature: Extrude a profile in a part document: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature" tests="4" errors="0" failures="0" hostname="localhost" timestamp="2026-11-27T03:00:49.944826942Z" time="38.003935035"><testcase name="Scenario: Preview a measured extrusion extent in each direction: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature:268:5" time="7.514576929"><system-out><![CDATA[  Scenario Outline: Preview a measured extrusion extent in each direction
+   ✔> Given the MCAD Software is displaying a part in the solid modeling workspace
+   ✔> And the viewport pointer is idle
+   ✔  Given a fresh copy of `fixtures/cad/revolve/revolve-profile.opd` is open in Extrude with its rectangle selected
+   ✔  And the start reference is the sketch plane with both tapers zero
+   ✔  When the user chooses Default and sets Distance A to 8 mm
+   ✔  Then the extrusion preview extends 8 mm along the default direction
+   ✔  And the command is ready to accept
+]]></system-out></testcase><testcase name="Scenario: Preview a measured extrusion extent in each direction: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature:269:5" time="11.139856089"><system-out><![CDATA[  Scenario Outline: Preview a measured extrusion extent in each direction
+   ✔> Given the MCAD Software is displaying a part in the solid modeling workspace
+   ✔> And the viewport pointer is idle
+   ✔  Given a fresh copy of `fixtures/cad/revolve/revolve-profile.opd` is open in Extrude with its rectangle selected
+   ✔  And the start reference is the sketch plane with both tapers zero
+   ✔  When the user chooses Flipped and sets Distance A to 8 mm
+   ✔  Then the extrusion preview extends 8 mm opposite the default direction
+   ✔  And the command is ready to accept
+]]></system-out></testcase><testcase name="Scenario: Preview a measured extrusion extent in each direction: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature:270:5" time="7.271828901"><system-out><![CDATA[  Scenario Outline: Preview a measured extrusion extent in each direction
+   ✔> Given the MCAD Software is displaying a part in the solid modeling workspace
+   ✔> And the viewport pointer is idle
+   ✔  Given a fresh copy of `fixtures/cad/revolve/revolve-profile.opd` is open in Extrude with its rectangle selected
+   ✔  And the start reference is the sketch plane with both tapers zero
+   ✔  When the user chooses Symmetric and sets Distance A to 8 mm
+   ✔  Then the extrusion preview extends 4 mm on each side of the sketch plane
+   ✔  And the command is ready to accept
+]]></system-out></testcase><testcase name="Scenario: Preview a measured extrusion extent in each direction: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature:271:5" time="12.077673116"><system-out><![CDATA[  Scenario Outline: Preview a measured extrusion extent in each direction
+   ✔> Given the MCAD Software is displaying a part in the solid modeling workspace
+   ✔> And the viewport pointer is idle
+   ✔  Given a fresh copy of `fixtures/cad/revolve/revolve-profile.opd` is open in Extrude with its rectangle selected
+   ✔  And the start reference is the sketch plane with both tapers zero
+   ✔  When the user chooses Asymmetric and sets Distance A to 8 mm and B to 4 mm
+   ✔  Then the extrusion preview extends 8 mm on the default side and 4 mm on the opposite side
+   ✔  And the command is ready to accept
+]]></system-out></testcase></testsuite></testsuites>

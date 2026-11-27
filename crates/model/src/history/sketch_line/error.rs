@@ -1,0 +1,43 @@
+// SPDX-License-Identifier: GPL-2.0-only
+use crate::{
+    history::{SketchConstraintReservationError, SketchPrimitiveCreationError},
+    sketch::{SketchError, SketchTransientSolveError},
+};
+use std::{error::Error, fmt};
+/// Keep geometry, solve readiness, primitive reservations, and local constraint exhaustion as typed causes.
+#[derive(Clone, Debug, PartialEq)]
+pub enum SketchLineCreationError {
+    Sketch(SketchError),
+    Inference(SketchTransientSolveError),
+    InferenceChanged(SketchError),
+    Readiness(crate::document_sketch::SketchReadinessError),
+    Primitive(SketchPrimitiveCreationError),
+    Constraint(SketchConstraintReservationError),
+    Dimension {
+        index: usize,
+        cause: crate::history::SketchDimensionCreationError,
+    },
+}
+impl SketchLineCreationError {
+    fn cause(&self) -> &(dyn Error + 'static) {
+        match self {
+            Self::Sketch(cause) => cause,
+            Self::Inference(cause) => cause,
+            Self::InferenceChanged(cause) => cause,
+            Self::Readiness(cause) => cause,
+            Self::Primitive(cause) => cause,
+            Self::Constraint(cause) => cause,
+            Self::Dimension { cause, .. } => cause,
+        }
+    }
+}
+impl fmt::Display for SketchLineCreationError {
+    fn fmt(&self, output: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(output, "inferred line creation: {}", self.cause())
+    }
+}
+impl Error for SketchLineCreationError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        Some(self.cause())
+    }
+}

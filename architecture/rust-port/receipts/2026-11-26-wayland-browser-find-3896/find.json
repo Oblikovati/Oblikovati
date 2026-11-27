@@ -1,0 +1,1463 @@
+[
+  {
+    "uri": "mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature",
+    "keyword": "Feature",
+    "name": "Model browser",
+    "tags": [],
+    "elements": [
+      {
+        "after": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 650207775
+            }
+          }
+        ],
+        "before": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 2166458768
+            }
+          }
+        ],
+        "keyword": "Scenario",
+        "type": "scenario",
+        "id": "model-browser/group-search-criteria-for-the-same-feature-property",
+        "line": 382,
+        "name": "Group search criteria for the same feature property",
+        "tags": [
+          {
+            "name": "fixture_variation",
+            "line": 382
+          }
+        ],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "line": 383,
+            "name": "`fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software",
+            "result": {
+              "status": "passed",
+              "duration": 1295374626
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 384,
+            "name": "a part with one extrusion and no fillet is open in the MCAD Software",
+            "result": {
+              "status": "passed",
+              "duration": 5260008
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 385,
+            "name": "the Find dialog contains the criterion Type equals Extrusion",
+            "result": {
+              "status": "passed",
+              "duration": 4405518217
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 386,
+            "name": "Features is the selected object type and And is selected for additional criteria",
+            "result": {
+              "status": "passed",
+              "duration": 3755977
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 387,
+            "name": "the user chooses Type equals Fillet and clicks Add to list",
+            "result": {
+              "status": "passed",
+              "duration": 2796077142
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 388,
+            "name": "a prompt says criteria using the same property must be grouped",
+            "result": {
+              "status": "passed",
+              "duration": 9328062
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 389,
+            "name": "the prompt offers to add the criterion using the OR operator",
+            "result": {
+              "status": "passed",
+              "duration": 8029219
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 390,
+            "name": "the user chooses Yes",
+            "result": {
+              "status": "passed",
+              "duration": 775573405
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 391,
+            "name": "the criteria list shows Type equals Extrusion",
+            "result": {
+              "status": "passed",
+              "duration": 9700952
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 392,
+            "name": "the next line shows OR Type equals Fillet",
+            "result": {
+              "status": "passed",
+              "duration": 7314248
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 393,
+            "name": "the user closes and reopens the Find dialog",
+            "result": {
+              "status": "passed",
+              "duration": 2175243124
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 394,
+            "name": "both criteria remain in the list",
+            "result": {
+              "status": "passed",
+              "duration": 8100392
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 395,
+            "name": "the user clicks Find Now",
+            "result": {
+              "status": "passed",
+              "duration": 531464572
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 396,
+            "name": "the extrusion row is selected and the block edges are highlighted",
+            "result": {
+              "status": "passed",
+              "duration": 253885095
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 397,
+            "name": "the Find dialog remains open",
+            "result": {
+              "status": "passed",
+              "duration": 7406718
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 398,
+            "name": "the user closes the Find dialog and clicks empty viewport space",
+            "result": {
+              "status": "passed",
+              "duration": 932697813
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 399,
+            "name": "the highlight disappears and the part remains visible",
+            "result": {
+              "status": "passed",
+              "duration": 248204058
+            }
+          }
+        ]
+      },
+      {
+        "after": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 241689560
+            }
+          }
+        ],
+        "before": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 2136288618
+            }
+          }
+        ],
+        "keyword": "Scenario",
+        "type": "scenario",
+        "id": "model-browser/inspect-the-find-feature-criteria",
+        "line": 99,
+        "name": "Inspect the Find feature criteria",
+        "tags": [
+          {
+            "name": "fixture_variation",
+            "line": 99
+          }
+        ],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "line": 100,
+            "name": "`fixtures/cad/workspace-layout-native.opd` is active in the MCAD Software",
+            "result": {
+              "status": "passed",
+              "duration": 1142271355
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 101,
+            "name": "an active part is open in the MCAD Software",
+            "result": {
+              "status": "passed",
+              "duration": 343789861
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 102,
+            "name": "the user chooses Find from the model browser menu",
+            "result": {
+              "status": "passed",
+              "duration": 1636043496
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 103,
+            "name": "a search criteria dialog opens over the workspace",
+            "result": {
+              "status": "passed",
+              "duration": 10178075
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 104,
+            "name": "its object type list offers Sketches and Features",
+            "result": {
+              "status": "passed",
+              "duration": 993453250
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 105,
+            "name": "the user selects Features and opens the Property list",
+            "result": {
+              "status": "passed",
+              "duration": 1573461121
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 106,
+            "name": "the list offers Name, Note contents, Note title, Suppress status and Type",
+            "result": {
+              "status": "passed",
+              "duration": 8021075
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 107,
+            "name": "the user selects Name and opens the Condition list",
+            "result": {
+              "status": "passed",
+              "duration": 1099535256
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 108,
+            "name": "the list offers any value, begins with, ends with, includes, is exactly and is not",
+            "result": {
+              "status": "passed",
+              "duration": 7182124
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 109,
+            "name": "the user dismisses the list and closes the dialog",
+            "result": {
+              "status": "passed",
+              "duration": 958332424
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 110,
+            "name": "the model browser and part remain visible",
+            "result": {
+              "status": "passed",
+              "duration": 130370066
+            }
+          }
+        ]
+      },
+      {
+        "after": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 297405916
+            }
+          }
+        ],
+        "before": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 2142985474
+            }
+          }
+        ],
+        "keyword": "Scenario",
+        "type": "scenario",
+        "id": "model-browser/inspect-sketch-parameter-search-criteria",
+        "line": 345,
+        "name": "Inspect sketch parameter search criteria",
+        "tags": [
+          {
+            "name": "fixture_variation",
+            "line": 345
+          }
+        ],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "line": 346,
+            "name": "`fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software",
+            "result": {
+              "status": "passed",
+              "duration": 1645427531
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 347,
+            "name": "a part is open in the MCAD Software with its model browser visible",
+            "result": {
+              "status": "passed",
+              "duration": 429905140
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 348,
+            "name": "the user chooses Find from the model browser menu",
+            "result": {
+              "status": "passed",
+              "duration": 1770013551
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 349,
+            "name": "the user chooses Sketches in the object type list",
+            "result": {
+              "status": "passed",
+              "duration": 1138272209
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 350,
+            "name": "the user opens the Property list",
+            "result": {
+              "status": "passed",
+              "duration": 586803911
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 351,
+            "name": "the list offers Name, Note contents, Note title and Sketch Parameter Name",
+            "result": {
+              "status": "passed",
+              "duration": 8198673
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 352,
+            "name": "the user chooses Sketch Parameter Name",
+            "result": {
+              "status": "passed",
+              "duration": 567519524
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 353,
+            "name": "the Condition field displays contains",
+            "result": {
+              "status": "passed",
+              "duration": 10148670
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 354,
+            "name": "the Value field is empty and adds to list is disabled",
+            "result": {
+              "status": "passed",
+              "duration": 9016375
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 355,
+            "name": "the user opens the Condition list",
+            "result": {
+              "status": "passed",
+              "duration": 542400046
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 356,
+            "name": "it offers contains and does not contain",
+            "result": {
+              "status": "passed",
+              "duration": 9507243
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 357,
+            "name": "the user dismisses the list and closes the dialog",
+            "result": {
+              "status": "passed",
+              "duration": 1003081777
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 358,
+            "name": "the model browser and part are visible",
+            "result": {
+              "status": "passed",
+              "duration": 123013792
+            }
+          }
+        ]
+      },
+      {
+        "after": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 803132065
+            }
+          }
+        ],
+        "before": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 2060809882
+            }
+          }
+        ],
+        "keyword": "Scenario",
+        "type": "scenario",
+        "id": "model-browser/find-an-extrusion-by-feature-type",
+        "line": 361,
+        "name": "Find an extrusion by feature type",
+        "tags": [
+          {
+            "name": "fixture_variation",
+            "line": 361
+          }
+        ],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "line": 362,
+            "name": "`fixtures/cad/workspace-layout-native.opd` is active in the MCAD Software",
+            "result": {
+              "status": "passed",
+              "duration": 1559544442
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 363,
+            "name": "an active part in the MCAD Software contains one extrusion forming a block",
+            "result": {
+              "status": "passed",
+              "duration": 727831177
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 364,
+            "name": "the model browser is visible",
+            "result": {
+              "status": "passed",
+              "duration": 2972848
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 365,
+            "name": "the Find criteria list is empty",
+            "result": {
+              "status": "passed",
+              "duration": 1510764
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 366,
+            "name": "the user chooses Find from the model browser menu",
+            "result": {
+              "status": "passed",
+              "duration": 1398282102
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 367,
+            "name": "the user selects Features as the object type",
+            "result": {
+              "status": "passed",
+              "duration": 878070262
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 368,
+            "name": "the user selects Type as the property and Extrusion as the value",
+            "result": {
+              "status": "passed",
+              "duration": 1748820163
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 369,
+            "name": "the condition displays equals",
+            "result": {
+              "status": "passed",
+              "duration": 7784848
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 370,
+            "name": "the user clicks Add to list",
+            "result": {
+              "status": "passed",
+              "duration": 428260238
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 371,
+            "name": "the criteria list contains Type equals Extrusion",
+            "result": {
+              "status": "passed",
+              "duration": 9195898
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 372,
+            "name": "the user clicks Find Now",
+            "result": {
+              "status": "passed",
+              "duration": 455681042
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 373,
+            "name": "the extrusion row is selected in the model browser",
+            "result": {
+              "status": "passed",
+              "duration": 108137989
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 374,
+            "name": "the visible edges of the block are highlighted in blue",
+            "result": {
+              "status": "passed",
+              "duration": 121688871
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 375,
+            "name": "the Find dialog remains open",
+            "result": {
+              "status": "passed",
+              "duration": 7675145
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 376,
+            "name": "the user closes the dialog",
+            "result": {
+              "status": "passed",
+              "duration": 384593267
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 377,
+            "name": "the extrusion remains selected and the block edges remain highlighted",
+            "result": {
+              "status": "passed",
+              "duration": 212654279
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 378,
+            "name": "the user clicks empty viewport space",
+            "result": {
+              "status": "passed",
+              "duration": 126762895
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 379,
+            "name": "the selection highlight disappears and the block remains visible",
+            "result": {
+              "status": "passed",
+              "duration": 204590596
+            }
+          }
+        ]
+      },
+      {
+        "after": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 291168670
+            }
+          }
+        ],
+        "before": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1926612266
+            }
+          }
+        ],
+        "keyword": "Scenario",
+        "type": "scenario",
+        "id": "model-browser/report-no-matching-feature-search-results",
+        "line": 402,
+        "name": "Report no matching feature search results",
+        "tags": [
+          {
+            "name": "fixture_variation",
+            "line": 402
+          }
+        ],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "line": 403,
+            "name": "`fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software",
+            "result": {
+              "status": "passed",
+              "duration": 1197337810
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 404,
+            "name": "a part with one unsuppressed extrusion and no fillet is open in the MCAD Software",
+            "result": {
+              "status": "passed",
+              "duration": 461437198
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 405,
+            "name": "the Find dialog contains Type equals Extrusion OR Type equals Fillet",
+            "result": {
+              "status": "passed",
+              "duration": 6375749937
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 406,
+            "name": "And is selected for additional criteria",
+            "result": {
+              "status": "passed",
+              "duration": 3356177
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 407,
+            "name": "the user selects Suppress status as the property",
+            "result": {
+              "status": "passed",
+              "duration": 899648630
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 408,
+            "name": "the condition is equals and the value is Suppressed",
+            "result": {
+              "status": "passed",
+              "duration": 9787642
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 409,
+            "name": "the user clicks Add to list",
+            "result": {
+              "status": "passed",
+              "duration": 497482393
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 410,
+            "name": "the criteria list includes Suppress status equals Suppressed",
+            "result": {
+              "status": "passed",
+              "duration": 7884843
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 411,
+            "name": "the user clicks Find Now",
+            "result": {
+              "status": "passed",
+              "duration": 502878152
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 412,
+            "name": "an information message says that no objects matched the criteria",
+            "result": {
+              "status": "passed",
+              "duration": 6954252
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 413,
+            "name": "the user acknowledges the message",
+            "result": {
+              "status": "passed",
+              "duration": 440277283
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 414,
+            "name": "the Find dialog remains open with the criteria displayed",
+            "result": {
+              "status": "passed",
+              "duration": 9059035
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 415,
+            "name": "the user closes the Find dialog",
+            "result": {
+              "status": "passed",
+              "duration": 393555121
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 416,
+            "name": "the block remains visible in the same apparent view",
+            "result": {
+              "status": "passed",
+              "duration": 354329144
+            }
+          }
+        ]
+      },
+      {
+        "after": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 778533971
+            }
+          }
+        ],
+        "before": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 2003822415
+            }
+          }
+        ],
+        "keyword": "Scenario",
+        "type": "scenario",
+        "id": "model-browser/decline-grouping-an-additional-feature-type",
+        "line": 419,
+        "name": "Decline grouping an additional feature type",
+        "tags": [
+          {
+            "name": "fixture_variation",
+            "line": 419
+          }
+        ],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "line": 420,
+            "name": "`fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software",
+            "result": {
+              "status": "passed",
+              "duration": 1646016170
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 421,
+            "name": "a part is open in the MCAD Software with the Find dialog open",
+            "result": {
+              "status": "passed",
+              "duration": 1868573335
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 422,
+            "name": "the criteria list contains Type equals Extrusion OR Type equals Fillet",
+            "result": {
+              "status": "passed",
+              "duration": 5132982266
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 423,
+            "name": "the criteria list contains Suppress status equals Suppressed",
+            "result": {
+              "status": "passed",
+              "duration": 1398477894
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 424,
+            "name": "And is selected for additional criteria",
+            "result": {
+              "status": "passed",
+              "duration": 3519599
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 425,
+            "name": "the user chooses Type equals Hole and clicks Add to list",
+            "result": {
+              "status": "passed",
+              "duration": 2470518038
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 426,
+            "name": "a prompt offers to group the additional type criterion using OR",
+            "result": {
+              "status": "passed",
+              "duration": 7666930
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 427,
+            "name": "the user chooses No",
+            "result": {
+              "status": "passed",
+              "duration": 384586734
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 428,
+            "name": "the prompt closes and the existing three criteria remain in the list",
+            "result": {
+              "status": "passed",
+              "duration": 10163286
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 429,
+            "name": "Type equals Hole is not added to the list",
+            "result": {
+              "status": "passed",
+              "duration": 10434779
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 430,
+            "name": "the property, condition and value controls still show Type equals Hole",
+            "result": {
+              "status": "passed",
+              "duration": 7135457
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 431,
+            "name": "the user closes the Find dialog",
+            "result": {
+              "status": "passed",
+              "duration": 459632270
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 432,
+            "name": "the part remains visible",
+            "result": {
+              "status": "passed",
+              "duration": 8541507
+            }
+          }
+        ]
+      },
+      {
+        "after": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 532326826
+            }
+          }
+        ],
+        "before": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 2006642590
+            }
+          }
+        ],
+        "keyword": "Scenario",
+        "type": "scenario",
+        "id": "model-browser/inspect-existing-feature-search-criteria",
+        "line": 595,
+        "name": "Inspect existing feature search criteria",
+        "tags": [
+          {
+            "name": "fixture_variation",
+            "line": 595
+          }
+        ],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "line": 596,
+            "name": "`fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software",
+            "result": {
+              "status": "passed",
+              "duration": 1378249923
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 597,
+            "name": "the MCAD Software Find dialog contains these feature criteria in order:",
+            "result": {
+              "status": "passed",
+              "duration": 9050629478
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 602,
+            "name": "the user selects the Suppress status criterion",
+            "result": {
+              "status": "passed",
+              "duration": 494938719
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 603,
+            "name": "the criterion controls show Suppress status, equals and Suppressed",
+            "result": {
+              "status": "passed",
+              "duration": 7922533
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 604,
+            "name": "And is selected",
+            "result": {
+              "status": "passed",
+              "duration": 1803756
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 605,
+            "name": "the user selects the Fillet criterion",
+            "result": {
+              "status": "passed",
+              "duration": 475916336
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 606,
+            "name": "the criterion controls show Type, equals and Fillet",
+            "result": {
+              "status": "passed",
+              "duration": 9638746
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 607,
+            "name": "Or is selected",
+            "result": {
+              "status": "passed",
+              "duration": 2055552
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 608,
+            "name": "the user selects the Extrusion criterion",
+            "result": {
+              "status": "passed",
+              "duration": 468990718
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 609,
+            "name": "the criterion controls show Type, equals and Extrusion",
+            "result": {
+              "status": "passed",
+              "duration": 8604594
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 610,
+            "name": "And is selected",
+            "result": {
+              "status": "passed",
+              "duration": 1184150
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 611,
+            "name": "the three criteria remain listed",
+            "result": {
+              "status": "passed",
+              "duration": 3469767
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 612,
+            "name": "the user closes the Find dialog",
+            "result": {
+              "status": "passed",
+              "duration": 426620304
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 613,
+            "name": "the part workspace is visible",
+            "result": {
+              "status": "passed",
+              "duration": 105614482
+            }
+          }
+        ]
+      },
+      {
+        "after": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 349545947
+            }
+          }
+        ],
+        "before": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 2355281380
+            }
+          }
+        ],
+        "keyword": "Scenario",
+        "type": "scenario",
+        "id": "model-browser/change-a-pending-find-value-without-replacing-a-listed-criterion",
+        "line": 616,
+        "name": "Change a pending Find value without replacing a listed criterion",
+        "tags": [
+          {
+            "name": "fixture_variation",
+            "line": 616
+          }
+        ],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "line": 617,
+            "name": "`fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software",
+            "result": {
+              "status": "passed",
+              "duration": 2926949908
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 618,
+            "name": "the MCAD Software Find dialog lists Type equals Extrusion and OR Type equals Fillet",
+            "result": {
+              "status": "passed",
+              "duration": 7158926975
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 619,
+            "name": "Type equals Extrusion is selected with And selected",
+            "result": {
+              "status": "passed",
+              "duration": 473753055
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 620,
+            "name": "the user chooses Hole in the Value list",
+            "result": {
+              "status": "passed",
+              "duration": 970895580
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 621,
+            "name": "the Value field shows Hole and adds to list is enabled",
+            "result": {
+              "status": "passed",
+              "duration": 9242344
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 622,
+            "name": "the listed Extrusion and Fillet criteria remain unchanged",
+            "result": {
+              "status": "passed",
+              "duration": 4391863
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 623,
+            "name": "the user selects the Fillet criterion",
+            "result": {
+              "status": "passed",
+              "duration": 493791376
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 624,
+            "name": "the controls show Type, equals, Fillet and Or",
+            "result": {
+              "status": "passed",
+              "duration": 9665316
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 625,
+            "name": "the user selects the Extrusion criterion",
+            "result": {
+              "status": "passed",
+              "duration": 461663967
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 626,
+            "name": "the controls show Type, equals, Extrusion and And",
+            "result": {
+              "status": "passed",
+              "duration": 9284692
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 627,
+            "name": "adds to list is disabled",
+            "result": {
+              "status": "passed",
+              "duration": 4587595
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 628,
+            "name": "the user closes the Find dialog",
+            "result": {
+              "status": "passed",
+              "duration": 433944611
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 629,
+            "name": "the part workspace is visible",
+            "result": {
+              "status": "passed",
+              "duration": 105158378
+            }
+          }
+        ]
+      },
+      {
+        "after": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 356103135
+            }
+          }
+        ],
+        "before": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 2191177173
+            }
+          }
+        ],
+        "keyword": "Scenario",
+        "type": "scenario",
+        "id": "model-browser/cancel-the-saved-search-name-prompt",
+        "line": 632,
+        "name": "Cancel the saved-search name prompt",
+        "tags": [
+          {
+            "name": "fixture_variation",
+            "line": 632
+          }
+        ],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "line": 633,
+            "name": "`fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software",
+            "result": {
+              "status": "passed",
+              "duration": 1870143178
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 634,
+            "name": "the MCAD Software Find dialog contains feature search criteria",
+            "result": {
+              "status": "passed",
+              "duration": 7401075093
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 635,
+            "name": "the user chooses Save Search",
+            "result": {
+              "status": "passed",
+              "duration": 551036410
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 636,
+            "name": "a prompt shows an empty search-name field",
+            "result": {
+              "status": "passed",
+              "duration": 8509858
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 637,
+            "name": "OK is disabled and cancels is available",
+            "result": {
+              "status": "passed",
+              "duration": 6185991
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 638,
+            "name": "the user clicks Cancel",
+            "result": {
+              "status": "passed",
+              "duration": 325155799
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 639,
+            "name": "the Find dialog remains open with its criteria unchanged",
+            "result": {
+              "status": "passed",
+              "duration": 10002710
+            }
+          }
+        ]
+      },
+      {
+        "after": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 441616129
+            }
+          }
+        ],
+        "before": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1923598152
+            }
+          }
+        ],
+        "keyword": "Scenario",
+        "type": "scenario",
+        "id": "model-browser/cancel-the-open-search-picker",
+        "line": 642,
+        "name": "Cancel the open-search picker",
+        "tags": [
+          {
+            "name": "fixture_variation",
+            "line": 642
+          }
+        ],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "line": 643,
+            "name": "`fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software",
+            "result": {
+              "status": "passed",
+              "duration": 1195005617
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 644,
+            "name": "the MCAD Software Find dialog contains feature search criteria",
+            "result": {
+              "status": "passed",
+              "duration": 7211243174
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 645,
+            "name": "at least one saved search is available",
+            "result": {
+              "status": "passed",
+              "duration": 1676560230
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 646,
+            "name": "the user chooses Open Search",
+            "result": {
+              "status": "passed",
+              "duration": 559839701
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 647,
+            "name": "a picker shows a saved-search list and opens, Cancel and Delete actions",
+            "result": {
+              "status": "passed",
+              "duration": 7848917
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 648,
+            "name": "the user clicks Cancel",
+            "result": {
+              "status": "passed",
+              "duration": 408735989
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 649,
+            "name": "the Find dialog remains open with its original criteria unchanged",
+            "result": {
+              "status": "passed",
+              "duration": 8528453
+            }
+          }
+        ]
+      }
+    ]
+  }
+]

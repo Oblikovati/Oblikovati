@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: tmp/obk-browser-find-MoCBwC/source/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: tmp/obk-browser-find-MoCBwC/source/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-15T18:26:20.978539257Z" time="20.006257629"><testcase name="Scenario: Find an extrusion by feature type: tmp/obk-browser-find-MoCBwC/source/features/application/model-browser/model-browser.feature:337:3" time="20.006257629"><system-out><![CDATA[  Scenario: Find an extrusion by feature type
+   ✔  Given an active part in the MCAD Software contains one extrusion forming a block
+   ✔  And the model browser is visible
+   ✔  And the Find criteria list is empty
+   ✔  When the user chooses Find from the model browser menu
+   ✔  And the user selects Features as the object type
+   ✔  And the user selects Type as the property and Extrusion as the value
+   ✔  Then the condition displays equals
+   ✔  When the user clicks Add to list
+   ✔  Then the criteria list contains Type equals Extrusion
+   ✔  When the user clicks Find Now
+   ✔  Then the extrusion row is selected in the model browser
+   ✔  And the visible edges of the block are highlighted in blue
+   ✔  And the Find dialog remains open
+   ✔  When the user closes the dialog
+   ✔  Then the extrusion remains selected and the block edges remain highlighted
+   ✔  When the user clicks empty viewport space
+   ✔  Then the selection highlight disappears and the block remains visible
+]]></system-out></testcase></testsuite></testsuites>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T12:22:22.211554366Z" time="31.970813711"><testcase name="Scenario: Cancel a later edit after applying a custom command: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature:374:3" time="31.970813711"><system-out><![CDATA[  Scenario: Cancel a later edit after applying a custom command
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the Part Tools custom panel is initially empty
+   ✔  And the ribbon customization dialog is open
+   ✔  When the user adds "2D Sketches" to the custom panel and clicks "Apply"
+   ✔  Then the User Commands panel appears on the Tools ribbon
+   ✔  When the user adds "3D Annotations" to the custom panel and clicks "Cancel"
+   ✔  Then the customization dialog closes
+   ✔  And the User Commands panel remains visible
+   ✔  When the user reopens ribbon customization
+   ✔  Then the Part Tools custom panel contains "2D Sketches"
+   ✔  And "3D Annotations" is available in the source list
+   ✔  And no pending-change marker is shown
+]]></system-out></testcase></testsuite></testsuites>

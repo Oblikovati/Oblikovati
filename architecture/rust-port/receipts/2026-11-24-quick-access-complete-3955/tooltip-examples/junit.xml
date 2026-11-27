@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Quick access toolbar customization: tmp/oblikovati-ribbon-relocated.RcZVDl/current-quick-access-source/features/application/quick-access-toolbar/quick-access-toolbar.feature" package="testsuite/Feature: Quick access toolbar customization: tmp/oblikovati-ribbon-relocated.RcZVDl/current-quick-access-source/features/application/quick-access-toolbar/quick-access-toolbar.feature" tests="13" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T21:25:57.99280145Z" time="260.342434654"><testcase name="Scenario: Identify a quick access command from its icon and tooltip: tmp/oblikovati-ribbon-relocated.RcZVDl/current-quick-access-source/features/application/quick-access-toolbar/quick-access-toolbar.feature:21:5" time="14.371910374"><system-out><![CDATA[  Scenario Outline: Identify a quick access command from its icon and tooltip
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is open and active in the MCAD Software
+   ✔  And a part document is active in the MCAD Software
+   ✔  And the quick access toolbar is above the ribbon
+   ✔  And the New shortcut is visible on the quick access toolbar
+   ✔  Then it has a distinct command icon without a persistent text caption
+   ✔  When the user hovers over the New icon until its tooltip appears
+   ✔  Then the tooltip identifies the command as New
+   ✔  And the part remains active without a command dialog
+   ✔  When the user moves the pointer to an empty area of the viewport
+   ✔  Then the tooltip disappears
+]]></system-out></testcase><testcase name="Scenario: Identify a quick access command from its icon and tooltip: tmp/oblikovati-ribbon-relocated.RcZVDl/current-quick-access-source/features/application/quick-access-toolbar/quick-access-toolbar.feature:22:5" time="14.013703058"><system-out><![CDATA[  Scenario Outline: Identify a quick access command from its icon and tooltip
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is open and active in the MCAD Software
+   ✔  And a part document is active in the MCAD Software
+   ✔  And the quick access toolbar is above the ribbon
+   ✔  And the Open shortcut is visible on the quick access toolbar
+   ✔  Then it has a distinct command icon without a persistent text caption
+   ✔  When the user hovers over the Open icon until its tooltip appears
+   ✔  Then the tooltip identifies the command as Open
+   ✔  And the part remains active without a command dialog
+   ✔  When the user moves the pointer to an empty area of the viewport
+   ✔  Then the tooltip disappears
+]]></system-out></testcase><testcase name="Scenario: Identify a quick access command from its icon and tooltip: tmp/oblikovati-ribbon-relocated.RcZVDl/current-quick-access-source/features/application/quick-access-toolbar/quick-access-toolbar.feature:23:5" time="14.929158086"><system-out><![CDATA[  Scenario Outline: Identify a quick access command from its icon and tooltip
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is open and active in the MCAD Software
+   ✔  And a part document is active in the MCAD Software
+   ✔  And the quick access toolbar is above the ribbon
+   ✔  And the Save shortcut is visible on the quick access toolbar
+   ✔  Then it has a distinct command icon without a persistent text caption
+   ✔  When the user hovers over the Save icon until its tooltip appears
+   ✔  Then the tooltip identifies the command as Save
+   ✔  And the part remains active without a command dialog
+   ✔  When the user moves the pointer to an empty area of the viewport
+   ✔  Then the tooltip disappears
+]]></system-out></testcase><testcase name="Scenario: Identify a quick access command from its icon and tooltip: tmp/oblikovati-ribbon-relocated.RcZVDl/current-quick-access-source/features/application/quick-access-toolbar/quick-access-toolbar.feature:24:5" time="21.17193881"><system-out><![CDATA[  Scenario Outline: Identify a quick access command from its icon and tooltip
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is open and active in the MCAD Software
+   ✔  And a part document is active in the MCAD Software
+   ✔  And the quick access toolbar is above the ribbon
+   ✔  And the Undo shortcut is visible on the quick access toolbar
+   ✔  Then it has a distinct command icon without a persistent text caption
+   ✔  When the user hovers over the Undo icon until its tooltip appears
+   ✔  Then the tooltip identifies the command as Undo
+   ✔  And the part remains active without a command dialog
+   ✔  When the user moves the pointer to an empty area of the viewport
+   ✔  Then the tooltip disappears
+]]></system-out></testcase><testcase name="Scenario: Identify a quick access command from its icon and tooltip: tmp/oblikovati-ribbon-relocated.RcZVDl/current-quick-access-source/features/application/quick-access-toolbar/quick-access-toolbar.feature:25:5" time="21.009773553"><system-out><![CDATA[  Scenario Outline: Identify a quick access command from its icon and tooltip
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is open and active in the MCAD Software
+   ✔  And a part document is active in the MCAD Software
+   ✔  And the quick access toolbar is above the ribbon
+   ✔  And the Redo shortcut is visible on the quick access toolbar
+   ✔  Then it has a distinct command icon without a persistent text caption
+   ✔  When the user hovers over the Redo icon until its tooltip appears
+   ✔  Then the tooltip identifies the command as Redo
+   ✔  And the part remains active without a command dialog
+   ✔  When the user moves the pointer to an empty area of the viewport
+   ✔  Then the tooltip disappears
+]]></system-out></testcase><testcase name="Scenario: Identify a quick access command from its icon and tooltip: tmp/oblikovati-ribbon-relocated.RcZVDl/current-quick-access-source/features/application/quick-access-toolbar/quick-access-toolbar.feature:26:5" time="17.173729826"><system-out><![CDATA[  Scenario Outline: Identify a quick access command from its icon and tooltip
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is open and active in the MCAD Software
+   ✔  And a part document is active in the MCAD Software
+   ✔  And the quick access toolbar is above the ribbon
+   ✔  And the Home shortcut is visible on the quick access toolbar
+   ✔  Then it has a distinct command icon without a persistent text caption
+   ✔  When the user hovers over the Home icon until its tooltip appears
+   ✔  Then the tooltip identifies the command as Home
+   ✔  And the part remains active without a command dialog
+   ✔  When the user moves the pointer to an empty area of the viewport
+   ✔  Then the tooltip disappears
+]]></system-out></testcase><testcase name="Scenario: Identify a quick access command from its icon and tooltip: tmp/oblikovati-ribbon-relocated.RcZVDl/current-quick-access-source/features/application/quick-access-toolbar/quick-access-toolbar.feature:27:5" time="27.866918646"><system-out><![CDATA[  Scenario Outline: Identify a quick access command from its icon and tooltip
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is open and active in the MCAD Software
+   ✔  And a part document is active in the MCAD Software
+   ✔  And the quick access toolbar is above the ribbon
+   ✔  And the Projects shortcut is visible on the quick access toolbar
+   ✔  Then it has a distinct command icon without a persistent text caption
+   ✔  When the user hovers over the Projects icon until its tooltip appears
+   ✔  Then the tooltip identifies the command as Projects
+   ✔  And the part remains active without a command dialog
+   ✔  When the user moves the pointer to an empty area of the viewport
+   ✔  Then the tooltip disappears
+]]></system-out></testcase><testcase name="Scenario: Identify a quick access command from its icon and tooltip: tmp/oblikovati-ribbon-relocated.RcZVDl/current-quick-access-source/features/application/quick-access-toolbar/quick-access-toolbar.feature:28:5" time="28.9430043"><system-out><![CDATA[  Scenario Outline: Identify a quick access command from its icon and tooltip
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is open and active in the MCAD Software
+   ✔  And a part document is active in the MCAD Software
+   ✔  And the quick access toolbar is above the ribbon
+   ✔  And the Update shortcut is visible on the quick access toolbar
+   ✔  Then it has a distinct command icon without a persistent text caption
+   ✔  When the user hovers over the Update icon until its tooltip appears
+   ✔  Then the tooltip identifies the command as Update
+   ✔  And the part remains active without a command dialog
+   ✔  When the user moves the pointer to an empty area of the viewport
+   ✔  Then the tooltip disappears
+]]></system-out></testcase><testcase name="Scenario: Identify a quick access command from its icon and tooltip: tmp/oblikovati-ribbon-relocated.RcZVDl/current-quick-access-source/features/application/quick-access-toolbar/quick-access-toolbar.feature:29:5" time="23.94148541"><system-out><![CDATA[  Scenario Outline: Identify a quick access command from its icon and tooltip
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is open and active in the MCAD Software
+   ✔  And a part document is active in the MCAD Software
+   ✔  And the quick access toolbar is above the ribbon
+   ✔  And the Select shortcut is visible on the quick access toolbar
+   ✔  Then it has a distinct command icon without a persistent text caption
+   ✔  When the user hovers over the Select icon until its tooltip appears
+   ✔  Then the tooltip identifies the command as Select
+   ✔  And the part remains active without a command dialog
+   ✔  When the user moves the pointer to an empty area of the viewport
+   ✔  Then the tooltip disappears
+]]></system-out></testcase><testcase name="Scenario: Identify a quick access command from its icon and tooltip: tmp/oblikovati-ribbon-relocated.RcZVDl/current-quick-access-source/features/application/quick-access-toolbar/quick-access-toolbar.feature:30:5" time="23.499031255"><system-out><![CDATA[  Scenario Outline: Identify a quick access command from its icon and tooltip
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is open and active in the MCAD Software
+   ✔  And a part document is active in the MCAD Software
+   ✔  And the quick access toolbar is above the ribbon
+   ✔  And the Material Browser shortcut is visible on the quick access toolbar
+   ✔  Then it has a distinct command icon without a persistent text caption
+   ✔  When the user hovers over the Material Browser icon until its tooltip appears
+   ✔  Then the tooltip identifies the command as Material Browser
+   ✔  And the part remains active without a command dialog
+   ✔  When the user moves the pointer to an empty area of the viewport
+   ✔  Then the tooltip disappears
+]]></system-out></testcase><testcase name="Scenario: Identify a quick access command from its icon and tooltip: tmp/oblikovati-ribbon-relocated.RcZVDl/current-quick-access-source/features/application/quick-access-toolbar/quick-access-toolbar.feature:31:5" time="20.327346640000002"><system-out><![CDATA[  Scenario Outline: Identify a quick access command from its icon and tooltip
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is open and active in the MCAD Software
+   ✔  And a part document is active in the MCAD Software
+   ✔  And the quick access toolbar is above the ribbon
+   ✔  And the Materials shortcut is visible on the quick access toolbar
+   ✔  Then it has a distinct command icon without a persistent text caption
+   ✔  When the user hovers over the Materials icon until its tooltip appears
+   ✔  Then the tooltip identifies the command as Materials
+   ✔  And the part remains active without a command dialog
+   ✔  When the user moves the pointer to an empty area of the viewport
+   ✔  Then the tooltip disappears
+]]></system-out></testcase><testcase name="Scenario: Identify a quick access command from its icon and tooltip: tmp/oblikovati-ribbon-relocated.RcZVDl/current-quick-access-source/features/application/quick-access-toolbar/quick-access-toolbar.feature:32:5" time="17.381635272"><system-out><![CDATA[  Scenario Outline: Identify a quick access command from its icon and tooltip
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is open and active in the MCAD Software
+   ✔  And a part document is active in the MCAD Software
+   ✔  And the quick access toolbar is above the ribbon
+   ✔  And the Appearance Browser shortcut is visible on the quick access toolbar
+   ✔  Then it has a distinct command icon without a persistent text caption
+   ✔  When the user hovers over the Appearance Browser icon until its tooltip appears
+   ✔  Then the tooltip identifies the command as Appearance Browser
+   ✔  And the part remains active without a command dialog
+   ✔  When the user moves the pointer to an empty area of the viewport
+   ✔  Then the tooltip disappears
+]]></system-out></testcase><testcase name="Scenario: Identify a quick access command from its icon and tooltip: tmp/oblikovati-ribbon-relocated.RcZVDl/current-quick-access-source/features/application/quick-access-toolbar/quick-access-toolbar.feature:33:5" time="15.712799424"><system-out><![CDATA[  Scenario Outline: Identify a quick access command from its icon and tooltip
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is open and active in the MCAD Software
+   ✔  And a part document is active in the MCAD Software
+   ✔  And the quick access toolbar is above the ribbon
+   ✔  And the Parameters shortcut is visible on the quick access toolbar
+   ✔  Then it has a distinct command icon without a persistent text caption
+   ✔  When the user hovers over the Parameters icon until its tooltip appears
+   ✔  Then the tooltip identifies the command as Parameters
+   ✔  And the part remains active without a command dialog
+   ✔  When the user moves the pointer to an empty area of the viewport
+   ✔  Then the tooltip disappears
+]]></system-out></testcase></testsuite></testsuites>

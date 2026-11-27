@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Create a document from a template: tmp/obk-create-refresh/features/application/document-creation/document-creation.feature" package="testsuite/Feature: Create a document from a template: tmp/obk-create-refresh/features/application/document-creation/document-creation.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T18:19:00.915232826Z" time="2.8216722709999997"><testcase name="Scenario: Create a standard metric part: tmp/obk-create-refresh/features/application/document-creation/document-creation.feature:41:3" time="2.8216722709999997"><system-out><![CDATA[  Scenario: Create a standard metric part
+   ✔  Given the new-document template chooser is open in the MCAD Software
+   ✔  When the user selects the metric template folder
+   ✔  And the user selects the standard metric part template
+   ✔  And the user chooses Create
+   ✔  Then a new part document becomes active
+   ✔  And its viewport contains no visible model geometry
+   ✔  And its model browser displays an origin and an end-of-part marker
+   ✔  And a new document tab is visible
+]]></system-out></testcase></testsuite></testsuites>

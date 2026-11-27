@@ -1,0 +1,27 @@
+{
+  "kind": "native-acceptance",
+  "scenario_id": "scenario:ecfb4103b54e7240f86118a4493a82fa9918a03162bfd26bcd7b4594a9791f99",
+  "scenario_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+  "source_sha256": "130621bae0d8b2196d399a885f76d6f3bb4c5050a41257459a9f02cd0ec4de17",
+  "application_commit": "7a6a4cfa3520f0b92ce4eb2c8f41f8b1161a2e0c",
+  "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+  "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+  "runner": "sketch_scenarios_use_the_native_window",
+  "exit_code": 0,
+  "environment": {
+    "os": "Linux",
+    "renderer": "Vulkan Lavapipe under Xvfb"
+  },
+  "cucumber": {
+    "path": "architecture/rust-port/receipts/2026-11-14-corrected-rectangle-13/cucumber.json",
+    "sha256": "8073fb5849d1986b2876b2545d02cda136b0ce526bd88cd29f0130152f25cc17"
+  },
+  "source_report": {
+    "path": "architecture/rust-port/receipts/2026-11-14-corrected-rectangle-13/source-revision.json",
+    "sha256": "296cc330629243fc2aaf86c4516dfcd3f509fe7bedb66a4e01230d04af4f3353"
+  },
+  "capture": {
+    "path": "architecture/rust-port/receipts/2026-11-14-corrected-rectangle-13/rectangle-two-point-13-Accept-and-undo-a-rectangle-height-edit.png",
+    "sha256": "e9d9a2bc0a49092d389f20544e6dbdaa418618190d147bc3fa9381d3b9d402bc"
+  }
+}

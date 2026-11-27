@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-labelledby="title">
+  <title id="title">Finish Sketch</title>
+  <rect x="2" y="2" width="28" height="28" rx="4" fill="var(--status-success-subtle, rgba(34, 197, 94, 0.14))"/>
+  <path d="M8 16.5l5.2 5.2L24 10.5" fill="none" stroke="var(--status-success, #22C55E)" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

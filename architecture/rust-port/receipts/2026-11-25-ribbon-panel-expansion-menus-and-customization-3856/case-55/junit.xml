@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" package="testsuite/Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:20:16.816335679Z" time="40.253064711"><testcase name="Scenario: Close the Sketch Constrain area and its menu on a tab switch: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:762:3" time="40.253064711"><system-out><![CDATA[  Scenario: Close the Sketch Constrain area and its menu on a tab switch
+   ✔  Given `fixtures/cad/planar-sketch-empty-xy.opd` is open with Sketch1 being edited
+   ✔  And the full Sketch ribbon is selected
+   ✔  And the Constrain additional-command area is open
+   ✔  When the user right-clicks Constraint Inference Scope in the additional area
+   ✔  Then the Constrain area context menu is visible
+   ✔  And the Constrain additional-command area remains open
+   ✔  When the user selects the Tools tab
+   ✔  Then the context menu and Constrain additional-command area close
+   ✔  And the full Tools ribbon is visible
+   ✔  When the user selects the Sketch tab
+   ✔  Then the full Sketch ribbon is visible
+   ✔  And the Constrain additional-command area remains closed
+]]></system-out></testcase></testsuite></testsuites>

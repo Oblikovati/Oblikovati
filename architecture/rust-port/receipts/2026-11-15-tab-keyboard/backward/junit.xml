@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Open document tabs: tmp/obk-tab-3950/features/application/document-tabs/document-tabs.feature" package="testsuite/Feature: Open document tabs: tmp/obk-tab-3950/features/application/document-tabs/document-tabs.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-15T00:01:54.611447656Z" time="3.621496748"><testcase name="Scenario: Switch backward and forward between neighboring part tabs: tmp/obk-tab-3950/features/application/document-tabs/document-tabs.feature:250:3" time="3.621496748"><system-out><![CDATA[  Scenario: Switch backward and forward between neighboring part tabs
+   ✔  Given two part tabs are adjacent in the MCAD Software
+   ✔  And the part on the right is active
+   ✔  When the user presses Control+Shift+Tab
+   ✔  Then the part on the left becomes active
+   ✔  And its viewport and model browser are displayed
+   ✔  When the user presses Control+Tab
+   ✔  Then the part on the right becomes active again
+   ✔  And its viewport and model browser are displayed
+]]></system-out></testcase></testsuite></testsuites>

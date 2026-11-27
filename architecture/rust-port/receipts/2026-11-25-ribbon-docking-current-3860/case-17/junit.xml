@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon docking: target/native-scratch.HSqCy5/current-ribbon-docking-source/features/application/ribbon-docking/ribbon-docking.feature" package="testsuite/Feature: Ribbon docking: target/native-scratch.HSqCy5/current-ribbon-docking-source/features/application/ribbon-docking/ribbon-docking.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T23:51:27.841323049Z" time="25.996651517"><testcase name="Scenario: Select the already active dock from an expanded Modify title: target/native-scratch.HSqCy5/current-ribbon-docking-source/features/application/ribbon-docking/ribbon-docking.feature:247:3" time="25.996651517"><system-out><![CDATA[  Scenario: Select the already active dock from an expanded Modify title
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part is active with the 3D Model ribbon docked at the top
+   ✔  And the unpinned Modify additional command area is open
+   ✔  When the user chooses the checked Top position from Docking Positions on its title
+   ✔  Then the menus and additional command area close
+   ✔  And the ribbon remains docked at the top
+]]></system-out></testcase></testsuite></testsuites>

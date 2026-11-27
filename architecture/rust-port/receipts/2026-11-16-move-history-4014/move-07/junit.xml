@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Move: tmp/obk-move-history-source/features/sketch/move/scenario.feature" package="testsuite/Feature: Move: tmp/obk-move-history-source/features/sketch/move/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-16T03:30:10.791506353Z" time="31.080470278"><testcase name="Scenario: move-07 Undo and redoes the accepted precise endpoint: tmp/obk-move-history-source/features/sketch/move/scenario.feature:18:3" time="31.080470278"><system-out><![CDATA[  Scenario: move-07 Undo and redoes the accepted precise endpoint
+   ✔  Given an editable sketch with eligible geometry
+   ✔  Given the precise ellipse Move has been accepted and Move closed
+   ✔  When the user undoes
+   ✔  Then the ellipse returns to its original screen position
+   ✔  When the user redoes
+   ✔  Then the ellipse returns to its displaced screen position
+   ✔  When the user undoes
+   ✔  Then the original fixture position is restored again
+]]></system-out></testcase></testsuite></testsuites>

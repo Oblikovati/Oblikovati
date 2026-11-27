@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon docking: target/native-scratch.HSqCy5/current-ribbon-docking-source/features/application/ribbon-docking/ribbon-docking.feature" package="testsuite/Feature: Ribbon docking: target/native-scratch.HSqCy5/current-ribbon-docking-source/features/application/ribbon-docking/ribbon-docking.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T23:49:44.306766694Z" time="31.883576252"><testcase name="Scenario: Dismiss the floating ribbon title menu with Escape: target/native-scratch.HSqCy5/current-ribbon-docking-source/features/application/ribbon-docking/ribbon-docking.feature:207:3" time="31.883576252"><system-out><![CDATA[  Scenario: Dismiss the floating ribbon title menu with Escape
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part is active and the ribbon is floating
+   ✔  When the user right-clicks the floating ribbon title
+   ✔  Then the menu offers Dock to Top, Dock to Left and docks to Right
+   ✔  When the user presses Escape
+   ✔  Then the menu closes
+   ✔  And the ribbon remains floating
+   ✔  When the user opens the floating title menu again
+   ✔  And chooses Dock to Top
+   ✔  Then the ribbon returns to the top dock
+]]></system-out></testcase></testsuite></testsuites>

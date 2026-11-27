@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:32:07.288596962Z" time="45.260572608"><testcase name="Scenario: Open and closes an additional browser pane: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature:113:3" time="45.260572608"><system-out><![CDATA[  Scenario: Open and closes an additional browser pane
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is active in the MCAD Software
+   ✔  And an active part is visible in the MCAD Software
+   ✔  And the Model browser tab is active
+   ✔  When the user opens the add-pane menu in the browser header
+   ✔  And the user chooses Favorites
+   ✔  Then a Favorites tab appears beside the Model tab and becomes active
+   ✔  And the Favorites pane shows its content controls
+   ✔  And the model remains visible in the same apparent view
+   ✔  When the user selects the Model tab
+   ✔  Then the model hierarchy is visible again
+   ✔  When the user selects Favorites and closes its tab
+   ✔  Then the Favorites tab disappears and the Model hierarchy is visible
+   ✔  And the model remains visible in the same apparent view
+]]></system-out></testcase></testsuite></testsuites>

@@ -1,0 +1,3 @@
+27911f17a368200bf36122594b2f2d697947243217d57378db4b3373ed2c5894  crates/head/tests/application/solid_visibility.rs
+03e6f07867412fb91750c4f81a1258393e62b36fb25a56e861159fc909ef46cb  crates/head/tests/solid-model/extrusion/acceptance.rs
+b84aca9d1360e6758f1a539afa09efd4d953486f6ac5a3e4847bcd2696ee797f  crates/head/tests/solid-model/extrusion/viewport_interaction.rs

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon display modes: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature" package="testsuite/Feature: Ribbon display modes: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T02:33:58.970670981Z" time="18.815648764"><testcase name="Scenario: Reduce the full ribbon to compact group buttons: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature:6:3" time="18.815648764"><system-out><![CDATA[  Scenario: Reduce the full ribbon to compact group buttons
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part document is open in the MCAD Software
+   ✔  And the View ribbon tab displays its full groups of commands
+   ✔  When the user opens the ribbon display menu
+   ✔  Then Minimize to Panel Buttons is selected
+   ✔  When the user dismisses the menu with Escape
+   ✔  Then the full View ribbon remains visible
+   ✔  When the user activates the ribbon display control once
+   ✔  Then the View ribbon shows compact buttons for Visibility, Appearance, Windows and Navigate
+   ✔  And the viewport has more vertical space
+   ✔  When the user selects the Windows group button
+   ✔  Then a temporary panel displays that group's commands
+   ✔  When the user activates the ribbon display control again
+   ✔  Then the full View ribbon is restored
+   ✔  And the temporary Windows panel closes
+]]></system-out></testcase></testsuite></testsuites>

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T12:22:20.115291375Z" time="30.506639708"><testcase name="Scenario: Apply a customization after reversing a staged command addition: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature:820:3" time="30.506639708"><system-out><![CDATA[  Scenario: Apply a customization after reversing a staged command addition
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the Ribbon customization dialog shows All Commands and an empty Part Tools target
+   ✔  When the user selects "2D Sketches" in the available list
+   ✔  And the user clicks the right transfer button
+   ✔  Then "2D Sketches" appears in the custom panel list
+   ✔  And the Part Tools target has a pending-change marker
+   ✔  When the user selects "2D Sketches" in the custom panel list
+   ✔  And the user clicks the left transfer button
+   ✔  Then the custom panel list is empty
+   ✔  And "2D Sketches" is available in the source list
+   ✔  And the Part Tools target still has a pending-change marker
+   ✔  And Apply and cancels are enabled
+   ✔  When the user clicks Apply
+   ✔  Then the custom panel list remains empty
+   ✔  And the Part Tools target has no pending-change marker
+   ✔  And Apply and cancels are disabled
+   ✔  When the user closes and reopens Ribbon customization
+   ✔  Then the Part Tools custom panel list is empty
+   ✔  And "2D Sketches" is available in the source list
+]]></system-out></testcase></testsuite></testsuites>

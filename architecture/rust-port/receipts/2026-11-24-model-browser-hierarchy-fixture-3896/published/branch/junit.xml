@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T10:55:40.137800919Z" time="33.921412721"><testcase name="Scenario: Collapse and expands a feature branch: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:32:3" time="33.921412721"><system-out><![CDATA[  Scenario: Collapse and expands a feature branch
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is active in the MCAD Software
+   ✔  And an active part in the MCAD Software contains a visible block made by an extrusion with a nested sketch
+   ✔  And the extrusion branch is expanded in the model browser
+   ✔  When the user clicks the extrusion branch expansion control
+   ✔  Then the sketch row is hidden and the extrusion row remains visible
+   ✔  And the block remains visible in the same apparent view
+   ✔  When the user clicks the extrusion branch expansion control again
+   ✔  Then the sketch row appears beneath the extrusion
+   ✔  And the block remains visible in the same apparent view
+]]></system-out></testcase></testsuite></testsuites>

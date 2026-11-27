@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T13:10:02.94579927Z" time="43.364987853"><testcase name="Scenario: Retain staged command display options when switching targets: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature:1009:3" time="43.364987853"><system-out><![CDATA[  Scenario: Retain staged command display options when switching targets
+   ✔  Given a part is active in the MCAD Software
+   ✔  And ribbon customization is open with "All Commands" selected
+   ✔  And the Part | Tools and Part | Manage custom targets are empty
+   ✔  When the user adds "2D Sketches" to the Part | Tools target without applying
+   ✔  And the user checks Large and Text for that command
+   ✔  And the user selects the Part | Manage target
+   ✔  Then the Part | Manage target list is empty
+   ✔  And "2D Sketches" is available in the source list
+   ✔  When the user returns to the Part | Tools target
+   ✔  Then "2D Sketches" remains in the target list
+   ✔  And its Large and Text options are checked
+   ✔  And the target is marked as changed
+   ✔  And Apply and cancels are enabled
+   ✔  When the user cancels customization
+   ✔  Then the customization dialog closes
+]]></system-out></testcase></testsuite></testsuites>

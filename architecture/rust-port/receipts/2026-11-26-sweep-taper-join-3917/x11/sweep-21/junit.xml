@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Sweep: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/sweep/sweep.feature" package="testsuite/Feature: Sweep: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/sweep/sweep.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-26T22:37:35.591388508Z" time="13.886267216"><testcase name="Scenario: sweep-21 Compare positive and negative taper in a straight-path sweep: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/sweep/sweep.feature:236:3" time="13.886267216"><system-out><![CDATA[  Scenario: sweep-21 Compare positive and negative taper in a straight-path sweep
+   ✔  Given a disposable copy of the native fixture "fixtures/cad/sweep/block-outward-path.opd" is open
+   ✔  And the user creates Sweep1 by joining the circular profile along the outward straight path at zero taper
+   ✔  And Sweep1 is open for editing with its path and zero taper
+   ✔  When the taper is changed to -5 degrees and the preview updates
+   ✔  Then the preview narrows toward its upper end
+   ✔  And OK is enabled
+   ✔  When the taper is changed to 5 degrees and the preview updates
+   ✔  Then the preview widens toward its upper end
+   ✔  And OK is enabled
+   ✔  When Cancel is clicked
+   ✔  Then the edit closes
+]]></system-out></testcase></testsuite></testsuites>

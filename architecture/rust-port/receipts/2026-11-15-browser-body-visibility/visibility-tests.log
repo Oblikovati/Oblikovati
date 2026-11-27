@@ -1,0 +1,15 @@
+    Finished `test` profile [unoptimized] target(s) in 0.09s
+     Running unittests src/lib.rs (/tmp/obk-body-visibility-Gi8hyJ/target/debug/deps/oblikovati_head-0c1a18eb5aa1b656)
+
+running 8 tests
+test native::gui_loop_tests::application_bdd::solid_visibility::tests::fixture_point_recognizes_a_lit_neutral_face_but_not_black ... ok
+test native::gui_loop_tests::application_bdd::solid_visibility::tests::black_appearance_requires_model_pixels_outside_all_ui_panels ... ok
+test native::gui_loop_tests::application_bdd::solid_visibility::tests::fixture_bounds_exclude_neutral_pixels_in_application_chrome ... ok
+test native::gui_loop_tests::application_bdd::solid_visibility::tests::fixture_point_excludes_ui_and_requires_filled_neutral ... ok
+test native::gui_loop_tests::application_bdd::solid_visibility::tests::preview_requires_orange_fill_outside_the_gui ... ok
+test native::gui_loop_tests::application_bdd::solid_visibility::tests::visibility_accepts_solid_fill_in_plain_selected_and_dimmed_colors ... ok
+test native::gui_loop_tests::application_bdd::solid_visibility::tests::selected_face_requires_blue_fill_outside_the_gui ... ok
+test native::gui_loop_tests::application_bdd::solid_visibility::tests::a_blue_outline_or_gui_fill_does_not_prove_a_visible_solid ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 1055 filtered out; finished in 0.00s
+

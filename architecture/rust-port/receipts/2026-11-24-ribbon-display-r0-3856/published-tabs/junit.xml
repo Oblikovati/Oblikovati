@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon display modes: tmp/oblikovati-ribbon-relocated.RcZVDl/display-snapshot/checkout/features/application/ribbon-display/ribbon-display.feature" package="testsuite/Feature: Ribbon display modes: tmp/oblikovati-ribbon-relocated.RcZVDl/display-snapshot/checkout/features/application/ribbon-display/ribbon-display.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T08:17:44.836512793Z" time="19.81056245"><testcase name="Scenario: Access a ribbon tab in tabs-only mode: tmp/oblikovati-ribbon-relocated.RcZVDl/display-snapshot/checkout/features/application/ribbon-display/ribbon-display.feature:39:3" time="19.81056245"><system-out><![CDATA[  Scenario: Access a ribbon tab in tabs-only mode
+   ✔  Given a part document is open in the MCAD Software
+   ✔  And the ribbon display control is configured to cycle through all modes
+   ✔  And the View ribbon displays its group titles
+   ✔  When the user activates the ribbon display control once
+   ✔  Then the ribbon shows its tabs without the group strip
+   ✔  When the user selects the View tab
+   ✔  Then the View commands appear in a temporary panel below the tabs
+   ✔  When the user activates the ribbon display control
+   ✔  Then the expanded View ribbon is restored
+   ✔  When the user clicks in an empty area of the viewport
+   ✔  Then the expanded View ribbon remains visible
+   ✔  When the user chooses Minimize to Panel Buttons from the ribbon display menu
+   ✔  Then the ribbon displays compact group buttons
+   ✔  When the user activates the ribbon display control once
+   ✔  Then the full ribbon is restored
+]]></system-out></testcase></testsuite></testsuites>

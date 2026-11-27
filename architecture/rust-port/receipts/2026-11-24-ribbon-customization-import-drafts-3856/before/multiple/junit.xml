@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="1" hostname="localhost" timestamp="2026-11-24T13:46:30.790605064Z" time="7.65468082"><testcase name="Scenario: Import settings with edits staged on two ribbon targets: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature:1356:3" time="7.65468082"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Import settings with edits staged on two ribbon targets
+   ✔  Given a part is active in the MCAD Software with the full Tools ribbon visible
+   ✘  And ribbon customization shows All Commands and initially empty Part Tools and Part Manage targets
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature:1358:5
+      Step doesn't match any function
+]]></system-out></testcase></testsuite></testsuites>

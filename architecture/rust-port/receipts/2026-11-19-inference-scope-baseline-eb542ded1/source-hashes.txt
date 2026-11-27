@@ -1,0 +1,6 @@
+838f6ac369f1a72fd12ca7fffb6d42364c8a982d4bbd5e01d519c178f4e0bbb8  /mnt/vininas-projects/MCAD-Scenarios/features/sketch/constraint-inference-scope/BLOCKERS.md
+2ac35fb0fecdd450da67199035577d71f3b350dc6a2a126079e0e01d61611400  /mnt/vininas-projects/MCAD-Scenarios/features/sketch/constraint-inference-scope/FIXTURES.md
+3c9462abb97362b150897429cc2e488874f2884ad1b154e41e5ed330f1e3af47  /mnt/vininas-projects/MCAD-Scenarios/features/sketch/constraint-inference-scope/FUNCTIONAL.md
+978d7bd4b6cc11f3f457fe65bb8a93ba1410ddd0cdbbb8b03db39fd1b6679fe7  /mnt/vininas-projects/MCAD-Scenarios/features/sketch/constraint-inference-scope/VISUAL.md
+459b063c1d6e4e0815081a38631005c92f52d1651f552f799c14bf5f8cf1c3a3  /mnt/vininas-projects/MCAD-Scenarios/features/sketch/constraint-inference-scope/feature-icon.svg
+91a3fdd6d43589c27536aa8e605125541613a32e26aa42f758bfb062633a0857  /mnt/vininas-projects/MCAD-Scenarios/features/sketch/constraint-inference-scope/scenario.feature

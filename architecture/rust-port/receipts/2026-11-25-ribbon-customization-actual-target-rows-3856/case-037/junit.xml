@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T04:05:52.248415863Z" time="29.675660638"><testcase name="Scenario: Return to customization after selecting malformed XML: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature:519:3" time="29.675660638"><system-out><![CDATA[  Scenario: Return to customization after selecting malformed XML
+   ✔> Given the MCAD Software starts with a writable copy of `fixtures/preferences/ribbon-normal` as its configuration directory
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part is active in the MCAD Software
+   ✔  And the ribbon customization dialog shows an empty Part Tools custom panel
+   ✔  And an XML file contains the incomplete text "<invalid"
+   ✔  When the user selects the file through the customization Import dialog
+   ✔  Then the file picker closes
+   ✔  And the customization dialog remains open
+   ✔  And the Part Tools custom panel list remains empty
+   ✔  And Apply and cancels are disabled
+]]></system-out></testcase></testsuite></testsuites>

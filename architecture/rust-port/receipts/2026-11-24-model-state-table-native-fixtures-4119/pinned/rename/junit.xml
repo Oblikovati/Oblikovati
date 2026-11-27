@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T12:11:04.969492147Z" time="27.8836693"><testcase name="Scenario: Rename an inactive model state through the table: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature:1400:3" time="27.8836693"><system-out><![CDATA[  Scenario: Rename an inactive model state through the table
+   ✔  Given The MCAD Software has an active Copy State and an inactive Model State1
+   ✔  And no model state is named Table Variant
+   ✔  When the user opens the model-state table
+   ✔  And changes the Model State1 member cell to "Table Variant"
+   ✔  Then OK is enabled
+   ✔  When the user accepts the table
+   ✔  Then the model browser shows Table Variant in place of Model State1
+   ✔  And Copy State remains active
+]]></system-out></testcase></testsuite></testsuites>

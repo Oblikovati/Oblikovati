@@ -1,0 +1,163 @@
+// SPDX-License-Identifier: GPL-2.0-only
+use super::*;
+use std::collections::BTreeSet;
+pub(super) fn validate_sources(definition: &SketchPrismDefinition) -> Result<(), SketchPrismCause> {
+    if definition.sketch.0 == 0 {
+        return Err(SketchPrismCause::Definition(format!(
+            "sketch {:?}: expected a nonzero source identity",
+            definition.sketch
+        )));
+    }
+    validate_selection(&definition.selection)?;
+    let from_plane = matches!(
+        definition.extent,
+        Some(SketchPrismExtent::DistanceFromPlane { .. })
+    );
+    let plane_bounds_only = definition.extent.is_some() && !from_plane;
+    if from_plane && definition.displacement[..2] != [DatumLength::Constant(0.); 2] {
+        return Err(SketchPrismCause::Definition(
+            "prism start plane: expected a sweep normal to the profile".into(),
+        ));
+    }
+    if let Some(source) = definition.taper {
+        if plane_bounds_only
+            || !matches!(
+                definition.direction,
+                SketchPrismDirection::Positive | SketchPrismDirection::Negative
+            )
+            || definition.displacement[..2] != [DatumLength::Constant(0.); 2]
+        {
+            return Err(SketchPrismCause::Definition(
+                "Extrude Taper A requires a single depth normal to the sketch.".into(),
+            ));
+        }
+        source
+            .validate_source()
+            .map_err(|cause| SketchPrismCause::Definition(cause.to_string()))?;
+        match source.source() {
+            DatumLength::Constant(angle) => require_taper_angle(angle)?,
+            DatumLength::Parameter(0) => {
+                return Err(SketchPrismCause::Definition(
+                    "Extrude Taper A requires a named angle parameter.".into(),
+                ));
+            }
+            DatumLength::Parameter(_) => {}
+        }
+    }
+    if plane_bounds_only {
+        return validate_plane_extent(definition);
+    }
+    for (axis, source) in definition.displacement.into_iter().enumerate() {
+        validate_scalar_source(source, axis)?;
+    }
+    if let DatumLength::Constant(normal) = definition.displacement[2] {
+        definition.validate_normal_source(normal)?;
+    }
+    if (definition.direction == SketchPrismDirection::Asymmetric)
+        != definition.second_depth.is_some()
+    {
+        return Err(SketchPrismCause::Definition(
+            "asymmetric prism: expected Distance B only for a two-sided sweep".into(),
+        ));
+    }
+    if let Some(depth) = definition.second_depth {
+        validate_scalar_source(depth, 3)?;
+        if let DatumLength::Constant(value) = depth {
+            require_second_depth(value)?;
+        }
+    }
+    Ok(())
+}
+pub(super) fn validate_plane_extent(
+    definition: &SketchPrismDefinition,
+) -> Result<(), SketchPrismCause> {
+    if definition.displacement == [DatumLength::Constant(0.); 3]
+        && definition.direction == SketchPrismDirection::Positive
+        && definition.second_depth.is_none()
+    {
+        return Ok(());
+    }
+    Err(SketchPrismCause::Definition(
+        "prism plane extent: expected plane bounds without authored distance or direction".into(),
+    ))
+}
+pub(super) fn require_taper_angle(angle: f64) -> Result<(), SketchPrismCause> {
+    if angle.abs() < std::f64::consts::FRAC_PI_2 {
+        return Ok(());
+    }
+    Err(SketchPrismCause::Definition(format!(
+        "Extrude Taper A must be between -90 and 90 degrees (exclusive), got {}.",
+        angle.to_degrees()
+    )))
+}
+pub(super) fn require_second_depth(value: f64) -> Result<(), SketchPrismCause> {
+    if value <= 0. || !value.is_finite() {
+        return Err(SketchPrismCause::Definition(format!(
+            "prism Distance B {value:?}: expected a finite positive length"
+        )));
+    }
+    Ok(())
+}
+/// Validate one shared directed closed-profile selection before a sweep operation.
+/// Example: `validate_selection(&selection)?` before an authored revolve is accepted.
+pub(crate) fn validate_selection(selection: &SketchPrismSelection) -> Result<(), SketchPrismCause> {
+    let mut used = BTreeSet::new();
+    for lines in std::iter::once(&selection.outer).chain(&selection.holes) {
+        validate_curve_identities(lines, &mut used)?;
+    }
+    Ok(())
+}
+fn validate_curve_identities(
+    curves: &[SketchDirectedCurve],
+    used: &mut BTreeSet<SketchEntityId>,
+) -> Result<(), SketchPrismCause> {
+    if curves.is_empty() {
+        return Err(SketchPrismCause::Definition(format!(
+            "sketch prism boundary {curves:?}: expected at least one directed curve"
+        )));
+    }
+    for directed in curves {
+        if directed.curve.0 == 0 || !used.insert(directed.curve) {
+            return Err(SketchPrismCause::Definition(format!(
+                "sketch prism curve {:?}: expected nonzero identity with one occurrence across all boundaries",
+                directed.curve
+            )));
+        }
+    }
+    Ok(())
+}
+fn validate_scalar_source(source: DatumLength, axis: usize) -> Result<(), SketchPrismCause> {
+    if source.parameter() == Some(0) {
+        return Err(SketchPrismCause::Definition(format!(
+            "displacement axis {axis} source {source:?}: expected a nonzero parameter identity"
+        )));
+    }
+    source
+        .validate_source()
+        .map_err(|cause| SketchPrismCause::Length {
+            axis,
+            source,
+            cause,
+        })
+}
+impl SketchPrismDefinition {
+    pub(super) fn validate_normal_source(&self, normal: f64) -> Result<(), SketchPrismCause> {
+        if self.direction != SketchPrismDirection::Positive && normal <= 0. {
+            return Err(SketchPrismCause::Definition(format!(
+                "prism {:?} depth {normal:?}: expected a positive authored distance",
+                self.direction
+            )));
+        }
+        if self.direction == SketchPrismDirection::Symmetric && normal / 2. == 0. {
+            return Err(SketchPrismCause::Definition(format!(
+                "symmetric prism depth {normal:?}: expected a representable half-distance"
+            )));
+        }
+        if normal == 0. {
+            return Err(SketchPrismCause::Definition(format!(
+                "prism normal displacement {normal:?}: expected nonzero profile-normal displacement"
+            )));
+        }
+        Ok(())
+    }
+}

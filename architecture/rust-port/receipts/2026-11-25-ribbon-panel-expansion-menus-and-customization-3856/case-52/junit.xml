@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" package="testsuite/Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:23:45.79888309Z" time="34.374636548"><testcase name="Scenario: Compare the expansion footer in full and temporary ribbon displays: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:716:3" time="34.374636548"><system-out><![CDATA[  Scenario: Compare the expansion footer in full and temporary ribbon displays
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open and active
+   ✔  And the full 3D Model ribbon is at the top
+   ✔  When the user opens the Modify additional command area
+   ✔  Then the additional area shows Move Bodies, Bend Part and Copy Object
+   ✔  And its lower title strip shows a pin control and the Modify title
+   ✔  When the user minimizes the ribbon to tabs
+   ✔  And the user opens the temporary 3D Model ribbon
+   ✔  And the user opens the Modify additional command area
+   ✔  Then the same three additional commands are visible
+   ✔  And the lower title strip shows the Modify title without a visible pin control
+   ✔  When the user clicks empty viewport space
+   ✔  Then the additional area and the temporary ribbon close
+   ✔  And the ribbon remains minimized to tabs
+]]></system-out></testcase></testsuite></testsuites>

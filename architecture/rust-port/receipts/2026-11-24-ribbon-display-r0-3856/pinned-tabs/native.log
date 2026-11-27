@@ -1,0 +1,41 @@
+
+running 1 test
+Feature: Ribbon display modes
+  Scenario: Access a ribbon tab in tabs-only mode
+   ✔  Given a part document is open in the MCAD Software
+   ✔  And the ribbon display control is configured to cycle through all modes
+   ✔  And the View ribbon displays its group titles
+   ✔  When the user activates the ribbon display control once
+   ✔  Then the ribbon shows its tabs without the group strip
+   ✔  When the user selects the View tab
+   ✔  Then the View commands appear in a temporary panel below the tabs
+   ✔  When the user activates the ribbon display control
+   ✔  Then the expanded View ribbon is restored
+   ✔  When the user clicks in an empty area of the viewport
+   ✔  Then the expanded View ribbon remains visible
+   ✔  When the user chooses Minimize to Panel Buttons from the ribbon display menu
+   ✔  And the user activates the ribbon display control twice
+   ✘  Then the full ribbon is restored
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-display/ribbon-display.feature:53:5
+      Matched: crates/head/src/../tests/application/ribbon-panel-visibility/minimized_context.rs:94:1
+      Step panicked. Captured output: expected full 3D Model or View ribbon commands
+[Summary]
+1 feature
+1 scenario (1 failed)
+14 steps (13 passed, 1 failed)
+
+thread 'application-scenarios' (1058952) panicked at crates/head/src/../tests/application/benchmark.rs:386:5:
+scenario benchmark: expected no failed, undefined, or skipped steps
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'native::gui_loop_tests::application_bdd::application_scenarios_use_the_native_window' (1058951) panicked at crates/head/src/../tests/application/benchmark.rs:275:10:
+called `Result::unwrap()` on an `Err` value: Any { .. }
+test native::gui_loop_tests::application_bdd::application_scenarios_use_the_native_window ... FAILED
+
+failures:
+
+failures:
+    native::gui_loop_tests::application_bdd::application_scenarios_use_the_native_window
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 1617 filtered out; finished in 22.92s

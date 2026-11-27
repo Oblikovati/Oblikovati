@@ -1,0 +1,448 @@
+{
+  "features": 1,
+  "scenarios": 22,
+  "excluded_capture_only": 0,
+  "blocked_capture_host_only": 0,
+  "steps": 230,
+  "unresolved": [
+    {
+      "source": "/mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-docking/ribbon-docking.feature",
+      "scenario": "Open the Modify command list on the floating ribbon",
+      "line": 72,
+      "step": "the Modify button is highlighted blue",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-docking/ribbon-docking.feature",
+      "scenario": "Open the Modify command list on the floating ribbon",
+      "line": 73,
+      "step": "an adjacent command list opens with Hole, Slot, Fillet, Chamfer, Shell, and other Modify commands",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-docking/ribbon-docking.feature",
+      "scenario": "Open the Modify command list on the floating ribbon",
+      "line": 74,
+      "step": "the user selects a face in the viewport outside the command list",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-docking/ribbon-docking.feature",
+      "scenario": "Open the Modify command list on the floating ribbon",
+      "line": 75,
+      "step": "the command list closes",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-docking/ribbon-docking.feature",
+      "scenario": "Open the Modify command list on the floating ribbon",
+      "line": 76,
+      "step": "the face is highlighted with a one-face selection indicator",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-docking/ribbon-docking.feature",
+      "scenario": "Open the Modify command list on the floating ribbon",
+      "line": 77,
+      "step": "the user clicks empty workspace outside the part",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-docking/ribbon-docking.feature",
+      "scenario": "Open the Modify command list on the floating ribbon",
+      "line": 78,
+      "step": "the face selection clears",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-docking/ribbon-docking.feature",
+      "scenario": "Switch compact command groups in the left-docked ribbon",
+      "line": 83,
+      "step": "the 3D Model ribbon is docked on the left with Modify and Work Features buttons visible",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-docking/ribbon-docking.feature",
+      "scenario": "Switch compact command groups in the left-docked ribbon",
+      "line": 84,
+      "step": "no adjacent group panel is open",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-docking/ribbon-docking.feature",
+      "scenario": "Switch compact command groups in the left-docked ribbon",
+      "line": 86,
+      "step": "Work Features is highlighted blue",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-docking/ribbon-docking.feature",
+      "scenario": "Switch compact command groups in the left-docked ribbon",
+      "line": 87,
+      "step": "an adjacent panel lists Plane, Axis, Point, and UCS",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-docking/ribbon-docking.feature",
+      "scenario": "Switch compact command groups in the left-docked ribbon",
+      "line": 89,
+      "step": "the Work Features panel closes",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-docking/ribbon-docking.feature",
+      "scenario": "Switch compact command groups in the left-docked ribbon",
+      "line": 90,
+      "step": "Modify is highlighted blue",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-docking/ribbon-docking.feature",
+      "scenario": "Switch compact command groups in the left-docked ribbon",
+      "line": 91,
+      "step": "an adjacent panel lists Hole, Slot, Fillet, Chamfer, Shell, Draft, and other Modify commands",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-docking/ribbon-docking.feature",
+      "scenario": "Switch compact command groups in the left-docked ribbon",
+      "line": 92,
+      "step": "the user clicks empty workspace outside the part",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-docking/ribbon-docking.feature",
+      "scenario": "Scroll the floating ribbon group list",
+      "line": 99,
+      "step": "the floating 3D Model ribbon shows Start 2D Sketch above the lower groups",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-docking/ribbon-docking.feature",
+      "scenario": "Scroll the floating ribbon group list",
+      "line": 100,
+      "step": "the user scrolls down in the floating ribbon group list",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-docking/ribbon-docking.feature",
+      "scenario": "Scroll the floating ribbon group list",
+      "line": 101,
+      "step": "Start 2D Sketch scrolls out of view",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-docking/ribbon-docking.feature",
+      "scenario": "Scroll the floating ribbon group list",
+      "line": 102,
+      "step": "Shape Generator, Work Features, Pattern, and Create Freeform are visible",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-docking/ribbon-docking.feature",
+      "scenario": "Switch tabs with a floating command panel open",
+      "line": 108,
+      "step": "the user selects the Annotate tab on the floating ribbon",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-docking/ribbon-docking.feature",
+      "scenario": "Switch tabs with a floating command panel open",
+      "line": 109,
+      "step": "the ribbon displays Geometric Annotation, General Annotation, Notes, Manage, and Tolerance Analysis groups",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-docking/ribbon-docking.feature",
+      "scenario": "Switch tabs with a floating command panel open",
+      "line": 110,
+      "step": "the user selects the Notes group",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-docking/ribbon-docking.feature",
+      "scenario": "Switch tabs with a floating command panel open",
+      "line": 111,
+      "step": "an adjacent panel displays Leader Text, General Note, and General Profile Note commands",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-docking/ribbon-docking.feature",
+      "scenario": "Switch tabs on a left-docked ribbon during a modeling command",
+      "line": 118,
+      "step": "`fixtures/cad/ribbon-docking/ShellBlock.ipt` with its solid block is active in the MCAD Software",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-docking/ribbon-docking.feature",
+      "scenario": "Switch tabs on a left-docked ribbon during a modeling command",
+      "line": 120,
+      "step": "the user starts Shell from Modify",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-docking/ribbon-docking.feature",
+      "scenario": "Switch tabs on a left-docked ribbon during a modeling command",
+      "line": 121,
+      "step": "the user selects a face of the block",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-docking/ribbon-docking.feature",
+      "scenario": "Switch tabs on a left-docked ribbon during a modeling command",
+      "line": 122,
+      "step": "the Shell properties panel reports one selected face",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-docking/ribbon-docking.feature",
+      "scenario": "Switch tabs on a left-docked ribbon during a modeling command",
+      "line": 123,
+      "step": "the model preview shows the shell cutaway",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-docking/ribbon-docking.feature",
+      "scenario": "Switch tabs on a left-docked ribbon during a modeling command",
+      "line": 125,
+      "step": "the user opens its expanded-title context menu",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-docking/ribbon-docking.feature",
+      "scenario": "Switch tabs on a left-docked ribbon during a modeling command",
+      "line": 128,
+      "step": "the 3D Model ribbon is docked vertically on the left of the model browser",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-docking/ribbon-docking.feature",
+      "scenario": "Switch tabs on a left-docked ribbon during a modeling command",
+      "line": 130,
+      "step": "the Shell properties panel and model preview remain visible",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-docking/ribbon-docking.feature",
+      "scenario": "Switch tabs on a left-docked ribbon during a modeling command",
+      "line": 131,
+      "step": "the user selects the Tools tab on the left-docked ribbon",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-docking/ribbon-docking.feature",
+      "scenario": "Switch tabs on a left-docked ribbon during a modeling command",
+      "line": 132,
+      "step": "the Tools ribbon groups are displayed on the left",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-docking/ribbon-docking.feature",
+      "scenario": "Switch tabs on a left-docked ribbon during a modeling command",
+      "line": 133,
+      "step": "the Shell properties panel still reports one selected face",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-docking/ribbon-docking.feature",
+      "scenario": "Switch tabs on a left-docked ribbon during a modeling command",
+      "line": 134,
+      "step": "the model preview remains visible",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-docking/ribbon-docking.feature",
+      "scenario": "Switch tabs on a left-docked ribbon during a modeling command",
+      "line": 135,
+      "step": "the user cancels Shell from its properties panel",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-docking/ribbon-docking.feature",
+      "scenario": "Switch tabs on a left-docked ribbon during a modeling command",
+      "line": 136,
+      "step": "the properties panel and preview close",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-docking/ribbon-docking.feature",
+      "scenario": "Switch tabs on a left-docked ribbon during a modeling command",
+      "line": 137,
+      "step": "the original solid block remains visible",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-docking/ribbon-docking.feature",
+      "scenario": "Switch tabs on a left-docked ribbon during a modeling command",
+      "line": 138,
+      "step": "the left-docked Tools ribbon remains selected",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-docking/ribbon-docking.feature",
+      "scenario": "Switch tabs on a left-docked ribbon during a modeling command",
+      "line": 140,
+      "step": "the command prompt returns to Ready",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-docking/ribbon-docking.feature",
+      "scenario": "Switch tabs on a left-docked ribbon during a modeling command",
+      "line": 141,
+      "step": "the user opens \"Docking Positions\" from the Tools tab context menu",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-docking/ribbon-docking.feature",
+      "scenario": "Switch tabs on a left-docked ribbon during a modeling command",
+      "line": 143,
+      "step": "the Tools ribbon appears at the top",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-docking/ribbon-docking.feature",
+      "scenario": "Finish a sketch while the ribbon is docked left",
+      "line": 245,
+      "step": "`fixtures/cad/ribbon-docking/SketchEdit.ipt` is open with `Sketch1` being edited and the ribbon docked at the top",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-docking/ribbon-docking.feature",
+      "scenario": "Finish a sketch while the ribbon is docked left",
+      "line": 246,
+      "step": "the user docks the Sketch ribbon on the left",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-docking/ribbon-docking.feature",
+      "scenario": "Finish a sketch while the ribbon is docked left",
+      "line": 247,
+      "step": "the sketch tools appear in a vertical group column",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-docking/ribbon-docking.feature",
+      "scenario": "Finish a sketch while the ribbon is docked left",
+      "line": 248,
+      "step": "Finish remains visible in the Exit group at the bottom",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-docking/ribbon-docking.feature",
+      "scenario": "Finish a sketch while the ribbon is docked left",
+      "line": 250,
+      "step": "sketch editing ends and the part model view returns",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-docking/ribbon-docking.feature",
+      "scenario": "Finish a sketch while the ribbon is docked left",
+      "line": 252,
+      "step": "the 3D Model tab and groups are active",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-docking/ribbon-docking.feature",
+      "scenario": "Finish a sketch while the ribbon is docked left",
+      "line": 253,
+      "step": "no sketch geometry has changed",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-docking/ribbon-docking.feature",
+      "scenario": "Open an Annotate command panel on the floating ribbon",
+      "line": 256,
+      "step": "a part is active and the ribbon is floating with 3D Model selected",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-docking/ribbon-docking.feature",
+      "scenario": "Open an Annotate command panel on the floating ribbon",
+      "line": 257,
+      "step": "the user selects Annotate",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-docking/ribbon-docking.feature",
+      "scenario": "Open an Annotate command panel on the floating ribbon",
+      "line": 258,
+      "step": "the ribbon displays its annotation groups",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-docking/ribbon-docking.feature",
+      "scenario": "Open an Annotate command panel on the floating ribbon",
+      "line": 259,
+      "step": "the user selects Notes",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-docking/ribbon-docking.feature",
+      "scenario": "Open an Annotate command panel on the floating ribbon",
+      "line": 260,
+      "step": "the adjacent panel lists Leader Text, General Note and General Profile Note",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-docking/ribbon-docking.feature",
+      "scenario": "Open an Annotate command panel on the floating ribbon",
+      "line": 261,
+      "step": "the user selects 3D Model",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-docking/ribbon-docking.feature",
+      "scenario": "Open an Annotate command panel on the floating ribbon",
+      "line": 263,
+      "step": "the modeling groups return",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-docking/ribbon-docking.feature",
+      "scenario": "Keep the ribbon docked while switching document types",
+      "line": 267,
+      "step": "`fixtures/cad/ribbon-docking/PartDocument.ipt`, `AssemblyDocument.iam` and `SheetMetalPart.ipt` are open in the MCAD Software",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-docking/ribbon-docking.feature",
+      "scenario": "Keep the ribbon docked while switching document types",
+      "line": 268,
+      "step": "`PartDocument.ipt` is active with the ribbon docked on the left",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-docking/ribbon-docking.feature",
+      "scenario": "Keep the ribbon docked while switching document types",
+      "line": 269,
+      "step": "the user activates `AssemblyDocument.iam`",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-docking/ribbon-docking.feature",
+      "scenario": "Keep the ribbon docked while switching document types",
+      "line": 271,
+      "step": "assembly tabs and commands are displayed",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-docking/ribbon-docking.feature",
+      "scenario": "Keep the ribbon docked while switching document types",
+      "line": 273,
+      "step": "the user activates `SheetMetalPart.ipt`",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-docking/ribbon-docking.feature",
+      "scenario": "Keep the ribbon docked while switching document types",
+      "line": 275,
+      "step": "the Sheet Metal tab and its commands are displayed",
+      "cause": "undefined step"
+    }
+  ],
+  "source_revision": {
+    "root": "/mnt/vininas-projects/MCAD-Scenarios",
+    "commit": null,
+    "dirty": null
+  }
+}

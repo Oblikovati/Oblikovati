@@ -1,0 +1,25 @@
+    Finished `test` profile [unoptimized] target(s) in 0.09s
+     Running unittests src/lib.rs (/tmp/obk-circle-diagnostic-E1AUBo/target/debug/deps/oblikovati_head-0c1a18eb5aa1b656)
+
+running 1 test
+Not executed (capture only): precise-input-06 Inspect and switch reference modes
+Not executed (capture only): precise-input-07 Measure the retained reference-mode trial marker
+Not executed (capture only): precise-input-01 Create a point with X and Y input
+Not executed (capture only): precise-input-04 Measure points created with coordinate modes
+Feature: Precise input
+  Scenario: precise-input-03 Reject an alphabetic coordinate
+   ✔  Given X and Y coordinate mode is active with numeric fields
+   ✔  When the user focus X, select its value, and enter the single character a
+   ✔  Then a is displayed in Red
+   ✔  When the user press Return
+   ✔  Then the Red value remains and no visible point is committed
+   ✔  When the user press Escape and restart Point
+   ✔  Then Precise Input reopens with numeric fields
+[Summary]
+1 feature
+1 scenario (1 passed)
+7 steps (7 passed)
+test native::gui_loop_tests::application_bdd::sketch::sketch_scenarios_use_the_native_window ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1062 filtered out; finished in 14.76s
+

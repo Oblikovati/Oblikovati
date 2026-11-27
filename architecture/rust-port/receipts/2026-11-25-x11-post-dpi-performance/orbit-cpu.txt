@@ -1,0 +1,21 @@
+# Total Lost Samples: 0
+# Samples: 788  of event 'cycles:u'
+ 46.65% |oblikovati
+ 39.69% |libc.so.6
+ 7.05%  |libVkLayer_khronos_validation.so
+ 2.13%  |libm.so.6
+ 1.63%  |libX11.so.6.4.0
+ 1.53%  |[unknown]
+
+Leaf symbols with at least 1.6% of sampled cycles
+ 10.35% |[.] oblikovati_gui::snapshot::capture_frame|oblikovati
+ 8.64%  |[.] _int_malloc|libc.so.6
+ 6.20%  |[.] _int_free|libc.so.6
+ 5.79%  |[.] malloc|libc.so.6
+ 5.12%  |[.] malloc_consolidate|libc.so.6
+ 3.24%  |[.] __memmove_avx512_unaligned_erms|libc.so.6
+ 2.13%  |[.] 0x0000000000ba66e6|libVkLayer_khronos_validation.so
+ 2.13%  |[.] __powf_fma|libm.so.6
+ 2.07%  |[.] cfree@GLIBC_2.2.5|libc.so.6
+ 1.94%  |[.] unlink_chunk.isra.0|libc.so.6
+ 1.65%  |[.] ImGui::PushClipRect(ImVec2 const&, ImVec2 const&, bool)|oblikovati

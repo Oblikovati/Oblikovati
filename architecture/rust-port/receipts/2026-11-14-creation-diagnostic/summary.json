@@ -1,0 +1,372 @@
+{
+  "kind": "diagnostic only; not acceptance",
+  "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+  "application_commit": "47a7d19d3",
+  "scenarios": [
+    {
+      "scenario": "Inspect metric and inch part templates",
+      "classification": "passes",
+      "unbound_steps": [],
+      "failed_steps": []
+    },
+    {
+      "scenario": "Cancel the template chooser",
+      "classification": "passes",
+      "unbound_steps": [],
+      "failed_steps": []
+    },
+    {
+      "scenario": "Inspect the current session's initial template selection",
+      "classification": "unbound step",
+      "unbound_steps": [
+        "the Create New File chooser opens over the part",
+        "the template gallery is grouped by document type",
+        "Metric is selected in the template folder tree",
+        "Standard (mm).ipt is selected in the Part group",
+        "the details identify a Part with millimeter units and Generic material",
+        "Create and Cancel are available",
+        "the existing part and sketch remain visible behind the chooser",
+        "the chooser closes without creating a document",
+        "the same part and sketch remain active"
+      ],
+      "failed_steps": []
+    },
+    {
+      "scenario": "Create a standard metric part",
+      "classification": "passes",
+      "unbound_steps": [],
+      "failed_steps": []
+    },
+    {
+      "scenario": "Create a standard metric assembly",
+      "classification": "passes",
+      "unbound_steps": [],
+      "failed_steps": []
+    },
+    {
+      "scenario": "Create a drawing from a sheet template",
+      "classification": "passes",
+      "unbound_steps": [],
+      "failed_steps": []
+    },
+    {
+      "scenario": "Create a metric sheet-metal part",
+      "classification": "passes",
+      "unbound_steps": [],
+      "failed_steps": []
+    },
+    {
+      "scenario": "Collapse and expand a template group",
+      "classification": "passes",
+      "unbound_steps": [],
+      "failed_steps": []
+    },
+    {
+      "scenario": "Change template folders before selecting a new template",
+      "classification": "passes",
+      "unbound_steps": [],
+      "failed_steps": []
+    },
+    {
+      "scenario": "Create a presentation and cancel initial model insertion",
+      "classification": "passes",
+      "unbound_steps": [],
+      "failed_steps": []
+    },
+    {
+      "scenario": "Display templates as details",
+      "classification": "passes",
+      "unbound_steps": [],
+      "failed_steps": []
+    },
+    {
+      "scenario": "Toggle template grouping by document type",
+      "classification": "passes",
+      "unbound_steps": [],
+      "failed_steps": []
+    },
+    {
+      "scenario": "Select an assembly template in list view",
+      "classification": "passes",
+      "unbound_steps": [],
+      "failed_steps": []
+    },
+    {
+      "scenario": "Navigate backward and forward through template folders",
+      "classification": "passes",
+      "unbound_steps": [],
+      "failed_steps": []
+    },
+    {
+      "scenario": "Reopen the chooser after canceling a selected template",
+      "classification": "passes",
+      "unbound_steps": [],
+      "failed_steps": []
+    },
+    {
+      "scenario": "Navigate home from a template folder",
+      "classification": "passes",
+      "unbound_steps": [],
+      "failed_steps": []
+    },
+    {
+      "scenario": "Change template icon size",
+      "classification": "passes",
+      "unbound_steps": [],
+      "failed_steps": []
+    },
+    {
+      "scenario": "Create a part by double-clicking its template",
+      "classification": "passes",
+      "unbound_steps": [],
+      "failed_steps": []
+    },
+    {
+      "scenario": "Create a selected part template with Enter",
+      "classification": "passes",
+      "unbound_steps": [],
+      "failed_steps": []
+    },
+    {
+      "scenario": "Dismiss the template chooser with Escape",
+      "classification": "passes",
+      "unbound_steps": [],
+      "failed_steps": []
+    },
+    {
+      "scenario": "Inspect projects from the template chooser",
+      "classification": "passes",
+      "unbound_steps": [],
+      "failed_steps": []
+    },
+    {
+      "scenario": "Reverse an ascending template size sort in Details view",
+      "classification": "passes",
+      "unbound_steps": [],
+      "failed_steps": []
+    },
+    {
+      "scenario": "Retain template sort order when reopening the chooser",
+      "classification": "passes",
+      "unbound_steps": [],
+      "failed_steps": []
+    },
+    {
+      "scenario": "Create a part after navigating to an empty template root",
+      "classification": "passes",
+      "unbound_steps": [],
+      "failed_steps": []
+    },
+    {
+      "scenario": "Enable creation by selecting a template",
+      "classification": "passes",
+      "unbound_steps": [],
+      "failed_steps": []
+    },
+    {
+      "scenario": "Create the retained template after changing folders",
+      "classification": "passes",
+      "unbound_steps": [],
+      "failed_steps": []
+    },
+    {
+      "scenario": "Cancel component selection for a drawing layout",
+      "classification": "passes",
+      "unbound_steps": [],
+      "failed_steps": []
+    },
+    {
+      "scenario": "Create a populated drawing layout with a component that needs updating",
+      "classification": "unbound step",
+      "unbound_steps": [
+        "a drawing template provides a populated layout with a parts list and a view",
+        "the component-selection dialog will initially propose a part requiring an update",
+        "the user selects the drawing template and populated layout",
+        "the component-selection dialog displays the proposed component",
+        "the user confirms that component in the component-selection dialog",
+        "a message identifies the component as needing an update",
+        "the message says the drawing reflects the model's non-updated state",
+        "the message includes a display preference and an OK control",
+        "its sheet displays a border, title block and parts list",
+        "the drawing browser lists a parts list and a view referencing the component"
+      ],
+      "failed_steps": []
+    },
+    {
+      "scenario": "Cancel browsing for a drawing-layout component",
+      "classification": "passes",
+      "unbound_steps": [],
+      "failed_steps": []
+    },
+    {
+      "scenario": "Browse to a different component for a populated drawing layout",
+      "classification": "unbound step",
+      "unbound_steps": [
+        "the file-selection dialog can access the folder containing a different part file",
+        "the user selects the different part file and choose Open",
+        "the user confirms the selected component",
+        "a message identifies the selected component as needing an update",
+        "a new drawing becomes active",
+        "its parts list identifies the selected component",
+        "its browser contains a view referencing the selected component"
+      ],
+      "failed_steps": []
+    },
+    {
+      "scenario": "Display the observed drawing layout for the captured component",
+      "classification": "unbound step",
+      "unbound_steps": [
+        "the captured populated drawing layout and its component requiring an update are available",
+        "the user selects the layout and chooses Create",
+        "the component-selection dialog displays the captured component",
+        "the user confirms that component",
+        "an update-needed message says the drawing reflects the component's non-updated state",
+        "the message includes a display preference and an OK control",
+        "a drawing opens with a border, title block, and parts list",
+        "the drawing browser lists a parts list and a view referencing that component",
+        "no model geometry is visible on the sheet"
+      ],
+      "failed_steps": []
+    },
+    {
+      "scenario": "Reverse the template name order in grouped Details view",
+      "classification": "unbound step",
+      "unbound_steps": [
+        "the new-document template chooser shows the metric folder in grouped Details view",
+        "the previously selected standard inch part is displayed in the details pane",
+        "the visible part section lists two Sheet Metal entries before two Standard entries",
+        "the user clicks the Name column header",
+        "the visible part section lists the Standard entries before the Sheet Metal entries",
+        "the other visible document-type sections also reorder",
+        "the details pane still identifies the standard inch part and inch units",
+        "the user clicks the Name column header again",
+        "the visible part section lists the Sheet Metal entries before the Standard entries",
+        "the details pane still identifies the standard inch part and inch units",
+        "the user restores Medium icons and cancels the chooser",
+        "the chooser closes and the original part remains active"
+      ],
+      "failed_steps": []
+    },
+    {
+      "scenario": "Navigate adjacent part templates with arrow keys",
+      "classification": "unbound step",
+      "unbound_steps": [
+        "the part group displays Sheet Metal (mm) immediately before Standard (DIN)",
+        "the user selects the Sheet Metal (mm) part template",
+        "its tile is selected and its details identify millimeter units",
+        "the user presses Right",
+        "the Standard (DIN) part tile is selected",
+        "the details identify Standard (DIN) and millimeter units",
+        "the user presses Left",
+        "the Sheet Metal (mm) part tile is selected again",
+        "its sheet-metal details are displayed",
+        "the template gallery scrolls down",
+        "Sheet Metal (mm) remains selected with its details displayed",
+        "the chooser closes and the original part remains active"
+      ],
+      "failed_steps": []
+    },
+    {
+      "scenario": "Navigate to template group endpoints with Home and End",
+      "classification": "unbound step",
+      "unbound_steps": [
+        "the Part group begins with Sheet Metal (DIN) and ends with Standard (mm)",
+        "the Assembly group begins with Mold Design (DIN) and ends with Weldment (JIS)",
+        "the user selects Sheet Metal (mm) in the Part group",
+        "Sheet Metal (DIN) is selected and identified in the details pane",
+        "Standard (mm) is selected and identified in the details pane",
+        "the user selects Mold Design (mm) in the Assembly group",
+        "Weldment (JIS) is selected and identified in the details pane",
+        "Mold Design (DIN) is selected and identified in the details pane",
+        "the chooser closes and the original part remains active"
+      ],
+      "failed_steps": []
+    },
+    {
+      "scenario": "Use horizontal arrows at Part template group boundaries",
+      "classification": "unbound step",
+      "unbound_steps": [
+        "the gallery is at its leftmost horizontal position",
+        "the Part group begins with Sheet Metal (DIN) and ends with Standard (mm)",
+        "the user selects Standard (mm) and presses Right",
+        "Standard (mm) remains selected and identified in the details pane",
+        "the gallery shifts horizontally so its leftmost tiles are partially clipped",
+        "the user presses Left",
+        "Standard (DIN) is selected and identified in the details pane",
+        "the user presses Home and then Left",
+        "Sheet Metal (DIN) remains selected and identified in the details pane",
+        "the gallery shifts back to its leftmost horizontal position",
+        "the chooser closes and the original part remains active"
+      ],
+      "failed_steps": []
+    },
+    {
+      "scenario": "Create from a selected template in a collapsed group",
+      "classification": "unbound step",
+      "unbound_steps": [
+        "Standard (mm) is selected in the expanded Part group",
+        "the user collapses the Part group",
+        "the details pane still identifies Standard (mm) as a millimeter part template",
+        "Create remains enabled",
+        "the chooser closes and a new empty part becomes active",
+        "a new document tab is visible alongside the original part",
+        "the user closes the new unedited part",
+        "the original part becomes active",
+        "the user reopens the template chooser in the same session",
+        "the Part group remains collapsed",
+        "the details pane identifies Standard (mm) and Create is enabled",
+        "the user expands the Part group",
+        "Standard (mm) is shown as the selected template"
+      ],
+      "failed_steps": []
+    },
+    {
+      "scenario": "Press Enter after moving the template folder highlight with Up",
+      "classification": "unbound step",
+      "unbound_steps": [
+        "the details pane identifies the selected Standard (mm) part template",
+        "the user clicks the Metric folder in the folder tree",
+        "the user presses Up",
+        "the English folder is highlighted in the tree",
+        "the metric template gallery remains visible",
+        "the details pane still identifies Standard (mm)",
+        "the chooser closes and a new empty part becomes active",
+        "a new document tab appears alongside the original part",
+        "the user closes the new unedited part",
+        "the original part becomes active"
+      ],
+      "failed_steps": []
+    },
+    {
+      "scenario": "Select templates with the secondary mouse button",
+      "classification": "unbound step",
+      "unbound_steps": [
+        "the Part group contains Standard (in) and Sheet Metal (in)",
+        "the user right-clicks the Standard (in) part template",
+        "Standard (in) is selected and its details show inch units",
+        "no context menu is visible",
+        "the user right-clicks the Sheet Metal (in) part template",
+        "Sheet Metal (in) is selected and its details show inch units",
+        "no context menu is visible",
+        "the user right-clicks empty space in the Part gallery",
+        "Sheet Metal (in) remains selected and its details remain displayed",
+        "no context menu is visible",
+        "the chooser closes and the original part remains active"
+      ],
+      "failed_steps": []
+    },
+    {
+      "scenario": "Click a folder highlighted by keyboard navigation",
+      "classification": "unbound step",
+      "unbound_steps": [
+        "the details pane identifies the selected Standard (mm) part template",
+        "the user clicks Metric in the folder tree and presses Up",
+        "English is highlighted in the tree",
+        "the metric gallery and Standard (mm) details remain visible",
+        "the user clicks the highlighted English folder",
+        "the details pane still identifies Standard (mm) with millimeter units"
+      ],
+      "failed_steps": []
+    }
+  ]
+}

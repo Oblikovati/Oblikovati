@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Workspace layout and panel visibility: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature" package="testsuite/Feature: Workspace layout and panel visibility: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:00:52.80818354Z" time="19.83707976"><testcase name="Scenario: Add and switch between browser panel tabs: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature:264:3" time="19.83707976"><system-out><![CDATA[  Scenario: Add and switch between browser panel tabs
+   ✔  Given `fixtures/cad/blank-drawing.odd` is active in the MCAD Software
+   ✔  And its Model browser is docked on the left
+   ✔  And an additional log panel is available in the browser's plus menu
+   ✔  When the user adds the log panel from the plus menu
+   ✔  Then the log panel becomes active in the same dock
+   ✔  And the Model browser remains available as a tab
+   ✔  When the user selects the Model browser tab
+   ✔  Then the drawing resources and sheet tree are displayed
+   ✔  When the user selects the log panel tab
+   ✔  Then the log area is displayed in the dock
+   ✔  When the user closes the log panel tab
+   ✔  Then the Model browser is displayed
+   ✔  And the drawing remains visible
+]]></system-out></testcase></testsuite></testsuites>

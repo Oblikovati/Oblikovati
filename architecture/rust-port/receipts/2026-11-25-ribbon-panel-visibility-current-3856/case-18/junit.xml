@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon panel visibility: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" package="testsuite/Feature: Ribbon panel visibility: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" tests="1" errors="0" failures="1" hostname="localhost" timestamp="2026-11-25T03:10:34.977193523Z" time="11.485652887"><testcase name="Scenario: Toggle a ribbon panel with Space from keyboard navigation: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:251:3" time="11.485652887"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Toggle a ribbon panel with Space from keyboard navigation
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is open and active
+   ✔  And the full 3D Model ribbon is visible
+   ✘  And the Primitives panel is hidden
+      Step failed:
+      Defined: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:254:5
+      Step doesn't match any function
+]]></system-out></testcase></testsuite></testsuites>

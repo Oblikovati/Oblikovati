@@ -1,0 +1,14 @@
+{
+  "revision": "028492efd6fad2a4fb740048e4810c7c6e29234a",
+  "files": {
+    "features/application/docking-system/FIXTURES.md": "0f809bba03ca954b1e368e4e49e19dd1e0d5f1b80c9f01d32ce8b286dbd8b2b2",
+    "features/application/docking-system/FUNCTIONAL.md": "c0d837930944c7b61411ce194e9395046a27d15021977c435b1b29a373b94e50",
+    "features/application/docking-system/VISUAL.md": "ab88095125af0b4dd5b5859fc743f1606837210ea54a787e9a45b3dc7aae875c",
+    "features/application/docking-system/docking-system.feature": "11567ca6f598b1b812d635e5bb7fed2eb75abd1e2b5a087c91ef962e78e679e7",
+    "features/application/docking-system/right-dock-tabs.svg": "f07847f1b581581045032a3cf5d17d8d67de6f3a3ac82c4f035b5b692982ca55",
+    "fixtures/cad/docking-visible-solid-current.opd": "54a6f807b8084cc19061bce4079aaee3d4cefc03eaad2ac33123544997999f8a"
+  },
+  "provenance": "local unversioned source; not an upstream commit",
+  "feature_scope": "application/docking-system",
+  "excluded": "reference images, BLOCKERS.md and non-native CAD fixtures"
+}

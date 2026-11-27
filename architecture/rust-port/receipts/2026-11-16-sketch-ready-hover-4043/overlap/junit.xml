@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Interact with sketch entities in the viewport: tmp/oblikovati-bdd-v8Fxoy/checkout/features/sketch/viewport-entity-interaction/viewport-entity-interaction.feature" package="testsuite/Feature: Interact with sketch entities in the viewport: tmp/oblikovati-bdd-v8Fxoy/checkout/features/sketch/viewport-entity-interaction/viewport-entity-interaction.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-16T17:35:02.72520562Z" time="11.251572839"><testcase name="Scenario: Resolve a pick where sketch entities overlap: tmp/oblikovati-bdd-v8Fxoy/checkout/features/sketch/viewport-entity-interaction/viewport-entity-interaction.feature:54:3" time="11.251572839"><system-out><![CDATA[  Scenario: Resolve a pick where sketch entities overlap
+   ✔> Given the MCAD Software is displaying an editable sketch
+   ✔> And the viewport pointer is idle
+   ✔  Given an editable sketch contains a curve and a selectable point at the same screen location
+   ✔  When the user clicks the overlapping location
+   ✔  Then the MCAD Software identifies the picked entity type
+   ✔  And any available pick-choice control identifies the alternatives
+]]></system-out></testcase></testsuite></testsuites>

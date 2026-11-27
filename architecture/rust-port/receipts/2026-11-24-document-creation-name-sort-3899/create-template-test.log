@@ -1,0 +1,4 @@
+running 1 test
+test native::gui_loop_tests::application_bdd::document_creation::gallery_views::named_catalog::create_from_named_template_retains_the_saved_extrusion ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1643 filtered out; finished in 7.73s

@@ -1,0 +1,12 @@
+{
+  "kind": "unsealed full-feature diagnostic",
+  "application_base_commit": "539003a18",
+  "feature_sha256": "3a0703dc9df2a77830b6b90402210ba9dffd10a0e370763015a46904744fbfce",
+  "scenarios_total": 11,
+  "scenarios_passed": 10,
+  "scenarios_failed": 1,
+  "steps_passed": 99,
+  "steps_failed": 1,
+  "failure": "The new dock menu scenario names a deferred Inventor fixture and its Given step is undefined.",
+  "limitations": "Live scenario source is unversioned; the test executable included an unrelated unfinished native dock-menu test. This run is not a verified feature receipt."
+}

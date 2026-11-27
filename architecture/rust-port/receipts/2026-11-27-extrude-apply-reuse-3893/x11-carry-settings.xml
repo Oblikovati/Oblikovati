@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Properties panel for creating and editing a modeled feature: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/feature-properties/feature-properties.feature" package="testsuite/Feature: Properties panel for creating and editing a modeled feature: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/feature-properties/feature-properties.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-27T05:47:17.167245069Z" time="8.013031116"><testcase name="Rule: Dockable Properties commands reuse the Properties shell: Scenario: Apply and start another feature: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/feature-properties/feature-properties.feature:112:5" time="8.013031116"><system-out><![CDATA[  Scenario: Apply and start another feature
+   ✔  Given a feature Properties panel has a valid preview in a disposable part
+   ✔  When the user clicks Apply and create new in the footer
+   ✔  Then the current feature is committed once and appears in the model browser
+   ✔  And Properties stays open for another feature with the carried configuration and fresh input requirements
+   ✔  When the user cancels the second feature
+   ✔  Then the first feature remains committed and no second feature is added
+]]></system-out></testcase></testsuite></testsuites>

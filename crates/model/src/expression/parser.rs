@@ -1,32 +1,54 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 use super::{
-    Expression, ExpressionError,
+    Expression, ExpressionError, ReferenceSpan,
     node::{BinaryOperator, Node},
     token::{Token, TokenKind, tokenize},
 };
-use crate::{quantity::Dimension, units::UnitsOfMeasure};
+use crate::{quantity::Dimension, quantity::Quantity, units::UnitsOfMeasure};
 use std::collections::BTreeMap;
 
 // Limit recursive syntax, not a left-associative formula's length. Evaluation
 // and destruction use flat storage regardless of the number of operations.
 const MAX_NESTING: usize = 128;
+type ParsedSource = (Expression, Vec<Option<(usize, usize)>>);
 
 struct Parser<'a> {
+    fold_constants: bool,
+    literal_spans: Vec<Option<(usize, usize)>>,
     tokens: Vec<Token<'a>>,
     position: usize,
     nodes: Vec<Node>,
     references: Vec<String>,
+    spans: Vec<ReferenceSpan>,
     reference_indices: BTreeMap<String, usize>,
     units: &'a UnitsOfMeasure,
 }
 
 pub(super) fn compile(source: &str, units: &UnitsOfMeasure) -> Result<Expression, ExpressionError> {
+    Ok(compile_with_spans(source, units, true)?.0)
+}
+
+pub(super) fn compile_unfolded(
+    source: &str,
+    units: &UnitsOfMeasure,
+) -> Result<ParsedSource, ExpressionError> {
+    compile_with_spans(source, units, false)
+}
+
+fn compile_with_spans(
+    source: &str,
+    units: &UnitsOfMeasure,
+    fold_constants: bool,
+) -> Result<ParsedSource, ExpressionError> {
     let mut parser = Parser {
+        fold_constants,
+        literal_spans: Vec::new(),
         tokens: tokenize(source)?,
         position: 0,
         nodes: Vec::new(),
         references: Vec::new(),
+        spans: Vec::new(),
         reference_indices: BTreeMap::new(),
         units,
     };
@@ -34,12 +56,16 @@ pub(super) fn compile(source: &str, units: &UnitsOfMeasure) -> Result<Expression
     if parser.peek().kind != TokenKind::End {
         return Err(parser.peek().expected("the end of the expression"));
     }
-    Ok(Expression {
-        source: source.into(),
-        nodes: parser.nodes,
-        references: parser.references,
-        root,
-    })
+    Ok((
+        Expression {
+            source: source.into(),
+            nodes: parser.nodes,
+            references: parser.references,
+            spans: parser.spans,
+            root,
+        },
+        parser.literal_spans,
+    ))
 }
 
 impl Parser<'_> {
@@ -57,7 +83,13 @@ impl Parser<'_> {
 
     fn append(&mut self, node: Node) -> usize {
         let index = self.nodes.len();
-        self.nodes.push(node.fold(&self.nodes));
+        let node = if self.fold_constants {
+            node.fold(&self.nodes)
+        } else {
+            node
+        };
+        self.nodes.push(node);
+        self.literal_spans.push(None);
         index
     }
 
@@ -98,28 +130,61 @@ impl Parser<'_> {
     fn number(&mut self) -> Result<usize, ExpressionError> {
         let token = self.tokens[self.position];
         self.advance();
-        let next = self.tokens[self.position];
-        let literal = format!("{} {}", token.text, next.text);
-        if next.kind == TokenKind::Name
-            && let Ok(quantity) = self.units.parse(&literal, Dimension::Unitless)
-        {
-            self.advance();
-            return Ok(self.append(Node::Literal(quantity)));
+        let quantity = match self.named_literal(token.text) {
+            Some(quantity) => quantity,
+            None => self
+                .units
+                .parse(token.text, Dimension::Unitless)
+                .map_err(|_| token.expected("a finite decimal literal"))?,
+        };
+        let last = self.tokens[self.position - 1];
+        let end = last.position + last.text.len();
+        let index = self.append(Node::Literal(quantity));
+        self.literal_spans[index] = Some((token.position, end));
+        Ok(index)
+    }
+
+    fn named_literal(&mut self, number: &str) -> Option<Quantity> {
+        let unit = self.tokens[self.position];
+        if unit.kind != TokenKind::Name {
+            return None;
         }
+        let (suffix, consumed) = self.unit_suffix(unit);
         let quantity = self
             .units
-            .parse(token.text, Dimension::Unitless)
-            .map_err(|_| token.expected("a finite decimal literal"))?;
-        Ok(self.append(Node::Literal(quantity)))
+            .parse(&format!("{number} {suffix}"), Dimension::Unitless)
+            .ok()?;
+        self.position += consumed;
+        Some(quantity)
+    }
+
+    fn unit_suffix(&self, unit: Token<'_>) -> (String, usize) {
+        let following = self.tokens.get(self.position + 1..self.position + 3);
+        if let Some([caret, exponent]) = following
+            && caret.kind == TokenKind::Caret
+            && exponent.kind == TokenKind::Number
+            && caret.position == unit.position + unit.text.len()
+            && exponent.position == caret.position + 1
+        {
+            return (format!("{}^{}", unit.text, exponent.text), 3);
+        }
+        (unit.text.into(), 1)
     }
 
     fn identifier(&mut self, nesting: usize) -> Result<usize, ExpressionError> {
+        let start = self.peek().position;
         let name = self.advance().text.to_owned();
+        let end = start + name.len();
         if self.peek().kind == TokenKind::Open {
             let arguments = self.arguments(nesting + 1)?;
             return Ok(self.append(Node::Call(name, arguments)));
         }
         let reference = self.reference_index(name);
+        self.spans.push(ReferenceSpan {
+            start,
+            end,
+            reference,
+        });
         Ok(self.append(Node::Reference(reference)))
     }
 

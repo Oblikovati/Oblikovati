@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Inspect files before opening a document: mnt/vininas-projects/MCAD-Scenarios/features/application/document-opening/document-opening.feature" package="testsuite/Feature: Inspect files before opening a document: mnt/vininas-projects/MCAD-Scenarios/features/application/document-opening/document-opening.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-26T00:45:34.278341252Z" time="21.74776737"><testcase name="Scenario: Switch between details and thumbnail file views: mnt/vininas-projects/MCAD-Scenarios/features/application/document-opening/document-opening.feature:87:3" time="21.74776737"><system-out><![CDATA[  Scenario: Switch between details and thumbnail file views
+   ✔  Given the Open dialog is open in the MCAD Software
+   ✔  And a saved part with a preview is selected in the detailed file list
+   ✔  And `fixtures/cad/extrusion/extrusion-rect-8mm.opd` is selected in the detailed file list
+   ✔  When the user chooses the thumbnail view control
+   ✔  Then files are displayed as thumbnail tiles
+   ✔  And the selected part remains selected with its file name and preview displayed
+   ✔  When the user chooses the details view control
+   ✔  Then files are displayed in rows with Name, Date modified, Type and Size columns
+   ✔  And the selected part remains selected with its file name and preview displayed
+]]></system-out></testcase></testsuite></testsuites>

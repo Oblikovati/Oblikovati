@@ -1,0 +1,14 @@
+ok  	oblikovati.org/api	0.002s	coverage: 85.7% of statements
+ok  	oblikovati.org/api/client	0.053s	coverage: 88.3% of statements
+ok  	oblikovati.org/api/contract	0.007s	coverage: [no statements]
+ok  	oblikovati.org/api/examples/c_addin	0.007s	coverage: 95.7% of statements
+ok  	oblikovati.org/api/examples/ellipse	0.007s	coverage: 100.0% of statements
+ok  	oblikovati.org/api/examples/operations	0.007s	coverage: 100.0% of statements
+ok  	oblikovati.org/api/examples/version	0.007s	coverage: 85.7% of statements
+ok  	oblikovati.org/api/scripts/apifixtures	0.029s	coverage: 87.5% of statements
+ok  	oblikovati.org/api/scripts/apischema	0.329s	coverage: 97.0% of statements
+ok  	oblikovati.org/api/scripts/nextver	0.008s	coverage: 82.9% of statements
+ok  	oblikovati.org/api/types	0.011s	coverage: 80.3% of statements
+ok  	oblikovati.org/api/wire	0.007s	coverage: [no statements]
+ok  	oblikovati.org/api/wire/featureargs	0.009s	coverage: 100.0% of statements
+total:								(statements)				86.5%

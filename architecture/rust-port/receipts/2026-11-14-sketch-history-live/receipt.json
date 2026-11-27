@@ -1,0 +1,24 @@
+{
+  "kind": "foreground-keyboard-mouse-acceptance",
+  "application_commit": "c307563a2f64bc5ae2442e97918c1c7884af8c5a",
+  "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+  "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+  "bridge_binary_sha256": "2942bdba7a756d20ea17f24fb18e9eb41f495e20b1d259caf9d28d77e237b20b",
+  "environment": "Linux, Xvfb, Vulkan with Lavapipe",
+  "result": "passed: undo Finish, undo creation, redo creation, redo Finish",
+  "limitations": [
+    "Fixed screen coordinates and a pre-existing MCPBridge binary; the binary source provenance was not verified."
+  ],
+  "artifacts": {
+    "driver.py.gz": "b38919b4bff63ed22c41e458c2b433abb08a9f7a2203b2a637571829b24a789b",
+    "redo-create.json": "d34293b87c1d74d0ca11b6557262a705008a9b3726e491a81644981aad2382d6",
+    "redo-create.png": "0eac3d051900c256a769af7fd849f7d18351bd2b9d38d6c9890c751589d50dae",
+    "redo-finish.json": "d7ce06174acf311a8b9732526fde6e479ec8802bbcc89e7fcc03e1eab70aafff",
+    "redo-finish.png": "b798e99786afb95ead3284b85c0592936720591e4377ce0bc6e4db658aebedd0",
+    "run.log.gz": "023ec54f32c138fbdba8bb2c9d356838c04d1f73afb4dc6f52ad032460f40423",
+    "undo-create.json": "04791d78d99b6111f585deabcc5ae903d983e24b4d28dc4a0d4ee3e7c739918f",
+    "undo-create.png": "7c8de069bcdd8ad0772bdbea78297cfaf830088a211d222e8f4752d5d7c79223",
+    "undo-finish.json": "d34293b87c1d74d0ca11b6557262a705008a9b3726e491a81644981aad2382d6",
+    "undo-finish.png": "0766f9067a9dd2d18138df0c1e82211c14322e355a6af6284667bc758d0eab35"
+  }
+}

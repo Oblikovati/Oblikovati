@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Close the application: tmp/oblikovati-ribbon-relocated.RcZVDl/current-application-closing-source/features/application/application-closing/application-closing.feature" package="testsuite/Feature: Close the application: tmp/oblikovati-ribbon-relocated.RcZVDl/current-application-closing-source/features/application/application-closing/application-closing.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T21:34:35.922207735Z" time="27.112371405"><testcase name="Scenario: Cancel closing the application when an assembly has unsaved changes: tmp/oblikovati-ribbon-relocated.RcZVDl/current-application-closing-source/features/application/application-closing/application-closing.feature:17:3" time="27.112371405"><system-out><![CDATA[  Scenario: Cancel closing the application when an assembly has unsaved changes
+   ✔  Given a writable copy of `fixtures/cad/blank-metric-assembly.oad` is open in the MCAD Software
+   ✔  And the user inserts `fixtures/cad/extrusion/extrusion-rect-8mm.opd` as an occurrence without saving the assembly
+   ✔  When the user presses Alt+F4
+   ✔  Then a save-changes prompt identifies the assembly document
+   ✔  And the prompt offers Yes, No and Cancel
+   ✔  And the prompt shows the "Always show this message" setting
+   ✔  When the user presses Escape
+   ✔  Then the save-changes prompt closes
+   ✔  And the assembly document remains open
+   ✔  And the MCAD Software remains open
+]]></system-out></testcase></testsuite></testsuites>

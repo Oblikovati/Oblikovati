@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon appearance: target/native-scratch.HSqCy5/current-ribbon-appearance-source/features/application/ribbon-appearance/ribbon-appearance.feature" package="testsuite/Feature: Ribbon appearance: target/native-scratch.HSqCy5/current-ribbon-appearance-source/features/application/ribbon-appearance/ribbon-appearance.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T23:35:47.918614866Z" time="34.778336903"><testcase name="Scenario: Keep Text Off appearance when switching ribbon tabs: target/native-scratch.HSqCy5/current-ribbon-appearance-source/features/application/ribbon-appearance/ribbon-appearance.feature:160:3" time="34.778336903"><system-out><![CDATA[  Scenario: Keep Text Off appearance when switching ribbon tabs
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active with the full Tools ribbon visible in the MCAD Software
+   ✔  And the ribbon appearance is Normal
+   ✔  When the user right-clicks the Tools Options panel title
+   ✔  And the user opens Ribbon Appearance
+   ✔  And the user selects Text Off
+   ✔  Then the Tools command icons are visible without their command labels
+   ✔  And the Tools panel titles remain visible
+   ✔  When the user selects the 3D Model ribbon tab
+   ✔  Then the 3D Model command icons are visible without their command labels
+   ✔  And the 3D Model panel titles remain visible
+   ✔  When the user right-clicks the Modify panel title
+   ✔  And the user opens Ribbon Appearance
+   ✔  Then Text Off is marked as selected
+   ✔  When the user selects Normal
+   ✔  Then command labels are visible on the 3D Model ribbon
+   ✔  When the user selects the Tools ribbon tab
+   ✔  Then the full Tools ribbon and its command labels are visible
+]]></system-out></testcase></testsuite></testsuites>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T11:39:32.889240939Z" time="48.842924296"><testcase name="Scenario: Create a feature while editing a single model-state member: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature:1473:3" time="48.842924296"><system-out><![CDATA[  Scenario: Create a feature while editing a single model-state member
+   ✔  Given The MCAD Software has an empty part with Primary, Capture State, and Copy State model states
+   ✔  And Copy State is active and the edit scope is a single member
+   ✔  When the user creates a rectangular sketch and extrudes it as a solid
+   ✔  Then the extrusion is computed in Copy State
+   ✔  And its model-state indicator lists the extrusion as suppressed in Primary and Capture State
+   ✔  When the user shows the solid using All Visible on the active view representation
+   ✔  And activates Primary
+   ✔  Then the solid is absent and the extrusion row is dimmed and struck through
+   ✔  When the user reactivates Copy State
+   ✔  Then the solid is visible and the extrusion row is no longer struck through
+]]></system-out></testcase></testsuite></testsuites>

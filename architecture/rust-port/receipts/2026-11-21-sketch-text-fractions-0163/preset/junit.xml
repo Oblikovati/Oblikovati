@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Text: tmp/oblikovati-bdd-SXICh5/checkout/features/sketch/text/scenario.feature" package="testsuite/Feature: Text: tmp/oblikovati-bdd-SXICh5/checkout/features/sketch/text/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-21T00:44:39.998509248Z" time="89.830439121"><testcase name="Scenario: text-30 Save and apply a named content preset: tmp/oblikovati-bdd-SXICh5/checkout/features/sketch/text/scenario.feature:294:3" time="89.830439121"><system-out><![CDATA[  Scenario: text-30 Save and apply a named content preset
+   ✔  Given the existing stacked fraction is open in Format Text
+   ✔  When the user creates and confirm inline preset name f
+   ✔  And the user cancels the unchanged existing-text editor
+   ✔  And the user starts a fresh Text placement
+   ✔  Then the fresh editor initially shows No Preset and empty content
+   ✔  When the user selects f from the preset list
+   ✔  Then the fraction content and blue formatting appear in the fresh placement
+   ✔  And the controls show Arial, 6.10 mm, and width 50
+   ✔  When the user inspects and dismiss preset settings without changing them
+   ✔  And the user accepts the dialog and press Escape
+   ✔  Then a second fraction remains with 37 dimensions needed
+]]></system-out></testcase></testsuite></testsuites>

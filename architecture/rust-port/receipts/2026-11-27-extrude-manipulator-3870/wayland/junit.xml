@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Extrude a profile in a part document: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature" package="testsuite/Feature: Extrude a profile in a part document: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-27T03:11:11.056394017Z" time="8.647979569"><testcase name="Scenario: Keep the Distance A input synchronized with its viewport manipulator: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature:447:3" time="8.647979569"><system-out><![CDATA[  Scenario: Keep the Distance A input synchronized with its viewport manipulator
+   ✔> Given the MCAD Software is displaying a part in the solid modeling workspace
+   ✔> And the viewport pointer is idle
+   ✔  Given `fixtures/cad/revolve/revolve-profile.opd` is open in Extrude with a distance preview
+   ✔  When the user drags the distance manipulator along the extrusion direction
+   ✔  Then Distance A changes with the viewport dimension and the preview depth
+   ✔  When the user enters 8 mm in Distance A
+   ✔  Then the viewport dimension reads 8 mm and the preview returns to that depth
+]]></system-out></testcase></testsuite></testsuites>

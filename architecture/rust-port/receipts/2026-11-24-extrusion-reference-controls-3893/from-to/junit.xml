@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Extrude a profile in a part document: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/solid-model/extrusion/extrusion.feature" package="testsuite/Feature: Extrude a profile in a part document: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/solid-model/extrusion/extrusion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T17:28:45.371851312Z" time="34.292999117"><testcase name="Scenario: extrusion-10 Reference selectors require input: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/solid-model/extrusion/extrusion.feature:100:3" time="34.292999117"><system-out><![CDATA[  Scenario: extrusion-10 Reference selectors require input
+   ✔> Given the MCAD Software is displaying a part in the solid modeling workspace
+   ✔> And the viewport pointer is idle
+   ✔  Given a sketch-plane start and numeric distance
+   ✔  When the From reference control is activated
+   ✔  Then missing From and To references show Select Face
+   ✔  And OK is disabled without a shaded solid preview
+   ✔  When the reference control is restored
+   ✔  Then Sketch Plane and the numeric distance preview return
+]]></system-out></testcase></testsuite></testsuites>

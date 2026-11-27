@@ -1,0 +1,21 @@
+Draft selection baseline
+  left: Measure
+ right: Annotations
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 836 filtered out; finished in 0.00s
+
+Focused GUI Ribbon Customization tests
+test result: ok. 58 passed; 0 failed; 0 ignored; 0 measured; 779 filtered out; finished in 0.07s
+
+Native staged range removal baseline on wayland
+assertion `left == right` failed: target highlight for "3DAnnotations"
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 1718 filtered out; finished in 6.78s
+
+Native removal and selection regressions on wayland
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 1716 filtered out; finished in 26.38s
+
+Native staged range removal baseline on x11
+assertion `left == right` failed: target highlight for "3DAnnotations"
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 1718 filtered out; finished in 7.05s
+
+Native removal and selection regressions on x11
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 1716 filtered out; finished in 26.55s

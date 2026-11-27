@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Loft: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/loft/loft.feature" package="testsuite/Feature: Loft: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/loft/loft.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-27T01:01:04.381081341Z" time="40.603809741"><testcase name="Scenario: loft-09 Change and retain a section condition weight: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/loft/loft.feature:87:3" time="40.603809741"><system-out><![CDATA[  Scenario: loft-09 Change and retain a section condition weight
+   ✔  Given a disposable copy of the native fixture "fixtures/cad/loft/parallel-circles.opd" is open
+   ✔  And the user creates LoftSrf1 with surface output by selecting both circular sketches as sections
+   ✔  When LoftSrf1 is opened for editing and the alternate first-section condition is selected
+   ✔  Then its weight changes from zero to one
+   ✔  When the first-section weight is replaced with 2 and OK is clicked
+   ✔  And LoftSrf1 is reopened on the Conditions tab
+   ✔  Then the alternate condition and weight 2.000 ul are shown for Sketch1
+]]></system-out></testcase></testsuite></testsuites>

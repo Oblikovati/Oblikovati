@@ -1,0 +1,22 @@
+
+running 1 test
+Feature: Ribbon display modes
+  Scenario: Inspect ribbon appearance choices without changing the display mode
+   ✔  Given a part has an active editable sketch in the MCAD Software
+   ✔  And ribbon appearance is set to Normal
+   ✔  When the user opens Ribbon Appearance from the Create panel title context menu
+   ✔  Then Normal is checked
+   ✔  And Text Off, Small, Compact, Large and Reset Ribbon are listed
+   ✔  When the user presses Escape twice
+   ✔  Then the Ribbon Appearance submenu remains open
+   ✔  When the user clicks in the viewport outside the menu
+   ✔  Then the panel context menu closes
+   ✔  And the ribbon remains in Normal appearance
+   ✔  And the sketch remains active and unchanged
+[Summary]
+1 feature
+1 scenario (1 passed)
+11 steps (11 passed)
+test native::gui_loop_tests::application_bdd::application_scenarios_use_the_native_window ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1617 filtered out; finished in 33.50s

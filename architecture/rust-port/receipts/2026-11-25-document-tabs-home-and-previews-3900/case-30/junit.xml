@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Open document tabs: target/native-scratch.HSqCy5/current-document-tabs-source/features/application/document-tabs/document-tabs.feature" package="testsuite/Feature: Open document tabs: target/native-scratch.HSqCy5/current-document-tabs-source/features/application/document-tabs/document-tabs.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T00:46:01.302169907Z" time="26.285389944"><testcase name="Scenario: Show the location of a saved document in its tab preview: target/native-scratch.HSqCy5/current-document-tabs-source/features/application/document-tabs/document-tabs.feature:317:3" time="26.285389944"><system-out><![CDATA[  Scenario: Show the location of a saved document in its tab preview
+   ✔  Given `fixtures/cad/quick-access-toolbar/PartOne.opd` and `fixtures/cad/quick-access-toolbar/PartTwo.opd` are open in that order
+   ✔  And the first part is active
+   ✔  And the second part has been saved to a file
+   ✔  When the user hovers over the second part's document tab
+   ✔  Then a thumbnail of the second part appears above the tab
+   ✔  And the preview label displays the saved file's full path and part name on separate lines
+   ✔  And the first part remains active
+]]></system-out></testcase></testsuite></testsuites>

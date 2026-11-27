@@ -1,0 +1,188 @@
+// SPDX-License-Identifier: GPL-2.0-only
+use super::*;
+use oblikovati_model::document_sketch::SketchBlockInstance;
+
+fn instance(id: u64, definition: &str) -> SketchBlockInstance {
+    SketchBlockInstance::new(SketchEntityId(id), definition, [1., -2.], 0.5, 2.).unwrap()
+}
+
+#[test]
+fn placement_coordinates_round_trip_for_rotation_and_signed_scale() {
+    for scale in [2., -2.] {
+        let block =
+            SketchBlockInstance::new(SketchEntityId(20), "Rib", [3., -4.], 0.7, scale).unwrap();
+        let point = [2., -1.];
+        let restored = block
+            .to_definition(block.to_sketch(point).unwrap())
+            .unwrap();
+        for axis in 0..2 {
+            assert!((restored[axis] - point[axis]).abs() < 1e-12);
+        }
+        assert!(block.to_sketch([f64::MAX, f64::MAX]).is_err());
+        assert!(block.to_definition([f64::INFINITY, 0.]).is_err());
+    }
+}
+#[test]
+fn instances_round_trip_with_global_identities_and_block_deletion_is_refused() {
+    let mut sketches = document();
+    sketches.define_empty_block("Rib").unwrap();
+    let before = sketches.clone();
+    sketches
+        .insert_block_instance(DocumentSketchId(1), instance(20, "Rib"))
+        .unwrap();
+    assert!(!before.same_recipe(&sketches));
+    assert!(sketches.entity_ids().contains(&20));
+    let error = sketches
+        .delete_block_definition("Rib")
+        .unwrap_err()
+        .to_string();
+    assert!(error.contains("Sketch1"), "{error}");
+    let recipe = sketches.recipe();
+    assert_eq!(recipe.version, 11);
+    let restored = DocumentSketches::from_recipe(&recipe).unwrap();
+    assert!(restored.same_recipe(&sketches));
+    let guid: DocumentGuid = "00112233-4455-6677-8899-aabbccddeeff".parse().unwrap();
+    let names =
+        oblikovati_model::document_sketch::DocumentSketchReferenceIndex::new(&restored, guid)
+            .unwrap();
+    let key = names
+        .entity_key(DocumentSketchId(1), SketchEntityId(20))
+        .unwrap();
+    assert_eq!(
+        names.resolve(&key).unwrap().entity,
+        Some(SketchEntityId(20))
+    );
+    let placed = &restored.get(DocumentSketchId(1)).unwrap().block_instances()[0];
+    assert_eq!(placed.id(), SketchEntityId(20));
+    assert_eq!(placed.ordinal(), Some(1));
+    sketches.remove(DocumentSketchId(1)).unwrap();
+    sketches.delete_block_definition("Rib").unwrap();
+}
+
+#[test]
+fn legacy_block_instances_receive_stable_numbers_during_migration() {
+    let mut sketches = document();
+    sketches.define_empty_block("Rib").unwrap();
+    for id in [20, 21] {
+        sketches
+            .insert_block_instance(DocumentSketchId(1), instance(id, "Rib"))
+            .unwrap();
+    }
+    let mut value = serde_json::to_value(sketches.recipe()).unwrap();
+    value["version"] = 10.into();
+    for block in value["sketches"][0]["block_instances"]
+        .as_array_mut()
+        .unwrap()
+    {
+        block.as_object_mut().unwrap().remove("ordinal");
+    }
+    let legacy = serde_json::from_value::<DocumentSketchRecipe>(value).unwrap();
+    let restored = DocumentSketches::from_recipe(&legacy).unwrap();
+    let ordinals: Vec<_> = restored
+        .get(DocumentSketchId(1))
+        .unwrap()
+        .block_instances()
+        .iter()
+        .map(|row| row.ordinal())
+        .collect();
+    assert_eq!(ordinals, [Some(1), Some(2)]);
+    assert_eq!(restored.recipe().version, 11);
+}
+
+#[test]
+fn current_recipes_refuse_missing_or_duplicate_instance_numbers() {
+    let mut sketches = document();
+    sketches.define_empty_block("Rib").unwrap();
+    for id in [20, 21] {
+        sketches
+            .insert_block_instance(DocumentSketchId(1), instance(id, "Rib"))
+            .unwrap();
+    }
+    let original = serde_json::to_value(sketches.recipe()).unwrap();
+    let mut missing = original.clone();
+    missing["sketches"][0]["block_instances"][0]
+        .as_object_mut()
+        .unwrap()
+        .remove("ordinal");
+    let missing = serde_json::from_value::<DocumentSketchRecipe>(missing).unwrap();
+    assert!(DocumentSketches::from_recipe(&missing).is_err());
+    let mut duplicate = original;
+    duplicate["sketches"][0]["block_instances"][1]["ordinal"] = 1.into();
+    let duplicate = serde_json::from_value::<DocumentSketchRecipe>(duplicate).unwrap();
+    assert!(DocumentSketches::from_recipe(&duplicate).is_err());
+}
+#[test]
+fn invalid_or_colliding_instances_never_change_the_document() {
+    let mut sketches = document();
+    sketches.define_empty_block("Rib").unwrap();
+    let before = sketches.clone();
+    for (sketch, item) in [
+        (DocumentSketchId(1), instance(1, "Rib")),
+        (DocumentSketchId(1), instance(20, "Missing")),
+        (DocumentSketchId(99), instance(20, "Rib")),
+    ] {
+        assert!(sketches.insert_block_instance(sketch, item).is_err());
+        assert!(before.same_recipe(&sketches));
+    }
+    for (id, position, rotation, scale) in [
+        (0, [0., 0.], 0., 1.),
+        (20, [f64::NAN, 0.], 0., 1.),
+        (20, [0., 0.], f64::INFINITY, 1.),
+        (20, [0., 0.], 0., 0.),
+    ] {
+        assert!(
+            SketchBlockInstance::new(SketchEntityId(id), "Rib", position, rotation, scale).is_err()
+        );
+    }
+}
+#[test]
+fn old_or_malformed_instance_recipes_are_refused() {
+    let mut sketches = document();
+    sketches.define_empty_block("Rib").unwrap();
+    sketches
+        .insert_block_instance(DocumentSketchId(1), instance(20, "Rib"))
+        .unwrap();
+    let mut recipe = sketches.recipe();
+    recipe.version = 9;
+    assert!(DocumentSketches::from_recipe(&recipe).is_err());
+    recipe.version = 10;
+    recipe.sketches[1].block_instances.push(instance(20, "Rib"));
+    assert!(DocumentSketches::from_recipe(&recipe).is_err());
+}
+
+#[test]
+fn replacing_geometry_cannot_reuse_an_instance_identity() {
+    let mut sketches = document();
+    sketches.define_empty_block("Rib").unwrap();
+    sketches
+        .insert_block_instance(DocumentSketchId(1), instance(20, "Rib"))
+        .unwrap();
+    let before = sketches.clone();
+    let mut geometry = sketches
+        .get(DocumentSketchId(1))
+        .unwrap()
+        .geometry()
+        .clone();
+    geometry.add_point(SketchEntityId(20), [0., 0.]).unwrap();
+    assert!(
+        sketches
+            .replace_geometry(DocumentSketchId(1), geometry)
+            .is_err()
+    );
+    assert!(before.same_recipe(&sketches));
+}
+#[test]
+fn instance_placement_preserves_signed_zero_in_recipe_comparison() {
+    let mut first = document();
+    first.define_empty_block("Rib").unwrap();
+    let mut second = first.clone();
+    for (sketches, x) in [(&mut first, 0.0), (&mut second, -0.0)] {
+        let placed = SketchBlockInstance::new(SketchEntityId(20), "Rib", [x, 0.], 0., 1.).unwrap();
+        sketches
+            .insert_block_instance(DocumentSketchId(1), placed)
+            .unwrap();
+    }
+    assert!(!first.same_recipe(&second));
+    let restored = DocumentSketches::from_recipe(&second.recipe()).unwrap();
+    assert!(second.same_recipe(&restored));
+}

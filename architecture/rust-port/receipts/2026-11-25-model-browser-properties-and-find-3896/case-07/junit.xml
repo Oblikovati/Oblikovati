@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:35:53.095143639Z" time="69.298364855"><testcase name="Scenario: Toggle extended feature names in the browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature:85:3" time="69.298364855"><system-out><![CDATA[  Scenario: Toggle extended feature names in the browser
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is active in the MCAD Software
+   ✔  And an active part in the MCAD Software contains a 20 mm new-solid extrusion
+   ✔  And Show Extended Names is disabled in the model browser display preferences
+   ✔  When the user enables Show Extended Names from the browser display preferences
+   ✔  Then the extrusion row includes its new-solid operation and 20 mm extent after its name
+   ✔  And the block remains visible in the same apparent view
+   ✔  When the user reopens the browser display preferences
+   ✔  Then Show Extended Names is checked
+   ✔  When the user chooses Show Extended Names again
+   ✔  Then the extrusion row returns to its shorter name
+   ✔  And the block remains visible in the same apparent view
+]]></system-out></testcase></testsuite></testsuites>

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon panel visibility: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" package="testsuite/Feature: Ribbon panel visibility: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" tests="1" errors="0" failures="1" hostname="localhost" timestamp="2026-11-24T09:36:58.784541296Z" time="18.413795186"><testcase name="Scenario: Toggle the direct panel list without changing a checkbox: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:225:3" time="18.413795186"><failure type="Step Panicked" message="Step panicked. Captured output: expected the direct panel list closed"/><system-out><![CDATA[  Scenario: Toggle the direct panel list without changing a checkbox
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the 3D Model ribbon is docked on the left with the Modify panel visible
+   ✔  When the user clicks the direct panel selector arrow
+   ✔  Then the panel list opens with Modify checked
+   ✔  When the user clicks the direct panel selector arrow again
+   ✘  Then the panel list closes
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:231:5
+      Matched: crates/head/src/../tests/application/ribbon-panel-visibility/panel_selector.rs:128:1
+      Step panicked. Captured output: expected the direct panel list closed
+      ApplicationWorld {
+          text: "W\nP\nZ\nv\nO\nv\nFRONT\nModel\nMaterialBrow\u{85}\nAppearanceBr\u{85}\nMenu\nSearch\nPart1<Primary>\nRepresentations\nModelState\n<Primary>\n1\nView\n<Primary>\nOrigin\nYZPlane\nXZPlane\nXYPlane\nXAxis\nYAxis\nZAxis\nCenterPoint\nParameters\nSketches\nFeatures\nEndofPart\nABS(Black)\nAppearance\nAssigntopart\nClose\nReady\n...\nPart1\nFile\nHome\nPart1<Primary>*\nDocuments\nX\nY\nZ\nv\n3DModel\nSketch\nTools\nManage\nView\nAnnotate\nSketch\nCreate\nModify\nWorkFeatures\nPattern\nSimplification\nSketch\nCreate\nModify\nWorkFeatures\nPattern\nSimplification\nParameters",
+          ..
+      }
+]]></system-out></testcase></testsuite></testsuites>

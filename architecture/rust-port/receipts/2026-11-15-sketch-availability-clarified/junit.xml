@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Inspect ribbon command availability: tmp/obk-sketch-avail-3956-scenarios/features/application/ribbon-command-availability/ribbon-command-availability.feature" package="testsuite/Feature: Inspect ribbon command availability: tmp/obk-sketch-avail-3956-scenarios/features/application/ribbon-command-availability/ribbon-command-availability.feature" tests="3" errors="0" failures="2" hostname="localhost" timestamp="2026-11-15T13:35:52.537363298Z" time="26.03157449"><testcase name="Scenario: Inspect Sketch commands outside sketch edit: tmp/obk-sketch-avail-3956-scenarios/features/application/ribbon-command-availability/ribbon-command-availability.feature:5:3" time="7.565607979"><failure type="Step Panicked" message="Step panicked. Captured output: Line: expected enabled in Create"/><system-out><![CDATA[  Scenario: Inspect Sketch commands outside sketch edit
+   ✔  Given a part containing an existing sketch is active in the MCAD Software
+   ✔  And sketch edit is inactive
+   ✔  When the user selects the Sketch ribbon tab
+   ✘  Then Line, Circle, Arc, Rectangle, Fillet, Text and Point are enabled in Create
+      Step failed:
+      Defined: tmp/obk-sketch-avail-3956-scenarios/features/application/ribbon-command-availability/ribbon-command-availability.feature:9:5
+      Matched: crates/head/src/../tests/application/ribbon-command-availability/steps.rs:30:1
+      Step panicked. Captured output: Line: expected enabled in Create
+      ApplicationWorld {
+          text: "W\nP\nZ\nv\nO\nv\nFront\nReady\nModel\n+\nModel\nMenu\nSearch\nextruded<Primary>\nRepresentations\nModelState\n<Primary>\n1\nSolidBodies\nOrigin\nYZPlane\nXZPlane\nXYPlane\nXAxis\nYAxis\nZAxis\nCenterPoint\nParameters\nSketches\nFeatures\nExtrude1\nProfile\n[DOF0]\nEndofPart\nHome\nextruded<Primary>\nDocuments\nFile\nTools\nNew\nOpen\nSave\nUndo\nRedo\nHome\nProjects\nUpdate\nSelect\nMaterialBrowser\nMaterials\nAppearanceBrowser\nParameters\n...\n3DModel\nSketch\nTools\nManage\nView\nAnnotate\nRibbonDisplay\nv\nv\nRectangle\nCircle\nv\nPoint\nCenterArcv\nEllipse\nCenterRect.\n3-PtRect.\nv\nLine\nProjectGeometry\nCreatev\nv\nConstrain\nv\nModify\nv\nPattern\nv\nInsert\nv\nFormat\nFinishSketch\nExit",
+          ..
+      }
+]]></system-out></testcase><testcase name="Scenario: Revisit Sketch from another ribbon tab: tmp/obk-sketch-avail-3956-scenarios/features/application/ribbon-command-availability/ribbon-command-availability.feature:14:3" time="8.033738776"><failure type="Step Panicked" message="Step panicked. Captured output: Line: expected enabled in Create"/><system-out><![CDATA[  Scenario: Revisit Sketch from another ribbon tab
+   ✔  Given a part containing an existing sketch is active in the MCAD Software
+   ✔  And sketch edit is inactive
+   ✔  And the Sketch ribbon tab is selected
+   ✔  When the user selects the 3D Model ribbon tab
+   ✔  And the user selects the Sketch ribbon tab again
+   ✘  Then Line, Circle, Arc, Rectangle, Fillet, Text and Point remain enabled in Create
+      Step failed:
+      Defined: tmp/obk-sketch-avail-3956-scenarios/features/application/ribbon-command-availability/ribbon-command-availability.feature:20:5
+      Matched: crates/head/src/../tests/application/ribbon-command-availability/steps.rs:31:1
+      Step panicked. Captured output: Line: expected enabled in Create
+      ApplicationWorld {
+          text: "W\nP\nZ\nv\nO\nv\nFront\nReady\nModel\n+\nModel\nMenu\nSearch\nextruded<Primary>\nRepresentations\nModelState\n<Primary>\n1\nSolidBodies\nOrigin\nYZPlane\nXZPlane\nXYPlane\nXAxis\nYAxis\nZAxis\nCenterPoint\nParameters\nSketches\nFeatures\nExtrude1\nProfile\n[DOF0]\nEndofPart\nHome\nextruded<Primary>\nDocuments\nFile\nTools\nNew\nOpen\nSave\nUndo\nRedo\nHome\nProjects\nUpdate\nSelect\nMaterialBrowser\nMaterials\nAppearanceBrowser\nParameters\n...\n3DModel\nSketch\nTools\nManage\nView\nAnnotate\nRibbonDisplay\nv\nv\nRectangle\nCircle\nv\nPoint\nCenterArcv\nEllipse\nCenterRect.\n3-PtRect.\nv\nLine\nProjectGeometry\nCreatev\nv\nConstrain\nv\nModify\nv\nPattern\nv\nInsert\nv\nFormat\nFinishSketch\nExit",
+          ..
+      }
+]]></system-out></testcase><testcase name="Scenario: Inspect Sketch ribbon while editing an existing sketch: tmp/obk-sketch-avail-3956-scenarios/features/application/ribbon-command-availability/ribbon-command-availability.feature:25:3" time="10.432227735"><system-out><![CDATA[  Scenario: Inspect Sketch ribbon while editing an existing sketch
+   ✔  Given a part containing an existing sketch is active in the MCAD Software
+   ✔  And sketch edit is inactive
+   ✔  When the user opens the existing sketch from the model browser
+   ✔  Then the Sketch ribbon tab is selected
+   ✔  And the 2D sketch workspace shows the existing profile
+   ✔  And Create, Modify, Pattern, Constrain, Insert and Format groups are displayed
+   ✔  And Finish is available to exit sketch editing
+   ✔  When the user selects Line
+   ✔  Then the Line command prompt requests a start point
+   ✔  And the Line tooltip indicates line and arc creation
+   ✔  When the user exits sketch editing with Finish
+   ✔  Then the previous part workspace and ribbon context return
+   ✔  And the existing sketch remains in the model browser
+]]></system-out></testcase></testsuite></testsuites>

@@ -1,0 +1,12 @@
+{
+  "base": "d5d99fcaa",
+  "issue": 4073,
+  "scope": "Orientation Options close actions in shared dock",
+  "native_x11": "Cancel, OK and Escape activate Material Browser; Orientation Options reopens in the same dock; 1 passed",
+  "checks": [
+    "cargo fmt --all -- --check",
+    "cargo clippy --locked --offline -p oblikovati-head --all-targets -- -D warnings",
+    "cargo check --locked --offline -p oblikovati-head --target x86_64-pc-windows-gnu"
+  ],
+  "remaining": "Other dockable window close transitions remain under investigation."
+}

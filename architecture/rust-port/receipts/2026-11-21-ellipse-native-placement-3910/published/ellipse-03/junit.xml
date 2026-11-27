@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ellipse: mnt/vininas-projects/MCAD-Scenarios/features/sketch/ellipse/scenario.feature" package="testsuite/Feature: Ellipse: mnt/vininas-projects/MCAD-Scenarios/features/sketch/ellipse/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-21T11:12:53.291137973Z" time="36.966073758"><testcase name="Scenario: ellipse-03 Cancel at the defining stages: mnt/vininas-projects/MCAD-Scenarios/features/sketch/ellipse/scenario.feature:17:3" time="36.966073758"><system-out><![CDATA[  Scenario: ellipse-03 Cancel at the defining stages
+   ✔  Given a copy of `fixtures/cad/ellipse/empty-yz.opd` is open with Sketch1 being edited in RIGHT view
+   ✔  And the fixture center is (20, -20) mm, first-axis point is (27, -17) mm and point on the ellipse is (18.8, -17.2) mm in sketch coordinates
+   ✔  And the user starts Ellipse
+   ✔  Given the MCAD Software is running
+   ✔  And an editable planar sketch
+   ✔  Given Ellipse is active in an editable sketch
+   ✔  When the user select only a center and press Escape
+   ✔  Then Ready returns without an additional ellipse
+   ✔  When the user invoke Ellipse again, select a center and rotated first axis, and press Escape
+   ✔  Then Ready returns with no new ellipse
+]]></system-out></testcase></testsuite></testsuites>

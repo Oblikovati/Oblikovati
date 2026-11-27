@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Inspect files before opening a document: mnt/vininas-projects/MCAD-Scenarios/features/application/document-opening/document-opening.feature" package="testsuite/Feature: Inspect files before opening a document: mnt/vininas-projects/MCAD-Scenarios/features/application/document-opening/document-opening.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-26T01:00:54.586223316Z" time="112.486641147"><testcase name="Scenario: Inspect a file context menu without opening the document: mnt/vininas-projects/MCAD-Scenarios/features/application/document-opening/document-opening.feature:325:3" time="112.486641147"><system-out><![CDATA[  Scenario: Inspect a file context menu without opening the document
+   ✔  Given the Open dialog in the MCAD Software displays a saved part as a thumbnail
+   ✔  And the part is selected with its file name and preview displayed
+   ✔  And `fixtures/cad/extrusion/extrusion-rect-8mm.opd` is selected as a thumbnail
+   ✔  When the user right-clicks the part thumbnail
+   ✔  Then a context menu appears with Open, Copy, Rename and Properties choices
+   ✔  And the part name and preview remain displayed behind the menu
+   ✔  When the user clicks an empty area of the file list
+   ✔  Then the context menu closes
+   ✔  And the selected-item count is cleared
+   ✔  And the dialog remains open with the part name and preview displayed
+]]></system-out></testcase></testsuite></testsuites>

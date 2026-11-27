@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon panel visibility: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" package="testsuite/Feature: Ribbon panel visibility: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T09:03:09.88425905Z" time="15.931446467"><testcase name="Scenario: Show and hides a ribbon panel: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:5:3" time="15.931446467"><system-out><![CDATA[  Scenario: Show and hides a ribbon panel
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the expanded 3D Model ribbon shows the Modify panel
+   ✔  And the Parameters panel is hidden
+   ✔  When the user clicks the direct panel selector
+   ✔  Then Parameters is unchecked
+   ✔  And Modify is checked
+   ✔  When the user selects Parameters in the panel list
+   ✔  Then the Parameters panel appears in the ribbon
+   ✔  And the panel list remains open with Parameters checked
+   ✔  When the user selects Parameters again
+   ✔  Then the Parameters panel disappears from the ribbon
+   ✔  And the panel list remains open with Parameters unchecked
+   ✔  And the part remains active
+]]></system-out></testcase></testsuite></testsuites>

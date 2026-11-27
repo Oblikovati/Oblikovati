@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="Hole">
+  <title>Hole — Void Reversed-Lighting Demo (32px 2.5D Isometric)</title>
+  <defs>
+    <!-- Reversed interior bore lighting: dark upper-left lip -> brighter far lower-right wall -->
+    <linearGradient id="voidBore" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#3A404F"/>
+      <stop offset="45%" stop-color="#5B6375"/>
+      <stop offset="82%" stop-color="#858DA0"/>
+      <stop offset="100%" stop-color="#5B6375"/>
+    </linearGradient>
+  </defs>
+  <!-- Layer 1: Neutral solid block -->
+  <g id="layer-body">
+    <polygon points="16,6 27,11.5 16,17 5,11.5" fill="var(--icon-body-top, #D2D7E2)" stroke="var(--icon-body-stroke, #181B22)" stroke-width="1.2" stroke-linejoin="round"/>
+    <polygon points="5,11.5 16,17 16,27.5 5,22" fill="var(--icon-body-front, #9EA6B8)" stroke="var(--icon-body-stroke, #181B22)" stroke-width="1.2" stroke-linejoin="round"/>
+    <polygon points="27,11.5 16,17 16,27.5 27,22" fill="var(--icon-body-side, #677084)" stroke="var(--icon-body-stroke, #181B22)" stroke-width="1.2" stroke-linejoin="round"/>
+  </g>
+  <!-- Layer 2: Carved Void Bore + Centerline Axis -->
+  <g id="layer-accent">
+    <ellipse cx="16" cy="11.5" rx="5.4" ry="2.9" fill="url(#voidBore)" stroke="var(--icon-body-stroke, #181B22)" stroke-width="1.2"/>
+    <!-- Subtle inner bore bottom arc hinting depth -->
+    <path d="M12.2,13.2 C13.5,12.4 18.5,12.4 19.8,13.2" fill="none" stroke="var(--icon-body-stroke, #181B22)" stroke-width="0.9" opacity="0.65"/>
+    <!-- Vertical hole axis + top accent -->
+    <line x1="16" y1="2.5" x2="16" y2="14" stroke="var(--icon-cutout, #121317)" stroke-width="2.6" stroke-linecap="round"/>
+    <line x1="16" y1="2.5" x2="16" y2="14" stroke="var(--icon-line-active, #8172FA)" stroke-width="1.4" stroke-dasharray="3.5 1.5 1.5 1.5" stroke-linecap="round"/>
+    <circle cx="16" cy="11.5" r="1.4" fill="var(--accent-brand, #8172FA)"/>
+  </g>
+</svg>

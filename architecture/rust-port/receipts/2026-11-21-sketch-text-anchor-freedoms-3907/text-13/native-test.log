@@ -1,0 +1,8 @@
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 25.86s
+     Running unittests src/lib.rs (target/debug/deps/oblikovati_head-422152f5f0046b19)
+
+running 1 test
+test native::gui_loop_tests::application_bdd::ribbon_command_availability::text_native::text_degrees_of_freedom::native_bold_text_undo_redo_restores_the_same_anchor_and_freedoms ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1598 filtered out; finished in 55.21s

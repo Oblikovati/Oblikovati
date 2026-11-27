@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Open document tabs: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/document-tabs/document-tabs.feature" package="testsuite/Feature: Open document tabs: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/document-tabs/document-tabs.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T15:22:21.62575908Z" time="21.375683539"><testcase name="Scenario: Preview Home while a part is active: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/document-tabs/document-tabs.feature:310:3" time="21.375683539"><system-out><![CDATA[  Scenario: Preview Home while a part is active
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the Home workspace is available in the document tab strip
+   ✔  When the user hovers over the Home tab
+   ✔  Then a thumbnail of the Home workspace appears above the tab
+   ✔  And a Home label appears above the thumbnail
+   ✔  And the part remains active in the workspace
+]]></system-out></testcase></testsuite></testsuites>

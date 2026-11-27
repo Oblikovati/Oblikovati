@@ -1,0 +1,135 @@
+# Drawing notes
+
+API 0.166.0 `drawingAnnotations.addNote` adds free text to the active
+sheet at the requested position in millimetres. A nonzero leader target
+adds a line and arrowhead to that point. The sheet can contain notes
+without a model reference. Duplicate or omitted names receive a
+`NOTE:n` identifier in the current sheet's annotation collection.
+
+`drawingAnnotations.list` lists notes and existing parts lists in sheet
+order. `drawingAnnotations.delete` removes a named annotation and
+returns the remaining collection. Adding and deleting notes are drawing
+history operations. The saved Go-shaped note recipe records the text and
+its sheet coordinates. The canvas rebuilds leader geometry on display.
+Annotation edits require opening the drawing with updates enabled.
+
+The owner test verifies naming, invalid input, leader geometry, removal,
+undo, redo, and save and reopen. The drawing model test verifies that
+source-independent notes and source-backed parts lists coexist.
+
+On native Wayland, the MCP Bridge added plain and leader notes to an empty
+drawing. In the sheet image, the plain note changed 950 pixels and the
+leader note changed 829 more. Deletion, undo, redo, and reopening
+reproduced the respective captures pixel for pixel.
+
+## Custom tables
+
+`drawingAnnotations.addCustomTable` places caller-supplied headers and
+rows on the active sheet without a model reference. The specified sheet
+point is the top-left corner. The grid uses 36 mm columns and 8 mm rows.
+Empty cells fill short rows in the presentation. Cells beyond the header
+count remain in the saved recipe and are clipped from the presentation.
+The existing annotation routes list and delete tables.
+
+The owner test checks missing header validation, blank and uneven rows,
+grid coordinates, deletion, undo, and the authored cells after reopening.
+The native Wayland MCP run used two columns and three data rows. Adding
+the table changed 4,921 sheet pixels. Undo, redo, deletion, and reopen
+matched their expected sheet captures pixel for pixel.
+
+## Revision annotations
+
+`drawingAnnotations.addRevisionTable` places revision, date, and
+description rows in a table at the given top-left sheet point.
+`drawingAnnotations.addRevisionTag` places an upward triangle with the
+revision text at the given sheet point. Each is saved with the active
+sheet and can be listed, deleted, and undone independently.
+
+The owner test checks required inputs, the table and tag geometry,
+separate undo and redo, and the authored rows and tag after reopening.
+The native Wayland MCP run placed a two-row table and a B tag on a
+drawing with no referenced model. The table changed 7,149 sheet pixels,
+and the tag changed another 454. Undo, redo, reopen, and tag deletion
+matched their expected captures pixel for pixel.
+
+## Revision clouds
+
+`drawingAnnotations.addRevisionCloud` places an outward scalloped
+outline around a sheet rectangle, with an optional tag above it.
+The active sheet stores the rectangle and tag. The API returns the
+nominal segment count. At small display scales the canvas draws
+subpixel scallops as straight edges.
+
+The owner test checks invalid extents, the outward outline, sheet
+clipping, and save and reopen. A native Wayland MCP run added a
+60 × 40 mm cloud with a B tag and verified 204 nominal segments.
+The cloud changed 2,560 sheet pixels. Undo, redo, reopening, and
+deletion matched their respective captures pixel for pixel.
+
+## Datum feature symbols
+
+`drawingAnnotations.addDatumFeature` places the top-left corner of a
+boxed datum letter at the requested sheet point. The box has a stem
+and a filled triangle. The sheet recipe stores the point and the letter.
+The wire reply reports the datum letter as its tag and uses the Go
+reference's 10-curve count, which includes two triangle fill strokes.
+
+The owner test checks blank-letter rejection, the box, stem, and triangle
+coordinates, history, save and reopen, and deletion. The native Wayland
+MCP run placed datum A on a sheet with no referenced model. It changed
+584 sheet pixels. Undo, redo, reopen, and deletion matched their
+expected sheet captures pixel for pixel.
+
+## Surface texture symbols
+
+`drawingAnnotations.addSurfaceTexture` places the finish symbol's
+vertex at the requested sheet point. The basic variant is `any` and
+is the default. `required` adds a bar, and `prohibited` adds a circle
+at the vertex. The optional roughness text appears above the extension.
+The drawing stores the point, typed variant, and text with the sheet.
+
+The owner test checks the default, both explicit variants, unknown
+variant rejection, geometry, history, and the saved symbols after
+reopening. The native Wayland MCP run placed all three variants on
+one sheet with no referenced model. Their respective wire curve
+counts were 3, 4, and 27. Undo, redo, reopening, and deletion matched
+the expected sheet captures pixel for pixel.
+
+## Feature control frames
+
+`drawingAnnotations.addFeatureControlFrame` places the top-left corner
+of a frame at the requested sheet point. It stores one canonical
+geometric characteristic, the tolerance text, and the ordered datum
+references. The frame has a compartment for each value. It uses
+the Go reference's eight line-drawn glyphs and its text abbreviations
+for the other characteristics.
+
+The model test checks the glyph segment counts and that their geometry
+fits inside the symbol cell. The owner test checks invalid requests,
+the diameter tolerance and datum order, the profile abbreviation,
+history, save and reopen, and deletion.
+
+The native Wayland MCP run placed a position frame with `⌀0.2` and
+datum references B then A, followed by a line-profile frame with
+`0.5`. Their wire curve counts were 33 and 5. Undo, redo, reopening,
+and deletion produced the expected sheet pixels in each capture.
+
+## View centre lines
+
+`drawingAnnotations.addCenterlines` places horizontal and vertical
+dash-dot strokes through the current projection bounds of a named
+view. The strokes extend 4 mm beyond the view and the automatic
+caption clears the vertical stroke. The drawing saves the view name.
+The bounds are rebuilt from live projection samples or the saved
+projection when the drawing opens with updates deferred. A removed
+view leaves its annotation with zero curves until the view returns.
+
+The model test checks the dash-dot phase and clipping. The owner
+test checks missing-view rejection, rotation, deletion and undo of the
+view, and both live and deferred reopening.
+
+The native Wayland MCP run created centre lines on a 40 × 20 mm top
+view and verified eight dash-dot segments. Rotation changed the line
+extents, and undo, redo, and reopening reproduced their respective
+sheet captures pixel for pixel. The default caption cleared the
+vertical line in both orientations.

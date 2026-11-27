@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T10:44:47.083396528Z" time="99.24847353"><testcase name="Scenario: Create and switch model states in an empty part: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature:772:3" time="99.24847353"><system-out><![CDATA[  Scenario: Create and switch model states in an empty part
+   ✔  Given a new empty part is active in the MCAD Software
+   ✔  And the model browser shows the expanded Model State branch with Primary active
+   ✔  When the user opens the Model State branch context menu
+   ✔  Then it offers New Model State, Expand All Children and collapses All Children
+   ✔  When the user opens the New Model State submenu
+   ✔  Then it offers New Model State and Duplicate Primary
+   ✔  When the user chooses New Model State
+   ✔  Then a new model-state entry appears and is active
+   ✔  And its generated name is selected for inline editing
+   ✔  When the user enters a new state name and presses Enter
+   ✔  Then the new name appears in the model-state row and branch label
+   ✔  And the browser root and document tab identify the new state
+   ✔  When the user double-clicks the Primary model-state entry
+   ✔  Then Primary is marked as active
+   ✔  And the browser root and document tab identify Primary
+   ✔  When the user double-clicks the new model-state entry
+   ✔  Then the new state is marked as active
+   ✔  And the browser root and document tab identify the new state
+   ✔  And the viewport remains empty
+]]></system-out></testcase></testsuite></testsuites>

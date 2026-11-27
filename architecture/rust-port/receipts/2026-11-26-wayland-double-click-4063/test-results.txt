@@ -1,0 +1,33 @@
+
+published-wayland
+[03:27:07.561650] {Default Queue} wl_output#11.mode(3, 1920, 1080, 60000)
+[03:27:08.480796] wl_output#11.mode(3, 1920, 1080, 60000)
+[03:27:08.480813] xdg_toplevel#8.configure(0, 0, array[0])
+[03:27:10.401168]  -> xdg_toplevel#8.set_maximized()
+[03:27:10.426232] xdg_toplevel#8.configure(1920, 1048, array[4])
+[03:27:11.589766]  -> xdg_toplevel#8.unset_maximized()
+[03:27:11.625189] xdg_toplevel#8.configure(0, 0, array[0])
+7 steps (7 passed)
+
+published-4k
+[03:27:07.572375] {Default Queue} wl_output#11.mode(3, 3840, 2160, 60000)
+[03:27:08.409646] wl_output#11.mode(3, 3840, 2160, 60000)
+[03:27:08.409664] xdg_toplevel#8.configure(0, 0, array[0])
+[03:27:14.526653]  -> xdg_toplevel#8.set_maximized()
+[03:27:14.581486] xdg_toplevel#8.configure(1920, 1048, array[4])
+[03:27:16.334933]  -> xdg_toplevel#8.unset_maximized()
+[03:27:16.423118] xdg_toplevel#8.configure(0, 0, array[0])
+7 steps (7 passed)
+
+Weston application bounds before maximize and after restore
+		position: (103, 178) -> (1543, 1078)
+		position: (103, 178) -> (1543, 1078)
+
+Published X11 scenario
+7 steps (7 passed)
+
+Native Wayland checks
+test native::gui_loop_tests::application_bdd::main_window_frame::wayland::wayland_frame_maximizes_and_restores_the_saved_part ... ok
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1732 filtered out; finished in 7.57s
+test native::gui_loop_tests::application_bdd::main_window_frame::wayland::wayland_double_click_maximizes_and_restores_the_application_bar ... ok
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1732 filtered out; finished in 4.07s

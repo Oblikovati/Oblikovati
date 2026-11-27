@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" package="testsuite/Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:20:50.661852585Z" time="31.74274693"><testcase name="Scenario: Open a face context menu while an expansion is open: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:510:3" time="31.74274693"><system-out><![CDATA[  Scenario: Open a face context menu while an expansion is open
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open and active
+   ✔  And the full 3D Model ribbon is displayed
+   ✔  And the Modify additional command area is open and unpinned
+   ✔  When the user right-clicks a visible solid face outside the expanded area
+   ✔  Then the face context menu is displayed
+   ✔  And the Modify additional command area remains visible
+   ✔  When the user presses Escape
+   ✔  Then the face context menu closes
+   ✔  And the Modify additional command area closes
+   ✔  And the face remains selected
+   ✔  When the user clicks empty viewport space
+   ✔  Then the face selection is cleared
+]]></system-out></testcase></testsuite></testsuites>

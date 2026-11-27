@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-labelledby="t d">
+  <title id="t">Circular Pattern</title>
+  <desc id="d">Neutral seed prism arrayed radially around a cyan axis into Indigo-Violet copies.</desc>
+  <g id="layer-body">
+    <ellipse cx="16" cy="17.5" rx="10.5" ry="5.5" fill="none" stroke="var(--icon-line-center, #38BDF8)" stroke-width="1.25" stroke-dasharray="3 1.5"/><polygon points="16,8.2 19.6,10 16,11.8 12.4,10" fill="var(--icon-body-top, #D2D7E2)" stroke="var(--icon-body-stroke, #181B22)" stroke-width="1.0" stroke-linejoin="round"/>
+    <polygon points="12.4,10 16,11.8 16,15.6 12.4,13.8" fill="var(--icon-body-front, #9EA6B8)" stroke="var(--icon-body-stroke, #181B22)" stroke-width="1.0" stroke-linejoin="round"/>
+    <polygon points="19.6,10 16,11.8 16,15.6 19.6,13.8" fill="var(--icon-body-side, #677084)" stroke="var(--icon-body-stroke, #181B22)" stroke-width="1.0" stroke-linejoin="round"/>
+  </g>
+  <g id="layer-accent">
+    <polygon points="25,13.8 28.4,15.5 25,17.2 21.6,15.5" fill="var(--icon-mod-top, #B4AAFF)" stroke="var(--icon-mod-stroke, #1D1840)" stroke-width="1.0" stroke-linejoin="round"/>
+    <polygon points="21.6,15.5 25,17.2 25,20.8 21.6,19.1" fill="var(--icon-mod-front, #8172FA)" stroke="var(--icon-mod-stroke, #1D1840)" stroke-width="1.0" stroke-linejoin="round"/>
+    <polygon points="28.4,15.5 25,17.2 25,20.8 28.4,19.1" fill="var(--icon-mod-side, #5948D4)" stroke="var(--icon-mod-stroke, #1D1840)" stroke-width="1.0" stroke-linejoin="round"/>
+    <polygon points="16,19.8 19.4,21.5 16,23.2 12.6,21.5" fill="var(--icon-mod-top, #B4AAFF)" stroke="var(--icon-mod-stroke, #1D1840)" stroke-width="1.0" stroke-linejoin="round"/>
+    <polygon points="12.6,21.5 16,23.2 16,26.8 12.6,25.1" fill="var(--icon-mod-front, #8172FA)" stroke="var(--icon-mod-stroke, #1D1840)" stroke-width="1.0" stroke-linejoin="round"/>
+    <polygon points="19.4,21.5 16,23.2 16,26.8 19.4,25.1" fill="var(--icon-mod-side, #5948D4)" stroke="var(--icon-mod-stroke, #1D1840)" stroke-width="1.0" stroke-linejoin="round"/>
+    <polygon points="7,13.8 10.4,15.5 7,17.2 3.6,15.5" fill="var(--icon-mod-top, #B4AAFF)" stroke="var(--icon-mod-stroke, #1D1840)" stroke-width="1.0" stroke-linejoin="round"/>
+    <polygon points="3.6,15.5 7,17.2 7,20.8 3.6,19.1" fill="var(--icon-mod-front, #8172FA)" stroke="var(--icon-mod-stroke, #1D1840)" stroke-width="1.0" stroke-linejoin="round"/>
+    <polygon points="10.4,15.5 7,17.2 7,20.8 10.4,19.1" fill="var(--icon-mod-side, #5948D4)" stroke="var(--icon-mod-stroke, #1D1840)" stroke-width="1.0" stroke-linejoin="round"/>
+    <line x1="16" y1="4" x2="16" y2="17" stroke="var(--icon-line-center, #38BDF8)" stroke-width="1.2"/>
+  </g>
+</svg>

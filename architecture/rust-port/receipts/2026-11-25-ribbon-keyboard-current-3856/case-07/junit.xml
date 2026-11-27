@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Navigate the ribbon using key tips: target/native-scratch.HSqCy5/current-ribbon-keyboard-navigation-source/features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature" package="testsuite/Feature: Navigate the ribbon using key tips: target/native-scratch.HSqCy5/current-ribbon-keyboard-navigation-source/features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T23:05:34.942018562Z" time="12.640052773"><testcase name="Scenario: Switch ribbon tabs with the mouse while top-level key tips are visible: target/native-scratch.HSqCy5/current-ribbon-keyboard-navigation-source/features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature:95:3" time="12.640052773"><system-out><![CDATA[  Scenario: Switch ribbon tabs with the mouse while top-level key tips are visible
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And the full 3D Model ribbon is visible
+   ✔  When the user presses Alt
+   ✔  Then key tips appear on the ribbon tabs and quick-access controls
+   ✔  When the user clicks the Tools ribbon tab
+   ✔  Then the Tools ribbon is selected and its commands are visible
+   ✔  And the key tips disappear
+   ✔  And the part remains visible
+]]></system-out></testcase></testsuite></testsuites>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: File menu: tmp/obk-menu-refresh/features/application/file-menu/file-menu.feature" package="testsuite/Feature: File menu: tmp/obk-menu-refresh/features/application/file-menu/file-menu.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T18:25:37.761178487Z" time="2.408775864"><testcase name="Scenario: Open and dismiss the file menu in a drawing: tmp/obk-menu-refresh/features/application/file-menu/file-menu.feature:29:3" time="2.408775864"><system-out><![CDATA[  Scenario: Open and dismiss the file menu in a drawing
+   ✔  Given a drawing document is active in the MCAD Software
+   ✔  When the user selects File
+   ✔  Then the menu shows New, Open, Save, Save As, Export, Share, Manage, document properties, Print and Close entries
+   ✔  And a recent-documents region is visible
+   ✔  And the drawing sheet remains visible around the menu
+   ✔  When the user presses Escape
+   ✔  Then the File menu closes
+   ✔  And the same drawing document remains active
+]]></system-out></testcase></testsuite></testsuites>

@@ -1,0 +1,44 @@
+{
+  "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+  "application_commit": "4832c3e41e2d14d8c61c88e74f80b4039e55e85a",
+  "areas": {
+    "application": {
+      "blocked": 35,
+      "stale": 0,
+      "total": 746,
+      "unclassified": 740,
+      "verified": 6
+    },
+    "sketch": {
+      "blocked": 27,
+      "stale": 0,
+      "total": 1372,
+      "unclassified": 1372,
+      "verified": 0
+    },
+    "solid-model": {
+      "blocked": 0,
+      "stale": 0,
+      "total": 601,
+      "unclassified": 601,
+      "verified": 0
+    }
+  },
+  "milestones": {
+    "R7": {
+      "blocked": 0,
+      "stale": 0,
+      "total": 6,
+      "unclassified": 0,
+      "verified": 6
+    },
+    "unclassified": {
+      "blocked": 62,
+      "stale": 0,
+      "total": 2713,
+      "unclassified": 2713,
+      "verified": 0
+    }
+  },
+  "orphaned_classifications": []
+}

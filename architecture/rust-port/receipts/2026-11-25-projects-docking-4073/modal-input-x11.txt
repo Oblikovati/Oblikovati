@@ -1,0 +1,7 @@
+running 1 test
+test native::gui_loop_tests::application_bdd::workspace_layout::external_close_native::restored_project_dock_survives_parent_closure ...
+thread 'native::gui_loop_tests::application_bdd::workspace_layout::external_close_native::restored_project_dock_survives_parent_closure' (1468744) panicked at crates/head/src/../tests/application/workspace-layout/external_close_native.rs:76:5:
+Projects###template-projects: expected close within eight frames
+stack backtrace:
+   0: __rustc::rust_begin_unwind
+             at /rustc/b940084d7eb6a299eb4bfeb8e34901bc051e7ac4/library/std/src/panicking.rs:679:5

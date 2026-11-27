@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Inspect ribbon command availability: target/native-scratch.HSqCy5/current-ribbon-command-availability-source/features/application/ribbon-command-availability/ribbon-command-availability.feature" package="testsuite/Feature: Inspect ribbon command availability: target/native-scratch.HSqCy5/current-ribbon-command-availability-source/features/application/ribbon-command-availability/ribbon-command-availability.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T22:43:59.76868002Z" time="24.665009127"><testcase name="Scenario: Inspect Sketch ribbon while editing an existing sketch: target/native-scratch.HSqCy5/current-ribbon-command-availability-source/features/application/ribbon-command-availability/ribbon-command-availability.feature:28:3" time="24.665009127"><system-out><![CDATA[  Scenario: Inspect Sketch ribbon while editing an existing sketch
+   ✔  Given `fixtures/cad/revolve/revolve-profile.opd` is open and active in the MCAD Software
+   ✔  And sketch edit is inactive
+   ✔  When the user opens Sketch1 from the model browser
+   ✔  Then the Sketch ribbon tab is selected
+   ✔  And the 2D sketch workspace shows the existing profile
+   ✔  And Create, Modify, Pattern, Constrain, Insert and Format groups are displayed
+   ✔  And Finish is available to exit sketch editing
+   ✔  When the user selects Line
+   ✔  Then the Line command prompt requests a start point
+   ✔  And the Line tooltip indicates line and arc creation
+   ✔  When the user exits sketch editing with Finish
+   ✔  Then the previous part workspace and ribbon context return
+   ✔  And Sketch1 remains in the model browser
+]]></system-out></testcase></testsuite></testsuites>

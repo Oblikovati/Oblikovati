@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon display modes: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature" package="testsuite/Feature: Ribbon display modes: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T02:43:18.494242458Z" time="18.755172531"><testcase name="Scenario: Dismiss a compact panel using the selected tab: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature:515:3" time="18.755172531"><system-out><![CDATA[  Scenario: Dismiss a compact panel using the selected tab
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part is active in the MCAD Software
+   ✔  And the Tools ribbon is minimized to panel buttons
+   ✔  When the user clicks the Options panel button
+   ✔  Then the temporary Options command panel appears below the button strip
+   ✔  When the user clicks the selected Tools tab
+   ✔  Then the temporary Options command panel closes
+   ✔  And the Tools panel buttons remain visible
+]]></system-out></testcase></testsuite></testsuites>

@@ -1,0 +1,4 @@
+running 1 test
+test native::gui_loop_tests::application_bdd::ribbon_panel_expansion::tool_options::x11_options_layout_reset_can_be_cancelled ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1617 filtered out; finished in 10.31s

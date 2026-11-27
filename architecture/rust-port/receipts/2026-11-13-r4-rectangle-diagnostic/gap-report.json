@@ -1,0 +1,59 @@
+{
+  "kind": "diagnostic only; not acceptance",
+  "source_files": {
+    "/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/target/benchmarks/mcad-scenarios-35f4a77b/features/sketch/rectangle-two-point/scenario.feature": "@sketch\r\nFeature: Rectangle two point\r\n\r\n  @acceptance @documented_observation @needs_fixture\r\n  Scenario: rectangle-two-point-01 Create a rectangle from opposite corners\r\n    Given the MCAD Software is running\r\n    And an editable planar sketch\r\n    When the user select Two Point Rectangle and click diagonally opposite corners\r\n    Then four connected sides form an axis-aligned closed rectangle\r\n    When the user press Escape\r\n    Then the rectangle remains and the sketch is Ready\r\n\r\n\r\n\r\n\r\n\r\n  @needs_fixture\r\n  Scenario: rectangle-two-point-06 Cancel before the opposite corner\r\n    Given an editable sketch is Ready\r\n    When the user choose Rectangle Two Point and click the fixture first corner\r\n    Then the prompt requests the opposite corner\r\n    When the user press Escape\r\n    Then the MCAD Software returns to Ready without a new rectangle\r\n\r\n  @needs_fixture\r\n  Scenario: rectangle-two-point-07 Keep selecting after identical corner clicks\r\n    Given an editable sketch is Ready\r\n    When the user invoke Two Point Rectangle\r\n    And the user click the same fixture position for both corners\r\n    Then Select opposite corner remains active\r\n    And both dynamic size fields display 0,000 mm\r\n    And no error dialog or rectangle appears\r\n    When the user press Escape\r\n    Then the MCAD Software returns to Ready\r\n\r\n  @documented_observation @needs_fixture @numeric_input @undo_redo\r\n  Scenario: rectangle-two-point-08 Commit typed sizes and restore through history\r\n    Given an editable sketch in RIGHT view with the required fixture\r\n    When the user start Two Point Rectangle and select a first corner\r\n    And the user press 1 and then 0\r\n    And the user press Tab\r\n    And the user press 6 and then Enter\r\n    Then a rectangle with size annotations 10 and 6 is committed\r\n    And the command returns to Select first corner\r\n    When the user press Escape and then Ctrl+Z\r\n    Then the rectangle and its two size annotations disappear\r\n    When the user press Ctrl+Y\r\n    Then the rectangle and both annotations return\r\n\r\n  @documented_observation @measurement @needs_fixture\r\n  Scenario: rectangle-two-point-09 Verify the numeric rectangle edge lengths\r\n    Given the recorded numeric rectangle in RIGHT view has been restored\r\n    When the user open Measure and select its vertical edge away from endpoints\r\n    Then Selection 1 is a Curve with Length 10.000 mm\r\n    When the user click empty canvas and select its horizontal edge away from endpoints\r\n    Then Selection 1 is a Curve with Length 6.000 mm\r\n    When the user click Done\r\n    Then Measure closes and the rectangle remains\r\n\r\n  @needs_fixture\r\n  Scenario: rectangle-two-point-10 Observe a zero first size\r\n    Given the recorded fixture sketch is Ready with 22 dimensions needed\r\n    When the user choose Two Point Rectangle and the fixture first corner\r\n    And the user enter 0 and press Tab\r\n    Then the first size is locked at 0.000 mm and the second field is focused\r\n    When the user enter 4 and press Return\r\n    Then the command returns to Select first corner without a warning dialog\r\n    And the immediate status temporarily shows 24 dimensions needed\r\n    When the user press Escape\r\n    Then Ready returns with 22 dimensions needed and no new rectangle visible\r\n\r\n  @needs_fixture\r\n  Scenario: rectangle-two-point-11 Retain a numeric rectangle\r\n    Given a fresh Two Point Rectangle command in the recorded sketch view\r\n    And the existing ellipse from the recorded fixture is visible\r\n    When the user select the fixture first corner, enter 6, press Tab, enter 4 and press Return\r\n    Then the rectangle shows height 6 and width 4\r\n    And the rectangle extends upward and rightward in the recorded view\r\n    And it overlaps part of the existing ellipse\r\n    When the user press Escape\r\n    Then the rectangle remains and Ready returns\r\n\r\n  @needs_fixture\r\n  Scenario: rectangle-two-point-12 Cancel a rectangle height proposal\r\n    Given the rectangle height editor is open with 6 mm selected\r\n    When the user enter 8 and press Escape\r\n    And the user reopen the height annotation\r\n    Then the height editor still contains 6 mm\r\n\r\n  @needs_fixture\r\n  Scenario: rectangle-two-point-13 Accept and undo a rectangle height edit\r\n    Given the numeric rectangle retains height 6 and width 4 annotations\r\n    When the user accept height 8 mm and exit General Dimension\r\n    Then the rectangle extends downward while its top edge stays in place in the recorded view\r\n    And the width annotation remains 4\r\n    When the user open Measure and select the left edge\r\n    Then Measure reports the selected left edge length as 8.000 mm\r\n    When the user close Measure and undo the height edit\r\n    Then the visible height annotation returns to 6\r\n    When the user redo the height edit\r\n    Then the visible height annotation returns to 8\r\n    And width annotation 4 remains\r\n\r\n  @needs_fixture\r\n  Scenario: rectangle-two-point-14 Observe a zero second size\r\n    Given the recorded sketch is Ready with the 4-by-8 rectangle retained\r\n    When the user start Two Point Rectangle and click the fixture first corner\r\n    And the user enter 4, press Tab, enter 0 and press Return\r\n    Then Select first corner returns without a warning or a visible new rectangle\r\n    When the user press Escape\r\n    Then Ready returns and the prior rectangle remains\r\n\r\n"
+  },
+  "scenarios": [
+    {
+      "source": "/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/target/benchmarks/mcad-scenarios-35f4a77b/features/sketch/rectangle-two-point/scenario.feature",
+      "scenario": "rectangle-two-point-01 Create a rectangle from opposite corners",
+      "line": 5,
+      "classification": "unbound step",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 6,
+          "step": "the MCAD Software is running",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 7,
+          "step": "an editable planar sketch",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 8,
+          "step": "the user select Two Point Rectangle and click diagonally opposite corners",
+          "result": "unbound",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 9,
+          "step": "four connected sides form an axis-aligned closed rectangle",
+          "result": "failed",
+          "tainted": true,
+          "detail": "assertion `left == right` failed: sides\n  left: 0\n right: 4"
+        },
+        {
+          "line": 10,
+          "step": "the user press Escape",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 11,
+          "step": "the rectangle remains and the sketch is Ready",
+          "result": "failed",
+          "tainted": true,
+          "detail": "assertion `left == right` failed: sides\n  left: 0\n right: 4"
+        }
+      ]
+    }
+  ]
+}

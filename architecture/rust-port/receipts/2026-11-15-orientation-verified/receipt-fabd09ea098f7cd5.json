@@ -1,0 +1,27 @@
+{
+  "kind": "native-acceptance",
+  "scenario_id": "scenario:fabd09ea098f7cd5a899d3de75b5b519126fc60a0e414af5159f100db69a1a66",
+  "scenario_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+  "source_sha256": "5fbf06d51afb265f1c022d8d5f93aa0107f8c79f31445beccd986aa373b64f62",
+  "application_commit": "4fb43878cffd2f9d2a6689600c668b67915cec4b",
+  "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+  "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+  "runner": "application_scenarios_use_the_native_window",
+  "exit_code": 0,
+  "environment": {
+    "os": "Linux",
+    "renderer": "Vulkan with Lavapipe under Xvfb"
+  },
+  "cucumber": {
+    "path": "architecture/rust-port/receipts/2026-11-15-orientation-verified/cucumber.json",
+    "sha256": "67c207bd13a8f31aa4d82004d61ae9291eec26b5897c0783664bf15e3ed8cf5c"
+  },
+  "source_report": {
+    "path": "architecture/rust-port/receipts/2026-11-15-orientation-verified/source-revision.json",
+    "sha256": "e884c71ee6d5ec5dc5c8603585da56a18c300f739057bcf99233cfe81bf7ac80"
+  },
+  "capture": {
+    "path": "architecture/rust-port/receipts/2026-11-15-orientation-verified/Place-the-orientation-control-in-the-lower-viewport-corners.png",
+    "sha256": "5094e20b2ceda62edc9f4ac3b475e560f271766cc438d3bb40d2ecc8f5f46b16"
+  }
+}

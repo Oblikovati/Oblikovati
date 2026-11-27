@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Save and reopen part documents: target/native-scratch.HSqCy5/current-document-saving-source/features/application/document-saving/document-saving.feature" package="testsuite/Feature: Save and reopen part documents: target/native-scratch.HSqCy5/current-document-saving-source/features/application/document-saving/document-saving.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T02:27:51.792332177Z" time="72.154827414"><testcase name="Scenario: Inspect the first-save preview of a solid part: target/native-scratch.HSqCy5/current-document-saving-source/features/application/document-saving/document-saving.feature:297:3" time="72.154827414"><system-out><![CDATA[  Scenario: Inspect the first-save preview of a solid part
+   ✔  Given the user creates a new unsaved metric part in the MCAD Software
+   ✔  And the user sketches a 40 by 25 mm rectangle on the XY datum plane and extrudes it 20 mm
+   ✔  And the unsaved part containing that visible rectangular solid is active
+   ✔  And the first-save preview settings are configured to save an isometric component view
+   ✔  When the user presses Control+S
+   ✔  Then the Save As dialog opens with a proposed part filename selected
+   ✔  And Save Preview Picture is checked
+   ✔  And Active Component Iso View on Save is selected
+   ✔  And the preview area displays a shaded isometric block
+]]></system-out></testcase></testsuite></testsuites>

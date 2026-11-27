@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon panel visibility: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" package="testsuite/Feature: Ribbon panel visibility: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T09:49:41.462732903Z" time="13.041466966"><testcase name="Scenario: Read and dismisses the direct panel selector help: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:708:3" time="13.041466966"><system-out><![CDATA[  Scenario: Read and dismisses the direct panel selector help
+   ✔  Given a part is active in the MCAD Software with the full 3D Model ribbon visible
+   ✔  When the user opens the direct panel selector
+   ✔  And the user closes it with the same selector control
+   ✔  Then the Show Panels help tooltip appears
+   ✔  And it explains that the down arrow displays more ribbon panels
+   ✔  And it explains that selecting or clearing a checkbox adds or removes a panel
+   ✔  And it offers additional help through F1
+   ✔  When the user clicks empty viewport space
+   ✔  Then the tooltip closes
+   ✔  And the 3D Model ribbon and part remain visible
+]]></system-out></testcase></testsuite></testsuites>

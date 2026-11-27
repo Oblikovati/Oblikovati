@@ -1,0 +1,27 @@
+{
+  "kind": "native-acceptance",
+  "scenario_id": "scenario:e66c7e308267be0964f66b35902621ca3d95fd2ef34196471e0cf85e078e5577",
+  "scenario_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+  "source_sha256": "e6a69fa7b7e300fa7683a52a09abaf7396e2550c1ab19aaab2dbdb6a06ca46ea",
+  "application_commit": "f7fbb8a4342f5283ba22733268d9e0a936eddb87",
+  "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+  "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+  "runner": "sketch_scenarios_use_the_native_window",
+  "exit_code": 0,
+  "environment": {
+    "os": "Linux",
+    "renderer": "Vulkan Lavapipe on Xvfb, Linux"
+  },
+  "cucumber": {
+    "path": "architecture/rust-port/receipts/2026-11-14-line-e66c7e308267be09-f7fbb8a4/cucumber.json",
+    "sha256": "39eefe8b3d4b242c31bd7e3d704c3e4cbbafbb416a515a106536d06ff5bd819b"
+  },
+  "source_report": {
+    "path": "architecture/rust-port/receipts/2026-11-14-line-e66c7e308267be09-f7fbb8a4/source-revision.json",
+    "sha256": "ca516437e1fd8853d795a04a4a638fc1b022828cc495c3ecbac9aa8e46d891a8"
+  },
+  "capture": {
+    "path": "architecture/rust-port/receipts/2026-11-14-line-e66c7e308267be09-f7fbb8a4/line-04-Undo-and-redo-the-recorded-numeric-creation.png",
+    "sha256": "caf39c3033f20a2d4834b713bb7e5a4c0c79559513a548572f4f835b63e1b9a4"
+  }
+}

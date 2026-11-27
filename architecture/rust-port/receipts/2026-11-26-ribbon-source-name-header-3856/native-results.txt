@@ -1,0 +1,13 @@
+Wayland baseline
+expected first source rows ["<Separator>", "ZoomWindow", "ZoomSelected", "ZoomAll", "Zoom", "ZParallel"], found ["<Separator>", "2-DDrawing", "2DSketches", "3DAnnotations", "3-PointArc", "3-PointCircle", "3-PtCenterRect.", "3-PtRect.", "CancelSketch", "CenterArc", "CenterRect."]
+
+Wayland after the change
+test native::gui_loop_tests::application_bdd::ribbon_customization::list_steps::reversing_available_command_order_returns_to_top_and_keeps_selection ... ok
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1729 filtered out; finished in 3.63s
+test native::gui_loop_tests::application_bdd::ribbon_customization::list_steps::available_name_header_sorts_near_its_right_edge ... ok
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1729 filtered out; finished in 3.35s
+
+X11 after the change
+test native::gui_loop_tests::application_bdd::ribbon_customization::list_steps::available_name_header_sorts_near_its_right_edge ... ok
+test native::gui_loop_tests::application_bdd::ribbon_customization::list_steps::reversing_available_command_order_returns_to_top_and_keeps_selection ... ok
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 1728 filtered out; finished in 7.19s

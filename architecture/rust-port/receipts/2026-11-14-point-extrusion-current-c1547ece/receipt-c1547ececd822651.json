@@ -1,0 +1,27 @@
+{
+  "kind": "native-acceptance",
+  "scenario_id": "scenario:c1547ececd82265193e7e655fe1153003d790dd6dabaeb60577d3b1c62dbb047",
+  "scenario_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+  "source_sha256": "f88b2e19cf22dae22f91dbd57e319e819d47e9f1daf9edc00b3da4c122111bf5",
+  "application_commit": "216281fe7f4e33141a64a5ea2fcf8743e2faa210",
+  "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+  "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+  "runner": "sketch_scenarios_use_the_native_window",
+  "exit_code": 0,
+  "environment": {
+    "os": "Linux",
+    "renderer": "Vulkan with Lavapipe under Xvfb"
+  },
+  "cucumber": {
+    "path": "architecture/rust-port/receipts/2026-11-14-point-extrusion-current-c1547ece/cucumber.json",
+    "sha256": "20f8356c4111599fb90aae1a5cd83cf0d3349f339613791daad0ac6c50672f7d"
+  },
+  "source_report": {
+    "path": "architecture/rust-port/receipts/2026-11-14-point-extrusion-current-c1547ece/source-revision.json",
+    "sha256": "509629fd398de984a77e33b2011b33e83f1a66cdd591fabf2d88c7c0f1c0f9fd"
+  },
+  "capture": {
+    "path": "architecture/rust-port/receipts/2026-11-14-point-extrusion-current-c1547ece/point-03-Cancel-before-placing-a-point.png",
+    "sha256": "77993ab1acb307bf2dc6d5f26e3012309d4db3810d11b33a90e8bbde110ab540"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "kind": "native-acceptance",
+  "scenario_id": "scenario:ffc9cb9e3eee8e369f8b39e15f50ed5a77e0e8ed66cc90fc0a7cb523ab177466",
+  "scenario_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+  "source_sha256": "c38e881942205983e27a3924f950a5732d2cae0e2cb09ae40a16b88e9f581f3d",
+  "application_commit": "dc359bc157602caeee097232f68a09a94fa8a6b2",
+  "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+  "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+  "runner": "application_scenarios_use_the_native_window",
+  "exit_code": 0,
+  "environment": {
+    "os": "Linux",
+    "renderer": "Vulkan with Lavapipe under Xvfb"
+  },
+  "cucumber": {
+    "path": "architecture/rust-port/receipts/2026-11-14-gate-project-ffc9cb9e/cucumber.json",
+    "sha256": "5666f4c52eed86454e722dffcaae090460b1a82e788af2ff5e2afb7973880ddd"
+  },
+  "source_report": {
+    "path": "architecture/rust-port/receipts/2026-11-14-gate-project-ffc9cb9e/source-revision.json",
+    "sha256": "8455490b0d6f41cce2c3ba12a66a0303db43ee442006121a235b917beec3a0ae"
+  },
+  "capture": {
+    "path": "architecture/rust-port/receipts/2026-11-14-gate-project-ffc9cb9e/Expand-library-groups-independently-in-the-project-tree.png",
+    "sha256": "64f9db725c2a2d63c7af3bf0e828c7838a558ddcd4dd993ed6c0f114383a08f0"
+  }
+}

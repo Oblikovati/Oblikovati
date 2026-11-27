@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon display modes: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-display/ribbon-display.feature" package="testsuite/Feature: Ribbon display modes: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-display/ribbon-display.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T08:17:44.876487513Z" time="14.580551279"><testcase name="Scenario: View additional Options commands from a compact panel button: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-display/ribbon-display.feature:200:3" time="14.580551279"><system-out><![CDATA[  Scenario: View additional Options commands from a compact panel button
+   ✔  Given a part document is open in the MCAD Software
+   ✔  And the Tools ribbon displays compact panel buttons
+   ✔  When the user clicks the Options panel button
+   ✔  Then a temporary Options panel opens below the ribbon
+   ✔  And it shows Application Options, Document Settings and Customize
+   ✔  And it also shows Reset UI Layout and iLogic Configuration
+   ✔  When the user clicks empty viewport space outside the panel
+   ✔  Then the temporary Options panel closes
+   ✔  And the compact Tools panel buttons remain visible
+]]></system-out></testcase></testsuite></testsuites>

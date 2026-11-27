@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" package="testsuite/Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:20:41.334028575Z" time="34.511761953"><testcase name="Scenario: Pin two expanded panels independently: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:260:3" time="34.511761953"><system-out><![CDATA[  Scenario: Pin two expanded panels independently
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open and active
+   ✔  And the full 3D Model ribbon is visible
+   ✔  And the Modify additional command area is open and pinned
+   ✔  When the user opens and pins the Simplification additional command area
+   ✔  And the user clicks empty viewport space
+   ✔  Then both additional command areas remain visible
+   ✔  When the user unpins Simplification and clicks empty viewport space
+   ✔  Then the Simplification additional command area closes
+   ✔  And the pinned Modify additional command area remains visible
+   ✔  When the user unpins Modify and clicks empty viewport space
+   ✔  Then the Modify additional command area closes
+]]></system-out></testcase></testsuite></testsuites>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon panel visibility: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" package="testsuite/Feature: Ribbon panel visibility: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:11:42.95232405Z" time="39.860511952"><testcase name="Scenario: Preserve a hidden panel when changing ribbon docking position: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:95:3" time="39.860511952"><system-out><![CDATA[  Scenario: Preserve a hidden panel when changing ribbon docking position
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is open and active
+   ✔  And the 3D Model ribbon is docked at the top with Modify visible
+   ✔  When the user hides Modify through Show Panels
+   ✔  Then the Modify panel disappears from the ribbon
+   ✔  When the user docks the ribbon on the left
+   ✔  Then the ribbon is docked on the left
+   ✔  And the Modify group remains hidden
+   ✔  When the user opens Show Panels on the left-docked ribbon
+   ✔  Then Modify is unchecked
+   ✔  When the user selects Modify
+   ✔  Then the Modify group returns to the left-docked ribbon
+]]></system-out></testcase></testsuite></testsuites>

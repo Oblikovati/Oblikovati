@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Create a document from a template: tmp/obk-gallery2/features/application/document-creation/document-creation.feature" package="testsuite/Feature: Create a document from a template: tmp/obk-gallery2/features/application/document-creation/document-creation.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T18:48:19.374888943Z" time="2.898494295"><testcase name="Scenario: Reopen the chooser after canceling a selected template: tmp/obk-gallery2/features/application/document-creation/document-creation.feature:178:3" time="2.898494295"><system-out><![CDATA[  Scenario: Reopen the chooser after canceling a selected template
+   ✔  Given the new-document template chooser is open in the MCAD Software
+   ✔  And the metric folder and standard metric assembly template are selected
+   ✔  When the user cancels the chooser
+   ✔  And the user reopens the new-document chooser during the same session
+   ✔  Then the metric folder is selected
+   ✔  And the standard metric assembly template is selected
+   ✔  And its details identify an assembly with millimeter units
+]]></system-out></testcase></testsuite></testsuites>

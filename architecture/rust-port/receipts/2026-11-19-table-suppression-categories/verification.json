@@ -1,0 +1,18 @@
+{
+  "feature": "features/application/model-browser/model-browser.feature",
+  "feature_sha256": "603382ec4009d73a74e960c5981d255c4ca9ac5489b94fcf57193c7b09458b2e",
+  "environment": "Linux X11, Xvfb, software Vulkan, native mouse and keyboard input",
+  "scenarios": [
+    {
+      "scenario": "Apply a feature suppression change through the model-state table",
+      "application_commit": "9e24be7a1",
+      "passed_steps": 16
+    },
+    {
+      "scenario": "Retain a staged property column while switching table categories",
+      "application_commit": "3e410575d",
+      "passed_steps": 14
+    }
+  ],
+  "scope": "Focused scenarios only; this is not a full-feature run. The source was unversioned."
+}

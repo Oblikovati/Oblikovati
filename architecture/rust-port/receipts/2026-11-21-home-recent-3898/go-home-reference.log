@@ -1,0 +1,6 @@
+=== RUN   TestOpenDocumentFromMRUHonorsVetoAndRecords
+=== PAUSE TestOpenDocumentFromMRUHonorsVetoAndRecords
+=== CONT  TestOpenDocumentFromMRUHonorsVetoAndRecords
+--- PASS: TestOpenDocumentFromMRUHonorsVetoAndRecords (0.00s)
+PASS
+ok  	oblikovati.org/app	0.005s

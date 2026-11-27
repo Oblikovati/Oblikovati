@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-26T01:09:59.668258356Z" time="18.291258914"><testcase name="Scenario: Navigate the available command list with the keyboard: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-customization/ribbon-customization.feature:773:3" time="18.291258914"><system-out><![CDATA[  Scenario: Navigate the available command list with the keyboard
+   ✔> Given the MCAD Software starts with a writable copy of `fixtures/preferences/ribbon-normal` as its configuration directory
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part is active in the MCAD Software
+   ✔  And the Ribbon customization dialog shows All Commands and an empty Part Tools target
+   ✔  And the available command list is in its observed ascending order
+   ✔  When the user selects "2D Sketches" in the available command list
+   ✔  And the user presses End
+   ✔  Then the list scrolls to its end and selects "Zoom Window"
+   ✔  When the user presses Home
+   ✔  Then the list scrolls to its beginning and selects "<Separator>"
+   ✔  And Apply remains disabled
+   ✔  When the user presses "Z"
+   ✔  Then the list scrolls to and selects "Z Parallel"
+   ✔  And the custom panel list remains empty
+   ✔  And the target has no pending-change marker
+   ✔  When the user clicks Close
+   ✔  Then the customization dialog closes
+]]></system-out></testcase></testsuite></testsuites>

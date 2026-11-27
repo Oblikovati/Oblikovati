@@ -1,0 +1,8 @@
+
+xwininfo: Window id: 0x39f (the root window) (has no name)
+
+  Root window id: 0x39f (the root window) (has no name)
+  Parent window id: 0x0 (none)
+     2 children:
+     0x400000 (has no name): ()  1x1+0+0  +0+0
+     0x200001 "Part1 <Primary> - Oblikovati - document 1 generation 0 - 0 solids, 0 unavailable features - 0 sketches, 0 sketch display failures": ()  1440x900+100+100  +100+100

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Open document tabs: target/native-scratch.HSqCy5/current-document-tabs-source/features/application/document-tabs/document-tabs.feature" package="testsuite/Feature: Open document tabs: target/native-scratch.HSqCy5/current-document-tabs-source/features/application/document-tabs/document-tabs.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T00:39:47.931845712Z" time="17.057595096"><testcase name="Scenario: Inspect the detached drawing tab context menu: target/native-scratch.HSqCy5/current-document-tabs-source/features/application/document-tabs/document-tabs.feature:221:3" time="17.057595096"><system-out><![CDATA[  Scenario: Inspect the detached drawing tab context menu
+   ✔  Given `fixtures/cad/blank-drawing.odd` is open
+   ✔  And the user drags its tab into the workspace to detach it into a separate window
+   ✔  And the drawing has a document tab in that window
+   ✔  When the user opens the detached drawing tab context menu
+   ✔  Then the menu offers Close, Close Tabs, Close All, Save and Properties
+   ✔  And it displays shortcuts for Close and Save
+   ✔  When the user dismisses the menu
+   ✔  Then the drawing remains open in its separate window
+]]></system-out></testcase></testsuite></testsuites>

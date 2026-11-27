@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Navigate the native template catalog: tmp/oblikovati-ribbon-relocated.RcZVDl/current-document-creation-catalog-source/features/application/document-creation/document-creation-catalog-basics.feature" package="testsuite/Feature: Navigate the native template catalog: tmp/oblikovati-ribbon-relocated.RcZVDl/current-document-creation-catalog-source/features/application/document-creation/document-creation-catalog-basics.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T19:54:53.266614484Z" time="24.437862646"><testcase name="Scenario: Navigate home from a template folder: tmp/oblikovati-ribbon-relocated.RcZVDl/current-document-creation-catalog-source/features/application/document-creation/document-creation-catalog-basics.feature:114:3" time="24.437862646"><system-out><![CDATA[  Scenario: Navigate home from a template folder
+   ✔> Given a fresh MCAD Software session loads `fixtures/cad/document-creation-native-candidate.opj` as its active project
+   ✔> And the native catalog contains metric and inch templates in their respective folders
+   ✔> And the catalog root has no direct template files
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And the user presses Control+N to open the new-document template chooser
+   ✔  And the new-document template chooser is open in the MCAD Software
+   ✔  And the metric template folder is selected
+   ✔  And the standard metric assembly template details are displayed
+   ✔  And the template root has no templates directly in it
+   ✔  When the user selects Home in the chooser navigation bar
+   ✔  Then the template root is selected in the folder tree
+   ✔  And the gallery type sections contain no template entries
+   ✔  And the metric assembly template details remain displayed
+   ✔  When the user chooses Back in the chooser navigation bar
+   ✔  Then the metric template folder and its gallery are displayed again
+]]></system-out></testcase></testsuite></testsuites>

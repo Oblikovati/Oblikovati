@@ -10,6 +10,7 @@ license.workspace = true
 publish.workspace = true
 
 [dependencies]
+gherkin = "=0.16.0"
 chrono = { version = "0.4", default-features = false, features = ["clock"] }
 regex = "1"
 serde = { version = "1", features = ["derive"] }
@@ -19,7 +20,11 @@ toml = "0.9"
 walkdir = "2"
 flate2 = "1"
 tar = "0.4"
-zip = { version = "4", default-features = false, features = ["deflate"] }
+zip = { version = "9", default-features = false, features = ["deflate"] }
+tree-sitter = "=0.27.1"
+tree-sitter-go = "=0.25.0"
+
+oblikovati-script = { path = "../../crates/script" }
 
 [dev-dependencies]
 tempfile = "3"

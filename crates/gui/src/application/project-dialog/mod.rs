@@ -1,0 +1,334 @@
+// SPDX-License-Identifier: GPL-2.0-only
+//! The Projects dialog the template chooser opens: what is loaded, and which project is active.
+use crate::dockable_window::DockableWindow;
+use crate::{GuiCommandState, GuiProject, GuiProjectAction, GuiProjectGroup, GuiShellAction};
+use imgui::{
+    Condition, Key, SelectableFlags, TableColumnFlags, TableColumnSetup, TreeNodeFlags, Ui,
+};
+use std::sync::atomic::{AtomicU64, Ordering};
+
+#[path = "new_project_wizard.rs"]
+mod new_project_wizard;
+mod project_editor;
+#[path = "project_picker.rs"]
+mod project_picker;
+
+const TITLE: &str = "Projects";
+const SIZE: [f32; 2] = [760., 520.];
+static PROJECT_REQUEST: AtomicU64 = AtomicU64::new(1);
+
+fn next_project_request() -> u64 {
+    PROJECT_REQUEST.fetch_add(1, Ordering::Relaxed)
+}
+
+#[derive(Default)]
+pub(crate) struct ProjectsDialog {
+    opening: bool,
+    open: crate::dockable_lifecycle::DockableState,
+    dock_title: String,
+    /// The row a click chose to inspect; choosing one does not activate it.
+    inspected: Option<String>,
+    inspection_redraw: bool,
+    /// The settings group the arrow keys open and close.
+    selected_group: Option<String>,
+    open_groups: Vec<String>,
+    wizard: new_project_wizard::NewProjectWizard,
+    picker: project_picker::ProjectPicker,
+    editor: project_editor::ProjectEditor,
+    activation_request: Option<u64>,
+    activation_error: Option<String>,
+}
+impl DockableWindow for ProjectsDialog {}
+impl ProjectsDialog {
+    pub(crate) fn register_dockable(
+        &mut self,
+        registry: &mut crate::dockable_lifecycle::DockRegistry,
+        identity: &str,
+    ) -> Result<(), String> {
+        self.dock_title = format!("Projects###{identity}");
+        registry.register::<Self>(&self.dock_title, &self.open)
+    }
+    pub(crate) fn request(&mut self) {
+        self.opening = true;
+        self.inspected = None;
+    }
+    pub(crate) fn is_requested(&self) -> bool {
+        self.opening || self.open.is_requested()
+    }
+    pub(crate) fn opens_in_dock(&self, ui: &Ui) -> bool {
+        self.opening && crate::widget_abi::window_has_dock(ui, self.title())
+    }
+    fn title(&self) -> &str {
+        if self.dock_title.is_empty() {
+            TITLE
+        } else {
+            &self.dock_title
+        }
+    }
+    /// Close with its parent; example: `projects.close()` when the chooser closes.
+    pub(crate) fn close(&mut self) {
+        self.open.set_open(false);
+        self.opening = false;
+        self.inspection_redraw = false;
+        self.wizard.cancel();
+        self.picker.cancel();
+        self.editor.cancel();
+        self.activation_request = None;
+        self.activation_error = None;
+    }
+    /// A frame must follow so the dialog opens without waiting for an event.
+    pub(crate) fn needs_frame(&self) -> bool {
+        self.opening
+            || self.inspection_redraw
+            || self.wizard.needs_frame()
+            || self.picker.needs_frame()
+    }
+    /// Draw above the chooser, for example `dialog.panel(ui, &state, &mut actions)`.
+    pub(crate) fn panel(
+        &mut self,
+        ui: &Ui,
+        state: &GuiCommandState,
+        actions: &mut Vec<GuiShellAction>,
+    ) {
+        self.inspection_redraw = false;
+        let focus_dock = self.opens_in_dock(ui);
+        if std::mem::take(&mut self.opening) {
+            self.open.set_open(true);
+        }
+        if !self.open.is_open() {
+            return;
+        }
+        self.finish_activation(state);
+        self.editor.finish(state);
+        let title = self.title().to_owned();
+        Self::center_dockable(ui, &title, SIZE);
+        let mut open = true;
+        let mut done = false;
+        let window = Self::dockable_window(ui, &title, &mut open).focused(focus_dock);
+        window.build(|| {
+            {
+                let _disabled = ui.begin_disabled(self.editor.is_open());
+                self.project_rows(ui, &state.projects);
+            }
+            ui.separator();
+            self.settings_contents(ui, &state.projects);
+            ui.separator();
+            {
+                let _disabled = ui.begin_disabled(self.editor.is_open());
+                self.new_and_browse(ui, &state.projects);
+            }
+            ui.same_line();
+            self.editor.save_button(ui, actions);
+            ui.same_line();
+            self.apply_button(ui, state, actions);
+            ui.same_line();
+            done = crate::widget_abi::button(ui, "Done", [80., 0.])
+                || !crate::widget_abi::any_popup_open(ui)
+                    && ui.is_window_focused()
+                    && ui.is_key_pressed_no_repeat(Key::Escape);
+            if let Some(location) = self.wizard.panel(ui, state, actions) {
+                self.inspected = Some(location);
+                self.inspection_redraw = true;
+            }
+            if let Some(location) = self.picker.panel(ui, state, actions) {
+                self.inspected = Some(location);
+                // The project rows were drawn before the picker acknowledged the request.
+                self.inspection_redraw = true;
+            }
+            if let Some(error) = &self.activation_error {
+                ui.text_wrapped(error);
+            }
+        });
+        if !open || done {
+            self.close();
+        }
+    }
+    fn new_and_browse(&mut self, ui: &Ui, projects: &[GuiProject]) {
+        if crate::widget_abi::button(ui, "New", [0.; 2]) {
+            self.wizard.request();
+        }
+        ui.same_line();
+        if crate::widget_abi::button(ui, "Browse", [0.; 2]) {
+            let location = self.shown_project(projects).map(|row| row.location.clone());
+            self.picker.request(location.as_deref());
+        }
+    }
+    fn finish_activation(&mut self, state: &GuiCommandState) {
+        if let Some((request, result)) = &state.project_file_result
+            && self.activation_request == Some(*request)
+        {
+            self.activation_request = None;
+            self.activation_error = result.as_ref().err().cloned();
+        }
+    }
+    fn apply_button(
+        &mut self,
+        ui: &Ui,
+        state: &GuiCommandState,
+        actions: &mut Vec<GuiShellAction>,
+    ) {
+        let target = self
+            .shown_project(&state.projects)
+            .filter(|row| !row.active);
+        let _disabled = ui.begin_disabled(
+            target.is_none() || self.activation_request.is_some() || self.editor.is_open(),
+        );
+        if crate::widget_abi::button(ui, "Apply", [0.; 2])
+            && let Some(project) = target
+        {
+            let request = next_project_request();
+            actions.push(GuiShellAction::ProjectFile(GuiProjectAction::Activate {
+                request,
+                path: project.location.clone().into(),
+            }));
+            self.activation_request = Some(request);
+            self.activation_error = None;
+        }
+    }
+    fn settings_contents(&mut self, ui: &Ui, projects: &[GuiProject]) {
+        if self.editor.is_open() {
+            if self.editor.panel(ui) {
+                self.editor.cancel();
+                self.inspection_redraw = true;
+            }
+            return;
+        }
+        self.settings_tree(ui, projects);
+        if let Some(project) = self.shown_project(projects)
+            && crate::widget_abi::button(ui, "Edit Settings", [0.; 2])
+        {
+            self.editor.request(project);
+            self.inspection_redraw = true;
+        }
+    }
+    fn project_rows(&mut self, ui: &Ui, projects: &[GuiProject]) {
+        if projects.is_empty() {
+            ui.text_disabled("No projects loaded");
+        }
+        self.project_table(ui, projects);
+        if let Some(provisional) = self.wizard.provisional_name() {
+            ui.text_disabled(provisional);
+        }
+    }
+    fn project_table(&mut self, ui: &Ui, projects: &[GuiProject]) {
+        let Some(_table) = ui.begin_table("project-list", 2) else {
+            return;
+        };
+        let mut name = TableColumnSetup::new("Name");
+        name.flags = TableColumnFlags::WIDTH_FIXED;
+        name.init_width_or_weight = ui.current_font_size() * 13.;
+        ui.table_setup_column_with(name);
+        ui.table_setup_column("Location");
+        ui.table_headers_row();
+        let shown = self.shown_project(projects).map(|row| row.location.clone());
+        for project in projects {
+            if project_row(ui, project, shown.as_deref()) {
+                self.inspected = Some(project.location.clone());
+                self.activation_error = None;
+                self.inspection_redraw = true;
+            }
+        }
+    }
+    /// The project the tree describes: the row a click chose, or else the active one.
+    fn shown_project<'p>(&self, projects: &'p [GuiProject]) -> Option<&'p GuiProject> {
+        let inspected = self.inspected.as_deref();
+        projects
+            .iter()
+            .find(|row| Some(row.location.as_str()) == inspected)
+            .or_else(|| projects.iter().find(|row| row.active))
+    }
+    fn settings_tree(&mut self, ui: &Ui, projects: &[GuiProject]) {
+        let Some(project) = self.shown_project(projects).cloned() else {
+            return;
+        };
+        let Some(_settings) = ui
+            .tree_node_config("Project Settings")
+            .default_open(true)
+            .push()
+        else {
+            return;
+        };
+        ui.bullet();
+        ui.text_wrapped(format!("Location: {}", project.location));
+        ui.bullet_text(format!("Workspace: {}", project.settings.workspace));
+        ui.bullet_text(format!(
+            "Libraries: {}",
+            project.settings.libraries.join(", ")
+        ));
+        for group in &project.groups {
+            self.settings_group(ui, group);
+        }
+    }
+    fn settings_group(&mut self, ui: &Ui, group: &GuiProjectGroup) {
+        let selected = self.selected_group.as_deref() == Some(group.label.as_str());
+        self.follow_arrow_keys(ui, &group.label, selected);
+        let open = self.open_groups.contains(&group.label);
+        let mut flags = TreeNodeFlags::OPEN_ON_ARROW | TreeNodeFlags::SPAN_AVAIL_WIDTH;
+        if selected {
+            flags |= TreeNodeFlags::SELECTED;
+        }
+        let token = ui
+            .tree_node_config(&group.label)
+            .flags(flags)
+            .opened(open, Condition::Always)
+            .push();
+        if ui.is_item_clicked() {
+            self.selected_group = Some(group.label.clone());
+        }
+        if token.is_some() {
+            for row in &group.rows {
+                ui.bullet_text(row);
+            }
+        }
+    }
+    /// Right opens the selected group and Left closes it; no other group changes.
+    fn follow_arrow_keys(&mut self, ui: &Ui, label: &str, selected: bool) {
+        if !selected {
+            return;
+        }
+        if ui.is_key_pressed_no_repeat(Key::RightArrow)
+            && !self.open_groups.iter().any(|g| g == label)
+        {
+            self.open_groups.push(label.to_owned());
+        }
+        if ui.is_key_pressed_no_repeat(Key::LeftArrow) {
+            self.open_groups.retain(|group| group != label);
+        }
+    }
+}
+fn project_row(ui: &Ui, project: &GuiProject, inspected: Option<&str>) -> bool {
+    ui.table_next_row();
+    ui.table_next_column();
+    let _identity = ui.push_id(&project.location);
+    let chose = choose_project_name(
+        ui,
+        &project_row_name(project),
+        inspected == Some(project.location.as_str()),
+    );
+    ui.table_next_column();
+    ui.text_wrapped(&project.location);
+    chose
+}
+
+fn choose_project_name(ui: &Ui, label: &str, selected: bool) -> bool {
+    let cursor = ui.cursor_pos();
+    let width = ui.content_region_avail()[0].max(1.);
+    let height = ui.calc_text_size_with_opts(label, false, width)[1];
+    let chose = ui
+        .selectable_config("##project-name")
+        .selected(selected)
+        .size([0., height])
+        // Inside a dialog a plain selectable would close it.
+        .flags(SelectableFlags::DONT_CLOSE_POPUPS | SelectableFlags::SPAN_ALL_COLUMNS)
+        .build();
+    ui.set_cursor_pos(cursor);
+    ui.text_wrapped(label);
+    chose
+}
+fn project_row_name(project: &GuiProject) -> String {
+    let mark = if project.active { "(active) " } else { "" };
+    format!("{mark}{}", project.name)
+}
+#[cfg(test)]
+#[path = "../../../tests/application/document-creation/projects.rs"]
+mod tests;

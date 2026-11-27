@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Workspace layout and panel visibility: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature" package="testsuite/Feature: Workspace layout and panel visibility: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:02:04.706731777Z" time="13.761464979"><testcase name="Scenario: Switch the selected drawing browser entry: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature:322:3" time="13.761464979"><system-out><![CDATA[  Scenario: Switch the selected drawing browser entry
+   ✔  Given `fixtures/cad/blank-drawing.odd` is open in the MCAD Software with a border and title block
+   ✔  And the sheet branch is expanded in the drawing browser
+   ✔  When the user selects the sheet border entry in the drawing browser
+   ✔  Then the border entry is highlighted in the browser
+   ✔  And the drawing sheet remains displayed
+   ✔  When the user selects the sheet title block entry in the drawing browser
+   ✔  Then the title block entry is highlighted in the browser
+   ✔  And the border entry is no longer highlighted as the active selection
+   ✔  And the drawing sheet remains displayed
+]]></system-out></testcase></testsuite></testsuites>

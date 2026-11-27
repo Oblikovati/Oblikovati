@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon appearance: tmp/obk-ribbon-appearance-full.Do3D8M/pin/features/application/ribbon-appearance/ribbon-appearance.feature" package="testsuite/Feature: Ribbon appearance: tmp/obk-ribbon-appearance-full.Do3D8M/pin/features/application/ribbon-appearance/ribbon-appearance.feature" tests="18" errors="0" failures="0" hostname="localhost" timestamp="2026-11-20T17:33:46.948093412Z" time="305.472398621"><testcase name="Scenario: Inspect the appearance menu: tmp/obk-ribbon-appearance-full.Do3D8M/pin/features/application/ribbon-appearance/ribbon-appearance.feature:5:3" time="11.4321326"><system-out><![CDATA[  Scenario: Inspect the appearance menu
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the full 3D Model ribbon uses the Normal appearance
+   ✔  When the user right-clicks a ribbon panel title and opens "Ribbon Appearance"
+   ✔  Then the submenu offers "Normal", "Text Off", "Small", "Compact", and "Large"
+   ✔  And "Normal" is marked as selected
+   ✔  And the submenu offers "Reset Ribbon"
+]]></system-out></testcase><testcase name="Scenario: Hide command labels: tmp/obk-ribbon-appearance-full.Do3D8M/pin/features/application/ribbon-appearance/ribbon-appearance.feature:13:3" time="14.819654325"><system-out><![CDATA[  Scenario: Hide command labels
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the full 3D Model ribbon uses the Normal appearance
+   ✔  When the user selects "Text Off" from the Ribbon Appearance submenu
+   ✔  Then command icons remain visible without command labels
+   ✔  And panel titles remain visible
+   ✔  And the ribbon panels reflow
+   ✔  When the user reopens the Ribbon Appearance submenu
+   ✔  Then "Text Off" is marked as selected
+]]></system-out></testcase><testcase name="Scenario: Use small ribbon commands: tmp/obk-ribbon-appearance-full.Do3D8M/pin/features/application/ribbon-appearance/ribbon-appearance.feature:23:3" time="12.922739356"><system-out><![CDATA[  Scenario: Use small ribbon commands
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the full 3D Model ribbon uses the Text Off appearance
+   ✔  When the user selects "Small" from the Ribbon Appearance submenu
+   ✔  Then the command icons are smaller and the command area is shorter
+   ✔  And the panel titles remain visible
+   ✔  When the user reopens the Ribbon Appearance submenu
+   ✔  Then "Small" is marked as selected
+]]></system-out></testcase><testcase name="Scenario: Use compact ribbon commands: tmp/obk-ribbon-appearance-full.Do3D8M/pin/features/application/ribbon-appearance/ribbon-appearance.feature:32:3" time="12.383670027"><system-out><![CDATA[  Scenario: Use compact ribbon commands
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the full 3D Model ribbon uses the Small appearance
+   ✔  When the user selects "Compact" from the Ribbon Appearance submenu
+   ✔  Then multiple command icons are arranged in a single horizontal row
+   ✔  And at least one group is displayed as a compact panel button
+   ✔  When the user reopens the Ribbon Appearance submenu
+   ✔  Then "Compact" is marked as selected
+]]></system-out></testcase><testcase name="Scenario: Use large ribbon commands and restore normal appearance: tmp/obk-ribbon-appearance-full.Do3D8M/pin/features/application/ribbon-appearance/ribbon-appearance.feature:41:3" time="13.802185127"><system-out><![CDATA[  Scenario: Use large ribbon commands and restore normal appearance
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the full 3D Model ribbon uses the Compact appearance
+   ✔  When the user selects "Large" from the Ribbon Appearance submenu
+   ✔  Then larger command icons appear in two rows without visible command labels
+   ✔  And panel titles remain visible
+   ✔  When the user reopens the Ribbon Appearance submenu
+   ✔  Then "Large" is marked as selected
+   ✔  When the user selects "Normal"
+   ✔  Then the ribbon shows its mixed-size icons and command labels again
+   ✔  And the part remains visible
+]]></system-out></testcase><testcase name="Scenario: Retain compact appearance when switching tabs and cycling display modes: tmp/obk-ribbon-appearance-full.Do3D8M/pin/features/application/ribbon-appearance/ribbon-appearance.feature:53:3" time="14.726853038"><system-out><![CDATA[  Scenario: Retain compact appearance when switching tabs and cycling display modes
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the full 3D Model ribbon uses the Compact appearance
+   ✔  And the ribbon display control is set to cycle through all modes
+   ✔  When the user selects the Tools tab
+   ✔  Then its ribbon commands use the compact layout
+   ✔  When the user cycles the ribbon through panel buttons, panel titles, and tabs only back to the full ribbon
+   ✔  Then the Tools ribbon commands still use the compact layout
+   ✔  And the Ribbon Appearance submenu marks "Compact" as selected
+]]></system-out></testcase><testcase name="Scenario: Dismiss the appearance submenu without changing the ribbon: tmp/obk-ribbon-appearance-full.Do3D8M/pin/features/application/ribbon-appearance/ribbon-appearance.feature:63:3" time="31.477627618"><system-out><![CDATA[  Scenario: Dismiss the appearance submenu without changing the ribbon
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the full Tools ribbon uses the Normal appearance
+   ✔  And Team Web, Tutorials, and User Commands are enabled in Show Panels
+   ✔  When the user right-clicks the Options panel title and opens "Ribbon Appearance"
+   ✔  And the user presses Escape
+   ✔  Then the appearance submenu closes and the panel context menu remains open
+   ✔  When the user presses Escape again
+   ✔  Then the panel context menu closes
+   ✔  And the Tools ribbon remains in the Normal appearance
+]]></system-out></testcase><testcase name="Scenario: Change appearance while additional commands are expanded: tmp/obk-ribbon-appearance-full.Do3D8M/pin/features/application/ribbon-appearance/ribbon-appearance.feature:74:3" time="16.736084843"><system-out><![CDATA[  Scenario: Change appearance while additional commands are expanded
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the full 3D Model ribbon uses the Normal appearance
+   ✔  And the Modify additional command area is open
+   ✔  When the user selects "Text Off" from Ribbon Appearance
+   ✔  Then the Modify additional command area remains open
+   ✔  And its command icons remain visible without their text labels
+   ✔  And the expanded area becomes narrower
+   ✔  And the Modify panel title remains visible
+   ✔  When the user selects "Normal" from Ribbon Appearance
+   ✔  Then the Modify additional command area remains open
+   ✔  And its command labels are visible again
+   ✔  And the expanded area returns to its wider layout
+]]></system-out></testcase><testcase name="Scenario: Hide panel titles while retaining access to additional commands: tmp/obk-ribbon-appearance-full.Do3D8M/pin/features/application/ribbon-appearance/ribbon-appearance.feature:88:3" time="13.025032535"><system-out><![CDATA[  Scenario: Hide panel titles while retaining access to additional commands
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the full 3D Model ribbon shows panel titles
+   ✔  When the user opens the 3D Model tab context menu
+   ✔  And the user clears Show Panel Titles
+   ✔  Then the ribbon panel titles are hidden
+   ✔  And the main panel commands remain visible
+   ✔  And the Modify panel expansion arrow remains visible
+   ✔  When the user clicks the Modify panel expansion arrow
+   ✔  Then the Modify additional-command area opens
+   ✔  And the area shows Move Bodies, Bend Part, and Copy Object
+   ✔  When the user opens the 3D Model tab context menu
+   ✔  Then Show Panel Titles is unchecked
+   ✔  When the user selects Show Panel Titles
+   ✔  Then the panel titles return
+   ✔  And the additional-command area closes
+]]></system-out></testcase><testcase name="Scenario: Share the panel-title setting between two ribbon tabs: tmp/obk-ribbon-appearance-full.Do3D8M/pin/features/application/ribbon-appearance/ribbon-appearance.feature:105:3" time="13.061426983"><system-out><![CDATA[  Scenario: Share the panel-title setting between two ribbon tabs
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the full 3D Model ribbon shows panel titles
+   ✔  When the user clears Show Panel Titles from the 3D Model tab context menu
+   ✔  And the user selects the Tools tab
+   ✔  Then the Tools panel titles are hidden
+   ✔  When the user opens the Tools tab context menu
+   ✔  Then Show Panel Titles is unchecked
+   ✔  When the user selects Show Panel Titles from that menu
+   ✔  Then the Tools panel titles appear
+   ✔  When the user returns to 3D Model
+   ✔  Then the 3D Model panel titles are visible
+]]></system-out></testcase><testcase name="Scenario: Switch tabs while the appearance submenu is open: tmp/obk-ribbon-appearance-full.Do3D8M/pin/features/application/ribbon-appearance/ribbon-appearance.feature:118:3" time="11.495098161"><system-out><![CDATA[  Scenario: Switch tabs while the appearance submenu is open
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the full 3D Model ribbon uses the Normal appearance
+   ✔  And the Ribbon Appearance submenu is open from a panel context menu
+   ✔  When the user clicks the Tools tab
+   ✔  Then the appearance submenu and panel context menu close
+   ✔  And the Tools ribbon is displayed
+   ✔  And the part remains visible
+]]></system-out></testcase><testcase name="Scenario: Switch between appearance and panel visibility submenus: tmp/obk-ribbon-appearance-full.Do3D8M/pin/features/application/ribbon-appearance/ribbon-appearance.feature:127:3" time="37.677106943"><system-out><![CDATA[  Scenario: Switch between appearance and panel visibility submenus
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the full Tools ribbon uses the Normal appearance
+   ✔  And Team Web, Tutorials, and User Commands are enabled in Show Panels
+   ✔  And Team Web, Tutorials, and User Commands are enabled in Show Panels
+   ✔  When the user right-clicks the Options panel title
+   ✔  And the user opens the Ribbon Appearance submenu
+   ✔  Then Normal is marked as selected
+   ✔  When the user opens Show Panels from the same context menu
+   ✔  Then the appearance submenu closes
+   ✔  And the Show Panels submenu lists Measure, Material and Appearance, Options, Clipboard, Find, Team Web, Tutorials, and User Commands with visibility checks
+   ✔  And Team Web, Tutorials, and User Commands are checked in the captured panel state
+   ✔  And the panel context menu remains open
+   ✔  When the user opens Ribbon Appearance again
+   ✔  Then the Show Panels submenu closes
+   ✔  And Normal is still marked as selected
+   ✔  When the user clicks empty viewport space
+   ✔  Then both menus close
+   ✔  And the Tools ribbon remains visible
+]]></system-out></testcase><testcase name="Scenario: Keep Text Off appearance when switching ribbon tabs: tmp/obk-ribbon-appearance-full.Do3D8M/pin/features/application/ribbon-appearance/ribbon-appearance.feature:147:3" time="12.912243555"><system-out><![CDATA[  Scenario: Keep Text Off appearance when switching ribbon tabs
+   ✔  Given a part is active in the MCAD Software with the full Tools ribbon visible
+   ✔  And the ribbon appearance is Normal
+   ✔  When the user right-clicks the Tools Options panel title
+   ✔  And the user opens Ribbon Appearance
+   ✔  And the user selects Text Off
+   ✔  Then the Tools command icons are visible without their command labels
+   ✔  And the Tools panel titles remain visible
+   ✔  When the user selects the 3D Model ribbon tab
+   ✔  Then the 3D Model command icons are visible without their command labels
+   ✔  And the 3D Model panel titles remain visible
+   ✔  When the user right-clicks the Modify panel title
+   ✔  And the user opens Ribbon Appearance
+   ✔  Then Text Off is marked as selected
+   ✔  When the user selects Normal
+   ✔  Then command labels are visible on the 3D Model ribbon
+   ✔  When the user selects the Tools ribbon tab
+   ✔  Then the full Tools ribbon and its command labels are visible
+]]></system-out></testcase><testcase name="Scenario: Change panel title visibility from an inactive tab: tmp/obk-ribbon-appearance-full.Do3D8M/pin/features/application/ribbon-appearance/ribbon-appearance.feature:166:3" time="11.782860135"><system-out><![CDATA[  Scenario: Change panel title visibility from an inactive tab
+   ✔  Given a part is active in the MCAD Software with the full 3D Model ribbon selected
+   ✔  And panel titles are visible
+   ✔  When the user opens the inactive Sketch tab context menu
+   ✔  Then 3D Model remains selected and Show Panel Titles is checked
+   ✔  When the user clears Show Panel Titles
+   ✔  Then the menu closes and the 3D Model panel titles are hidden
+   ✔  And 3D Model remains selected
+   ✔  When the user selects Tools
+   ✔  Then the Tools panel titles are also hidden
+   ✔  When the user opens the Tools tab context menu
+   ✔  Then Show Panel Titles is unchecked and Tools remains selected
+   ✔  When the user selects Show Panel Titles
+   ✔  Then the menu closes and the Tools panel titles are visible
+   ✔  And Tools remains selected
+   ✔  When the user returns to 3D Model
+   ✔  Then the 3D Model panel titles are visible
+]]></system-out></testcase><testcase name="Scenario: Cancel the Reset Ribbon confirmation: tmp/obk-ribbon-appearance-full.Do3D8M/pin/features/application/ribbon-appearance/ribbon-appearance.feature:184:3" time="7.639476716"><system-out><![CDATA[  Scenario: Cancel the Reset Ribbon confirmation
+   ✔  Given a part is active in the MCAD Software with the full Tools ribbon selected
+   ✔  When the user right-clicks the Options panel title
+   ✔  And the user opens Ribbon Appearance
+   ✔  And the user selects Reset Ribbon
+   ✔  Then a confirmation says ribbon customizations will be removed
+   ✔  And the confirmation offers Yes and No
+   ✔  When the user selects No
+   ✔  Then the confirmation closes without resetting the ribbon
+   ✔  And the full Tools ribbon and active part remain visible
+]]></system-out></testcase><testcase name="Scenario: Apply Reset Ribbon after confirming: tmp/obk-ribbon-appearance-full.Do3D8M/pin/features/application/ribbon-appearance/ribbon-appearance.feature:195:3" time="28.332392908"><system-out><![CDATA[  Scenario: Apply Reset Ribbon after confirming
+   ✔  Given a part is active in the MCAD Software with the full Tools ribbon selected
+   ✔  And Team Web is disabled while Tutorials and User Commands are enabled in Show Panels
+   ✔  When the user right-clicks the Options panel title
+   ✔  And the user opens Ribbon Appearance
+   ✔  And the user selects Reset Ribbon
+   ✔  Then a confirmation says ribbon customizations will be removed
+   ✔  And the confirmation offers Yes and No
+   ✔  When the user selects Yes
+   ✔  Then the confirmation closes
+   ✔  And the 3D Model tab becomes active with its full command groups
+   ✔  When the user selects Tools
+   ✔  Then the Tools ribbon displays its standard groups with Team Web visible and Tutorials and User Commands hidden
+   ✔  And the part remains visible
+]]></system-out></testcase><testcase name="Scenario: Change ribbon command size modes while editing a sketch: tmp/obk-ribbon-appearance-full.Do3D8M/pin/features/application/ribbon-appearance/ribbon-appearance.feature:210:3" time="24.931166822"><system-out><![CDATA[  Scenario: Change ribbon command size modes while editing a sketch
+   ✔  Given a part has an active editable sketch in the MCAD Software
+   ✔  And Ribbon Appearance is set to Normal
+   ✔  When the user selects Small from the Ribbon Appearance submenu
+   ✔  Then command icons become smaller and the command area becomes shorter
+   ✔  And panel titles remain visible
+   ✔  And the sketch remains active and unchanged
+   ✔  When the user selects Compact from the Ribbon Appearance submenu
+   ✔  Then command icons form a dense horizontal layout within the panel groups
+   ✔  And panel titles remain visible
+   ✔  And the sketch remains active and unchanged
+   ✔  When the user selects Large from the Ribbon Appearance submenu
+   ✔  Then command icons become larger and occupy multiple rows
+   ✔  And command labels are hidden
+   ✔  And panel titles remain visible
+   ✔  And the sketch remains active and unchanged
+   ✔  When the user selects Normal from the Ribbon Appearance submenu
+   ✔  Then the normal mixed-size command layout is restored
+   ✔  And the sketch remains active and unchanged
+]]></system-out></testcase><testcase name="Scenario: Close the appearance menu by switching tabs during sketch editing: tmp/obk-ribbon-appearance-full.Do3D8M/pin/features/application/ribbon-appearance/ribbon-appearance.feature:230:3" time="16.314646929"><system-out><![CDATA[  Scenario: Close the appearance menu by switching tabs during sketch editing
+   ✔  Given a part has an active editable sketch in the MCAD Software
+   ✔  And the Sketch ribbon uses Normal appearance
+   ✔  When the user opens Ribbon Appearance from the Create panel title context menu
+   ✔  And the user clicks the Tools tab while the submenu is open
+   ✔  Then the appearance submenu and panel context menu close
+   ✔  And the Tools ribbon is displayed
+   ✔  And the part and editable sketch remain active and unchanged
+   ✔  When the user selects the Sketch tab
+   ✔  Then the Sketch ribbon is displayed
+   ✔  And sketch editing remains active and unchanged
+]]></system-out></testcase></testsuite></testsuites>

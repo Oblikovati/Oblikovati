@@ -1,0 +1,23 @@
+{
+  "kind": "full-feature-native-run",
+  "scenario_revision": "05317bbb2d0809a532b29b7ff6f726a5722b865f",
+  "application_base": "950a5cce5",
+  "test_code_commit": "50aa9f2a6",
+  "application_state": "The test code was uncommitted during this run and matches test_code_commit.",
+  "renderer": "Vulkan Lavapipe under Xvfb",
+  "scenario_counts": {
+    "passed": 8,
+    "failed": 1
+  },
+  "step_counts": {
+    "passed": 64,
+    "failed": 1
+  },
+  "historical_only": true,
+  "limitations": "Point-10 has no supplied recorded fixture. Input is injected into the window frame loop; runner build provenance remains open in #3978.",
+  "artifacts_sha256": {
+    "source-revision.json": "7f3649e659137a63c4a10e68d2777666012e125689e89cc5da0b419716a14a52",
+    "junit.xml": "ff6f909b2fe5aa165ee27d93ee4d61272e462d0a248155e58b0e15ff34c3b251",
+    "cucumber.json": "c6580010ee612e83dccae99ab0848a5ef43f3dbc708c57020624b14e22ce6c7e"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "application_commit": "4502890df",
+  "feature": "features/application/workspace-layout/workspace-layout.feature",
+  "feature_sha256": "3910a3c0a4e77f5417ae7e6b08019330b2fdc621c6af1c4f7f42ff9acb329b1a",
+  "scenario": "Expand and collapse an extrusion's browser children",
+  "result": "1 scenario passed",
+  "environment": "Linux X11, Xvfb, software Vulkan; mixed native and scripted window input",
+  "scope": "Focused scenario only; not a full-feature run. Source was unversioned."
+}

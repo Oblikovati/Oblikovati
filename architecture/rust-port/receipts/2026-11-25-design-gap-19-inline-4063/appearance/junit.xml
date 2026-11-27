@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon appearance: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-appearance/ribbon-appearance.feature" package="testsuite/Feature: Ribbon appearance: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-appearance/ribbon-appearance.feature" tests="18" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T15:38:47.059506955Z" time="146.082045972"><testcase name="Scenario: Inspect the appearance menu: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-appearance/ribbon-appearance.feature:6:3" time="5.200888052"><system-out><![CDATA[  Scenario: Inspect the appearance menu
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And the full 3D Model ribbon uses the Normal appearance
+   ✔  When the user right-clicks a ribbon panel title and opens "Ribbon Appearance"
+   ✔  Then the submenu offers "Normal", "Text Off", "Small", "Compact", and "Large"
+   ✔  And "Normal" is marked as selected
+   ✔  And the submenu offers "Reset Ribbon"
+]]></system-out></testcase><testcase name="Scenario: Hide command labels: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-appearance/ribbon-appearance.feature:15:3" time="6.192816577"><system-out><![CDATA[  Scenario: Hide command labels
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And the full 3D Model ribbon uses the Normal appearance
+   ✔  When the user selects "Text Off" from the Ribbon Appearance submenu
+   ✔  Then command icons remain visible without command labels
+   ✔  And panel titles remain visible
+   ✔  And the ribbon panels reflow
+   ✔  When the user reopens the Ribbon Appearance submenu
+   ✔  Then "Text Off" is marked as selected
+]]></system-out></testcase><testcase name="Scenario: Use small ribbon commands: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-appearance/ribbon-appearance.feature:26:3" time="5.65921842"><system-out><![CDATA[  Scenario: Use small ribbon commands
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And the full 3D Model ribbon uses the Text Off appearance
+   ✔  When the user selects "Small" from the Ribbon Appearance submenu
+   ✔  Then the command icons are smaller and the command area is shorter
+   ✔  And the panel titles remain visible
+   ✔  When the user reopens the Ribbon Appearance submenu
+   ✔  Then "Small" is marked as selected
+]]></system-out></testcase><testcase name="Scenario: Use compact ribbon commands: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-appearance/ribbon-appearance.feature:36:3" time="6.758809541"><system-out><![CDATA[  Scenario: Use compact ribbon commands
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And the full 3D Model ribbon uses the Small appearance
+   ✔  When the user selects "Compact" from the Ribbon Appearance submenu
+   ✔  Then multiple command icons are arranged in a single horizontal row
+   ✔  And at least one group is displayed as a compact panel button
+   ✔  When the user reopens the Ribbon Appearance submenu
+   ✔  Then "Compact" is marked as selected
+]]></system-out></testcase><testcase name="Scenario: Use large ribbon commands and restore normal appearance: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-appearance/ribbon-appearance.feature:46:3" time="6.195076632"><system-out><![CDATA[  Scenario: Use large ribbon commands and restore normal appearance
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And the full 3D Model ribbon uses the Compact appearance
+   ✔  When the user selects "Large" from the Ribbon Appearance submenu
+   ✔  Then larger command icons appear in two rows without visible command labels
+   ✔  And panel titles remain visible
+   ✔  When the user reopens the Ribbon Appearance submenu
+   ✔  Then "Large" is marked as selected
+   ✔  When the user selects "Normal"
+   ✔  Then the ribbon shows its mixed-size icons and command labels again
+   ✔  And the part remains visible
+]]></system-out></testcase><testcase name="Scenario: Retain compact appearance when switching tabs and cycling display modes: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-appearance/ribbon-appearance.feature:59:3" time="5.612073746"><system-out><![CDATA[  Scenario: Retain compact appearance when switching tabs and cycling display modes
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And the full 3D Model ribbon uses the Compact appearance
+   ✔  And the ribbon display control is set to cycle through all modes
+   ✔  When the user selects the Tools tab
+   ✔  Then its ribbon commands use the compact layout
+   ✔  When the user cycles the ribbon through panel buttons, panel titles, and tabs only back to the full ribbon
+   ✔  Then the Tools ribbon commands still use the compact layout
+   ✔  And the Ribbon Appearance submenu marks "Compact" as selected
+]]></system-out></testcase><testcase name="Scenario: Dismiss the appearance submenu without changing the ribbon: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-appearance/ribbon-appearance.feature:70:3" time="13.147985566"><system-out><![CDATA[  Scenario: Dismiss the appearance submenu without changing the ribbon
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And the full Tools ribbon uses the Normal appearance
+   ✔  And Team Web, Tutorials, and User Commands are enabled in Show Panels
+   ✔  When the user right-clicks the Options panel title and opens "Ribbon Appearance"
+   ✔  And the user presses Escape
+   ✔  Then the appearance submenu closes and the panel context menu remains open
+   ✔  When the user presses Escape again
+   ✔  Then the panel context menu closes
+   ✔  And the Tools ribbon remains in the Normal appearance
+]]></system-out></testcase><testcase name="Scenario: Change appearance while additional commands are expanded: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-appearance/ribbon-appearance.feature:82:3" time="6.990630362"><system-out><![CDATA[  Scenario: Change appearance while additional commands are expanded
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And the full 3D Model ribbon uses the Normal appearance
+   ✔  And the Modify additional command area is open
+   ✔  When the user selects "Text Off" from Ribbon Appearance
+   ✔  Then the Modify additional command area remains open
+   ✔  And its command icons remain visible without their text labels
+   ✔  And the expanded area becomes narrower
+   ✔  And the Modify panel title remains visible
+   ✔  When the user selects "Normal" from Ribbon Appearance
+   ✔  Then the Modify additional command area remains open
+   ✔  And its command labels are visible again
+   ✔  And the expanded area returns to its wider layout
+]]></system-out></testcase><testcase name="Scenario: Hide panel titles while retaining access to additional commands: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-appearance/ribbon-appearance.feature:97:3" time="5.359582406"><system-out><![CDATA[  Scenario: Hide panel titles while retaining access to additional commands
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And the full 3D Model ribbon shows panel titles
+   ✔  When the user opens the 3D Model tab context menu
+   ✔  And the user clears Show Panel Titles
+   ✔  Then the ribbon panel titles are hidden
+   ✔  And the main panel commands remain visible
+   ✔  And the Modify panel expansion arrow remains visible
+   ✔  When the user clicks the Modify panel expansion arrow
+   ✔  Then the Modify additional-command area opens
+   ✔  And the area shows Move Bodies, Bend Part, and Copy Object
+   ✔  When the user opens the 3D Model tab context menu
+   ✔  Then Show Panel Titles is unchecked
+   ✔  When the user selects Show Panel Titles
+   ✔  Then the panel titles return
+   ✔  And the additional-command area closes
+]]></system-out></testcase><testcase name="Scenario: Share the panel-title setting between two ribbon tabs: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-appearance/ribbon-appearance.feature:115:3" time="6.450732069"><system-out><![CDATA[  Scenario: Share the panel-title setting between two ribbon tabs
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And the full 3D Model ribbon shows panel titles
+   ✔  When the user clears Show Panel Titles from the 3D Model tab context menu
+   ✔  And the user selects the Tools tab
+   ✔  Then the Tools panel titles are hidden
+   ✔  When the user opens the Tools tab context menu
+   ✔  Then Show Panel Titles is unchecked
+   ✔  When the user selects Show Panel Titles from that menu
+   ✔  Then the Tools panel titles appear
+   ✔  When the user returns to 3D Model
+   ✔  Then the 3D Model panel titles are visible
+]]></system-out></testcase><testcase name="Scenario: Switch tabs while the appearance submenu is open: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-appearance/ribbon-appearance.feature:129:3" time="6.029295246"><system-out><![CDATA[  Scenario: Switch tabs while the appearance submenu is open
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And the full 3D Model ribbon uses the Normal appearance
+   ✔  And the Ribbon Appearance submenu is open from a panel context menu
+   ✔  When the user clicks the Tools tab
+   ✔  Then the appearance submenu and panel context menu close
+   ✔  And the Tools ribbon is displayed
+   ✔  And the part remains visible
+]]></system-out></testcase><testcase name="Scenario: Switch between appearance and panel visibility submenus: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-appearance/ribbon-appearance.feature:139:3" time="19.657788829"><system-out><![CDATA[  Scenario: Switch between appearance and panel visibility submenus
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And the full Tools ribbon uses the Normal appearance
+   ✔  And Team Web, Tutorials, and User Commands are enabled in Show Panels
+   ✔  And Team Web, Tutorials, and User Commands are enabled in Show Panels
+   ✔  When the user right-clicks the Options panel title
+   ✔  And the user opens the Ribbon Appearance submenu
+   ✔  Then Normal is marked as selected
+   ✔  When the user opens Show Panels from the same context menu
+   ✔  Then the appearance submenu closes
+   ✔  And the Show Panels submenu lists Measure, Material and Appearance, Options, Clipboard, Find, Team Web, Tutorials, and User Commands with visibility checks
+   ✔  And Team Web, Tutorials, and User Commands are checked in the captured panel state
+   ✔  And the panel context menu remains open
+   ✔  When the user opens Ribbon Appearance again
+   ✔  Then the Show Panels submenu closes
+   ✔  And Normal is still marked as selected
+   ✔  When the user clicks empty viewport space
+   ✔  Then both menus close
+   ✔  And the Tools ribbon remains visible
+]]></system-out></testcase><testcase name="Scenario: Keep Text Off appearance when switching ribbon tabs: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-appearance/ribbon-appearance.feature:160:3" time="8.221062612"><system-out><![CDATA[  Scenario: Keep Text Off appearance when switching ribbon tabs
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active with the full Tools ribbon visible in the MCAD Software
+   ✔  And the ribbon appearance is Normal
+   ✔  When the user right-clicks the Tools Options panel title
+   ✔  And the user opens Ribbon Appearance
+   ✔  And the user selects Text Off
+   ✔  Then the Tools command icons are visible without their command labels
+   ✔  And the Tools panel titles remain visible
+   ✔  When the user selects the 3D Model ribbon tab
+   ✔  Then the 3D Model command icons are visible without their command labels
+   ✔  And the 3D Model panel titles remain visible
+   ✔  When the user right-clicks the Modify panel title
+   ✔  And the user opens Ribbon Appearance
+   ✔  Then Text Off is marked as selected
+   ✔  When the user selects Normal
+   ✔  Then command labels are visible on the 3D Model ribbon
+   ✔  When the user selects the Tools ribbon tab
+   ✔  Then the full Tools ribbon and its command labels are visible
+]]></system-out></testcase><testcase name="Scenario: Change panel title visibility from an inactive tab: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-appearance/ribbon-appearance.feature:180:3" time="6.633706928"><system-out><![CDATA[  Scenario: Change panel title visibility from an inactive tab
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active with the full 3D Model ribbon selected in the MCAD Software
+   ✔  And panel titles are visible
+   ✔  When the user opens the inactive Sketch tab context menu
+   ✔  Then 3D Model remains selected and Show Panel Titles is checked
+   ✔  When the user clears Show Panel Titles
+   ✔  Then the menu closes and the 3D Model panel titles are hidden
+   ✔  And 3D Model remains selected
+   ✔  When the user selects Tools
+   ✔  Then the Tools panel titles are also hidden
+   ✔  When the user opens the Tools tab context menu
+   ✔  Then Show Panel Titles is unchecked and Tools remains selected
+   ✔  When the user selects Show Panel Titles
+   ✔  Then the menu closes and the Tools panel titles are visible
+   ✔  And Tools remains selected
+   ✔  When the user returns to 3D Model
+   ✔  Then the 3D Model panel titles are visible
+]]></system-out></testcase><testcase name="Scenario: Cancel the Reset Ribbon confirmation: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-appearance/ribbon-appearance.feature:199:3" time="4.587848596"><system-out><![CDATA[  Scenario: Cancel the Reset Ribbon confirmation
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active with the full Tools ribbon selected in the MCAD Software
+   ✔  When the user right-clicks the Options panel title
+   ✔  And the user opens Ribbon Appearance
+   ✔  And the user selects Reset Ribbon
+   ✔  Then a confirmation says ribbon customizations will be removed
+   ✔  And the confirmation offers Yes and No
+   ✔  When the user selects No
+   ✔  Then the confirmation closes without resetting the ribbon
+   ✔  And the full Tools ribbon and active part remain visible
+]]></system-out></testcase><testcase name="Scenario: Apply Reset Ribbon after confirming: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-appearance/ribbon-appearance.feature:211:3" time="13.513262056"><system-out><![CDATA[  Scenario: Apply Reset Ribbon after confirming
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active with the full Tools ribbon selected in the MCAD Software
+   ✔  And Team Web is disabled while Tutorials and User Commands are enabled in Show Panels
+   ✔  When the user right-clicks the Options panel title
+   ✔  And the user opens Ribbon Appearance
+   ✔  And the user selects Reset Ribbon
+   ✔  Then a confirmation says ribbon customizations will be removed
+   ✔  And the confirmation offers Yes and No
+   ✔  When the user selects Yes
+   ✔  Then the confirmation closes
+   ✔  And the 3D Model tab becomes active with its full command groups
+   ✔  When the user selects Tools
+   ✔  Then the Tools ribbon displays its standard groups with Team Web visible and Tutorials and User Commands hidden
+   ✔  And the part remains visible
+]]></system-out></testcase><testcase name="Scenario: Change ribbon command size modes while editing a sketch: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-appearance/ribbon-appearance.feature:227:3" time="11.670138576"><system-out><![CDATA[  Scenario: Change ribbon command size modes while editing a sketch
+   ✔  Given `fixtures/cad/planar-sketch-empty-xy.opd` is open with Sketch1 being edited in the MCAD Software
+   ✔  And Ribbon Appearance is set to Normal
+   ✔  When the user selects Small from the Ribbon Appearance submenu
+   ✔  Then command icons become smaller and the command area becomes shorter
+   ✔  And panel titles remain visible
+   ✔  And the sketch remains active and unchanged
+   ✔  When the user selects Compact from the Ribbon Appearance submenu
+   ✔  Then command icons form a dense horizontal layout within the panel groups
+   ✔  And panel titles remain visible
+   ✔  And the sketch remains active and unchanged
+   ✔  When the user selects Large from the Ribbon Appearance submenu
+   ✔  Then command icons become larger and occupy multiple rows
+   ✔  And command labels are hidden
+   ✔  And panel titles remain visible
+   ✔  And the sketch remains active and unchanged
+   ✔  When the user selects Normal from the Ribbon Appearance submenu
+   ✔  Then the normal mixed-size command layout is restored
+   ✔  And the sketch remains active and unchanged
+]]></system-out></testcase><testcase name="Scenario: Close the appearance menu by switching tabs during sketch editing: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-appearance/ribbon-appearance.feature:248:3" time="8.201129758"><system-out><![CDATA[  Scenario: Close the appearance menu by switching tabs during sketch editing
+   ✔  Given `fixtures/cad/planar-sketch-empty-xy.opd` is open with Sketch1 being edited in the MCAD Software
+   ✔  And the Sketch ribbon uses Normal appearance
+   ✔  When the user opens Ribbon Appearance from the Create panel title context menu
+   ✔  And the user clicks the Tools tab while the submenu is open
+   ✔  Then the appearance submenu and panel context menu close
+   ✔  And the Tools ribbon is displayed
+   ✔  And the part and editable sketch remain active and unchanged
+   ✔  When the user selects the Sketch tab
+   ✔  Then the Sketch ribbon is displayed
+   ✔  And sketch editing remains active and unchanged
+]]></system-out></testcase></testsuite></testsuites>

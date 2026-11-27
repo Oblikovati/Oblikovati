@@ -1,0 +1,13 @@
+{
+  "after": {
+    "commit": "028492efd6fad2a4fb740048e4810c7c6e29234a",
+    "dirty": false,
+    "root": "/scenario"
+  },
+  "before": {
+    "commit": "028492efd6fad2a4fb740048e4810c7c6e29234a",
+    "dirty": false,
+    "root": "/scenario"
+  },
+  "source_changed": false
+}

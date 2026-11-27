@@ -1,0 +1,49 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.11s
+     Running unittests src/lib.rs (target/debug/deps/oblikovati_head-ce56125549edf4ba)
+
+running 1 test
+test native::gui_loop_tests::application_bdd::application_scenarios_use_the_native_window ... Feature: Ribbon display modes
+  Scenario: Select a ribbon tab from the overflow menu
+   ✔  Given a part is active in the MCAD Software with the full Manage ribbon visible
+   ✔  And the application window is narrow enough that View is outside the visible tab row
+   ✔  When the user clicks the ribbon tab overflow control
+   ✔  Then a menu lists the tabs that do not fit in the row, including View
+   ✔  When the user selects View from the overflow menu
+   ✔  Then the menu closes and the View command groups replace the Manage command groups
+   ✔  And View remains outside the visible tab row at this window width
+   ✔  When the user maximizes the application window
+   ✔  Then View is visible and active in the tab row
+   ✔  And its command groups and the part remain visible
+  Scenario: Dismiss tab overflow without changing the active ribbon
+   ✔  Given a part is active in the MCAD Software with the full ribbon displayed
+   ✔  And View is active but outside the visible tab row because the window is narrow
+   ✔  When the user opens the ribbon tab overflow menu
+   ✔  And the user presses Escape
+   ✔  Then the overflow menu closes
+   ✔  And the View command groups remain displayed
+   ✔  When the user reopens the ribbon tab overflow menu
+   ✔  And the user clicks the overflow control again
+   ✔  Then the overflow menu closes and the View command groups remain displayed
+   ✔  When the user reopens the ribbon tab overflow menu
+   ✔  And the user clicks the visible Tools tab
+   ✔  Then the overflow menu closes
+   ✔  And Tools becomes active and its command groups replace the View groups
+   ✔  And the part remains visible
+  Scenario: Select an overflowed tab while the ribbon is minimized to tabs
+   ✔  Given a part is active in the MCAD Software with Tools active in tabs-only ribbon display
+   ✔  And the narrow application window places View in the tab overflow menu
+   ✔  When the user opens the tab overflow menu and selects View
+   ✔  Then the overflow menu closes
+   ✔  And no temporary ribbon command panel opens
+   ✔  And the part remains visible
+   ✔  When the user maximizes the application window
+   ✔  Then View is visible as the active tab
+   ✔  And the ribbon remains in tabs-only display
+[Summary]
+1 feature
+3 scenarios (3 passed)
+33 steps (33 passed)
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1356 filtered out; finished in 25.59s
+

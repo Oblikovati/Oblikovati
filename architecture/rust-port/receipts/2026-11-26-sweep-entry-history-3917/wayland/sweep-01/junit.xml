@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Sweep: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/sweep/sweep.feature" package="testsuite/Feature: Sweep: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/sweep/sweep.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-26T20:34:07.484165875Z" time="3.827593839"><testcase name="Scenario: sweep-01 Invoke Sweep in an empty part: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/sweep/sweep.feature:7:3" time="3.827593839"><system-out><![CDATA[  Scenario: sweep-01 Invoke Sweep in an empty part
+   ✔  Given a disposable copy of the native fixture "fixtures/cad/blank-metric-part.opd" is open
+   ✔  And the part contains no sketches or solid bodies
+   ✔  When Sweep is clicked
+   ✔  Then the MCAD Software displays a tip describing the geometry combinations required to create a sweep
+   ✔  And OK and Help are available
+]]></system-out></testcase></testsuite></testsuites>

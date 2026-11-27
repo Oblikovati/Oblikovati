@@ -1,0 +1,27 @@
+{
+  "kind": "native-acceptance",
+  "scenario_id": "scenario:d18b6850de15454ecd7f32357111404c60d2e76f061f91351cc7e0ae230956e0",
+  "scenario_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+  "source_sha256": "9793d6a9ad9655ef4412295075dfbf9f6f5a5f97566e5564f2ca9f5a9c68f62a",
+  "application_commit": "5d31a179c5db7a0321dfab9c427c6f391ba0df89",
+  "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+  "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+  "runner": "application_scenarios_use_the_native_window",
+  "exit_code": 0,
+  "environment": {
+    "os": "Linux",
+    "renderer": "Vulkan Lavapipe on Xvfb 1920x1200"
+  },
+  "cucumber": {
+    "path": "architecture/rust-port/receipts/2026-11-14-refresh-d18b6850/cucumber.json",
+    "sha256": "232e9fff40ae3913bdc18eac7a11f554268c7b4b5f38cfbf666a92f5ded7aa3d"
+  },
+  "source_report": {
+    "path": "architecture/rust-port/receipts/2026-11-14-refresh-d18b6850/source-revision.json",
+    "sha256": "7cfb98aa43531b397763f61c8c8689d45c18d489daa0417699ca413e046289d4"
+  },
+  "capture": {
+    "path": "architecture/rust-port/receipts/2026-11-14-refresh-d18b6850/Apply-and-restore-wheel-opacity.png",
+    "sha256": "f30ad95312c5a90741a1017e4ba612be1b2c4ad079f81296da2c1ce8bfc835cb"
+  }
+}

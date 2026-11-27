@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T13:02:11.410429206Z" time="45.542339397"><testcase name="Scenario: Return to a command category after selecting a source row: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature:1099:3" time="45.542339397"><system-out><![CDATA[  Scenario: Return to a command category after selecting a source row
+   ✔  Given a part is active in the MCAD Software with the full 3D Model ribbon visible
+   ✔  And the Ribbon customization dialog shows All Commands and an empty Part 3D Model target
+   ✔  When the user selects "2D Sketches" in the available commands list
+   ✔  And the user changes the command source to Sketch Tab
+   ✔  And the user returns the command source to All Commands
+   ✔  And the user clicks the add command button
+   ✔  Then a "<Separator>" row appears in the target list
+   ✔  And "2D Sketches" is not added to the target list
+   ✔  And the target shows a pending-change marker
+   ✔  When the user cancels customization
+   ✔  Then the customization dialog closes
+]]></system-out></testcase></testsuite></testsuites>

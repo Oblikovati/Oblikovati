@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Main application window frame: git/oblikovati-workspace/oblikovati-rust/target/native-scratch.HSqCy5/current-main-window-frame-source/features/application/main-window-frame/main-window-frame.feature" package="testsuite/Feature: Main application window frame: git/oblikovati-workspace/oblikovati-rust/target/native-scratch.HSqCy5/current-main-window-frame-source/features/application/main-window-frame/main-window-frame.feature" tests="8" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T23:19:06.532311979Z" time="158.866435608"><testcase name="Scenario: Resize the restored main window from its perimeter: git/oblikovati-workspace/oblikovati-rust/target/native-scratch.HSqCy5/current-main-window-frame-source/features/application/main-window-frame/main-window-frame.feature:95:5" time="20.397891661"><system-out><![CDATA[  Scenario Outline: Resize the restored main window from its perimeter
+   ✔  Given `fixtures/cad/main-window-frame-start.opd` is open and active in the MCAD Software
+   ✔  And a part document is active in the MCAD Software
+   ✔  And the main window is restored with space to grow within the desktop work area
+   ✔  When the user moves the pointer onto the left edge of the main window
+   ✔  Then the pointer shows a horizontal resize cursor
+   ✔  When the user drags that resize handle outward and releases it
+   ✔  Then the window grows along the horizontal axes of that handle
+   ✔  And the opposite boundary stays fixed
+   ✔  And the viewport and visible ribbon fit within the resized window
+   ✔  And all application window controls remain reachable
+]]></system-out></testcase><testcase name="Scenario: Resize the restored main window from its perimeter: git/oblikovati-workspace/oblikovati-rust/target/native-scratch.HSqCy5/current-main-window-frame-source/features/application/main-window-frame/main-window-frame.feature:96:5" time="20.71980896"><system-out><![CDATA[  Scenario Outline: Resize the restored main window from its perimeter
+   ✔  Given `fixtures/cad/main-window-frame-start.opd` is open and active in the MCAD Software
+   ✔  And a part document is active in the MCAD Software
+   ✔  And the main window is restored with space to grow within the desktop work area
+   ✔  When the user moves the pointer onto the right edge of the main window
+   ✔  Then the pointer shows a horizontal resize cursor
+   ✔  When the user drags that resize handle outward and releases it
+   ✔  Then the window grows along the horizontal axes of that handle
+   ✔  And the opposite boundary stays fixed
+   ✔  And the viewport and visible ribbon fit within the resized window
+   ✔  And all application window controls remain reachable
+]]></system-out></testcase><testcase name="Scenario: Resize the restored main window from its perimeter: git/oblikovati-workspace/oblikovati-rust/target/native-scratch.HSqCy5/current-main-window-frame-source/features/application/main-window-frame/main-window-frame.feature:97:5" time="20.505382744"><system-out><![CDATA[  Scenario Outline: Resize the restored main window from its perimeter
+   ✔  Given `fixtures/cad/main-window-frame-start.opd` is open and active in the MCAD Software
+   ✔  And a part document is active in the MCAD Software
+   ✔  And the main window is restored with space to grow within the desktop work area
+   ✔  When the user moves the pointer onto the top edge of the main window
+   ✔  Then the pointer shows a vertical resize cursor
+   ✔  When the user drags that resize handle outward and releases it
+   ✔  Then the window grows along the vertical axes of that handle
+   ✔  And the opposite boundary stays fixed
+   ✔  And the viewport and visible ribbon fit within the resized window
+   ✔  And all application window controls remain reachable
+]]></system-out></testcase><testcase name="Scenario: Resize the restored main window from its perimeter: git/oblikovati-workspace/oblikovati-rust/target/native-scratch.HSqCy5/current-main-window-frame-source/features/application/main-window-frame/main-window-frame.feature:98:5" time="20.463482555"><system-out><![CDATA[  Scenario Outline: Resize the restored main window from its perimeter
+   ✔  Given `fixtures/cad/main-window-frame-start.opd` is open and active in the MCAD Software
+   ✔  And a part document is active in the MCAD Software
+   ✔  And the main window is restored with space to grow within the desktop work area
+   ✔  When the user moves the pointer onto the bottom edge of the main window
+   ✔  Then the pointer shows a vertical resize cursor
+   ✔  When the user drags that resize handle outward and releases it
+   ✔  Then the window grows along the vertical axes of that handle
+   ✔  And the opposite boundary stays fixed
+   ✔  And the viewport and visible ribbon fit within the resized window
+   ✔  And all application window controls remain reachable
+]]></system-out></testcase><testcase name="Scenario: Resize the restored main window from its perimeter: git/oblikovati-workspace/oblikovati-rust/target/native-scratch.HSqCy5/current-main-window-frame-source/features/application/main-window-frame/main-window-frame.feature:99:5" time="18.290057378"><system-out><![CDATA[  Scenario Outline: Resize the restored main window from its perimeter
+   ✔  Given `fixtures/cad/main-window-frame-start.opd` is open and active in the MCAD Software
+   ✔  And a part document is active in the MCAD Software
+   ✔  And the main window is restored with space to grow within the desktop work area
+   ✔  When the user moves the pointer onto the top left corner of the main window
+   ✔  Then the pointer shows a northwest-southeast resize cursor
+   ✔  When the user drags that resize handle outward and releases it
+   ✔  Then the window grows along the northwest-southeast axes of that handle
+   ✔  And the opposite boundary stays fixed
+   ✔  And the viewport and visible ribbon fit within the resized window
+   ✔  And all application window controls remain reachable
+]]></system-out></testcase><testcase name="Scenario: Resize the restored main window from its perimeter: git/oblikovati-workspace/oblikovati-rust/target/native-scratch.HSqCy5/current-main-window-frame-source/features/application/main-window-frame/main-window-frame.feature:100:5" time="18.778475763"><system-out><![CDATA[  Scenario Outline: Resize the restored main window from its perimeter
+   ✔  Given `fixtures/cad/main-window-frame-start.opd` is open and active in the MCAD Software
+   ✔  And a part document is active in the MCAD Software
+   ✔  And the main window is restored with space to grow within the desktop work area
+   ✔  When the user moves the pointer onto the bottom right corner of the main window
+   ✔  Then the pointer shows a northwest-southeast resize cursor
+   ✔  When the user drags that resize handle outward and releases it
+   ✔  Then the window grows along the northwest-southeast axes of that handle
+   ✔  And the opposite boundary stays fixed
+   ✔  And the viewport and visible ribbon fit within the resized window
+   ✔  And all application window controls remain reachable
+]]></system-out></testcase><testcase name="Scenario: Resize the restored main window from its perimeter: git/oblikovati-workspace/oblikovati-rust/target/native-scratch.HSqCy5/current-main-window-frame-source/features/application/main-window-frame/main-window-frame.feature:101:5" time="19.646572733"><system-out><![CDATA[  Scenario Outline: Resize the restored main window from its perimeter
+   ✔  Given `fixtures/cad/main-window-frame-start.opd` is open and active in the MCAD Software
+   ✔  And a part document is active in the MCAD Software
+   ✔  And the main window is restored with space to grow within the desktop work area
+   ✔  When the user moves the pointer onto the top right corner of the main window
+   ✔  Then the pointer shows a northeast-southwest resize cursor
+   ✔  When the user drags that resize handle outward and releases it
+   ✔  Then the window grows along the northeast-southwest axes of that handle
+   ✔  And the opposite boundary stays fixed
+   ✔  And the viewport and visible ribbon fit within the resized window
+   ✔  And all application window controls remain reachable
+]]></system-out></testcase><testcase name="Scenario: Resize the restored main window from its perimeter: git/oblikovati-workspace/oblikovati-rust/target/native-scratch.HSqCy5/current-main-window-frame-source/features/application/main-window-frame/main-window-frame.feature:102:5" time="20.064763814"><system-out><![CDATA[  Scenario Outline: Resize the restored main window from its perimeter
+   ✔  Given `fixtures/cad/main-window-frame-start.opd` is open and active in the MCAD Software
+   ✔  And a part document is active in the MCAD Software
+   ✔  And the main window is restored with space to grow within the desktop work area
+   ✔  When the user moves the pointer onto the bottom left corner of the main window
+   ✔  Then the pointer shows a northeast-southwest resize cursor
+   ✔  When the user drags that resize handle outward and releases it
+   ✔  Then the window grows along the northeast-southwest axes of that handle
+   ✔  And the opposite boundary stays fixed
+   ✔  And the viewport and visible ribbon fit within the resized window
+   ✔  And all application window controls remain reachable
+]]></system-out></testcase></testsuite></testsuites>

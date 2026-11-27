@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T04:08:43.479828004Z" time="52.055707175"><testcase name="Scenario: Export and restore a custom ribbon command: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature:390:3" time="52.055707175"><system-out><![CDATA[  Scenario: Export and restore a custom ribbon command
+   ✔> Given the MCAD Software starts with a writable copy of `fixtures/preferences/ribbon-normal` as its configuration directory
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part is active in the MCAD Software
+   ✔  And the Part Tools custom panel is initially empty
+   ✔  And "2D Sketches" is added with Large and Text unchecked and applied
+   ✔  And the customization is exported to a new XML file
+   ✔  And the command is returned to the available list and the empty panel is applied
+   ✔  When the user imports the exported XML file
+   ✔  Then "2D Sketches" appears in the target list with Large and Text unchecked
+   ✔  And the target has a pending-change marker
+   ✔  And the User Commands panel is not yet visible on the Tools ribbon
+   ✔  When the user clicks "Apply"
+   ✔  Then the User Commands panel appears with a small command icon and no visible label
+   ✔  And the customization dialog remains open without a pending-change marker
+]]></system-out></testcase></testsuite></testsuites>

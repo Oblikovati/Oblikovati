@@ -1,0 +1,224 @@
+// SPDX-License-Identifier: GPL-2.0-only
+use super::*;
+use oblikovati_solve::residual::{ResidualTolerance, ResidualValueUnit};
+struct LengthTarget;
+impl ResidualSource for LengthTarget {
+    fn tolerance_kind(&self) -> ResidualTolerance {
+        ResidualTolerance::ModelLength
+    }
+    fn equation_unit(&self, _: usize) -> ResidualValueUnit {
+        ResidualValueUnit::Length
+    }
+    fn evaluate(&self, variables: &[DualNumber]) -> Result<Vec<DualNumber>, ResidualError> {
+        Ok(vec![variables[0].clone()])
+    }
+}
+#[test]
+fn accepted_evaluation_retains_each_declared_residual_domain() {
+    let length = LengthTarget;
+    let angular = RadianTarget;
+    let relative = Target {
+        target: 0.,
+        coefficient: 1.,
+    };
+    let blocks = [
+        block(&length, &[0]),
+        block(&length, &[3]),
+        block(&angular, &[1]),
+        block(&relative, &[2]),
+    ];
+    let options = SolveOptions {
+        max_iterations: 0,
+        ..Default::default()
+    };
+    let result = solve_constraints(&[2., 0.1, 1e12, -3.], &blocks, options, || false).unwrap();
+    assert_eq!(result.residual_evidence.model_length, Some(3.));
+    assert_eq!(result.residual_evidence.unitless, Some(0.1));
+    assert_eq!(result.residual_evidence.model_relative_rows, 1);
+    assert_eq!(
+        result.residual_units,
+        [
+            ResidualValueUnit::Length,
+            ResidualValueUnit::Length,
+            ResidualValueUnit::Radians,
+            ResidualValueUnit::Unknown
+        ]
+    );
+    assert_eq!(result.evaluation.values(), &[2., -3., 0.1, 1e12]);
+    assert_eq!(
+        result.residual_domains,
+        [
+            ResidualTolerance::ModelLength,
+            ResidualTolerance::ModelLength,
+            ResidualTolerance::Unitless,
+            ResidualTolerance::ModelRelative
+        ]
+    );
+}
+struct NonfiniteResidual(f64);
+impl ResidualSource for NonfiniteResidual {
+    fn evaluate(&self, _: &[DualNumber]) -> Result<Vec<DualNumber>, ResidualError> {
+        Ok(vec![DualNumber::constant(self.0)?])
+    }
+}
+#[test]
+fn nonfinite_row_cannot_produce_residual_evidence() {
+    for invalid in [f64::NAN, f64::INFINITY, f64::NEG_INFINITY] {
+        let source = NonfiniteResidual(invalid);
+        assert!(
+            solve_constraints(&[], &[block(&source, &[])], SolveOptions::default(), || {
+                false
+            })
+            .is_err()
+        );
+    }
+}
+struct RadianTarget;
+impl ResidualSource for RadianTarget {
+    fn tolerance_kind(&self) -> ResidualTolerance {
+        ResidualTolerance::Unitless
+    }
+    fn equation_unit(&self, _: usize) -> ResidualValueUnit {
+        ResidualValueUnit::Radians
+    }
+    fn evaluate(&self, variables: &[DualNumber]) -> Result<Vec<DualNumber>, ResidualError> {
+        Ok(vec![variables[0].clone()])
+    }
+}
+#[test]
+fn unitless_error_does_not_converge_early_beside_a_large_length_variable() {
+    let angular = RadianTarget;
+    let length = Target {
+        target: 1e12,
+        coefficient: 1.0,
+    };
+    let blocks = [block(&angular, &[0]), block(&length, &[1])];
+    let result = solve(&[0.9, 1e12], &blocks);
+    assert_eq!(result.termination, SolveTermination::Converged);
+    assert!(result.values[0].abs() <= SolveOptions::default().relative_tolerance);
+    assert_eq!(result.values[1], 1e12);
+    assert!(result.conflicts.is_empty());
+    assert_eq!(length.tolerance_kind(), ResidualTolerance::ModelRelative);
+}
+#[test]
+fn unsatisfied_unitless_source_is_reported_even_when_model_relative_error_is_small() {
+    let angular = RadianTarget;
+    let options = SolveOptions {
+        max_iterations: 0,
+        ..Default::default()
+    };
+    let result =
+        solve_constraints(&[1e12, 0.1], &[block(&angular, &[1])], options, || false).unwrap();
+    assert_eq!(result.termination, SolveTermination::IterationLimit);
+    assert_eq!(result.conflicts, [0]);
+    assert_eq!(result.relative_residual, 0.1);
+}
+
+struct MixedAngleOffset;
+impl ResidualSource for MixedAngleOffset {
+    fn equation_tolerance(&self, row: usize) -> ResidualTolerance {
+        if row == 0 {
+            ResidualTolerance::Unitless
+        } else {
+            ResidualTolerance::ModelRelative
+        }
+    }
+    fn evaluate(&self, variables: &[DualNumber]) -> Result<Vec<DualNumber>, ResidualError> {
+        Ok(vec![variables[0].clone(), variables[1].clone()])
+    }
+}
+fn mixed_result(angle: f64, offset: f64) -> NonlinearResult {
+    let source = MixedAngleOffset;
+    let blocks = [ResidualBlock {
+        source: &source,
+        variables: &[0, 1],
+        equations: 2,
+    }];
+    let options = SolveOptions {
+        max_iterations: 0,
+        ..Default::default()
+    };
+    solve_constraints(&[angle, offset, 1e12], &blocks, options, || false).unwrap()
+}
+#[test]
+fn mixed_source_reports_angular_error_without_relaxing_it_by_length() {
+    let result = mixed_result(0.1, 1.0);
+    assert_eq!(result.termination, SolveTermination::IterationLimit);
+    assert_eq!(result.relative_residual, 0.1);
+    assert_eq!(result.residual_evidence.model_length, None);
+    assert_eq!(result.residual_evidence.unitless, Some(0.1));
+    assert_eq!(result.conflicts, [0]);
+}
+#[test]
+fn mixed_source_keeps_the_offset_model_relative_and_the_angle_unitless() {
+    let result = mixed_result(0.0, 1.0);
+    assert_eq!(result.termination, SolveTermination::Converged);
+    assert_eq!(result.relative_residual, 1e-12);
+    assert!(result.conflicts.is_empty());
+}
+
+// #3788: a four-million-unit line couples a small coordinate derivative to a radian column.
+struct CoupledCoordinateAngle;
+impl ResidualSource for CoupledCoordinateAngle {
+    fn tolerance_kind(&self) -> ResidualTolerance {
+        ResidualTolerance::Unitless
+    }
+    fn evaluate(&self, variables: &[DualNumber]) -> Result<Vec<DualNumber>, ResidualError> {
+        Ok(vec![
+            variables[0].scaled(2.5e-7)?.plus(&variables[1])?,
+            variables[1].clone(),
+        ])
+    }
+}
+#[test]
+fn mixed_coordinate_and_angle_columns_converge_with_default_iteration_budget() {
+    let result = coupled_coordinate_angle_result();
+    assert_eq!(
+        result.termination,
+        SolveTermination::Converged,
+        "{result:?}"
+    );
+    let tolerance = SolveOptions::default().relative_tolerance;
+    assert!(
+        result
+            .evaluation
+            .values()
+            .iter()
+            .all(|value| value.abs() <= tolerance)
+    );
+}
+
+fn coupled_coordinate_angle_result() -> NonlinearResult {
+    let source = CoupledCoordinateAngle;
+    let blocks = [ResidualBlock {
+        source: &source,
+        variables: &[0, 1],
+        equations: 2,
+    }];
+    solve(&[4e6, 0.0], &blocks)
+}
+
+// #3928: a small dimensional residual and full local rank do not bound correction.
+struct WeakLengthConstraint;
+impl ResidualSource for WeakLengthConstraint {
+    fn tolerance_kind(&self) -> ResidualTolerance {
+        ResidualTolerance::ModelLength
+    }
+    fn equation_unit(&self, _: usize) -> ResidualValueUnit {
+        ResidualValueUnit::Length
+    }
+    fn evaluate(&self, variables: &[DualNumber]) -> Result<Vec<DualNumber>, ResidualError> {
+        Ok(vec![variables[0].scaled(1e-12)?])
+    }
+}
+#[test]
+fn convergence_and_rank_do_not_bound_geometric_correction() {
+    let source = WeakLengthConstraint;
+    let result = solve(&[1.], &[block(&source, &[0])]);
+    assert_eq!(result.termination, SolveTermination::Converged);
+    assert_eq!(result.structure.degrees_of_freedom, 0);
+    assert_eq!(result.residual_evidence.model_length, Some(1e-12));
+    assert_eq!(result.values[0], 1.);
+    // The only exact solution is x = 0: its distance is 1 model length unit.
+    assert_eq!((result.values[0] - 0.).abs(), 1.);
+}

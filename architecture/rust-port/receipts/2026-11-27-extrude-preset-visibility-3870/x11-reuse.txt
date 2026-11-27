@@ -1,0 +1,4 @@
+running 2 tests
+test native::gui_loop_tests::application_bdd::solid_extrusion::reference_extent::preset_visibility::last_used_extrude_settings_come_from_the_accepted_draft ... ok
+test native::gui_loop_tests::application_bdd::solid_extrusion::reference_extent::preset_visibility::named_extrude_preset_restores_distance_into_a_new_draft ... ok
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 1789 filtered out; finished in 26.76s

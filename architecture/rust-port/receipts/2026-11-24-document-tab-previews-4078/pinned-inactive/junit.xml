@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Open document tabs: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/document-tabs/document-tabs.feature" package="testsuite/Feature: Open document tabs: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/document-tabs/document-tabs.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T15:22:21.706693286Z" time="33.531168582"><testcase name="Scenario: Preview an inactive document from its tab: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/document-tabs/document-tabs.feature:297:3" time="33.531168582"><system-out><![CDATA[  Scenario: Preview an inactive document from its tab
+   ✔  Given two part documents are open in the MCAD Software
+   ✔  And the first part is active and the second has an empty sketch visible
+   ✔  When the user hovers over the second part's document tab
+   ✔  Then a thumbnail of the second part's sketch appears above the tab
+   ✔  And the second part's name appears above the thumbnail
+   ✔  And the first part remains active
+   ✔  When the user moves the pointer away from the tab
+   ✔  Then the thumbnail and its name disappear
+   ✔  And the first part remains active
+]]></system-out></testcase></testsuite></testsuites>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Save and reopen part documents: target/native-scratch.HSqCy5/current-document-saving-source/features/application/document-saving/document-saving.feature" package="testsuite/Feature: Save and reopen part documents: target/native-scratch.HSqCy5/current-document-saving-source/features/application/document-saving/document-saving.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T02:23:29.315971581Z" time="19.698784456"><testcase name="Scenario: Cancel closing a modified unsaved part: target/native-scratch.HSqCy5/current-document-saving-source/features/application/document-saving/document-saving.feature:91:3" time="19.698784456"><system-out><![CDATA[  Scenario: Cancel closing a modified unsaved part
+   ✔  Given the user creates a new unsaved metric part in the MCAD Software
+   ✔  And the user creates and finishes an empty sketch on the XY datum plane
+   ✔  And the unsaved part containing that sketch is active
+   ✔  And save-change prompts are configured to always show
+   ✔  When the user closes the document tab
+   ✔  Then a save-changes prompt offers Yes, No and Cancel
+   ✔  When the user chooses Cancel
+   ✔  Then the part remains active
+   ✔  And its sketch remains in the model browser
+]]></system-out></testcase></testsuite></testsuites>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Expand a ribbon panel: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" package="testsuite/Feature: Expand a ribbon panel: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T11:26:48.166064687Z" time="20.082338016"><testcase name="Scenario: Cancel the layout reset from the Options expansion: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:604:3" time="20.082338016"><system-out><![CDATA[  Scenario: Cancel the layout reset from the Options expansion
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open and active
+   ✔  And the full Tools ribbon is visible
+   ✔  And the Options panel displays its additional commands
+   ✔  When the user activates Reset UI Layout
+   ✔  Then a confirmation dialog warns that the UI layout will be reset to its default
+   ✔  And the dialog offers Yes and No
+   ✔  When the user clicks No
+   ✔  Then the confirmation dialog closes
+   ✔  And the Tools ribbon remains visible
+   ✔  And the Options additional-command area is closed
+]]></system-out></testcase></testsuite></testsuites>

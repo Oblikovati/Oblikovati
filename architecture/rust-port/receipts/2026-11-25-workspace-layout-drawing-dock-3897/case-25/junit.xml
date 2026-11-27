@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Workspace layout and panel visibility: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature" package="testsuite/Feature: Workspace layout and panel visibility: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:00:46.088241303Z" time="11.594235248"><testcase name="Scenario: Inspect the drawing browser tree menu: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature:279:3" time="11.594235248"><system-out><![CDATA[  Scenario: Inspect the drawing browser tree menu
+   ✔  Given `fixtures/cad/blank-drawing.odd` is active in the MCAD Software
+   ✔  And the drawing browser is visible
+   ✔  When the user opens the drawing browser menu
+   ✔  Then the menu offers Expand All, Collapse All and Help
+   ✔  And the drawing sheet remains visible
+]]></system-out></testcase></testsuite></testsuites>

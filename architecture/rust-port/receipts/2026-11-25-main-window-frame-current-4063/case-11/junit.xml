@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Main application window frame: git/oblikovati-workspace/oblikovati-rust/target/native-scratch.HSqCy5/current-main-window-frame-source/features/application/main-window-frame/main-window-frame.feature" package="testsuite/Feature: Main application window frame: git/oblikovati-workspace/oblikovati-rust/target/native-scratch.HSqCy5/current-main-window-frame-source/features/application/main-window-frame/main-window-frame.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T23:24:20.492422612Z" time="28.931703305"><testcase name="Scenario: Keep the window Close action available to the desktop: git/oblikovati-workspace/oblikovati-rust/target/native-scratch.HSqCy5/current-main-window-frame-source/features/application/main-window-frame/main-window-frame.feature:130:3" time="28.931703305"><system-out><![CDATA[  Scenario: Keep the window Close action available to the desktop
+   ✔  Given a writable copy of `fixtures/cad/extrusion/extrusion-rect-8mm.opd` is open in the MCAD Software
+   ✔  And the user creates a sketch on the XY datum plane without saving the part
+   ✔  And the MCAD Software has an open part document with unsaved changes
+   ✔  When the user invokes the desktop window Close shortcut
+   ✔  Then a save-changes prompt identifies the part document
+   ✔  When the user chooses Cancel
+   ✔  Then the main window remains open and the part retains its unsaved changes
+]]></system-out></testcase></testsuite></testsuites>

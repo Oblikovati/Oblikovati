@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T12:22:22.201079334Z" time="25.068331187"><testcase name="Scenario: Stage a command in the selected custom panel: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature:12:3" time="25.068331187"><system-out><![CDATA[  Scenario: Stage a command in the selected custom panel
+   ✔  Given the ribbon customization dialog is open with an empty custom panel for "Part | 3D Model"
+   ✔  When the user selects "2D Sketches" in the available commands
+   ✔  And the user clicks the right transfer button
+   ✔  Then "2D Sketches" appears in the custom panel list
+   ✔  And the target tab selector indicates a pending change
+   ✔  And "OK", "Cancel", and "Apply" are available
+]]></system-out></testcase></testsuite></testsuites>

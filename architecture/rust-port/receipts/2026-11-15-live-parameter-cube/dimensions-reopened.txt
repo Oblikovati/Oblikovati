@@ -1,0 +1,1 @@
+2 dimension(s): #0 distance d6=size → 2, #1 distance d7=size → 2.

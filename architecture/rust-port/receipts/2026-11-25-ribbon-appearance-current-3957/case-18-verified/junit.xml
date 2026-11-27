@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon appearance: target/native-scratch.HSqCy5/current-ribbon-appearance-source/features/application/ribbon-appearance/ribbon-appearance.feature" package="testsuite/Feature: Ribbon appearance: target/native-scratch.HSqCy5/current-ribbon-appearance-source/features/application/ribbon-appearance/ribbon-appearance.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T23:39:29.516502813Z" time="39.255222714"><testcase name="Scenario: Close the appearance menu by switching tabs during sketch editing: target/native-scratch.HSqCy5/current-ribbon-appearance-source/features/application/ribbon-appearance/ribbon-appearance.feature:248:3" time="39.255222714"><system-out><![CDATA[  Scenario: Close the appearance menu by switching tabs during sketch editing
+   ✔  Given `fixtures/cad/planar-sketch-empty-xy.opd` is open with Sketch1 being edited in the MCAD Software
+   ✔  And the Sketch ribbon uses Normal appearance
+   ✔  When the user opens Ribbon Appearance from the Create panel title context menu
+   ✔  And the user clicks the Tools tab while the submenu is open
+   ✔  Then the appearance submenu and panel context menu close
+   ✔  And the Tools ribbon is displayed
+   ✔  And the part and editable sketch remain active and unchanged
+   ✔  When the user selects the Sketch tab
+   ✔  Then the Sketch ribbon is displayed
+   ✔  And sketch editing remains active and unchanged
+]]></system-out></testcase></testsuite></testsuites>

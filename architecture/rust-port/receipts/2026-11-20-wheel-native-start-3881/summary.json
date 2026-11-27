@@ -1,0 +1,9 @@
+{
+  "kind": "unsealed focused diagnostic",
+  "application_base_commit": "2a803ec63",
+  "feature_sha256": "8b6164be54d7a3bd307b4de24d7750079ce4d23b9ada2e6fec7a3b83149e2cfa",
+  "scenario": "Open the full navigation wheel and close it from its menu",
+  "scenarios_passed": 1,
+  "steps_passed": 15,
+  "limitations": "Focused run; unsealed live scenario source and build. Scenario uses scripted window input; the Escape regression uses X11 input. XMODIFIERS was unset for the Xvfb display."
+}

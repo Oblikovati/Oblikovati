@@ -1,0 +1,11 @@
+#!/bin/bash
+set -eu
+printf '%s\n' "$DISPLAY" > /tmp/obk-live-face-replay/display
+printf '%s\n' "$XAUTHORITY" > /tmp/obk-live-face-replay/xauthority
+export OBK_ADDINS_DIR=/tmp/obk-live-face-replay/addins OBK_MCP_ADDR=127.0.0.1:17898 VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json XMODIFIERS=@im=none
+/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/target/debug/oblikovati /tmp/obk-live-face-replay/test.opd > /tmp/obk-live-face-replay/host.log 2>&1 &
+host_pid=$!
+printf '%s\n' "$host_pid" > /tmp/obk-live-face-replay/pid
+cleanup() { kill "$host_pid" 2>/dev/null || true; wait "$host_pid" 2>/dev/null || true; }
+trap cleanup EXIT
+wait "$host_pid"

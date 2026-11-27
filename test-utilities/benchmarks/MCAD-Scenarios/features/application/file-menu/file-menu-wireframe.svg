@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 620" role="img" aria-labelledby="title desc">
+<title id="title">Application file menu conceptual wireframe</title>
+<desc id="desc">A vertical command list and recent documents panel open over a workspace.</desc>
+<rect width="1000" height="620" fill="#293747"/>
+<rect x="0" y="0" width="1000" height="48" fill="#35475b"/>
+<rect x="12" y="10" width="64" height="30" rx="3" fill="#e1b636"/>
+<text x="29" y="31" fill="#172c39" font-family="sans-serif" font-size="16">File</text>
+<rect x="12" y="48" width="520" height="525" fill="#3b4e63" stroke="#a8b6c4"/>
+<rect x="12" y="48" width="190" height="525" fill="#304255"/>
+<g font-family="sans-serif" fill="#f4f7fa" font-size="16">
+<text x="38" y="88">New</text><text x="38" y="130">Open</text><text x="38" y="172">Save</text><text x="38" y="214">Save As</text><text x="38" y="256">Export</text><text x="38" y="298">Share</text><text x="38" y="340">Manage</text><text x="38" y="382">Document properties</text><text x="38" y="424">Print</text><text x="38" y="466">Close</text>
+<text x="222" y="80">Recent documents</text><text x="232" y="131">Document A</text><text x="232" y="169">Document B</text><text x="232" y="207">Document C</text><text x="232" y="245">…</text>
+<text x="236" y="548" font-size="14">Options</text><text x="390" y="548" font-size="14">Exit</text></g>
+<g fill="#b8c9d5"><circle cx="22" cy="82" r="4"/><circle cx="22" cy="124" r="4"/><circle cx="22" cy="166" r="4"/><circle cx="22" cy="208" r="4"/><circle cx="22" cy="250" r="4"/><circle cx="22" cy="292" r="4"/><circle cx="22" cy="334" r="4"/><circle cx="22" cy="376" r="4"/><circle cx="22" cy="418" r="4"/><circle cx="22" cy="460" r="4"/><path d="M486 120h18v4h-18zM486 158h18v4h-18zM486 196h18v4h-18z"/></g>
+<g font-family="sans-serif" fill="#aebdca" font-size="16"><text x="676" y="315">Model viewport</text></g>
+<g fill="none" stroke="#94a9ba"><rect x="219" y="528" width="94" height="30" rx="3"/><rect x="367" y="528" width="140" height="30" rx="3"/></g>
+</svg>

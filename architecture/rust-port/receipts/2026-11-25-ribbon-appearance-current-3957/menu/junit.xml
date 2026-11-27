@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon appearance: target/native-scratch.HSqCy5/current-ribbon-appearance-source/features/application/ribbon-appearance/ribbon-appearance.feature" package="testsuite/Feature: Ribbon appearance: target/native-scratch.HSqCy5/current-ribbon-appearance-source/features/application/ribbon-appearance/ribbon-appearance.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T23:25:32.626296038Z" time="28.86421578"><testcase name="Scenario: Inspect the appearance menu: target/native-scratch.HSqCy5/current-ribbon-appearance-source/features/application/ribbon-appearance/ribbon-appearance.feature:6:3" time="28.86421578"><system-out><![CDATA[  Scenario: Inspect the appearance menu
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And the full 3D Model ribbon uses the Normal appearance
+   ✔  When the user right-clicks a ribbon panel title and opens "Ribbon Appearance"
+   ✔  Then the submenu offers "Normal", "Text Off", "Small", "Compact", and "Large"
+   ✔  And "Normal" is marked as selected
+   ✔  And the submenu offers "Reset Ribbon"
+]]></system-out></testcase></testsuite></testsuites>

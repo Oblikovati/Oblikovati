@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon docking: tmp/obk-docking-compact.Th6BA5/stable/checkout/features/application/ribbon-docking/ribbon-docking.feature" package="testsuite/Feature: Ribbon docking: tmp/obk-docking-compact.Th6BA5/stable/checkout/features/application/ribbon-docking/ribbon-docking.feature" tests="22" errors="0" failures="5" hostname="localhost" timestamp="2026-11-21T14:48:15.447902972Z" time="490.05961131"><testcase name="Scenario: Open the ribbon context menu: tmp/obk-docking-compact.Th6BA5/stable/checkout/features/application/ribbon-docking/ribbon-docking.feature:5:3" time="10.881469081"><system-out><![CDATA[  Scenario: Open the ribbon context menu
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the ribbon is docked at the top
+   ✔  When the user right-clicks the Modify group title
+   ✔  Then the ribbon context menu offers Ribbon Appearance and Show Panels
+   ✔  And it offers Customize User Commands and undocks Ribbon
+   ✔  And it offers Docking Positions
+]]></system-out></testcase><testcase name="Scenario: Open the ribbon context menu from the active tab: tmp/obk-docking-compact.Th6BA5/stable/checkout/features/application/ribbon-docking/ribbon-docking.feature:13:3" time="15.650269986"><system-out><![CDATA[  Scenario: Open the ribbon context menu from the active tab
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the full 3D Model ribbon is docked at the top
+   ✔  And panel titles are shown
+   ✔  When the user right-clicks the active 3D Model tab
+   ✔  Then the ribbon context menu offers Ribbon Appearance and Show Panels
+   ✔  And Show Panel Titles is checked
+   ✔  And the menu offers Customize User Commands, Undock Ribbon and Docking Positions
+   ✔  When the user presses Escape
+   ✔  Then the context menu closes
+   ✔  And the 3D Model ribbon remains visible
+]]></system-out></testcase><testcase name="Scenario: Inspect available ribbon docking positions: tmp/obk-docking-compact.Th6BA5/stable/checkout/features/application/ribbon-docking/ribbon-docking.feature:24:3" time="23.63507135"><system-out><![CDATA[  Scenario: Inspect available ribbon docking positions
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the full 3D Model ribbon is docked at the top
+   ✔  When the user right-clicks the active 3D Model tab
+   ✔  And opens Docking Positions
+   ✔  Then the submenu offers Top, Left and Right
+   ✔  And Top is checked
+   ✔  When the user presses Escape
+   ✔  Then the Docking Positions submenu closes and the context menu remains open
+   ✔  When the user presses Escape again
+   ✔  Then the context menu closes and the 3D Model ribbon remains docked at the top
+]]></system-out></testcase><testcase name="Scenario: Move the ribbon from the top to both sides and back: tmp/obk-docking-compact.Th6BA5/stable/checkout/features/application/ribbon-docking/ribbon-docking.feature:36:3" time="52.536820086"><system-out><![CDATA[  Scenario: Move the ribbon from the top to both sides and back
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the model browser is docked on the left
+   ✔  And the ribbon is docked at the top with the 3D Model tab selected
+   ✔  When the user right-clicks the active 3D Model tab and chooses Left from Docking Positions
+   ✔  Then the ribbon tabs are arranged vertically along the left edge
+   ✔  And the 3D Model command groups are stacked beside the tabs
+   ✔  And the model browser appears to the right of the ribbon
+   ✔  When the user right-clicks the active 3D Model tab and opens Docking Positions
+   ✔  Then Left is checked
+   ✔  When the user chooses Right from the ribbon Docking Positions menu
+   ✔  Then the ribbon tabs and command groups are arranged vertically on the right
+   ✔  And the model browser is visible on the left of the viewport
+   ✔  When the user right-clicks the active 3D Model tab and opens Docking Positions
+   ✔  Then Right is checked
+   ✔  When the user chooses Top from the ribbon Docking Positions menu
+   ✔  Then the ribbon tabs and command groups are arranged horizontally above the viewport
+   ✔  And the same part remains active
+   ✔  And the model browser remains visible to the left of the viewport
+]]></system-out></testcase><testcase name="Scenario: Undock the ribbon and returns it to the top: tmp/obk-docking-compact.Th6BA5/stable/checkout/features/application/ribbon-docking/ribbon-docking.feature:56:3" time="20.623653464"><system-out><![CDATA[  Scenario: Undock the ribbon and returns it to the top
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the full 3D Model ribbon is docked at the top
+   ✔  When the user right-clicks the active 3D Model tab and chooses Undock Ribbon
+   ✔  Then the ribbon floats over the workspace in a vertical panel
+   ✔  And its tabs and 3D Model group buttons remain visible
+   ✔  When the user right-clicks the floating ribbon title
+   ✔  Then the context menu offers Dock to Top, Dock to Left and docks to Right
+   ✔  And it does not offer Undock Ribbon
+   ✔  When the user chooses Dock to Top
+   ✔  Then the ribbon returns to a horizontal position above the viewport
+   ✔  And the same part remains active
+]]></system-out></testcase><testcase name="Scenario: Open the Modify command list on the floating ribbon: tmp/obk-docking-compact.Th6BA5/stable/checkout/features/application/ribbon-docking/ribbon-docking.feature:68:3" time="20.791295162"><system-out><![CDATA[  Scenario: Open the Modify command list on the floating ribbon
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the ribbon is floating with the 3D Model tab selected
+   ✔  When the user selects the Modify group button
+   ✔  Then the Modify button is highlighted blue
+   ✔  And an adjacent command list opens with Hole, Slot, Fillet, Chamfer, Shell, and other Modify commands
+   ✔  When the user selects a face in the viewport outside the command list
+   ✔  Then the command list closes
+   ✔  And the face is highlighted with a one-face selection indicator
+   ✔  When the user clicks empty workspace outside the part
+   ✔  Then the face selection clears
+   ✔  And the ribbon remains floating
+]]></system-out></testcase><testcase name="Scenario: Switch compact command groups in the left-docked ribbon: tmp/obk-docking-compact.Th6BA5/stable/checkout/features/application/ribbon-docking/ribbon-docking.feature:81:3" time="23.878671617"><system-out><![CDATA[  Scenario: Switch compact command groups in the left-docked ribbon
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the 3D Model ribbon is docked on the left with Modify and Work Features buttons visible
+   ✔  And no adjacent group panel is open
+   ✔  When the user selects the Work Features group button
+   ✔  Then Work Features is highlighted blue
+   ✔  And an adjacent panel lists Plane, Axis, Point, and UCS
+   ✔  When the user selects the Modify group button
+   ✔  Then the Work Features panel closes
+   ✔  And Modify is highlighted blue
+   ✔  And an adjacent panel lists Hole, Slot, Fillet, Chamfer, Shell, Draft, and other Modify commands
+   ✔  When the user clicks empty workspace outside the part
+   ✔  Then the Modify panel closes
+   ✔  And the ribbon remains docked on the left
+   ✔  And the part remains active
+]]></system-out></testcase><testcase name="Scenario: Scroll the floating ribbon group list: tmp/obk-docking-compact.Th6BA5/stable/checkout/features/application/ribbon-docking/ribbon-docking.feature:97:3" time="5.518794273"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Scroll the floating ribbon group list
+   ✔  Given a part is active in the MCAD Software
+   ✘  And the floating 3D Model ribbon shows Start 2D Sketch above the lower groups
+      Step failed:
+      Defined: tmp/obk-docking-compact.Th6BA5/stable/checkout/features/application/ribbon-docking/ribbon-docking.feature:99:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Switch tabs with a floating command panel open: tmp/obk-docking-compact.Th6BA5/stable/checkout/features/application/ribbon-docking/ribbon-docking.feature:105:3" time="16.049908665"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Switch tabs with a floating command panel open
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the ribbon is floating with the 3D Model tab selected
+   ✘  When the user selects the Annotate tab on the floating ribbon
+      Step failed:
+      Defined: tmp/obk-docking-compact.Th6BA5/stable/checkout/features/application/ribbon-docking/ribbon-docking.feature:108:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Switch tabs on a left-docked ribbon during a modeling command: tmp/obk-docking-compact.Th6BA5/stable/checkout/features/application/ribbon-docking/ribbon-docking.feature:118:3" time="4.050869703"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Switch tabs on a left-docked ribbon during a modeling command
+   ✘  Given `fixtures/cad/docking-visible-solid-current.opd` with its solid block is active in the MCAD Software
+      Step failed:
+      Defined: tmp/obk-docking-compact.Th6BA5/stable/checkout/features/application/ribbon-docking/ribbon-docking.feature:119:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Inspect docking positions from a Manage panel title: tmp/obk-docking-compact.Th6BA5/stable/checkout/features/application/ribbon-docking/ribbon-docking.feature:146:3" time="14.772403919"><system-out><![CDATA[  Scenario: Inspect docking positions from a Manage panel title
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the full Manage ribbon is docked at the top
+   ✔  When the user right-clicks the Manage panel title
+   ✔  And opens Docking Positions
+   ✔  Then the submenu offers Top, Left and Right
+   ✔  And Top is checked
+   ✔  When the user presses Escape
+   ✔  Then the Docking Positions submenu closes and the context menu remains open
+   ✔  When the user presses Escape again
+   ✔  Then the context menu closes and the Manage ribbon remains docked at the top
+]]></system-out></testcase><testcase name="Scenario: Dock the floating ribbon to the left: tmp/obk-docking-compact.Th6BA5/stable/checkout/features/application/ribbon-docking/ribbon-docking.feature:160:3" time="23.860817554"><system-out><![CDATA[  Scenario: Dock the floating ribbon to the left
+   ✔  Given a part is active and the 3D Model ribbon is docked at the top
+   ✔  When the user undocks the ribbon
+   ✔  And chooses Dock to Left from the floating title menu
+   ✔  Then the ribbon tabs and command groups are arranged vertically on the left
+   ✔  And the model browser appears to the right of the ribbon
+   ✔  When the user chooses Top from the docked ribbon tab menu
+   ✔  Then the ribbon returns to a horizontal position above the viewport
+   ✔  And the part remains active
+]]></system-out></testcase><testcase name="Scenario: Dock the floating ribbon to the right: tmp/obk-docking-compact.Th6BA5/stable/checkout/features/application/ribbon-docking/ribbon-docking.feature:170:3" time="26.552428356"><system-out><![CDATA[  Scenario: Dock the floating ribbon to the right
+   ✔  Given a part is active and the 3D Model ribbon is docked at the top
+   ✔  When the user undocks the ribbon
+   ✔  And chooses Dock to Right from the floating title menu
+   ✔  Then the ribbon tabs and command groups are arranged vertically on the right
+   ✔  And the model browser remains on the left of the viewport
+   ✔  When the user opens Docking Positions from the active ribbon tab
+   ✔  Then Right is checked
+   ✔  When the user chooses Top
+   ✔  Then the ribbon returns to a horizontal position above the viewport
+   ✔  And the part remains active
+]]></system-out></testcase><testcase name="Scenario: Dismiss the floating ribbon title menu with Escape: tmp/obk-docking-compact.Th6BA5/stable/checkout/features/application/ribbon-docking/ribbon-docking.feature:182:3" time="32.603342715"><system-out><![CDATA[  Scenario: Dismiss the floating ribbon title menu with Escape
+   ✔  Given a part is active and the ribbon is floating
+   ✔  When the user right-clicks the floating ribbon title
+   ✔  Then the menu offers Dock to Top, Dock to Left and docks to Right
+   ✔  When the user presses Escape
+   ✔  Then the menu closes
+   ✔  And the ribbon remains floating
+   ✔  When the user opens the floating title menu again
+   ✔  And chooses Dock to Top
+   ✔  Then the ribbon returns to the top dock
+]]></system-out></testcase><testcase name="Scenario: Undock from a pinned expanded panel and redock at the top: tmp/obk-docking-compact.Th6BA5/stable/checkout/features/application/ribbon-docking/ribbon-docking.feature:193:3" time="29.371454389"><system-out><![CDATA[  Scenario: Undock from a pinned expanded panel and redock at the top
+   ✔  Given a part is active with the full 3D Model ribbon docked at the top
+   ✔  And the Modify additional command area is open and pinned
+   ✔  When the user chooses Undock Ribbon from its title context menu
+   ✔  Then the additional command area closes
+   ✔  And the ribbon floats vertically over the workspace
+   ✔  When the user docks the floating ribbon at the top
+   ✔  Then the full ribbon returns to the top
+   ✔  And the Modify additional command area is closed
+   ✔  When the user opens Modify and clicks empty viewport space
+   ✔  Then the additional command area closes
+]]></system-out></testcase><testcase name="Scenario: Dock left from an expanded Modify title: tmp/obk-docking-compact.Th6BA5/stable/checkout/features/application/ribbon-docking/ribbon-docking.feature:205:3" time="28.655251377"><system-out><![CDATA[  Scenario: Dock left from an expanded Modify title
+   ✔  Given a part is active with the 3D Model ribbon docked at the top
+   ✔  And the unpinned Modify additional command area is open
+   ✔  When the user chooses Left from Docking Positions on its title
+   ✔  Then the ribbon is docked on the left
+   ✔  And the Modify additional command area closes
+   ✔  When the user opens Docking Positions from the left-docked ribbon
+   ✔  Then Left is checked
+   ✔  When the user chooses Top
+   ✔  Then the ribbon returns to the top with the additional command area closed
+]]></system-out></testcase><testcase name="Scenario: Select the already active dock from an expanded Modify title: tmp/obk-docking-compact.Th6BA5/stable/checkout/features/application/ribbon-docking/ribbon-docking.feature:216:3" time="21.596344764"><system-out><![CDATA[  Scenario: Select the already active dock from an expanded Modify title
+   ✔  Given a part is active with the 3D Model ribbon docked at the top
+   ✔  And the unpinned Modify additional command area is open
+   ✔  When the user chooses the checked Top position from Docking Positions on its title
+   ✔  Then the menus and additional command area close
+   ✔  And the ribbon remains docked at the top
+]]></system-out></testcase><testcase name="Scenario: Select the already active left dock from an expanded Modify title: tmp/obk-docking-compact.Th6BA5/stable/checkout/features/application/ribbon-docking/ribbon-docking.feature:223:3" time="31.933616659"><system-out><![CDATA[  Scenario: Select the already active left dock from an expanded Modify title
+   ✔  Given a part is active with the 3D Model ribbon docked on the left
+   ✔  And the Modify command area is open
+   ✔  When the user opens Docking Positions from the expanded title
+   ✔  Then Left is checked
+   ✔  When the user selects Left
+   ✔  Then the menus and Modify command area close
+   ✔  And the ribbon remains docked on the left
+]]></system-out></testcase><testcase name="Scenario: Switch compact groups in the right-docked ribbon: tmp/obk-docking-compact.Th6BA5/stable/checkout/features/application/ribbon-docking/ribbon-docking.feature:232:3" time="34.589604534"><system-out><![CDATA[  Scenario: Switch compact groups in the right-docked ribbon
+   ✔  Given a part is active with the 3D Model ribbon docked on the right
+   ✔  And Modify and Work Features are shown as compact group buttons
+   ✔  When the user selects Modify
+   ✔  Then Modify is highlighted
+   ✔  And its command panel opens to the left of the ribbon
+   ✔  When the user selects Work Features
+   ✔  Then its command panel replaces the Modify panel
+   ✔  And lists Plane, Axis, Point and UCS
+   ✔  When the user docks the ribbon at the top
+   ✔  Then the temporary command panel closes
+   ✔  And the part remains active
+]]></system-out></testcase><testcase name="Scenario: Finish a sketch while the ribbon is docked left: tmp/obk-docking-compact.Th6BA5/stable/checkout/features/application/ribbon-docking/ribbon-docking.feature:246:3" time="39.994625197"><system-out><![CDATA[  Scenario: Finish a sketch while the ribbon is docked left
+   ✔  Given `fixtures/cad/planar-sketch-empty-xy.opd` is open with `Sketch1` being edited and the ribbon docked at the top
+   ✔  When the user docks the Sketch ribbon on the left
+   ✔  Then the sketch tools appear in a vertical group column
+   ✔  And Finish remains visible in the Exit group at the bottom
+   ✔  When the user selects Finish
+   ✔  Then sketch editing ends and the part model view returns
+   ✔  And the ribbon remains docked on the left
+   ✔  And the 3D Model tab and groups are active
+   ✔  And no sketch geometry has changed
+]]></system-out></testcase><testcase name="Scenario: Open an Annotate command panel on the floating ribbon: tmp/obk-docking-compact.Th6BA5/stable/checkout/features/application/ribbon-docking/ribbon-docking.feature:257:3" time="6.212265556"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Open an Annotate command panel on the floating ribbon
+   ✘  Given a part is active and the ribbon is floating with 3D Model selected
+      Step failed:
+      Defined: tmp/obk-docking-compact.Th6BA5/stable/checkout/features/application/ribbon-docking/ribbon-docking.feature:258:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Keep the ribbon docked while switching document types: tmp/obk-docking-compact.Th6BA5/stable/checkout/features/application/ribbon-docking/ribbon-docking.feature:269:3" time="6.300632903"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Keep the ribbon docked while switching document types
+   ✘  Given `fixtures/cad/blank-metric-part.opd`, `fixtures/cad/blank-metric-assembly.oad` and a native sheet-metal part are open in the MCAD Software
+      Step failed:
+      Defined: tmp/obk-docking-compact.Th6BA5/stable/checkout/features/application/ribbon-docking/ribbon-docking.feature:270:5
+      Step doesn't match any function
+]]></system-out></testcase></testsuite></testsuites>

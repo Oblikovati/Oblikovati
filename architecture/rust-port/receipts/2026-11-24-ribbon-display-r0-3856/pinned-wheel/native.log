@@ -1,0 +1,32 @@
+
+running 1 test
+Feature: Ribbon display modes
+  Scenario: Stop wheel navigation at the visible ends of the part ribbon
+   ✔  Given a part is active in the MCAD Software with the full ribbon visible
+   ✔  And the 3D Model tab is the first visible command tab and is active
+   ✔  When the user scrolls up over the 3D Model tab
+   ✔  Then the 3D Model tab remains active
+   ✔  And its command groups remain visible
+   ✘  When the user selects Fusion, the last visible command tab
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-display/ribbon-display.feature:280:5
+      Step doesn't match any function
+[Summary]
+1 feature
+1 scenario (1 failed)
+6 steps (5 passed, 1 failed)
+
+thread 'application-scenarios' (1057964) panicked at crates/head/src/../tests/application/benchmark.rs:386:5:
+scenario benchmark: expected no failed, undefined, or skipped steps
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'native::gui_loop_tests::application_bdd::application_scenarios_use_the_native_window' (1057963) panicked at crates/head/src/../tests/application/benchmark.rs:275:10:
+called `Result::unwrap()` on an `Err` value: Any { .. }
+test native::gui_loop_tests::application_bdd::application_scenarios_use_the_native_window ... FAILED
+
+failures:
+
+failures:
+    native::gui_loop_tests::application_bdd::application_scenarios_use_the_native_window
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 1617 filtered out; finished in 10.60s

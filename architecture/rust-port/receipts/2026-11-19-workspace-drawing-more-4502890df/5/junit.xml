@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Workspace layout and panel visibility: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature" package="testsuite/Feature: Workspace layout and panel visibility: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-19T14:33:08.2127019Z" time="9.089744807"><testcase name="Scenario: Find drawing entries inside a collapsed resource branch: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:367:3" time="9.089744807"><system-out><![CDATA[  Scenario: Find drawing entries inside a collapsed resource branch
+   ✔  Given a drawing with a border resource and a sheet border is open in the MCAD Software
+   ✔  And the drawing resources branch is collapsed in the browser
+   ✔  When the user opens the drawing browser search field
+   ✔  And the user enters "Border"
+   ✔  Then the filtered tree shows the matching border resource under its parent branches
+   ✔  And the filtered tree shows the matching sheet border
+   ✔  And the matching text is highlighted
+   ✔  When the user clears the search text
+   ✔  Then the unfiltered tree is restored
+   ✔  And the drawing resources branch is collapsed
+   ✔  And the drawing sheet remains visible
+]]></system-out></testcase></testsuite></testsuites>

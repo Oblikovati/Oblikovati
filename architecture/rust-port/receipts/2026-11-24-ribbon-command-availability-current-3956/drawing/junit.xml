@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Inspect ribbon command availability: target/native-scratch.HSqCy5/current-ribbon-command-availability-source/features/application/ribbon-command-availability/ribbon-command-availability.feature" package="testsuite/Feature: Inspect ribbon command availability: target/native-scratch.HSqCy5/current-ribbon-command-availability-source/features/application/ribbon-command-availability/ribbon-command-availability.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T22:44:35.857675386Z" time="12.738768904"><testcase name="Scenario: Inspect view and annotation commands in an active drawing: target/native-scratch.HSqCy5/current-ribbon-command-availability-source/features/application/ribbon-command-availability/ribbon-command-availability.feature:51:3" time="12.738768904"><system-out><![CDATA[  Scenario: Inspect view and annotation commands in an active drawing
+   ✔  Given `fixtures/cad/blank-drawing.odd` is open and active in the MCAD Software
+   ✔  When the user selects the Place Views ribbon tab
+   ✔  Then the Place Views ribbon displays Create, Modify, Sketch and Sheets groups
+   ✔  When the user selects the Annotate ribbon tab
+   ✔  Then the Annotate ribbon displays Dimension, Text and Symbols commands
+   ✔  And the drawing sheet remains visible
+]]></system-out></testcase></testsuite></testsuites>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon panel visibility: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" package="testsuite/Feature: Ribbon panel visibility: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T09:30:21.03362095Z" time="59.194596076"><testcase name="Scenario: Hide and restore a panel while editing a sketch: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:319:3" time="59.194596076"><system-out><![CDATA[  Scenario: Hide and restore a panel while editing a sketch
+   ✔  Given an existing sketch is being edited in the MCAD Software
+   ✔  And the full Sketch ribbon displays the Pattern panel and the Finish action
+   ✔  When the user right-clicks the Sketch tab
+   ✔  And the user opens Show Panels
+   ✔  Then Pattern is checked in the panel list
+   ✔  When the user selects Pattern
+   ✔  Then the menus close and the Pattern panel disappears from the ribbon
+   ✔  And the remaining ribbon panels reflow and Finish remains visible
+   ✔  When the user reopens Show Panels from the Sketch tab context menu
+   ✔  Then Pattern is unchecked
+   ✔  When the user selects Pattern
+   ✔  Then the Pattern panel returns to the Sketch ribbon
+   ✔  And Finish remains visible
+]]></system-out></testcase></testsuite></testsuites>

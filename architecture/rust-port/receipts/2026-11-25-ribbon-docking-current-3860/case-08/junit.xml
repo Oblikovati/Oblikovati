@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon docking: target/native-scratch.HSqCy5/current-ribbon-docking-source/features/application/ribbon-docking/ribbon-docking.feature" package="testsuite/Feature: Ribbon docking: target/native-scratch.HSqCy5/current-ribbon-docking-source/features/application/ribbon-docking/ribbon-docking.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T23:44:49.789714669Z" time="23.697183021"><testcase name="Scenario: Scroll the floating ribbon group list: target/native-scratch.HSqCy5/current-ribbon-docking-source/features/application/ribbon-docking/ribbon-docking.feature:112:3" time="23.697183021"><system-out><![CDATA[  Scenario: Scroll the floating ribbon group list
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part is active in the MCAD Software
+   ✔  And the floating 3D Model ribbon shows Start 2D Sketch above the lower groups
+   ✔  When the user scrolls down in the floating ribbon group list
+   ✔  Then Start 2D Sketch scrolls out of view
+   ✔  And Shape Generator, Work Features, Pattern, and Create Freeform are visible
+   ✔  And the ribbon remains floating
+]]></system-out></testcase></testsuite></testsuites>

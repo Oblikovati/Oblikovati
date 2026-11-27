@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Viewport orbit: tmp/obk-orbit-48987af/features/application/viewport-orbit/viewport-orbit.feature" package="testsuite/Feature: Viewport orbit: tmp/obk-orbit-48987af/features/application/viewport-orbit/viewport-orbit.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T21:59:38.701094884Z" time="7.784370525"><testcase name="Scenario: Select and exit constrained orbit: tmp/obk-orbit-48987af/features/application/viewport-orbit/viewport-orbit.feature:21:3" time="7.784370525"><system-out><![CDATA[  Scenario: Select and exit constrained orbit
+   ✔  Given a rectangular block is visible in an active part in the MCAD Software
+   ✔  When the user opens the orbit menu on the navigation bar
+   ✔  Then the menu offers Orbit, Constrained Orbit and Rotate at Angle
+   ✔  When the user chooses Constrained Orbit
+   ✔  Then a circular rotation guide appears over the viewport
+   ✔  And the active part remains visible
+   ✔  When the user presses Escape
+   ✔  Then the guide disappears
+   ✔  And the status area displays Ready
+   ✔  When the user reopens the orbit menu
+   ✔  Then Constrained Orbit is marked as the selected action
+]]></system-out></testcase></testsuite></testsuites>

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-labelledby="t d">
+  <title id="t">Chamfer</title>
+  <desc id="d">Neutral solid block with a flat 45-degree beveled Teal chamfer facet.</desc>
+  <g id="layer-body">
+    <polygon points="16,5 27,10.5 21,13.5 10,8" fill="var(--icon-body-top, #D2D7E2)" stroke="var(--icon-body-stroke, #181B22)" stroke-width="1.15" stroke-linejoin="round"/><polygon points="5,15.5 16,21 16,27.5 5,22" fill="var(--icon-body-front, #9EA6B8)" stroke="var(--icon-body-stroke, #181B22)" stroke-width="1.15" stroke-linejoin="round"/><polygon points="27,10.5 27,22 16,27.5 16,21 21,13.5" fill="var(--icon-body-side, #677084)" stroke="var(--icon-body-stroke, #181B22)" stroke-width="1.15" stroke-linejoin="round"/>
+  </g>
+  <g id="layer-accent">
+    <polygon points="10,8 21,13.5 16,21 5,15.5" fill="var(--icon-sel-front, #14B8A6)" stroke="var(--icon-sel-stroke, #0B2926)" stroke-width="1.15" stroke-linejoin="round"/>
+  </g>
+</svg>

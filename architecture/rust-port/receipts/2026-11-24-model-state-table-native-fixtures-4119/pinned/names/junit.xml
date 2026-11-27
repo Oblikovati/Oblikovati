@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T12:11:06.996452626Z" time="28.793906967"><testcase name="Scenario: Decline removal of duplicate model-state member names: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature:1386:3" time="28.793906967"><system-out><![CDATA[  Scenario: Decline removal of duplicate model-state member names
+   ✔  Given The MCAD Software has a model-state table with members Capture State and Model State1
+   ✔  When the user changes the Model State1 member cell to "Capture State" and presses Enter
+   ✔  Then both matching member-name cells are highlighted yellow
+   ✔  And OK is enabled
+   ✔  When the user selects OK
+   ✔  Then a warning identifies the duplicate name and says duplicates will be removed if the user continues
+   ✔  And the warning offers Yes and No
+   ✔  When the user selects No
+   ✔  Then the table remains open with both duplicate names highlighted
+   ✔  When the user cancels the table
+   ✔  Then the table closes without accepting the rename
+]]></system-out></testcase></testsuite></testsuites>

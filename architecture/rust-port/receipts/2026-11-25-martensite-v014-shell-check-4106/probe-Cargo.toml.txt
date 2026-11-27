@@ -1,0 +1,14 @@
+[package]
+name = "martensite-v014-shell-probe"
+version = "0.0.0"
+edition = "2024"
+
+[dependencies]
+martensite-tkbrep = { path = "../martensite-v014-source/crates/martensite-tkbrep" }
+martensite-tkernel = { path = "../martensite-v014-source/crates/martensite-tkernel" }
+martensite-tkg3d = { path = "../martensite-v014-source/crates/martensite-tkg3d" }
+martensite-tkoffset = { path = "../martensite-v014-source/crates/martensite-tkoffset" }
+martensite-tkprim = { path = "../martensite-v014-source/crates/martensite-tkprim" }
+martensite-tktopalgo = { path = "../martensite-v014-source/crates/martensite-tktopalgo" }
+
+[workspace]

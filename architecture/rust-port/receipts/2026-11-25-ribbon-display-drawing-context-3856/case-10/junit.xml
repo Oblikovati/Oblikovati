@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon display modes: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature" package="testsuite/Feature: Ribbon display modes: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T02:37:14.375123869Z" time="14.218168086"><testcase name="Scenario: Switch ribbon tabs while a compact group panel is open: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature:144:3" time="14.218168086"><system-out><![CDATA[  Scenario: Switch ribbon tabs while a compact group panel is open
+   ✔  Given `fixtures/cad/blank-drawing.odd` is open and active in the MCAD Software
+   ✔  And a drawing is active in the MCAD Software
+   ✔  And the Place Views ribbon shows compact group buttons
+   ✔  And the temporary Create group panel is open
+   ✔  When the user selects the Annotate tab
+   ✔  Then the temporary Create panel closes
+   ✔  And the full Annotate ribbon is visible
+   ✔  And it includes Dimension, Text and Symbols commands
+   ✔  And the drawing sheet remains visible
+   ✔  And the drawing remains active
+]]></system-out></testcase></testsuite></testsuites>

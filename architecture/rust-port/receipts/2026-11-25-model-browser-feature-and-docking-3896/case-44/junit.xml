@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:36:28.964664456Z" time="52.910903701"><testcase name="Scenario: Show dimensions from an extrusion row: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature:663:3" time="52.910903701"><system-out><![CDATA[  Scenario: Show dimensions from an extrusion row
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software
+   ✔  And a rectangular block in the MCAD Software is made by an extrusion of a dimensioned sketch
+   ✔  And the feature dimensions are not displayed
+   ✔  When the user chooses Show Dimensions from the extrusion row context menu
+   ✔  Then dimension annotations appear around the block
+   ✔  And the extrusion row and block edges are highlighted
+   ✔  When the user clicks empty viewport space
+   ✔  Then the selection highlight clears and the dimensions remain displayed
+   ✔  When the user right-clicks the extrusion row
+   ✔  Then the dimensions disappear and the extrusion context menu opens
+   ✔  When the user presses Escape
+   ✔  Then the context menu closes and the shaded block remains visible
+]]></system-out></testcase></testsuite></testsuites>

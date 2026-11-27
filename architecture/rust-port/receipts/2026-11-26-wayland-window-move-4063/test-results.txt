@@ -1,0 +1,35 @@
+Before fix
+[03:35:39.193440]  -> xdg_toplevel#8.move(wl_seat#9, 11)
+[03:35:39.240911]  -> xdg_toplevel#8.move(wl_seat#9, 11)
+[03:35:39.288912]  -> xdg_toplevel#8.move(wl_seat#9, 11)
+[03:35:39.349735]  -> xdg_toplevel#8.move(wl_seat#9, 11)
+[03:35:39.397466]  -> xdg_toplevel#8.move(wl_seat#9, 11)
+[03:35:39.444596]  -> xdg_toplevel#8.move(wl_seat#9, 11)
+[03:35:39.506863]  -> xdg_toplevel#8.move(wl_seat#9, 11)
+[03:35:39.509560]  -> xdg_toplevel#8.move(wl_seat#9, 11)
+[03:35:39.555862]  -> xdg_toplevel#8.move(wl_seat#9, 11)
+[03:35:39.602006]  -> xdg_toplevel#8.move(wl_seat#9, 11)
+
+After fix
+[03:38:32.832644] wl_pointer#18.button(11, 367983057, 272, 1)
+[03:38:32.967067]  -> xdg_toplevel#8.move(wl_seat#9, 11)
+
+Weston application bounds at setup, before drag, and after release
+position: (103, 178) -> (1543, 1078)
+position: (103, 178) -> (1543, 1078)
+position: (175, 178) -> (1615, 1078)
+
+fixed-wayland
+6 steps (6 passed)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1733 filtered out; finished in 4.92s
+
+fixed-x11
+6 steps (6 passed)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1733 filtered out; finished in 5.22s
+
+fixed-double-click
+7 steps (7 passed)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1733 filtered out; finished in 5.16s
+
+green-engine-serial
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 16.76s

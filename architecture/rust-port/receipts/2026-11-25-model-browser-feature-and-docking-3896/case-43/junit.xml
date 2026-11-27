@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:35:45.063265142Z" time="42.768349899"><testcase name="Scenario: Show the input of a nested sketch: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature:652:3" time="42.768349899"><system-out><![CDATA[  Scenario: Show the input of a nested sketch
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software
+   ✔  And a part in the MCAD Software contains a sketch on the XY plane used by an extrusion
+   ✔  And the origin plane is not persistently visible
+   ✔  When the user chooses Show Input from the sketch row context menu
+   ✔  Then the XY plane row is selected in the model browser
+   ✔  And the XY plane is highlighted in blue in the viewport
+   ✔  When the user clicks empty viewport space
+   ✔  Then the plane highlight is cleared and the shaded solid remains visible
+]]></system-out></testcase></testsuite></testsuites>

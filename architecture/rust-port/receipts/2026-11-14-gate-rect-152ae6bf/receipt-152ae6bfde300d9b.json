@@ -1,0 +1,27 @@
+{
+  "kind": "native-acceptance",
+  "scenario_id": "scenario:152ae6bfde300d9b28f59b8d0c51fa6077176ebf1a2c4b0e5bb1b850690a6e39",
+  "scenario_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+  "source_sha256": "130621bae0d8b2196d399a885f76d6f3bb4c5050a41257459a9f02cd0ec4de17",
+  "application_commit": "9cd6365f4873a41bf84fead8e35ba227ddd16a6f",
+  "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+  "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+  "runner": "sketch_scenarios_use_the_native_window",
+  "exit_code": 0,
+  "environment": {
+    "os": "Linux",
+    "renderer": "Vulkan with Lavapipe under Xvfb"
+  },
+  "cucumber": {
+    "path": "architecture/rust-port/receipts/2026-11-14-gate-rect-152ae6bf/cucumber.json",
+    "sha256": "104cb95324e7074b70f932754755ea90c6830ac8dd03cd38124595996c13d313"
+  },
+  "source_report": {
+    "path": "architecture/rust-port/receipts/2026-11-14-gate-rect-152ae6bf/source-revision.json",
+    "sha256": "b66a481b5945bc5da99536ccd40152a3d020bbf8612756bec334ac5098155df7"
+  },
+  "capture": {
+    "path": "architecture/rust-port/receipts/2026-11-14-gate-rect-152ae6bf/rectangle-two-point-09-Verify-the-numeric-rectangle-edge-lengths.png",
+    "sha256": "e8a78c649b279f7906da4c3e9fc04d9863c42d35157379161bede6fe34bc2826"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "kind": "unsealed work-in-progress diagnostic",
+  "application_base_commit": "d10a605f3",
+  "feature_sha256": "3a0703dc9df2a77830b6b90402210ba9dffd10a0e370763015a46904744fbfce",
+  "result": "native menu test failed",
+  "observation": "The test selected Log Panel from the plus menu; Log had the Model dock ID but no observable rendered Log tab before a later pointer event.",
+  "attempts": "The bounded wait alone, and a frame request with a bounded wait, both failed. The frame request was reverted.",
+  "limitations": "The failing test is uncommitted in work/docking-menu-4133; the Inventor-based BDD scenario was not executed. The test harness and application behavior are not yet distinguished."
+}

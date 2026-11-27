@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Workspace layout and panel visibility: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature" package="testsuite/Feature: Workspace layout and panel visibility: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T02:54:34.378035979Z" time="26.146721035"><testcase name="Scenario: Show the Tools tab once in the ribbon navigation row: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature:86:3" time="26.146721035"><system-out><![CDATA[  Scenario: Show the Tools tab once in the ribbon navigation row
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is active in the MCAD Software
+   ✔  And the ribbon is docked at the top in its expanded Normal appearance
+   ✔  When the user inspects the ribbon navigation row
+   ✔  Then File and the command tabs share one row beneath the application bar
+   ✔  And the Tools ribbon tab appears once in that row
+   ✔  And no separate Tools menu appears before the ribbon tabs
+   ✔  And the active part remains displayed
+]]></system-out></testcase></testsuite></testsuites>

@@ -1,0 +1,10 @@
+{
+  "application_commit": "2c50ee401",
+  "tested_code_commit": "00453d3b2",
+  "feature": "features/application/workspace-layout/workspace-layout.feature",
+  "feature_sha256": "3910a3c0a4e77f5417ae7e6b08019330b2fdc621c6af1c4f7f42ff9acb329b1a",
+  "scenario": "Inspect the context menu for the Origin center point",
+  "result": "1 scenario, 13 steps passed",
+  "environment": "Linux X11, Xvfb, software Vulkan; native pointer input",
+  "scope": "Focused scenario only; not a full-feature run. Source was unversioned."
+}

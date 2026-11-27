@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Inspect the project dialog: tmp/obk-tree-scenarios/features/application/project-dialog/project-dialog.feature" package="testsuite/Feature: Inspect the project dialog: tmp/obk-tree-scenarios/features/application/project-dialog/project-dialog.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T13:25:08.223847708Z" time="4.380109699"><testcase name="Scenario: Inspect an inactive project without activating it: tmp/obk-tree-scenarios/features/application/project-dialog/project-dialog.feature:22:3" time="4.380109699"><system-out><![CDATA[  Scenario: Inspect an inactive project without activating it
+   ✔  Given the new-document template chooser is open in the MCAD Software
+   ✔  And the Projects dialog lists an active project and another project
+   ✔  And the active project is marked in the list
+   ✔  When the user selects the other project with a single click
+   ✔  Then the other project row is highlighted
+   ✔  And the settings tree displays information for the selected project
+   ✔  And the active-project mark remains beside the original project
+   ✔  When the user chooses Done
+   ✔  Then the Projects dialog closes
+   ✔  And the chooser still displays the original active project
+]]></system-out></testcase></testsuite></testsuites>

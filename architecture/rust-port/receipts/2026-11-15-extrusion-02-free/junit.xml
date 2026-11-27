@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Extrude a profile in a part document: tmp/obk-3927-scenarios/features/solid-model/extrusion/extrusion.feature" package="testsuite/Feature: Extrude a profile in a part document: tmp/obk-3927-scenarios/features/solid-model/extrusion/extrusion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-15T04:30:48.609644749Z" time="12.628818172999999"><testcase name="Scenario: extrusion-02 Finish profile returns to waiting extrusion: tmp/obk-3927-scenarios/features/solid-model/extrusion/extrusion.feature:11:3" time="12.628818172999999"><system-out><![CDATA[  Scenario: extrusion-02 Finish profile returns to waiting extrusion
+   ✔  Given a rectangle was drawn in the sketch requested by Extrude
+   ✔  When Finish Sketch is clicked
+   ✔  Then the Extrusion panel shows one selected profile
+   ✔  And a solid preview displays Distance A of 10 mm
+]]></system-out></testcase></testsuite></testsuites>

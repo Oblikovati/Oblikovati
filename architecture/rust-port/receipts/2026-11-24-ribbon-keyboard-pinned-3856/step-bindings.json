@@ -1,0 +1,13 @@
+{
+  "features": 1,
+  "scenarios": 18,
+  "excluded_capture_only": 0,
+  "blocked_capture_host_only": 0,
+  "steps": 219,
+  "unresolved": [],
+  "source_revision": {
+    "root": "/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout",
+    "commit": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+    "dirty": false
+  }
+}

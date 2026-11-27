@@ -1,0 +1,18 @@
+
+running 1 test
+Feature: Ribbon display modes
+  Scenario: Dismiss the ribbon appearance submenu with Escape
+   ✔  Given a part is active in the MCAD Software with the full 3D Model ribbon displayed
+   ✔  And the Modify panel context menu is open with Ribbon Appearance expanded
+   ✔  And Normal is the checked ribbon appearance
+   ✔  When the user presses Escape twice
+   ✔  Then the Ribbon Appearance submenu and panel context menu close
+   ✔  And the full ribbon remains displayed in Normal appearance
+   ✔  And the part remains active
+[Summary]
+1 feature
+1 scenario (1 passed)
+7 steps (7 passed)
+test native::gui_loop_tests::application_bdd::application_scenarios_use_the_native_window ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1617 filtered out; finished in 16.50s

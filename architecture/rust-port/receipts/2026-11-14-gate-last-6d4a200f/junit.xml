@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Extrude a profile in a part document: tmp/obk-last-refresh/features/solid-model/extrusion/extrusion.feature" package="testsuite/Feature: Extrude a profile in a part document: tmp/obk-last-refresh/features/solid-model/extrusion/extrusion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T18:42:48.157210378Z" time="3.922258823"><testcase name="Scenario: extrusion-01 Empty part entry requests a sketch plane: tmp/obk-last-refresh/features/solid-model/extrusion/extrusion.feature:5:3" time="3.922258823"><system-out><![CDATA[  Scenario: extrusion-01 Empty part entry requests a sketch plane
+   ✔  Given a new Standard (mm) part with no sketch
+   ✔  When Extrude is clicked and a displayed origin plane is selected
+   ✔  Then Sketch1 opens for profile creation
+]]></system-out></testcase></testsuite></testsuites>

@@ -1,0 +1,41 @@
+{
+  "source": "/mnt/vininas-projects/MCAD-Scenarios",
+  "areas": {
+    "application": {
+      "features": 25,
+      "scenario_declarations": 749,
+      "outlines": 6
+    },
+    "sketch": {
+      "features": 92,
+      "scenario_declarations": 1384,
+      "outlines": 0
+    },
+    "sketch3d": {
+      "features": 9,
+      "scenario_declarations": 27,
+      "outlines": 1
+    },
+    "solid-model": {
+      "features": 84,
+      "scenario_declarations": 616,
+      "outlines": 0
+    }
+  },
+  "changes": {
+    "added": [
+      "features/sketch3d/curve-on-face/curve-on-face.feature",
+      "features/sketch3d/intersection-curve/intersection-curve.feature",
+      "features/sketch3d/project-to-surface/project-to-surface.feature",
+      "features/sketch3d/silhouette-curve/silhouette-curve.feature",
+      "features/sketch3d/spline/spline.feature"
+    ],
+    "changed": [
+      "features/sketch3d/arc/arc.feature",
+      "features/sketch3d/shared-tool-lifecycle/shared-tool-lifecycle.feature",
+      "features/solid-model/viewport-feature-interaction/viewport-feature-interaction.feature",
+      "features/solid-model/viewport-feature-picking/viewport-feature-picking.feature"
+    ],
+    "removed": []
+  }
+}

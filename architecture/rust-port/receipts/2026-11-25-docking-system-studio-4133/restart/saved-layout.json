@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "imgui_ini": "[Window][Model]\nPos=0,149\nSize=246,727\nCollapsed=0\nDockId=0x00000001,0\n\n[Window][Log]\nCollapsed=0\nDockId=0x00000001\n\n[Window][Favorites]\nCollapsed=0\nDockId=0x00000001\n\n[Window][Material Browser]\nPos=1043,149\nSize=397,727\nCollapsed=0\nDockId=0x00000004,0\n\n[Window][Appearance Browser]\nPos=1043,149\nSize=397,727\nCollapsed=0\nDockId=0x00000004,1\n\n[Window][##application-ribbon]\nPos=0,0\nSize=1440,149\nCollapsed=0\n\n[Window][Debug##Default]\nPos=60,60\nSize=400,400\nCollapsed=0\n\n[Window][##application-window-controls]\nPos=1302,0\nSize=138,32\nCollapsed=0\n\n[Window][##open-document-tabs]\nPos=248,850\nSize=701,26\nCollapsed=0\n\n[Window][Open]\nPos=220,190\nSize=1000,520\nCollapsed=0\n\n[Docking][Data]\nDockSpace     ID=0x8489D2E0 Window=0x12D13136 Pos=248,149 Size=793,701 CentralNode=1\nDockSpace     ID=0xBE29DBFF Window=0xAC2A164F Pos=0,149 Size=1440,727 Split=X\n  DockNode    ID=0x00000003 Parent=0xBE29DBFF SizeRef=998,727 Split=X\n    DockNode  ID=0x00000001 Parent=0x00000003 SizeRef=259,727 Selected=0x139FF6FE\n    DockNode  ID=0x00000002 Parent=0x00000003 SizeRef=1179,727 CentralNode=1\n  DockNode    ID=0x00000004 Parent=0xBE29DBFF SizeRef=440,727 Selected=0x4B9CA59D\n\n",
+  "material_browser": true,
+  "appearance_browser": true,
+  "parameters": false,
+  "selection_filter": false,
+  "history_browser": false,
+  "view_cube_visible": true,
+  "navigation_bar_visible": true,
+  "status_bar_visible": true,
+  "marking_menu_enabled": true,
+  "selection_toolbar_visible": true,
+  "auto_expand_representations": true,
+  "browser_panels": {
+    "model": true,
+    "log": false,
+    "favorites": false,
+    "active": "Model"
+  }
+}

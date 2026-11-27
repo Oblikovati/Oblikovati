@@ -1,0 +1,10 @@
+{
+  "repository": "https://github.com/Oblikovati/Oblikovati.API",
+  "commit": "be969b8fbc6e9c3ad4f79a93443afa24ae94d76a",
+  "branch": "work/constraint-settings-312",
+  "command": "GOWORK=off make gate",
+  "result": "passed",
+  "log": "architecture/rust-port/receipts/2026-11-19-api-constraint-selection-be969b8/gate.log",
+  "log_sha256": "b462195a0553b9d74b4a9dc7538bbae97b72f48cba47ce225120a32c7de9201a",
+  "note": "Gate ran on the same tree before commit; the branch is unreleased."
+}

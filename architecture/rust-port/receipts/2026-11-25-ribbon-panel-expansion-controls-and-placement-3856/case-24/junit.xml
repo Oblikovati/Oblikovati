@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" package="testsuite/Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:22:13.964018402Z" time="39.178142193"><testcase name="Scenario: Retain a command in the expanded panel across tab switches: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:309:3" time="39.178142193"><system-out><![CDATA[  Scenario: Retain a command in the expanded panel across tab switches
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open and active
+   ✔  And the full 3D Model ribbon is visible
+   ✔  And Shell is in the Modify main panel
+   ✔  When the user moves Shell to the expanded panel using its context menu
+   ✔  And the user selects Tools and then returns to 3D Model
+   ✔  Then Shell is absent from the Modify main panel
+   ✔  When the user opens the Modify expanded panel
+   ✔  Then Shell is available in the expanded panel
+   ✔  When the user moves Shell back to the main panel using its context menu
+   ✔  Then Shell appears in the main Modify panel
+   ✔  And the part remains visible
+]]></system-out></testcase></testsuite></testsuites>

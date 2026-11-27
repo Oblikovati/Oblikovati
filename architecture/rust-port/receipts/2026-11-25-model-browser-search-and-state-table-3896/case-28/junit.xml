@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:37:55.652133679Z" time="144.936808246"><testcase name="Scenario: Decline grouping an additional feature type: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature:419:3" time="144.936808246"><system-out><![CDATA[  Scenario: Decline grouping an additional feature type
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software
+   ✔  And a part is open in the MCAD Software with the Find dialog open
+   ✔  And the criteria list contains Type equals Extrusion OR Type equals Fillet
+   ✔  And the criteria list contains Suppress status equals Suppressed
+   ✔  And And is selected for additional criteria
+   ✔  When the user chooses Type equals Hole and clicks Add to list
+   ✔  Then a prompt offers to group the additional type criterion using OR
+   ✔  When the user chooses No
+   ✔  Then the prompt closes and the existing three criteria remain in the list
+   ✔  And Type equals Hole is not added to the list
+   ✔  And the property, condition and value controls still show Type equals Hole
+   ✔  When the user closes the Find dialog
+   ✔  Then the part remains visible
+]]></system-out></testcase></testsuite></testsuites>

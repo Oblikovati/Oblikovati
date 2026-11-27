@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="1" hostname="localhost" timestamp="2026-11-24T11:09:34.309169391Z" time="60.430130773"><testcase name="Scenario: Toggle an origin plane while the active view is locked: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature:1128:3" time="60.430130773"><failure type="Step Panicked" message="Step panicked. Captured output: called `Result::unwrap()` on an `Err` value: &quot;display fit bounds: expected nonempty finite bounds&quot;"/><system-out><![CDATA[  Scenario: Toggle an origin plane while the active view is locked
+   ✔  Given The MCAD Software has an empty part with a copied view active
+   ✔  And the YZ origin plane is hidden
+   ✔  When the user chooses Lock from the active view context menu
+   ✔  Then the active view displays a lock indicator
+   ✘  When the user chooses Visibility from the YZ origin plane context menu
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature:1133:5
+      Matched: crates/head/src/../tests/application/model-browser/view_origin.rs:68:1
+      Step panicked. Captured output: called `Result::unwrap()` on an `Err` value: "display fit bounds: expected nonempty finite bounds"
+      ApplicationWorld {
+          text: "W\nP\nZ\nv\nO\nv\nT\nO\nP\nR\nI\nG\nH\nT\nF\nR\nO\nN\nT\nModel\nMaterialBrow\u{85}\nAppearanceBr\u{85}\nMenu\nSearch\nPart1<Primary>\nRepresentations\nModelState\n<Primary>\n1\nView\n<CaptureView>\nPrimary\nIsometric\nFront\nTop\nRight\nCaptureView\nOrigin\nYZPlane\nXZPlane\nXYPlane\nXAxis\nYAxis\nZAxis\nCenterPoint\nParameters\nSketches\nFeatures\nEndofPart\nABS(Black)\nAppearance\nAssigntopart\nClose\nReady\nRibbonDisplay\nv\nv\n...\nPart1\nFile\n3DModel\nSketch\nTools\nManage\nView\nAnnotate\nStart2DSketch\nSketch\nExtrude\nRevolve\nCreate\nHole\nFillet\nChamfer\nShell\nModifyv\nPlane\nv\nAxis\nPoint\nUCS\nWorkFeatures\nRectangular\nCircular\nPattern\nSimplify\nSimplificationv\nHome\nPart1<Primary>*\nDocuments\nX\nY\nZ",
+          ..
+      }
+]]></system-out></testcase></testsuite></testsuites>

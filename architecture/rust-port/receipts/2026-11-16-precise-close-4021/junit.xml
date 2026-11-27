@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Move: tmp/obk-toolbar-close-source/features/sketch/move/scenario.feature" package="testsuite/Feature: Move: tmp/obk-toolbar-close-source/features/sketch/move/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-16T05:11:58.178228712Z" time="28.409848583"><testcase name="Scenario: move-17 close the mini-toolbar while retaining Move: tmp/obk-toolbar-close-source/features/sketch/move/scenario.feature:136:3" time="28.409848583"><system-out><![CDATA[  Scenario: move-17 close the mini-toolbar while retaining Move
+   ✔  Given an editable sketch with eligible geometry
+   ✔  Given the precise toolbar is visible in Move Base Point mode
+   ✔  When the user opens its right menu
+   ✔  Then Pin Mini-Toolbar Position, Auto Fade and closes are listed
+   ✔  When the user chooses Close
+   ✔  Then the toolbar and triad disappear while Move remains open
+   ✔  And Precise Input remains checked
+   ✔  When the user presses Escape
+   ✔  Then Move closes without accepting placement
+]]></system-out></testcase></testsuite></testsuites>

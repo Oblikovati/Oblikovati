@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Explode block: mnt/vininas-projects/MCAD-Scenarios/features/sketch/explode-block/scenario.feature" package="testsuite/Feature: Explode block: mnt/vininas-projects/MCAD-Scenarios/features/sketch/explode-block/scenario.feature" tests="5" errors="0" failures="3" hostname="localhost" timestamp="2026-11-19T19:32:46.013826889Z" time="29.106708346"><testcase name="Scenario: explode-block-01 acceptance: mnt/vininas-projects/MCAD-Scenarios/features/sketch/explode-block/scenario.feature:5:3" time="3.445159624"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: explode-block-01 acceptance
+   ✘  Given Block1:1 contains a rectangle and inner circle
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/sketch/explode-block/scenario.feature:6:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: explode-block-02 definition: mnt/vininas-projects/MCAD-Scenarios/features/sketch/explode-block/scenario.feature:14:3" time="8.294785529"><system-out><![CDATA[  Scenario: explode-block-02 definition
+   ✔  Given a block definition with an instance
+   ✔  When the user explode the instance
+   ✔  Then Block1:1 is absent from Sketch3
+   ✔  And definition Block1 remains in the document Blocks folder
+]]></system-out></testcase><testcase name="Scenario: explode-block-03 undo redo: mnt/vininas-projects/MCAD-Scenarios/features/sketch/explode-block/scenario.feature:21:3" time="10.944659556"><system-out><![CDATA[  Scenario: explode-block-03 undo redo
+   ✔  Given a committed block explosion
+   ✔  When the user undo and clear selection
+   ✔  Then Block1:1 and the grouped Cyan appearance return
+   ✔  When the user redo
+   ✔  Then the instance disappears and the purple rectangle and Red inner circle return
+]]></system-out></testcase><testcase name="Scenario: explode-block-04 scope: mnt/vininas-projects/MCAD-Scenarios/features/sketch/explode-block/scenario.feature:29:3" time="3.15249678"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: explode-block-04 scope
+   ✘  Given two instances of one block definition
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/sketch/explode-block/scenario.feature:30:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: explode-block-06 explode a measured line and inspect history: mnt/vininas-projects/MCAD-Scenarios/features/sketch/explode-block/scenario.feature:39:3" time="3.269606857"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: explode-block-06 explode a measured line and inspect history
+   ✘  Given the isolated Block1:1 Curve measured 206.514 mm before explosion
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/sketch/explode-block/scenario.feature:40:5
+      Step doesn't match any function
+]]></system-out></testcase></testsuite></testsuites>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Inspect files before opening a document: target/native-scratch.HSqCy5/current-document-opening-source/features/application/document-opening/document-opening.feature" package="testsuite/Feature: Inspect files before opening a document: target/native-scratch.HSqCy5/current-document-opening-source/features/application/document-opening/document-opening.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T01:55:32.208012271Z" time="94.968605045"><testcase name="Scenario: Open a selected folder while a file name is retained: target/native-scratch.HSqCy5/current-document-opening-source/features/application/document-opening/document-opening.feature:226:3" time="94.968605045"><system-out><![CDATA[  Scenario: Open a selected folder while a file name is retained
+   ✔  Given the Open dialog is open in the MCAD Software
+   ✔  And the file name field retains the name of a part in a child folder
+   ✔  And the parent folder displays that child folder
+   ✔  And `fixtures/cad/document-opening/folder-navigation/NativeParent` contains a `NativeChild` folder with `Navigation-Part.opd`
+   ✔  When the user selects the child folder in the file list
+   ✔  And the user chooses Open
+   ✔  Then the dialog remains open and displays the child folder contents
+   ✔  And the file name field still contains the part name
+   ✔  And the part preview is displayed
+   ✔  And no new document tab is created
+]]></system-out></testcase></testsuite></testsuites>

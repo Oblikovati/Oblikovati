@@ -1,0 +1,22 @@
+a411bdf1da0c8cbc7285e788798a8d43f0f1539f43d8dd4c773d54ecd12a64f8  features/application/document-creation/document-creation.feature
+a8700652d099d9e3e8dd12a81c6f56101c57aecd848bfe46da5b400b8e912744  fixtures/cad/document-creation-group-endpoints-candidate.opj
+3994ec0e4c1c7302920e56aecb1f66bbdedc4ace40a0c03775e9f8b275668bbf  fixtures/cad/document-creation-group-endpoints-candidate/English/Sheet Metal (in).opd
+d58faf2d76fbfc49a831609b1e9eb752ac6675b614debfccaf153a61cd1f00f5  fixtures/cad/document-creation-group-endpoints-candidate/English/Standard (in).opd
+f8197c6b228676cb1bf8015681a3ed64dabd1ec5bff8c22bce1037a5a25ee80e  fixtures/cad/document-creation-group-endpoints-candidate/English/Standard Assembly.oad
+fb550abddaf122a634f083ea9a383ff3f49764a350c96b0024a6a80a3b7c744f  fixtures/cad/document-creation-group-endpoints-candidate/English/Standard Drawing.odd
+271ff6b6f4ffd3a185c51592ff53682cf19a96318e44ce9465ed35b049051331  fixtures/cad/document-creation-group-endpoints-candidate/English/Standard Presentation.ord
+cfa6e9b0bd4bf33fa5ffd5834a1881c8ca17535e92df4865fcf47539452ebf66  fixtures/cad/document-creation-group-endpoints-candidate/Metric/Mold Design (DIN).lua
+afeabc42ef1356e1fe3939c80bf05c4c3217cc1a40316c1acab2719608e44052  fixtures/cad/document-creation-group-endpoints-candidate/Metric/Mold Design (DIN).oad
+cb5c3db6f831b1e8b85fa1029a48ee2a16c1825ee87da678efa96347e6b0765a  fixtures/cad/document-creation-group-endpoints-candidate/Metric/Mold Design (mm).lua
+493beb2753b8079cf2b7ade14eb3e816f857e094a63b43cde5852167ce1e0b5a  fixtures/cad/document-creation-group-endpoints-candidate/Metric/Mold Design (mm).oad
+6c66a37d638eecec635e003e45ee5062da4e7fd68a24f780408a77b03e59376d  fixtures/cad/document-creation-group-endpoints-candidate/Metric/Sheet Metal (DIN).opd
+6c66a37d638eecec635e003e45ee5062da4e7fd68a24f780408a77b03e59376d  fixtures/cad/document-creation-group-endpoints-candidate/Metric/Sheet Metal (mm).opd
+9d7241298fc443d96557325cfea9ad6b6d8ad6f1f49dd80d910346c1952c2e5c  fixtures/cad/document-creation-group-endpoints-candidate/Metric/Standard (DIN).opd
+9d7241298fc443d96557325cfea9ad6b6d8ad6f1f49dd80d910346c1952c2e5c  fixtures/cad/document-creation-group-endpoints-candidate/Metric/Standard (mm).opd
+f5168615164c72ae5314a7b66af724e1ee63e450590e2243e455035a93b3d9d5  fixtures/cad/document-creation-group-endpoints-candidate/Metric/Standard Assembly.oad
+74b8b10e7f9550589703559ddc320b9a293643a757efefccf871d6ef220da01e  fixtures/cad/document-creation-group-endpoints-candidate/Metric/Standard Drawing.odd
+f1395a6948d4c77f11a6bbaa441de3e4223fa0161244d9c882b8f84e54604a31  fixtures/cad/document-creation-group-endpoints-candidate/Metric/Standard Presentation.ord
+c3db99f725c2603eaa24cf6154750cafc2bf3552d91811a328d80fcaba056360  fixtures/cad/document-creation-group-endpoints-candidate/Metric/Weldment (JIS).lua
+3d991709dde2160940f86212d4d11047fab4647e1e3a14537b9d181826a38863  fixtures/cad/document-creation-group-endpoints-candidate/Metric/Weldment (JIS).oad
+157b425ca764367709d09d582d3acb590b0f47d31940ae72f9a8719c5946de05  fixtures/cad/document-creation-group-endpoints-candidate/inspect.lua
+58aafeb5ffcba693695903b57e8541178a77e27f7e0a45c27c1f680eb225b1f9  fixtures/cad/workspace-layout-native.opd

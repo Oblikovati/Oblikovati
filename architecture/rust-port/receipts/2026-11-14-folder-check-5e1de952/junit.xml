@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Inspect the project dialog: tmp/obk-folder-scenarios/features/application/project-dialog/project-dialog.feature" package="testsuite/Feature: Inspect the project dialog: tmp/obk-folder-scenarios/features/application/project-dialog/project-dialog.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T13:29:49.299353266Z" time="5.491880937"><testcase name="Scenario: Navigate backward through the new-project wizard: tmp/obk-folder-scenarios/features/application/project-dialog/project-dialog.feature:57:3" time="5.491880937"><system-out><![CDATA[  Scenario: Navigate backward through the new-project wizard
+   ✔  Given the new single-user project wizard is on its project-type page in the MCAD Software
+   ✔  When the user chooses Next
+   ✔  Then the project-file page displays the project name and workspace folder
+   ✔  When the user chooses Next
+   ✔  Then the Select Libraries page is displayed
+   ✔  When the user chooses Back
+   ✔  Then the project-file page is displayed
+   ✔  And its project name and workspace folder remain displayed
+   ✔  When the user chooses Back
+   ✔  Then the project-type page is displayed
+   ✔  And New Single User Project remains selected
+   ✔  And Back and Finish are unavailable
+   ✔  When the user chooses Cancel
+   ✔  Then the wizard closes and the Projects dialog is displayed
+]]></system-out></testcase></testsuite></testsuites>

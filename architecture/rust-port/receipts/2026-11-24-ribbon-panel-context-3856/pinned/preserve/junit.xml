@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon panel visibility: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" package="testsuite/Feature: Ribbon panel visibility: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T09:11:29.595193115Z" time="47.969813473"><testcase name="Scenario: Preserve a hidden panel when changing ribbon docking position: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:88:3" time="47.969813473"><system-out><![CDATA[  Scenario: Preserve a hidden panel when changing ribbon docking position
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the 3D Model ribbon is docked at the top with Modify visible
+   ✔  When the user hides Modify through Show Panels
+   ✔  Then the Modify panel disappears from the ribbon
+   ✔  When the user docks the ribbon on the left
+   ✔  Then the ribbon is docked on the left
+   ✔  And the Modify group remains hidden
+   ✔  When the user opens Show Panels on the left-docked ribbon
+   ✔  Then Modify is unchecked
+   ✔  When the user selects Modify
+   ✔  Then the Modify group returns to the left-docked ribbon
+]]></system-out></testcase></testsuite></testsuites>

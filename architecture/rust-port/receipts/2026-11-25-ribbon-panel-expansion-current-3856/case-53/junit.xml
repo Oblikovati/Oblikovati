@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" package="testsuite/Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:23:45.201787024Z" time="47.576132852"><testcase name="Scenario: Activate another expanded command while a command context menu is open: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:732:3" time="47.576132852"><system-out><![CDATA[  Scenario: Activate another expanded command while a command context menu is open
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open and active
+   ✔  And the full 3D Model ribbon is visible
+   ✔  And the part has no visible unadaptive sketch suitable for Bend Part
+   ✔  And the Modify additional command area is open and unpinned
+   ✔  When the user right-clicks Move Bodies in the additional area
+   ✔  Then the command context menu is visible
+   ✔  When the user clicks Bend Part outside that menu
+   ✔  Then the context menu closes and a notice says a visible unadaptive sketch is needed
+   ✔  And the Modify additional command area remains visible behind the notice
+   ✔  When the user acknowledges the notice
+   ✔  Then the notice closes and the Modify additional command area closes
+   ✔  And no bend feature has been created
+]]></system-out></testcase></testsuite></testsuites>

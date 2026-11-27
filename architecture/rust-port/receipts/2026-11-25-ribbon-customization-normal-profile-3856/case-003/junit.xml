@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:54:21.165573759Z" time="65.876154684"><testcase name="Scenario: Reorder and remove staged commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature:28:3" time="65.876154684"><system-out><![CDATA[  Scenario: Reorder and remove staged commands
+   ✔> Given the MCAD Software starts with a writable copy of `fixtures/preferences/ribbon-normal` as its configuration directory
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And the ribbon customization dialog has staged "2D Sketches" followed by "3D Annotations"
+   ✔  When the user selects "3D Annotations" and clicks the up arrow
+   ✔  Then "3D Annotations" appears above "2D Sketches"
+   ✔  When the user selects the "Large" checkbox for "3D Annotations"
+   ✔  Then its "Large" checkbox is checked
+   ✔  When the user removes "3D Annotations" with the left transfer button
+   ✔  Then "3D Annotations" returns to the available commands list
+   ✔  And "2D Sketches" remains in the custom panel list
+]]></system-out></testcase></testsuite></testsuites>

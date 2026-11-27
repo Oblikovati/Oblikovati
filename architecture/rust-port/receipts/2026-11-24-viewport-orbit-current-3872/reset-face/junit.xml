@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Viewport orbit: tmp/oblikovati-ribbon-relocated.RcZVDl/current-viewport-orbit-source/features/application/viewport-orbit/viewport-orbit.feature" package="testsuite/Feature: Viewport orbit: tmp/oblikovati-ribbon-relocated.RcZVDl/current-viewport-orbit-source/features/application/viewport-orbit/viewport-orbit.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T22:08:00.921533434Z" time="48.985379504"><testcase name="Scenario: Preview and reset an incremental view rotation: tmp/oblikovati-ribbon-relocated.RcZVDl/current-viewport-orbit-source/features/application/viewport-orbit/viewport-orbit.feature:33:3" time="48.985379504"><system-out><![CDATA[  Scenario: Preview and reset an incremental view rotation
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open with a rectangular face oriented toward the viewer in the active part in the MCAD Software
+   ✔  When the user chooses Rotate at Angle from the orbit menu
+   ✔  Then an incremental view rotation dialog opens
+   ✔  And it contains an increment field, six direction buttons, Reset, OK and Cancel
+   ✔  And the increment field displays 10
+   ✔  When the user clicks the first direction button
+   ✔  Then the visible view changes while the dialog remains open
+   ✔  When the user clicks Reset
+   ✔  Then the original face-on view is restored
+   ✔  When the user clicks the first direction button again
+   ✔  And the user clicks Cancel
+   ✔  Then the dialog closes
+   ✔  And the original face-on view is restored
+   ✔  And the status area displays Ready
+]]></system-out></testcase></testsuite></testsuites>

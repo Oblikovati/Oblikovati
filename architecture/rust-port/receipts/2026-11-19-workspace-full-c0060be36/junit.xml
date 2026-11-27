@@ -1,0 +1,554 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Workspace layout and panel visibility: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature" package="testsuite/Feature: Workspace layout and panel visibility: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature" tests="52" errors="0" failures="2" hostname="localhost" timestamp="2026-11-19T15:46:54.290561482Z" time="424.354935785"><testcase name="Scenario: Show the main regions of an active part workspace: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:8:3" time="3.918914965"><system-out><![CDATA[  Scenario: Show the main regions of an active part workspace
+   ✔  Given a part document is active in the MCAD Software
+   ✔  And the model browser is docked at the left
+   ✔  And the 3D Model ribbon is expanded at the top
+   ✔  Then the application controls occupy the top row
+   ✔  And the ribbon tabs appear below the application controls
+   ✔  And the active ribbon tab displays grouped commands below the tab row
+   ✔  And the model browser and viewport occupy the workspace below the ribbon
+   ✔  And the model browser shows the part hierarchy at the left
+   ✔  And the viewport displays the part to the right of the browser
+   ✔  And the document tab strip shows Home and the active part below the workspace
+   ✔  And the status area is visible along the bottom
+]]></system-out></testcase><testcase name="Scenario: Keep document tabs below the modeling workspace: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:22:3" time="4.09344676"><system-out><![CDATA[  Scenario: Keep document tabs below the modeling workspace
+   ✔  Given a part document is active in the MCAD Software
+   ✔  And the ribbon and model browser are visible
+   ✔  When the user inspects the workspace layout
+   ✔  Then the document tab strip appears below the model browser and viewport
+   ✔  And the status area appears below the document tab strip
+   ✔  And no document tab strip separates the ribbon from the viewport
+   ✔  And the active document remains visible in the viewport
+]]></system-out></testcase><testcase name="Scenario: Keep the default model browser dock compact: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:32:3" time="5.203592004"><system-out><![CDATA[  Scenario: Keep the default model browser dock compact
+   ✔  Given a part document is active in the MCAD Software
+   ✔  And the model browser is docked at the left with its default width
+   ✔  When the user inspects the workspace proportions
+   ✔  Then the model browser occupies about one quarter of the available workspace width
+   ✔  And the viewport occupies the remaining width beside the browser
+   ✔  And the active part remains visible
+]]></system-out></testcase><testcase name="Scenario: Align the model browser and viewport to the workspace frame: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:41:3" time="4.001042362"><system-out><![CDATA[  Scenario: Align the model browser and viewport to the workspace frame
+   ✔  Given a part document is active in the MCAD Software
+   ✔  And the model browser is docked at the left
+   ✔  When the user inspects the workspace boundaries
+   ✔  Then the model browser begins at the left content edge directly below the ribbon
+   ✔  And the viewport begins at the browser's shared divider without an empty gutter
+   ✔  And the viewport fills the remaining content width
+   ✔  And the ribbon, browser, viewport and status area use aligned outer edges
+]]></system-out></testcase><testcase name="Scenario: Use consistent spacing within and between workspace regions: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:51:3" time="3.571771345"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Use consistent spacing within and between workspace regions
+   ✔  Given a part document is active in the MCAD Software
+   ✘  And the ribbon, model browser, viewport, document tabs and status area are visible
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:53:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Align the document tabs with the viewport instead of the browser: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:62:3" time="4.171325217"><system-out><![CDATA[  Scenario: Align the document tabs with the viewport instead of the browser
+   ✔  Given a part document is active in the MCAD Software
+   ✔  And the model browser is docked at the left
+   ✔  When the user inspects the bottom workspace rows
+   ✔  Then the browser extends to the status area above the bottom row
+   ✔  And the document tab strip begins at the viewport's left edge
+   ✔  And the document tab strip ends at the viewport's right edge
+   ✔  And no document tabs appear below the model browser
+   ✔  And the status area spans the full application width
+]]></system-out></testcase><testcase name="Scenario: Give quick access and ribbon tabs separate rows: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:73:3" time="4.280873229"><system-out><![CDATA[  Scenario: Give quick access and ribbon tabs separate rows
+   ✔  Given a part document is active in the MCAD Software
+   ✔  And the quick access toolbar is configured to appear above the ribbon
+   ✔  And the ribbon is docked at the top in its expanded Normal appearance
+   ✔  When the user selects the View ribbon tab
+   ✔  Then quick access remains in the top application bar alongside document context
+   ✔  And File appears at the leading edge of the ribbon tab row beneath that bar
+   ✔  And the ribbon tabs share that row with File
+   ✔  And the selected View tab is visually distinct from the other tabs
+   ✔  And the View command panels occupy a separate row beneath the tabs
+   ✔  And each visible panel title sits below its commands
+]]></system-out></testcase><testcase name="Scenario: Show the Tools tab once in the ribbon navigation row: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:86:3" time="4.212612544"><system-out><![CDATA[  Scenario: Show the Tools tab once in the ribbon navigation row
+   ✔  Given a part document is active in the MCAD Software
+   ✔  And the ribbon is docked at the top in its expanded Normal appearance
+   ✔  When the user inspects the ribbon navigation row
+   ✔  Then File and the command tabs share one row beneath the application bar
+   ✔  And the Tools ribbon tab appears once in that row
+   ✔  And no separate Tools menu appears before the ribbon tabs
+   ✔  And the active part remains displayed
+]]></system-out></testcase><testcase name="Scenario: Switch the ribbon to the View tab: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:95:3" time="4.118651426"><system-out><![CDATA[  Scenario: Switch the ribbon to the View tab
+   ✔  Given a part document is open in the MCAD Software
+   ✔  And the 3D Model ribbon tab is active
+   ✔  When the user selects the View ribbon tab
+   ✔  Then the ribbon displays Visibility, Appearance and Windows panels
+   ✔  And the viewport navigation controls remain at the right edge
+   ✔  And the active document remains displayed
+]]></system-out></testcase><testcase name="Scenario: Inspect the View tab user interface options: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:103:3" time="3.873937141"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Inspect the View tab user interface options
+   ✔  Given a part document is open in the MCAD Software
+   ✘  And the View ribbon tab is active
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:105:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Hide and restore the model browser: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:112:3" time="5.155673068"><system-out><![CDATA[  Scenario: Hide and restore the model browser
+   ✔  Given a part document is open in the MCAD Software
+   ✔  And the model browser is visible at the left of the workspace
+   ✔  When the user opens the User Interface menu from the View ribbon tab
+   ✔  And the user clears the Model Browser option
+   ✔  Then the model browser is hidden
+   ✔  And the viewport extends into the space it occupied
+   ✔  When the user reopens the User Interface menu
+   ✔  Then the Model Browser option is unchecked
+   ✔  When the user selects the Model Browser option again
+   ✔  Then the model browser returns to the left of the workspace
+   ✔  When the user reopens the User Interface menu
+   ✔  Then the Model Browser option is checked
+]]></system-out></testcase><testcase name="Scenario: Float and redock the model browser: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:127:3" time="16.091972925"><system-out><![CDATA[  Scenario: Float and redock the model browser
+   ✔  Given a part document is open in the MCAD Software
+   ✔  And the model browser is docked to the left edge of the workspace
+   ✔  When the user drags the model browser by its header into the viewport
+   ✔  Then the model browser becomes a floating panel over the viewport
+   ✔  And the viewport occupies the space previously used by the docked browser
+   ✔  When the user drags the floating browser by its header to the left edge of the workspace
+   ✔  Then the model browser docks at the left edge
+   ✔  And the viewport occupies the remaining workspace
+]]></system-out></testcase><testcase name="Scenario: Move the model browser between side docks: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:138:3" time="15.714513564"><system-out><![CDATA[  Scenario: Move the model browser between side docks
+   ✔  Given a part document is open in the MCAD Software
+   ✔  And the model browser is docked to the left edge of the workspace
+   ✔  When the user drags its header to the right edge of the workspace
+   ✔  Then the model browser docks at the right edge
+   ✔  And the viewport occupies the workspace to its left
+   ✔  When the user drags its header to the left edge of the workspace
+   ✔  Then the model browser docks at the left edge
+]]></system-out></testcase><testcase name="Scenario: Resize the docked model browser: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:148:3" time="9.398270953"><system-out><![CDATA[  Scenario: Resize the docked model browser
+   ✔  Given a part document is open in the MCAD Software
+   ✔  And the model browser is docked to the left of the viewport
+   ✔  When the user drags the boundary between the model browser and viewport to the right
+   ✔  Then the model browser becomes wider
+   ✔  And the viewport becomes narrower
+   ✔  And the document and model tree remain displayed
+   ✔  When the user drags the boundary back to its original position
+   ✔  Then the model browser and viewport return to their previous widths
+]]></system-out></testcase><testcase name="Scenario: Inspect the model browser menu: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:158:3" time="4.457697696"><system-out><![CDATA[  Scenario: Inspect the model browser menu
+   ✔  Given a part document is open in the MCAD Software
+   ✔  And the model browser is visible
+   ✔  When the user opens the model browser menu
+   ✔  Then the menu offers Autoscroll, Expand All and Collapse All
+   ✔  And it offers Find, Display Preferences and Help
+]]></system-out></testcase><testcase name="Scenario: Open and closes an empty browser search in a part: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:165:3" time="6.288410906"><system-out><![CDATA[  Scenario: Open and closes an empty browser search in a part
+   ✔  Given a part document is open in the MCAD Software
+   ✔  And the model browser is visible with no search field open
+   ✔  When the user opens browser search
+   ✔  Then an empty search field appears beneath the browser header
+   ✔  And the field shows the placeholder "Type Keyword"
+   ✔  And the browser tree and solid remain visible
+   ✔  When the user closes the empty search field
+   ✔  Then the search field is hidden
+   ✔  And the browser tree and solid remain visible
+]]></system-out></testcase><testcase name="Scenario: Collapse and expands model browser branches: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:177:3" time="10.451719352"><system-out><![CDATA[  Scenario: Collapse and expands model browser branches
+   ✔  Given a part with nested model browser branches is open in the MCAD Software
+   ✔  And some browser branches are expanded
+   ✔  When the user opens the model browser menu
+   ✔  And the user chooses Collapse All
+   ✔  Then the expanded branches collapse to their parent rows
+   ✔  And the model remains displayed in the viewport
+   ✔  When the user opens the model browser menu
+   ✔  And the user chooses Expand All
+   ✔  Then nested browser rows are displayed
+   ✔  And the model remains displayed in the viewport
+]]></system-out></testcase><testcase name="Scenario: Collapse and expands a feature branch: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:189:3" time="6.294172915"><system-out><![CDATA[  Scenario: Collapse and expands a feature branch
+   ✔  Given a part document with an expanded Extrusion1 branch is open in the MCAD Software
+   ✔  And the model browser shows its Sketch1 child
+   ✔  When the user collapses the Extrusion1 branch
+   ✔  Then the Sketch1 child is hidden from the browser
+   ✔  And the solid remains displayed in the viewport
+   ✔  When the user expands the Extrusion1 branch
+   ✔  Then the Sketch1 child is shown beneath Extrusion1
+   ✔  And the solid remains displayed in the viewport
+]]></system-out></testcase><testcase name="Scenario: Filter model browser entries by name: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:200:3" time="20.519315507"><system-out><![CDATA[  Scenario: Filter model browser entries by name
+   ✔  Given a part with multiple work points and other features is open in the MCAD Software
+   ✔  And the model browser is visible
+   ✔  When the user opens the browser search field
+   ✔  And the user enters "Work Point"
+   ✔  Then matching work point rows are shown in the browser
+   ✔  And the matching text is highlighted in those rows
+   ✔  And unrelated visible feature rows are filtered from the browser
+   ✔  And the model remains displayed in the viewport
+   ✔  When the user activates the search field close control
+   ✔  Then the search text is cleared
+   ✔  And the unfiltered browser tree is shown again
+   ✔  When the user activates the close control again
+   ✔  Then the browser search field is hidden
+]]></system-out></testcase><testcase name="Scenario: Show an empty browser search result: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:216:3" time="9.819146629"><system-out><![CDATA[  Scenario: Show an empty browser search result
+   ✔  Given a populated part is open in the MCAD Software
+   ✔  And the model browser search field is open
+   ✔  When the user enters a query that matches no browser entry
+   ✔  Then the browser shows a no-results message instead of feature rows
+   ✔  And the search query remains visible in the field
+   ✔  And the model remains displayed in the viewport
+   ✔  When the user clears the search query
+   ✔  Then the unfiltered model browser tree is shown again
+]]></system-out></testcase><testcase name="Scenario: Float and redock the drawing browser: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:227:3" time="10.645111689"><system-out><![CDATA[  Scenario: Float and redock the drawing browser
+   ✔  Given a drawing document is active in the MCAD Software
+   ✔  And its browser is docked to the left of the drawing
+   ✔  When the user drags the browser header into the drawing area
+   ✔  Then the browser floats over the drawing sheet
+   ✔  And the browser displays drawing resources and the sheet tree
+   ✔  And the drawing remains visible behind the browser
+   ✔  When the user drags the floating browser header to the left edge of the workspace
+   ✔  Then the browser docks at the left edge
+   ✔  And the drawing remains visible in the remaining workspace
+]]></system-out></testcase><testcase name="Scenario: Close and restore the drawing browser from its tab area: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:238:3" time="5.059393782"><system-out><![CDATA[  Scenario: Close and restore the drawing browser from its tab area
+   ✔  Given a drawing is active in the MCAD Software
+   ✔  And its model browser is docked on the left
+   ✔  When the user selects the browser tab's close control
+   ✔  Then the browser tree is hidden
+   ✔  And the drawing occupies the space previously used by the browser
+   ✔  And a plus control remains at the upper left of the workspace
+   ✔  When the user opens the plus control
+   ✔  Then the panel list offers Model Browser
+   ✔  When the user selects Model Browser
+   ✔  Then the browser returns to the left
+   ✔  And it displays the drawing resources and sheet tree
+]]></system-out></testcase><testcase name="Scenario: Add and switch between browser panel tabs: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:253:3" time="7.211610068"><system-out><![CDATA[  Scenario: Add and switch between browser panel tabs
+   ✔  Given a drawing is active in the MCAD Software
+   ✔  And its Model browser is docked on the left
+   ✔  And an additional log panel is available in the browser's plus menu
+   ✔  When the user adds the log panel from the plus menu
+   ✔  Then the log panel becomes active in the same dock
+   ✔  And the Model browser remains available as a tab
+   ✔  When the user selects the Model browser tab
+   ✔  Then the drawing resources and sheet tree are displayed
+   ✔  When the user selects the log panel tab
+   ✔  Then the log area is displayed in the dock
+   ✔  When the user closes the log panel tab
+   ✔  Then the Model browser is displayed
+   ✔  And the drawing remains visible
+]]></system-out></testcase><testcase name="Scenario: Inspect the drawing browser tree menu: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:268:3" time="4.151392754"><system-out><![CDATA[  Scenario: Inspect the drawing browser tree menu
+   ✔  Given a drawing document is active in the MCAD Software
+   ✔  And the drawing browser is visible
+   ✔  When the user opens the drawing browser menu
+   ✔  Then the menu offers Expand All, Collapse All and Help
+   ✔  And the drawing sheet remains visible
+]]></system-out></testcase><testcase name="Scenario: Collapse and expands the drawing browser tree: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:276:3" time="5.555783151"><system-out><![CDATA[  Scenario: Collapse and expands the drawing browser tree
+   ✔  Given a drawing with drawing resources and a sheet is open in the MCAD Software
+   ✔  And the browser has expanded branches containing nested entries
+   ✔  When the user opens the drawing browser menu
+   ✔  And the user chooses Collapse All
+   ✔  Then the drawing resources and sheet remain visible as collapsed branches
+   ✔  And their nested entries are hidden
+   ✔  And the drawing sheet remains visible
+   ✔  When the user opens the drawing browser menu
+   ✔  And the user chooses Expand All
+   ✔  Then nested entries under the drawing resources and sheet are displayed
+   ✔  And the drawing sheet remains visible
+]]></system-out></testcase><testcase name="Scenario: Filter drawing browser entries while retaining their parent branches: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:290:3" time="8.676627497"><system-out><![CDATA[  Scenario: Filter drawing browser entries while retaining their parent branches
+   ✔  Given a drawing with border entries in its resources and sheet is open in the MCAD Software
+   ✔  And the drawing browser branches are expanded
+   ✔  When the user opens the drawing browser search field
+   ✔  And the user enters "Border"
+   ✔  Then matching border entries are displayed beneath their respective parent branches
+   ✔  And matching text is highlighted
+   ✔  And unrelated browser entries are hidden
+   ✔  And the drawing sheet remains visible
+   ✔  When the user clears the search text
+   ✔  Then the unfiltered drawing browser tree is displayed
+   ✔  When the user closes the empty search field
+   ✔  Then the search field is hidden
+]]></system-out></testcase><testcase name="Scenario: Show an empty drawing browser search result: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:305:3" time="5.510475826"><system-out><![CDATA[  Scenario: Show an empty drawing browser search result
+   ✔  Given a drawing with browser entries is open in the MCAD Software
+   ✔  And the drawing browser search field is open
+   ✔  When the user enters a query that matches no drawing browser entry
+   ✔  Then a no-results message is displayed in place of the browser tree
+   ✔  And the drawing sheet remains visible
+   ✔  When the user clears the search text
+   ✔  Then the unfiltered drawing browser tree is displayed
+]]></system-out></testcase><testcase name="Scenario: Switch the selected drawing browser entry: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:315:3" time="4.519780303"><system-out><![CDATA[  Scenario: Switch the selected drawing browser entry
+   ✔  Given a drawing with a border and title block is open in the MCAD Software
+   ✔  And the sheet branch is expanded in the drawing browser
+   ✔  When the user selects the sheet border entry in the drawing browser
+   ✔  Then the border entry is highlighted in the browser
+   ✔  And the drawing sheet remains displayed
+   ✔  When the user selects the sheet title block entry in the drawing browser
+   ✔  Then the title block entry is highlighted in the browser
+   ✔  And the border entry is no longer highlighted as the active selection
+   ✔  And the drawing sheet remains displayed
+]]></system-out></testcase><testcase name="Scenario: Search while the drawing browser floats: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:327:3" time="9.380824218"><system-out><![CDATA[  Scenario: Search while the drawing browser floats
+   ✔  Given a drawing with browser entries is open in the MCAD Software
+   ✔  And the drawing browser floats over the drawing sheet
+   ✔  When the user opens the floating browser search field
+   ✔  And the user enters a query that matches no drawing browser entry
+   ✔  Then the floating browser displays a no-results message instead of its tree
+   ✔  And the drawing sheet remains visible behind the browser
+   ✔  When the user clears the search text
+   ✔  Then the unfiltered drawing browser tree is displayed in the floating panel
+   ✔  When the user closes the empty search field
+   ✔  Then the search field is hidden
+   ✔  And the browser remains floating over the sheet
+]]></system-out></testcase><testcase name="Scenario: Move the drawing browser between side docks: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:341:3" time="10.673356118"><system-out><![CDATA[  Scenario: Move the drawing browser between side docks
+   ✔  Given a drawing is active in the MCAD Software
+   ✔  And the drawing browser is docked on the left
+   ✔  When the user drags the drawing browser header to the right edge of the workspace
+   ✔  Then the drawing browser docks on the right
+   ✔  And its drawing resources and sheet tree remain visible
+   ✔  And the drawing sheet remains visible to its left
+   ✔  When the user drags the drawing browser header to the left edge of the workspace
+   ✔  Then the drawing browser docks on the left
+   ✔  And the drawing sheet remains visible to its right
+]]></system-out></testcase><testcase name="Scenario: Collapse and reopens one drawing browser branch: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:353:3" time="4.590384653"><system-out><![CDATA[  Scenario: Collapse and reopens one drawing browser branch
+   ✔  Given a drawing with a sheet and drawing resources is open in the MCAD Software
+   ✔  And the sheet and drawing resources branches are expanded in the browser
+   ✔  And the nested title block branch is expanded
+   ✔  When the user selects the expansion control beside the sheet branch
+   ✔  Then the sheet branch collapses and its child entries are hidden
+   ✔  And the drawing resources branch remains expanded
+   ✔  And the drawing sheet remains visible
+   ✔  When the user selects the expansion control beside the sheet branch again
+   ✔  Then the sheet branch expands and its child entries are displayed
+   ✔  And the nested title block branch appears expanded
+   ✔  And the drawing resources branch remains expanded
+]]></system-out></testcase><testcase name="Scenario: Find drawing entries inside a collapsed resource branch: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:367:3" time="9.071730788"><system-out><![CDATA[  Scenario: Find drawing entries inside a collapsed resource branch
+   ✔  Given a drawing with a border resource and a sheet border is open in the MCAD Software
+   ✔  And the drawing resources branch is collapsed in the browser
+   ✔  When the user opens the drawing browser search field
+   ✔  And the user enters "Border"
+   ✔  Then the filtered tree shows the matching border resource under its parent branches
+   ✔  And the filtered tree shows the matching sheet border
+   ✔  And the matching text is highlighted
+   ✔  When the user clears the search text
+   ✔  Then the unfiltered tree is restored
+   ✔  And the drawing resources branch is collapsed
+   ✔  And the drawing sheet remains visible
+]]></system-out></testcase><testcase name="Scenario: Collapse and reopens the part origin branch during sketch editing: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:382:3" time="6.802827733"><system-out><![CDATA[  Scenario: Collapse and reopens the part origin branch during sketch editing
+   ✔  Given a part document is open in the MCAD Software with a sketch being edited
+   ✔  And the model browser shows an expanded Origin branch and other document entries
+   ✔  When the user selects the expansion control beside Origin
+   ✔  Then the Origin branch collapses and its child entries are hidden
+   ✔  And the other document entries remain visible in the browser
+   ✔  And the sketch remains displayed in the viewport
+   ✔  When the user selects the expansion control beside Origin again
+   ✔  Then the Origin branch expands and its child entries are displayed
+   ✔  And the other document entries remain visible
+   ✔  And the sketch remains displayed in the viewport
+]]></system-out></testcase><testcase name="Scenario: Open and closes an empty browser search while editing a sketch: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:395:3" time="6.5630170880000005"><system-out><![CDATA[  Scenario: Open and closes an empty browser search while editing a sketch
+   ✔  Given a part document is open in the MCAD Software with a sketch being edited
+   ✔  And the model browser is visible with its search field closed
+   ✔  When the user selects the browser search control
+   ✔  Then an empty search field appears beneath the browser header
+   ✔  And the model browser tree and sketch viewport remain visible
+   ✔  When the user selects the close control on the empty search field
+   ✔  Then the search field is hidden
+   ✔  And the browser tree and sketch viewport remain visible
+]]></system-out></testcase><testcase name="Scenario: Select an origin axis from the browser during sketch editing: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:406:3" time="6.328930914"><system-out><![CDATA[  Scenario: Select an origin axis from the browser during sketch editing
+   ✔  Given a part document is open in the MCAD Software with a sketch being edited
+   ✔  And the Origin branch is expanded in the model browser
+   ✔  When the user selects the X Axis entry in the browser
+   ✔  Then the X Axis entry is highlighted in the browser
+   ✔  And the sketch remains visible in the viewport
+]]></system-out></testcase><testcase name="Scenario: Close and restore the model browser while editing a sketch: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:414:3" time="7.670593329"><system-out><![CDATA[  Scenario: Close and restore the model browser while editing a sketch
+   ✔  Given a part document is open in the MCAD Software with a sketch being edited
+   ✔  And the model browser is docked on the left
+   ✔  When the user selects the browser tab's close control
+   ✔  Then the model browser is hidden
+   ✔  And the sketch viewport extends into the freed space
+   ✔  And a panel-add control remains at the upper left of the workspace
+   ✔  When the user opens the panel-add control
+   ✔  Then the panel list offers Model Browser
+   ✔  When the user selects Model Browser
+   ✔  Then the model browser returns to the left
+   ✔  And the browser tree and sketch viewport remain visible
+]]></system-out></testcase><testcase name="Scenario: Inspect browser display preferences during sketch editing: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:428:3" time="9.063221556"><system-out><![CDATA[  Scenario: Inspect browser display preferences during sketch editing
+   ✔  Given a part document is open in the MCAD Software with a sketch being edited
+   ✔  And the model browser is visible
+   ✔  And Auto expand Representations Folder on Open is enabled for the captured session
+   ✔  When the user opens the browser header menu
+   ✔  And the user expands Display Preferences
+   ✔  Then the submenu offers Hide UCS, Hide Work Features, Hide Notes, Hide Documents and Hide Warnings
+   ✔  And it offers Show Extended Names and Hide Blue Dot Indicator
+   ✔  And it offers Auto expand Representations Folder on Open and Design View Expansion
+   ✔  And Auto expand Representations Folder on Open is checked
+   ✔  And the sketch viewport remains visible
+]]></system-out></testcase><testcase name="Scenario: Hide and restore work-feature entries in the part browser: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:441:3" time="9.89258915"><system-out><![CDATA[  Scenario: Hide and restore work-feature entries in the part browser
+   ✔  Given a part document is open in the MCAD Software with a sketch being edited
+   ✔  And the model browser shows an expanded Origin branch
+   ✔  And Hide Work Features is unchecked in browser Display Preferences
+   ✔  When the user selects Hide Work Features
+   ✔  Then the Origin branch is hidden from the browser
+   ✔  And the sketch entries and sketch viewport remain visible
+   ✔  When the user reopens browser Display Preferences
+   ✔  Then Hide Work Features is checked
+   ✔  When the user selects Hide Work Features again
+   ✔  Then the Origin branch returns to the browser in a collapsed state
+   ✔  And the sketch entries and sketch viewport remain visible
+]]></system-out></testcase><testcase name="Scenario: Show and hide extended feature names in the browser: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:455:3" time="9.579426381"><system-out><![CDATA[  Scenario: Show and hide extended feature names in the browser
+   ✔  Given a part with a 20 mm new-solid extrusion is active in the MCAD Software
+   ✔  And Show Extended Names is unchecked in browser Display Preferences
+   ✔  And the extrusion is displayed with its short feature name
+   ✔  When the user selects Show Extended Names
+   ✔  Then the extrusion's browser label includes its new-solid operation and 20 mm depth
+   ✔  And the solid remains visible in the viewport
+   ✔  When the user reopens browser Display Preferences
+   ✔  Then Show Extended Names is checked
+   ✔  When the user selects Show Extended Names again
+   ✔  Then the extrusion is displayed with its short feature name
+   ✔  And the solid remains visible in the viewport
+]]></system-out></testcase><testcase name="Scenario: Inspect the context menu for a browser feature: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:469:3" time="7.820881497"><system-out><![CDATA[  Scenario: Inspect the context menu for a browser feature
+   ✔  Given a part with a solid extrusion is active in the MCAD Software
+   ✔  And its extrusion feature is visible in the model browser
+   ✔  When the user right-clicks the extrusion feature in the browser
+   ✔  Then a context menu opens beside the feature row
+   ✔  And the menu offers Edit Sketch, Edit Feature and Show Dimensions
+   ✔  And it offers Copy, Delete, Measure and Properties
+   ✔  And it offers Expand All Children and Collapse All Children
+   ✔  And the extrusion row and the solid edges are highlighted
+   ✔  When the user clicks an empty area of the viewport outside the menu
+   ✔  Then the context menu closes
+   ✔  And the extrusion row and solid edges remain highlighted
+]]></system-out></testcase><testcase name="Scenario: Expand and collapse an extrusion&apos;s browser children: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:484:3" time="11.581658503"><system-out><![CDATA[  Scenario: Expand and collapse an extrusion's browser children
+   ✔  Given a part with an extrusion and its underlying sketch is active in the MCAD Software
+   ✔  And the extrusion branch is collapsed in the model browser
+   ✔  When the user right-clicks the extrusion and chooses Expand All Children
+   ✔  Then the extrusion branch displays its sketch child
+   ✔  And the solid remains visible in the viewport
+   ✔  When the user right-clicks the extrusion and chooses Collapse All Children
+   ✔  Then the extrusion branch still displays its direct sketch child
+   ✔  And the solid remains visible in the viewport
+]]></system-out></testcase><testcase name="Scenario: Inspect the context menu for a sketch under an extrusion: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:495:3" time="9.61777904"><system-out><![CDATA[  Scenario: Inspect the context menu for a sketch under an extrusion
+   ✔  Given a part with an extrusion and its underlying dimensioned sketch is active in the MCAD Software
+   ✔  And the extrusion branch is expanded in the model browser
+   ✔  When the user right-clicks the sketch child in the browser
+   ✔  Then a context menu opens beside the sketch row
+   ✔  And the menu offers Edit Sketch, Redefine, Share Sketch and Properties
+   ✔  And it offers Measure, Visibility and Export Sketch As
+   ✔  And the sketch row is highlighted
+   ✔  And the sketch geometry and dimensions are highlighted over the solid
+   ✔  When the user clicks an empty area of the viewport outside the menu
+   ✔  Then the context menu closes
+   ✔  And the sketch row, geometry and dimensions remain highlighted
+   ✔  When the user clicks the empty viewport area again
+   ✔  Then the sketch row is no longer highlighted
+   ✔  And the highlighted sketch geometry and dimensions disappear from the viewport
+   ✔  And the solid remains visible
+]]></system-out></testcase><testcase name="Scenario: Expand and collapse Origin children from its context menu: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:515:3" time="11.882054564"><system-out><![CDATA[  Scenario: Expand and collapse Origin children from its context menu
+   ✔  Given a part containing a visible solid is active in the MCAD Software
+   ✔  And the Origin branch is collapsed in the model browser
+   ✔  When the user right-clicks Origin
+   ✔  Then its context menu offers Expand All Children and Collapse All Children
+   ✔  When the user chooses Expand All Children
+   ✔  Then Origin displays its plane, axis and center-point child rows
+   ✔  And the solid remains visible in the viewport
+   ✔  When the user right-clicks Origin and chooses Collapse All Children
+   ✔  Then the direct plane, axis and center-point rows remain visible under Origin
+   ✔  And the solid remains visible in the viewport
+]]></system-out></testcase><testcase name="Scenario: Inspect the context menu for an Origin plane: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:528:3" time="12.597570775"><system-out><![CDATA[  Scenario: Inspect the context menu for an Origin plane
+   ✔  Given a part containing a visible solid is active in the MCAD Software
+   ✔  And the Origin branch is expanded in the model browser
+   ✔  And Auto-Resize is enabled for the YZ Plane in the captured session
+   ✔  When the user right-clicks the YZ Plane row
+   ✔  Then a context menu opens beside the plane row
+   ✔  And the menu offers New Sketch, Measure, Visibility and Auto-Resize
+   ✔  And Auto-Resize is checked in this session
+   ✔  And the plane row is highlighted
+   ✔  And the corresponding plane is highlighted as a blue translucent surface in the viewport
+   ✔  When the user clicks an empty area of the viewport outside the menu
+   ✔  Then the context menu closes
+   ✔  And the plane row and translucent plane remain highlighted
+   ✔  When the user clicks the empty viewport area again
+   ✔  Then the plane selection is cleared
+   ✔  And the highlighted plane is no longer displayed
+   ✔  And the solid remains visible
+]]></system-out></testcase><testcase name="Scenario: Inspect the context menu for an Origin axis: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:548:3" time="12.938626012"><system-out><![CDATA[  Scenario: Inspect the context menu for an Origin axis
+   ✔  Given a part containing a visible solid is active in the MCAD Software
+   ✔  And the Origin branch is expanded in the model browser
+   ✔  And Auto-Resize is enabled for the Y Axis in the captured session
+   ✔  When the user right-clicks the Y Axis row
+   ✔  Then a context menu opens beside the axis row
+   ✔  And the menu offers Copy, Measure, Visibility and Auto-Resize
+   ✔  And Auto-Resize is checked in this session
+   ✔  And the axis row is highlighted
+   ✔  And the corresponding axis is highlighted in the viewport
+   ✔  When the user clicks an empty area of the viewport outside the menu
+   ✔  Then the context menu closes
+   ✔  And the axis row and axis remain highlighted
+   ✔  When the user clicks the empty viewport area again
+   ✔  Then the axis is no longer highlighted in the viewport
+   ✔  And the axis row no longer has the filled selection highlight
+   ✔  And the axis row retains a focus outline
+   ✔  And the solid remains visible
+]]></system-out></testcase><testcase name="Scenario: Inspect the context menu for the Origin center point: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:569:3" time="9.642693149"><system-out><![CDATA[  Scenario: Inspect the context menu for the Origin center point
+   ✔  Given a part containing a visible solid is active in the MCAD Software
+   ✔  And the Origin branch is expanded in the model browser
+   ✔  When the user right-clicks the Center Point row
+   ✔  Then a context menu opens beside the point row
+   ✔  And the menu offers Copy, Measure, Create Note, Visibility and Relationships
+   ✔  And the Center Point row is highlighted
+   ✔  When the user clicks an empty area of the viewport outside the menu
+   ✔  Then the context menu closes
+   ✔  And the Center Point row remains highlighted
+   ✔  When the user clicks the empty viewport area again
+   ✔  Then the Center Point row no longer has the filled selection highlight
+   ✔  And the Center Point row retains a focus outline
+   ✔  And the solid remains visible in the viewport
+]]></system-out></testcase><testcase name="Scenario: Expand and collapse nested entries in the solid-bodies folder: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:586:3" time="10.359632451"><system-out><![CDATA[  Scenario: Expand and collapse nested entries in the solid-bodies folder
+   ✔  Given a part with one solid body made from an extrusion and sketch is active in the MCAD Software
+   ✔  And the Solid Bodies folder is collapsed in the model browser
+   ✔  When the user right-clicks Solid Bodies
+   ✔  Then its context menu offers Visibility, Expand All Children and Collapse All Children
+   ✔  When the user chooses Expand All Children
+   ✔  Then the folder displays the body row
+   ✔  And the body displays its extrusion and underlying sketch as nested rows
+   ✔  And the solid remains visible in the viewport
+   ✔  When the user right-clicks Solid Bodies and chooses Collapse All Children
+   ✔  Then the body row remains visible beneath the folder
+   ✔  And the extrusion and sketch rows beneath that body are hidden
+   ✔  And the solid remains visible in the viewport
+]]></system-out></testcase><testcase name="Scenario: Select an origin axis from filtered browser results: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:601:3" time="10.481224144"><system-out><![CDATA[  Scenario: Select an origin axis from filtered browser results
+   ✔  Given a part containing a visible solid is active in the MCAD Software
+   ✔  And the model browser contains X Axis, Y Axis and Z Axis under Origin
+   ✔  When the user opens browser search and enters "axis"
+   ✔  Then the browser shows the three matching axes under Origin
+   ✔  And the matching text is highlighted
+   ✔  When the user selects X Axis in the filtered results
+   ✔  Then the X Axis row is highlighted
+   ✔  And its corresponding axis is highlighted in the viewport
+   ✔  When the user clears the search using the search close control
+   ✔  Then the unfiltered browser tree returns
+   ✔  And X Axis remains selected and highlighted in the viewport
+   ✔  When the user activates the search close control again
+   ✔  Then the search field closes
+   ✔  When the user clicks empty viewport space
+   ✔  Then the axis highlight disappears from the viewport
+   ✔  And the solid remains visible
+]]></system-out></testcase><testcase name="Scenario: Find origin axes with different query capitalization: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:631:5" time="8.013387974"><system-out><![CDATA[  Scenario Outline: Find origin axes with different query capitalization
+   ✔  Given a part is active in the MCAD Software
+   ✔  And its model browser contains X Axis, Y Axis and Z Axis under Origin
+   ✔  When the user opens browser search and enters "axis"
+   ✔  Then the browser displays X Axis, Y Axis and Z Axis under Origin
+   ✔  And the matching text is highlighted
+   ✔  When the user clears the search and closes the empty search field
+   ✔  Then the unfiltered browser tree is displayed
+]]></system-out></testcase><testcase name="Scenario: Find origin axes with different query capitalization: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:632:5" time="8.157024627"><system-out><![CDATA[  Scenario Outline: Find origin axes with different query capitalization
+   ✔  Given a part is active in the MCAD Software
+   ✔  And its model browser contains X Axis, Y Axis and Z Axis under Origin
+   ✔  When the user opens browser search and enters "AXIS"
+   ✔  Then the browser displays X Axis, Y Axis and Z Axis under Origin
+   ✔  And the matching text is highlighted
+   ✔  When the user clears the search and closes the empty search field
+   ✔  Then the unfiltered browser tree is displayed
+]]></system-out></testcase><testcase name="Scenario: Replace a browser query across matching and empty results: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:635:3" time="11.447444501"><system-out><![CDATA[  Scenario: Replace a browser query across matching and empty results
+   ✔  Given a part with origin axes and planes is active in the MCAD Software
+   ✔  And the browser search field contains "axis"
+   ✔  And X Axis, Y Axis and Z Axis are displayed under Origin
+   ✔  When the user selects all search text and replaces it with "zzq-nomatch"
+   ✔  Then the browser displays a no-results message instead of the axis rows
+   ✔  And the solid remains visible in the viewport
+   ✔  When the user selects all search text and replaces it with "plane"
+   ✔  Then the browser displays YZ Plane, XZ Plane and XY Plane under Origin
+   ✔  And matching text is highlighted
+   ✔  And the solid remains visible
+   ✔  When the user clears the query and closes the empty search field
+   ✔  Then the unfiltered browser tree is displayed
+]]></system-out></testcase><testcase name="Scenario: Expand a parent folder that matches browser search: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:650:3" time="13.230821042"><system-out><![CDATA[  Scenario: Expand a parent folder that matches browser search
+   ✔  Given a part with a visible solid is active in the MCAD Software
+   ✔  And the Origin branch is expanded in the model browser
+   ✔  When the user opens browser search and enters "origin"
+   ✔  Then the browser shows Origin as a matching collapsed row
+   ✔  And the Origin text is highlighted
+   ✔  When the user expands the matching Origin row
+   ✔  Then its plane, axis and center-point children are displayed
+   ✔  And the child labels appear dimmed while the search remains active
+   ✔  And the solid remains visible in the viewport
+   ✔  When the user clears the query and closes the empty search field
+   ✔  Then the unfiltered browser tree is displayed
+   ✔  And the Origin children are visible
+]]></system-out></testcase></testsuite></testsuites>

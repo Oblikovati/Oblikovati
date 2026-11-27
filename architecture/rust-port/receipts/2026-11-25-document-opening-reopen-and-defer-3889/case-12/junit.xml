@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Inspect files before opening a document: target/native-scratch.HSqCy5/current-document-opening-source/features/application/document-opening/document-opening.feature" package="testsuite/Feature: Inspect files before opening a document: target/native-scratch.HSqCy5/current-document-opening-source/features/application/document-opening/document-opening.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T01:53:15.475132565Z" time="108.180492208"><testcase name="Scenario: Deferred drawing loading clears and disables unresolved-file skipping: target/native-scratch.HSqCy5/current-document-opening-source/features/application/document-opening/document-opening.feature:156:3" time="108.180492208"><system-out><![CDATA[  Scenario: Deferred drawing loading clears and disables unresolved-file skipping
+   ✔  Given writable copies of `fixtures/cad/document-opening/OpenDrawingA.odd`, `OpenDrawingB.odd` and `OpenPart.opd` are staged in the same working folder
+   ✔  And the user opens and saves each drawing to establish its sheet preview, then closes the drawings
+   ✔  Given the Open dialog is open in the MCAD Software
+   ✔  And a saved drawing is selected with its Options pane displayed
+   ✔  And Load in Defer Mode is unchecked
+   ✔  And Skip all unresolved files is checked
+   ✔  And `OpenDrawingB.odd` is selected in the Options pane
+   ✔  When the user selects Load in Defer Mode
+   ✔  Then Skip all unresolved files is unavailable
+   ✔  When the user clears Load in Defer Mode
+   ✔  Then Skip all unresolved files is available and unchecked
+   ✔  And the selected drawing and its preview remain displayed
+]]></system-out></testcase></testsuite></testsuites>

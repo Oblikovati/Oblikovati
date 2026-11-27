@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Recent documents on Home: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature" package="testsuite/Feature: Recent documents on Home: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T01:01:56.257948544Z" time="29.904155455"><testcase name="Scenario: Show Home navigation beside the recent document list: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature:4:3" time="29.904155455"><system-out><![CDATA[  Scenario: Show Home navigation beside the recent document list
+   ✔  Given the MCAD Software starts with an isolated Recent profile prepared from a disposable copy of `fixtures/cad/home-recent-native`
+   ✔  And Part23.opd from the disposable package is open with Sketch1 being edited
+   ✔  And a part document is active in the MCAD Software
+   ✔  And the part has an active sketch editing environment
+   ✔  And the recent list contains documents
+   ✔  When the user chooses Home from the View ribbon Switch menu
+   ✔  Then the Home workspace displays Open and New actions in a left navigation rail
+   ✔  And a Recent area appears to the right of the rail
+   ✔  And the Recent area offers list view, grid view, search and filter controls
+   ✔  And the part document remains available as an open tab
+]]></system-out></testcase></testsuite></testsuites>

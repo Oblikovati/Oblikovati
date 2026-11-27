@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon display modes: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature" package="testsuite/Feature: Ribbon display modes: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T02:42:07.438532217Z" time="22.900134287"><testcase name="Scenario: Maximize while a width-compacted panel is open: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature:472:3" time="22.900134287"><system-out><![CDATA[  Scenario: Maximize while a width-compacted panel is open
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part is active in the MCAD Software with the full 3D Model ribbon displayed
+   ✔  And the narrow window shows Modify as a compact panel button
+   ✔  And the temporary Modify panel is open
+   ✔  When the user maximizes the application window
+   ✔  Then the temporary Modify panel closes
+   ✔  And the Modify commands are displayed directly in the ribbon
+   ✔  And the part remains visible
+]]></system-out></testcase></testsuite></testsuites>

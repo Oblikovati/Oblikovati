@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Viewport orbit: tmp/oblikovati-ribbon-relocated.RcZVDl/current-viewport-orbit-source/features/application/viewport-orbit/viewport-orbit.feature" package="testsuite/Feature: Viewport orbit: tmp/oblikovati-ribbon-relocated.RcZVDl/current-viewport-orbit-source/features/application/viewport-orbit/viewport-orbit.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T22:04:57.747822019Z" time="42.807471"><testcase name="Scenario: Open and exit the free-rotation mode: tmp/oblikovati-ribbon-relocated.RcZVDl/current-viewport-orbit-source/features/application/viewport-orbit/viewport-orbit.feature:5:3" time="42.807471"><system-out><![CDATA[  Scenario: Open and exit the free-rotation mode
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open with its rectangular solid visible in the active part in the MCAD Software
+   ✔  And the viewport navigation bar is visible
+   ✔  When the user selects the orbit control on the navigation bar
+   ✔  Then the status area indicates free rotation
+   ✔  And the active part remains visible
+   ✔  When the user moves through the viewport using a drag gesture
+   ✔  Then a circular guide with a central cross and radial marks is visible over the viewport
+   ✔  When the user opens the context menu in the viewport
+   ✔  Then it offers Done, OK, Home View, Pan, Zoom and Previous View
+   ✔  When the user chooses Done
+   ✔  Then the circular guide disappears
+   ✔  And the status area displays Ready
+   ✔  And the same part remains active
+]]></system-out></testcase></testsuite></testsuites>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Sweep: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/sweep/sweep.feature" package="testsuite/Feature: Sweep: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/sweep/sweep.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-26T21:57:43.241067159Z" time="13.827602831"><testcase name="Scenario: sweep-12 Select a recent twist expression: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/sweep/sweep.feature:132:3" time="13.827602831"><system-out><![CDATA[  Scenario: sweep-12 Select a recent twist expression
+   ✔  Given a disposable copy of the native fixture "fixtures/cad/sweep/circle-straight-path.opd" is open
+   ✔  And the user creates Sweep1 from its circle profile and straight path with Follow Path orientation and 5 degrees taper
+   ✔  And the user edits Sweep1, enters 45 degrees for Twist and accepts
+   ✔  And Sweep1 is reopened for editing and the Twist expression menu contains 45
+   ✔  When 45 is selected from the menu
+   ✔  Then the Twist field displays 45
+   ✔  When the edit is cancelled
+   ✔  Then the existing Sweep1 solid remains
+]]></system-out></testcase></testsuite></testsuites>

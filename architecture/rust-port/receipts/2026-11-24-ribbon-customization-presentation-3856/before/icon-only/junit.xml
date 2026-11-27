@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="1" hostname="localhost" timestamp="2026-11-24T13:05:06.265820344Z" time="22.742513264"><testcase name="Scenario: Display a large custom command without text: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature:99:3" time="22.742513264"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Display a large custom command without text
+   ✔  Given the ribbon customization dialog has an empty custom panel for "Part | 3D Model"
+   ✔  When the user adds "2D Sketches" to the custom panel list
+   ✘  And the user selects "Large" and leaves "Text" clear for the command
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature:102:5
+      Step doesn't match any function
+]]></system-out></testcase></testsuite></testsuites>

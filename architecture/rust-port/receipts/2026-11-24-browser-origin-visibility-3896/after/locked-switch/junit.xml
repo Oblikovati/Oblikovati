@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T11:12:17.099876509Z" time="80.523867136"><testcase name="Scenario: Switch locked views after showing an origin plane: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature:1143:3" time="80.523867136"><system-out><![CDATA[  Scenario: Switch locked views after showing an origin plane
+   ✔  Given The MCAD Software has an empty part with a locked copied view active
+   ✔  And the Primary view is locked
+   ✔  And the YZ origin plane is hidden
+   ✔  When the user chooses Visibility from the YZ origin plane context menu
+   ✔  Then the YZ origin plane is visible
+   ✔  When the user activates the Primary view
+   ✔  Then the YZ origin plane remains visible
+   ✔  When the user activates the locked copied view
+   ✔  Then the YZ origin plane remains visible
+   ✔  And the copied view displays its active and locked indicators
+]]></system-out></testcase></testsuite></testsuites>

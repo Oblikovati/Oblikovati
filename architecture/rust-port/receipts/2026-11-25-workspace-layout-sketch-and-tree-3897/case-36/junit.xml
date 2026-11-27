@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Workspace layout and panel visibility: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature" package="testsuite/Feature: Workspace layout and panel visibility: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T02:52:39.528879342Z" time="22.908886755"><testcase name="Scenario: Select an origin axis from the browser during sketch editing: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature:409:3" time="22.908886755"><system-out><![CDATA[  Scenario: Select an origin axis from the browser during sketch editing
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software
+   ✔  And Sketch1 is being edited
+   ✔  And the Origin branch is expanded in the model browser
+   ✔  When the user selects the X Axis entry in the browser
+   ✔  Then the X Axis entry is highlighted in the browser
+   ✔  And the sketch remains visible in the viewport
+]]></system-out></testcase></testsuite></testsuites>

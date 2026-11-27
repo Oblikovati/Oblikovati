@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T04:06:44.868181239Z" time="31.963761485"><testcase name="Scenario: Inspect the ribbon locations of an available command: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature:792:3" time="31.963761485"><system-out><![CDATA[  Scenario: Inspect the ribbon locations of an available command
+   ✔> Given the MCAD Software starts with a writable copy of `fixtures/preferences/ribbon-normal` as its configuration directory
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part is active in the MCAD Software
+   ✔  And the Ribbon customization dialog shows All Commands and an empty Part Tools target
+   ✔  When the user clicks "2D Sketches" in the available command list
+   ✔  And the user presses End and then Home while the pointer remains over that row
+   ✔  Then a tooltip for "2D Sketches" lists its Part and Assembly locations
+   ✔  And both locations identify the View tab and Visibility panel
+   ✔  And the target custom panel remains empty
+   ✔  When the user clicks Close
+   ✔  Then the dialog closes
+]]></system-out></testcase></testsuite></testsuites>

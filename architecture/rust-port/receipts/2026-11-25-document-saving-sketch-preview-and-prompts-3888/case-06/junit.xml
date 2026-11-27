@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Save and reopen part documents: target/native-scratch.HSqCy5/current-document-saving-source/features/application/document-saving/document-saving.feature" package="testsuite/Feature: Save and reopen part documents: target/native-scratch.HSqCy5/current-document-saving-source/features/application/document-saving/document-saving.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T02:23:15.396171963Z" time="12.925425867"><testcase name="Scenario: Inspect file type choices when saving a part: target/native-scratch.HSqCy5/current-document-saving-source/features/application/document-saving/document-saving.feature:84:3" time="12.925425867"><system-out><![CDATA[  Scenario: Inspect file type choices when saving a part
+   ✔  Given the user creates a new unsaved metric part in the MCAD Software
+   ✔  And the user presses Control+S to open Save As
+   ✔  And the Save As dialog is open for a new part in the MCAD Software
+   ✔  When the user opens the file type list
+   ✔  Then the list offers the native part file type and an All Files filter
+]]></system-out></testcase></testsuite></testsuites>

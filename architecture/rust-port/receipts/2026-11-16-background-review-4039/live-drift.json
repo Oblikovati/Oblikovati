@@ -1,0 +1,34 @@
+{
+  "source": "/mnt/vininas-projects/MCAD-Scenarios",
+  "areas": {
+    "application": {
+      "features": 25,
+      "scenario_declarations": 749,
+      "outlines": 6
+    },
+    "sketch": {
+      "features": 92,
+      "scenario_declarations": 1384,
+      "outlines": 0
+    },
+    "sketch3d": {
+      "features": 5,
+      "scenario_declarations": 11,
+      "outlines": 1
+    },
+    "solid-model": {
+      "features": 84,
+      "scenario_declarations": 617,
+      "outlines": 0
+    }
+  },
+  "changes": {
+    "added": [
+      "features/sketch3d/spline/spline.feature"
+    ],
+    "changed": [
+      "features/solid-model/viewport-feature-interaction/viewport-feature-interaction.feature"
+    ],
+    "removed": []
+  }
+}

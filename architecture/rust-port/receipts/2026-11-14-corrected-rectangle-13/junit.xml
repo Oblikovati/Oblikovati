@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Rectangle two point: tmp/obk-bdd-capture-1CiOe33y/checkout/features/sketch/rectangle-two-point/scenario.feature" package="testsuite/Feature: Rectangle two point: tmp/obk-bdd-capture-1CiOe33y/checkout/features/sketch/rectangle-two-point/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T09:28:25.588787745Z" time="28.757465031"><testcase name="Scenario: rectangle-two-point-13 Accept and undo a rectangle height edit: tmp/obk-bdd-capture-1CiOe33y/checkout/features/sketch/rectangle-two-point/scenario.feature:91:3" time="28.757465031"><system-out><![CDATA[  Scenario: rectangle-two-point-13 Accept and undo a rectangle height edit
+   ✔  Given the recorded Right-view sketch contains the overlapping ellipse and a rectangle annotated 6 mm high by 4 mm wide, with its height edit active
+   ✔  When the user accepts height 8 mm and exits General Dimension
+   ✔  Then the height annotation shows 8 and the width annotation remains 4
+   ✔  When the user opens Measure and selects the left edge
+   ✔  Then Measure reports the selected left edge length as 8.000 mm
+   ✔  When the user closes Measure and undoes the height edit
+   ✔  Then the visible height annotation returns to 6
+   ✔  When the user redoes the height edit
+   ✔  Then the visible height annotation returns to 8
+   ✔  And width annotation 4 remains
+]]></system-out></testcase></testsuite></testsuites>

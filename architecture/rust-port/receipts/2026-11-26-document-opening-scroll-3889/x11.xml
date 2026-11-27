@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Inspect files before opening a document: mnt/vininas-projects/MCAD-Scenarios/features/application/document-opening/document-opening.feature" package="testsuite/Feature: Inspect files before opening a document: mnt/vininas-projects/MCAD-Scenarios/features/application/document-opening/document-opening.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-26T00:29:19.022633911Z" time="13.205111283"><testcase name="Scenario: Open a saved document from Home: mnt/vininas-projects/MCAD-Scenarios/features/application/document-opening/document-opening.feature:7:3" time="13.205111283"><system-out><![CDATA[  Scenario: Open a saved document from Home
+   ✔  Given Home is active with no model document open in the MCAD Software
+   ✔  And a saved document fixture is available
+   ✔  And `fixtures/cad/single-occurrence.oad` and its referenced native component are available
+   ✔  When the user opens the saved fixture through the Open dialog
+   ✔  Then the fixture document becomes active in a document tab
+   ✔  And its document workspace is displayed
+   ✔  And Home remains available
+]]></system-out></testcase></testsuite></testsuites>

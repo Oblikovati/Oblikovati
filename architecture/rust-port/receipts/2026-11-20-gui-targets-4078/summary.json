@@ -1,0 +1,24 @@
+{
+  "application_commit": "6e76c535e402b211b20a07d78036b0dccc39e887",
+  "command": "xvfb-run cargo test --locked --offline -p oblikovati-gui --test engine --test file_dialog --test ribbon_click --no-fail-fast -- --test-threads=1",
+  "results": {
+    "engine": {
+      "passed": 3,
+      "failed": 1
+    },
+    "file_dialog": {
+      "passed": 1,
+      "failed": 3
+    },
+    "ribbon_click": {
+      "passed": 33,
+      "failed": 13
+    }
+  },
+  "native_probe": "File and menu row centers were read from rendered text at 1440x900; File was at [26,44.5], while the integration test clicks [20,10].",
+  "limitations": [
+    "Native positions demonstrate a stale initial test click in that display; they do not prove the remaining failures are test-only.",
+    "A keyboard replacement opened the menu but did not dispatch Save; no test changes were retained.",
+    "The complete workspace gate and all GUI targets were not run."
+  ]
+}

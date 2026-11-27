@@ -1,0 +1,13 @@
+{
+  "after": {
+    "commit": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+    "dirty": false,
+    "root": "/tmp/oblikovati-newsketch-source"
+  },
+  "before": {
+    "commit": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+    "dirty": false,
+    "root": "/tmp/oblikovati-newsketch-source"
+  },
+  "source_changed": false
+}

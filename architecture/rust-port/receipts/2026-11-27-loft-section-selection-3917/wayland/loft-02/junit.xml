@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Loft: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/loft/loft.feature" package="testsuite/Feature: Loft: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/loft/loft.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-26T23:25:38.50593973Z" time="4.716863157"><testcase name="Scenario: loft-02 Select a point and a circle separately: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/loft/loft.feature:17:3" time="4.716863157"><system-out><![CDATA[  Scenario: loft-02 Select a point and a circle separately
+   ✔  Given a disposable copy of the native fixture "fixtures/cad/loft/parallel-circles.opd" is open
+   ✔  And Loft is open and Sketch1 contains a visible circle and center point
+   ✔  When the center point and then the circle edge are clicked
+   ✔  Then the Sections list contains Point Sketch1 and Sketch1 as separate entries
+]]></system-out></testcase></testsuite></testsuites>

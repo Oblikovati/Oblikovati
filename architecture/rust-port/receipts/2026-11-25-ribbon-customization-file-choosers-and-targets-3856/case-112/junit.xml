@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T04:00:52.488246043Z" time="35.075883078"><testcase name="Scenario: Reopen customization from the custom panel title: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature:1847:3" time="35.075883078"><system-out><![CDATA[  Scenario: Reopen customization from the custom panel title
+   ✔> Given the MCAD Software starts with a writable copy of `fixtures/preferences/ribbon-normal` as its configuration directory
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part is active in the MCAD Software
+   ✔  And the full Tools ribbon is visible
+   ✔  And the Part Tools custom panel target is initially empty
+   ✔  When the user opens Customize from Tools
+   ✔  And the user adds 2D Sketches to the Part Tools target
+   ✔  And the user confirms the customization
+   ✔  Then a User Commands panel is visible on Tools
+   ✔  When the user right-clicks the User Commands panel title
+   ✔  Then the context menu offers Ribbon Appearance, Show Panels, Customize User Commands, Undock Ribbon, and Docking Positions
+   ✔  When the user selects Customize User Commands
+   ✔  Then the Ribbon customization dialog opens with Part Tools selected
+   ✔  And the target list contains 2D Sketches without a pending marker
+   ✔  When the user removes 2D Sketches from the target list
+   ✔  And the user confirms the customization
+   ✔  Then the User Commands panel is removed
+]]></system-out></testcase></testsuite></testsuites>

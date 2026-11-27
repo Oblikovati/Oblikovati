@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T12:22:24.29179501Z" time="36.913860287"><testcase name="Scenario: Cancel an uncommitted custom panel edit: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature:30:3" time="36.913860287"><system-out><![CDATA[  Scenario: Cancel an uncommitted custom panel edit
+   ✔  Given the ribbon customization dialog has a staged "2D Sketches" addition to the initially empty "Part | 3D Model" custom panel
+   ✔  When the user clicks "Cancel"
+   ✔  Then the customization dialog closes
+   ✔  And no custom panel appears in the visible ribbon
+   ✔  When the user reopens ribbon customization
+   ✔  Then the "Part | 3D Model" custom panel list is empty
+   ✔  And "2D Sketches" is available in the source list
+]]></system-out></testcase></testsuite></testsuites>

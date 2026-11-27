@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon docking: target/native-scratch.HSqCy5/current-ribbon-docking-source/features/application/ribbon-docking/ribbon-docking.feature" package="testsuite/Feature: Ribbon docking: target/native-scratch.HSqCy5/current-ribbon-docking-source/features/application/ribbon-docking/ribbon-docking.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T00:04:44.81597493Z" time="43.76833344"><testcase name="Scenario: Keep the ribbon docked while switching document types: target/native-scratch.HSqCy5/current-ribbon-docking-source/features/application/ribbon-docking/ribbon-docking.feature:306:3" time="43.76833344"><system-out><![CDATA[  Scenario: Keep the ribbon docked while switching document types
+   ✔  Given `fixtures/cad/blank-metric-part.opd`, `fixtures/cad/blank-metric-assembly.oad` and `fixtures/cad/ribbon-docking/native-sheet-metal.opd` are open in the MCAD Software
+   ✔  And `blank-metric-part.opd` is active with the ribbon docked on the left
+   ✔  When the user activates `blank-metric-assembly.oad`
+   ✔  Then the ribbon remains docked on the left
+   ✔  And assembly tabs and commands are displayed
+   ✔  And the browser and viewport show the assembly
+   ✔  When the user activates `native-sheet-metal.opd`
+   ✔  Then the ribbon remains docked on the left
+   ✔  And the Sheet Metal tab and its commands are displayed
+   ✔  And the browser and viewport show the sheet-metal part
+   ✔  And the sheet-metal part is active
+]]></system-out></testcase></testsuite></testsuites>

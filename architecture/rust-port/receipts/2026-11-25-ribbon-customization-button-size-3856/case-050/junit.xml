@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T05:09:04.137647946Z" time="28.891299296"><testcase name="Scenario: Retain a customized command size while switching tabs: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature:741:3" time="28.891299296"><system-out><![CDATA[  Scenario: Retain a customized command size while switching tabs
+   ✔> Given the MCAD Software starts with a writable copy of `fixtures/preferences/ribbon-normal` as its configuration directory
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part is active in the MCAD Software with the full 3D Model ribbon visible
+   ✔  And Shell uses the Standard button size in the Modify panel
+   ✔  When the user chooses Large from the Shell button size menu
+   ✔  And the user selects the Tools tab and then returns to 3D Model
+   ✔  Then Shell is still shown as a large button
+   ✔  And its button size menu marks Large as selected
+   ✔  When the user chooses Standard from that menu
+   ✔  Then Shell returns to its standard button presentation
+   ✔  And the part remains visible
+]]></system-out></testcase></testsuite></testsuites>

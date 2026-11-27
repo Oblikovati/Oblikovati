@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Sketch preferences: mnt/vininas-projects/MCAD-Scenarios/features/sketch/sketch-preferences/scenario.feature" package="testsuite/Feature: Sketch preferences: mnt/vininas-projects/MCAD-Scenarios/features/sketch/sketch-preferences/scenario.feature" tests="3" errors="0" failures="3" hostname="localhost" timestamp="2026-11-19T17:03:52.844567679Z" time="9.483162817"><testcase name="Scenario: sketch-preferences-06 Escape discards an uncommitted Axes change: mnt/vininas-projects/MCAD-Scenarios/features/sketch/sketch-preferences/scenario.feature:5:3" time="3.223870027"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: sketch-preferences-06 Escape discards an uncommitted Axes change
+   ✘  Given Axes is checked in Sketch preferences
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/sketch/sketch-preferences/scenario.feature:6:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: sketch-preferences-07 HUD input controls disable their coordinate modes: mnt/vininas-projects/MCAD-Scenarios/features/sketch/sketch-preferences/scenario.feature:13:3" time="3.091138513"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: sketch-preferences-07 HUD input controls disable their coordinate modes
+   ✘  Given Pointer Input is enabled with Cartesian Coordinates
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/sketch/sketch-preferences/scenario.feature:14:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: sketch-preferences-08 Apply Axes off reopen and restore: mnt/vininas-projects/MCAD-Scenarios/features/sketch/sketch-preferences/scenario.feature:28:3" time="3.168154277"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: sketch-preferences-08 Apply Axes off reopen and restore
+   ✘  Given Axes is checked on Sketch preferences page
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/sketch/sketch-preferences/scenario.feature:29:5
+      Step doesn't match any function
+]]></system-out></testcase></testsuite></testsuites>

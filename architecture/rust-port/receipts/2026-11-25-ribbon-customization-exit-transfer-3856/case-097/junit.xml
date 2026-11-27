@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T06:26:34.527096628Z" time="30.454983929"><testcase name="Scenario: Transfer a selected category containing commands and a separator: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature:1592:3" time="30.454983929"><system-out><![CDATA[  Scenario: Transfer a selected category containing commands and a separator
+   ✔> Given the MCAD Software starts with a writable copy of `fixtures/preferences/ribbon-normal` as its configuration directory
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part is active in the MCAD Software with the full Tools ribbon visible
+   ✔  And ribbon customization shows an empty Part Tools target
+   ✔  And the available command category is Exit 2D Sketch Tab
+   ✔  And the source list shows Separator, Cancel Sketch, and Finish Sketch in that order
+   ✔  When the user clicks Cancel Sketch in the source list
+   ✔  And the user presses Ctrl+A while the source list has focus
+   ✔  Then all three source entries are highlighted
+   ✔  When the user clicks the transfer-to-target button
+   ✔  Then the target contains Cancel Sketch, Separator, and Finish Sketch in that order
+   ✔  And the source list still contains Separator
+   ✔  And the two commands have Large and Text unchecked
+   ✔  And Part Tools is marked as having pending changes
+   ✔  When the user cancels ribbon customization
+   ✔  Then the customization dialog closes
+]]></system-out></testcase></testsuite></testsuites>

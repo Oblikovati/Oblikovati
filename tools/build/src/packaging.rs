@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
+use crate::executable_names::{CLI_BINARY, CLI_PACKAGE, GUI_BINARY, GUI_PACKAGE, binary_filename};
 use crate::{
     distribution::{new_manifest, sha256},
     platform::{Platform, platform, validate_version},
@@ -91,12 +92,12 @@ pub(crate) fn build_product(
         "--target",
         target,
         "-p",
-        "oblikovati-cli",
+        CLI_PACKAGE,
         "--bin",
-        "oblikovati-cli",
+        CLI_BINARY,
     ];
     if platform.head {
-        args.extend(["-p", "oblikovati-head", "--bin", "oblikovati-head"]);
+        args.extend(["-p", GUI_PACKAGE, "--bin", GUI_BINARY]);
     }
     let epoch = runner.output(root, "git", &["show", "-s", "--format=%ct", "HEAD"])?;
     print!(
@@ -127,16 +128,11 @@ pub(crate) fn stage_product(
         fs::remove_dir_all(&stage)
             .map_err(|error| format!("clear generated stage {}: {error}", stage.display()))?;
     }
-    let extension = if platform.target.contains("windows") {
-        ".exe"
-    } else {
-        ""
-    };
-    for name in ["oblikovati-cli", "oblikovati-head"]
+    for name in [CLI_BINARY, GUI_BINARY]
         .iter()
         .take(if platform.head { 2 } else { 1 })
     {
-        let binary = format!("{name}{extension}");
+        let binary = binary_filename(name, platform.target);
         copy_file(
             &root
                 .join("target")

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon display modes: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature" package="testsuite/Feature: Ribbon display modes: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T02:38:55.845160483Z" time="27.366494242999998"><testcase name="Scenario: Double-click an inactive ribbon tab before cycling its display: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature:256:3" time="27.366494242999998"><system-out><![CDATA[  Scenario: Double-click an inactive ribbon tab before cycling its display
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part is active in the MCAD Software
+   ✔  And the full 3D Model ribbon is visible
+   ✔  And the ribbon display control is set to cycle through all modes
+   ✔  When the user double-clicks the inactive Tools tab
+   ✔  Then Tools becomes the active tab
+   ✔  And the full Tools ribbon is visible
+   ✔  When the user double-clicks the active Tools tab
+   ✔  Then the Tools ribbon displays panel buttons
+   ✔  When the user double-clicks the active Tools tab three more times
+   ✔  Then the full Tools ribbon is visible again
+]]></system-out></testcase></testsuite></testsuites>

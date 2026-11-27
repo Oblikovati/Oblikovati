@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-labelledby="t d">
+  <title id="t">Project Settings</title>
+  <desc id="d">Project workspace folder with branching configuration paths and settings badge.</desc>
+  <g id="layer-body">
+    <path d="M3,8 H12 L14.5,11 H28 V25 H3 Z" fill="var(--icon-body-front, #9EA6B8)" stroke="var(--icon-body-stroke, #181B22)" stroke-width="1.2" stroke-linejoin="round"/>
+  </g>
+  <g id="layer-accent">
+    <path d="M9,15 V22 M9,18 H15 M9,22 H15" fill="none" stroke="var(--icon-line-active, #8172FA)" stroke-width="1.5" stroke-linecap="round"/><circle cx="16.5" cy="18" r="1.4" fill="var(--accent-selection-bright, #2DD4BF)"/><circle cx="16.5" cy="22" r="1.4" fill="var(--accent-work, #F59E0B)"/>
+  </g>
+  <g id="layer-badge">
+    <circle cx="25" cy="25" r="5.6" fill="var(--icon-cutout, #121317)"/>
+    <circle cx="25" cy="25" r="4.5" fill="var(--icon-mod-front, #8172FA)" stroke="var(--icon-mod-stroke, #1D1840)" stroke-width="0.9"/><circle cx="25" cy="25" r="2.1" fill="none" stroke="#FFF" stroke-width="1.3" stroke-dasharray="1.3 0.9"/><circle cx="25" cy="25" r="0.8" fill="#FFF"/>
+  </g>
+</svg>

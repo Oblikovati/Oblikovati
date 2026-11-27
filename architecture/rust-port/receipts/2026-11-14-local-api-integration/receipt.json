@@ -1,0 +1,61 @@
+{
+  "kind": "local candidate diagnostic; not accepted benchmark evidence",
+  "application_base_commit": "b769a7ae9",
+  "api_candidate_commit": "a419c6e9a982814ee6298839e22afd5e24dda9f8",
+  "scenario_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+  "results": [
+    "Coincident-07 passed 12 steps under Xvfb with Lavapipe and the local API override.",
+    "Automation query suite passed 745 tests after correcting its save-failure fixture; 10 geometric owner tests and Clippy passed."
+  ],
+  "limitations": [
+    "The tested application changes are uncommitted and require a local Cargo patch for the unreleased API candidate.",
+    "The native run is not a current reviewed acceptance receipt.",
+    "API duplication exceeds the pre-push threshold; the full application gate remains open."
+  ],
+  "artifacts": [
+    {
+      "path": "architecture/rust-port/receipts/2026-11-14-local-api-integration/tracked-changes.patch.gz",
+      "sha256": "eeca6151abab287414b9473c03afdfb4cc01f0f64a1cc4755a5a75433ef52e89"
+    },
+    {
+      "path": "architecture/rust-port/receipts/2026-11-14-local-api-integration/new-router-test.rs.gz",
+      "sha256": "c048dfcc0fe6c998a608242d3079662c75dee3ce8898856bde99d9b4e0df6159"
+    },
+    {
+      "path": "architecture/rust-port/receipts/2026-11-14-local-api-integration/native.log.gz",
+      "sha256": "070087e10b246910d567875e9597cc0b0e673a5a1c0803a7371b137342cd28cc"
+    },
+    {
+      "path": "architecture/rust-port/receipts/2026-11-14-local-api-integration/queries.log.gz",
+      "sha256": "6293e22228979f51324227b0c678b24502d69257c5047110e44412703f624d28"
+    },
+    {
+      "path": "architecture/rust-port/receipts/2026-11-14-local-api-integration/owner.log.gz",
+      "sha256": "f31c58560b42a7139e2aaa0d742f5132356a452cfabcb3bcf0593d1658b497a9"
+    },
+    {
+      "path": "architecture/rust-port/receipts/2026-11-14-local-api-integration/clippy.log.gz",
+      "sha256": "faf98ed172142f204d7313f44ab12b556f3735796eea36b53ea361516ec92aa1"
+    },
+    {
+      "path": "architecture/rust-port/receipts/2026-11-14-local-api-integration/initial-queries-failure.log.gz",
+      "sha256": "4f0a613f6f54249d9247f6c162997ee6c8c5d78929b1ee7e29e0cced8ea98534"
+    },
+    {
+      "path": "architecture/rust-port/receipts/2026-11-14-local-api-integration/coincident-07-Constrain-two-standalone-points-and-inspect-history.png",
+      "sha256": "5732b33e5b4276985fd5fe661019f8fa76881496dba6f82611479ab9824021e0"
+    },
+    {
+      "path": "architecture/rust-port/receipts/2026-11-14-local-api-integration/source-revision.json",
+      "sha256": "0da0adf00deb91ebd53949ec9c06bbff6aed77e2001e89935d4a2f13313645a4"
+    },
+    {
+      "path": "architecture/rust-port/receipts/2026-11-14-local-api-integration/junit.xml",
+      "sha256": "8a6e90577140e1952b6a78d0a738ad6f6dfcfe460707c394cfa7c17677c225a6"
+    },
+    {
+      "path": "architecture/rust-port/receipts/2026-11-14-local-api-integration/cucumber.json",
+      "sha256": "1afac11418d6cfe069941d6e7fbec3e6a9abf64578b59657a4004399de10cf33"
+    }
+  ]
+}

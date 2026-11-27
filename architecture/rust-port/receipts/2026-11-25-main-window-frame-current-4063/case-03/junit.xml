@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Main application window frame: git/oblikovati-workspace/oblikovati-rust/target/native-scratch.HSqCy5/current-main-window-frame-source/features/application/main-window-frame/main-window-frame.feature" package="testsuite/Feature: Main application window frame: git/oblikovati-workspace/oblikovati-rust/target/native-scratch.HSqCy5/current-main-window-frame-source/features/application/main-window-frame/main-window-frame.feature" tests="2" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T23:17:22.320113845Z" time="35.842807699"><testcase name="Scenario: Minimize and return from the taskbar: git/oblikovati-workspace/oblikovati-rust/target/native-scratch.HSqCy5/current-main-window-frame-source/features/application/main-window-frame/main-window-frame.feature:45:5" time="17.346617525"><system-out><![CDATA[  Scenario Outline: Minimize and return from the taskbar
+   ✔  Given `fixtures/cad/main-window-frame-start.opd` is open and active in the MCAD Software
+   ✔  And a part document is active in the MCAD Software
+   ✔  And the main window is restored
+   ✔  When the user selects Minimize in the application bar
+   ✔  Then the main window is minimized and its taskbar entry remains available
+   ✔  When the user activates the application from the taskbar
+   ✔  Then the main window returns in the restored state
+   ✔  And the same part and ribbon tab are active
+   ✔  And the displayed part retains its view orientation
+]]></system-out></testcase><testcase name="Scenario: Minimize and return from the taskbar: git/oblikovati-workspace/oblikovati-rust/target/native-scratch.HSqCy5/current-main-window-frame-source/features/application/main-window-frame/main-window-frame.feature:46:5" time="18.496190174"><system-out><![CDATA[  Scenario Outline: Minimize and return from the taskbar
+   ✔  Given `fixtures/cad/main-window-frame-start.opd` is open and active in the MCAD Software
+   ✔  And a part document is active in the MCAD Software
+   ✔  And the main window is maximized
+   ✔  When the user selects Minimize in the application bar
+   ✔  Then the main window is minimized and its taskbar entry remains available
+   ✔  When the user activates the application from the taskbar
+   ✔  Then the main window returns in the maximized state
+   ✔  And the same part and ribbon tab are active
+   ✔  And the displayed part retains its view orientation
+]]></system-out></testcase></testsuite></testsuites>

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Recent documents on Home: mnt/vininas-projects/MCAD-Scenarios/features/application/home-recent-documents/home-recent-documents.feature" package="testsuite/Feature: Recent documents on Home: mnt/vininas-projects/MCAD-Scenarios/features/application/home-recent-documents/home-recent-documents.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T13:48:54.892148355Z" time="2.806926384"><testcase name="Scenario: Show Home when the software starts without an open document: mnt/vininas-projects/MCAD-Scenarios/features/application/home-recent-documents/home-recent-documents.feature:465:3" time="2.806926384"><system-out><![CDATA[  Scenario: Show Home when the software starts without an open document
+   ✔  Given the MCAD Software is launched without opening a document
+   ✔  Then the Get Started tab is selected
+   ✔  And the Home workspace offers a New Part action
+   ✔  And the Model browser reports that no document is open
+   ✔  And Material Browser and Appearance Browser are available in the right dock
+   ✔  And the selected browser panel asks the user to select a part to browse its assets
+]]></system-out></testcase></testsuite></testsuites>

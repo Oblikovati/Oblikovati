@@ -1,0 +1,27 @@
+{
+  "kind": "native-acceptance",
+  "scenario_id": "scenario:290c0844328af2d23fb51f9930f988f5eff00430051c3f715469cdddc44fb612",
+  "scenario_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+  "source_sha256": "0b20ae95482d755cafe546d0bae98db647acdaa2ebfb5353e3fcb3bc6af0cf50",
+  "application_commit": "9a68a710fd330b3c2694a89a7d5343850fe9b900",
+  "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+  "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+  "runner": "application_scenarios_use_the_native_window",
+  "exit_code": 0,
+  "environment": {
+    "os": "Linux",
+    "renderer": "Vulkan with Lavapipe under Xvfb"
+  },
+  "cucumber": {
+    "path": "architecture/rust-port/receipts/2026-11-14-a12-body/cucumber.json",
+    "sha256": "5d76c1a5f0caf41e9d858b8de4c1c04d98e63ae0e9b8cd8097e02b7d0bed851a"
+  },
+  "source_report": {
+    "path": "architecture/rust-port/receipts/2026-11-14-a12-body/source-revision.json",
+    "sha256": "afdcde4b44bdbec6b08878f72ff7111f069221d84273b826035e73b15a5d3457"
+  },
+  "capture": {
+    "path": "architecture/rust-port/receipts/2026-11-14-a12-body/Update-unavailable-physical-properties-for-a-solid-body.png",
+    "sha256": "a0437ac16c790a3c48ffad99b17ebd536584ada472eb2a4399115c84d47b35a5"
+  }
+}

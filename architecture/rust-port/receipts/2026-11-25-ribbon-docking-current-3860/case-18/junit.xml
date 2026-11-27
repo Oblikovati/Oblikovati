@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon docking: target/native-scratch.HSqCy5/current-ribbon-docking-source/features/application/ribbon-docking/ribbon-docking.feature" package="testsuite/Feature: Ribbon docking: target/native-scratch.HSqCy5/current-ribbon-docking-source/features/application/ribbon-docking/ribbon-docking.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T00:01:06.922086557Z" time="30.708187476"><testcase name="Scenario: Select the already active left dock from an expanded Modify title: target/native-scratch.HSqCy5/current-ribbon-docking-source/features/application/ribbon-docking/ribbon-docking.feature:256:3" time="30.708187476"><system-out><![CDATA[  Scenario: Select the already active left dock from an expanded Modify title
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part is active with the 3D Model ribbon docked on the left
+   ✔  And the Modify command area is open
+   ✔  When the user opens Docking Positions from the expanded title
+   ✔  Then Left is checked
+   ✔  When the user selects Left
+   ✔  Then the menus and Modify command area close
+   ✔  And the ribbon remains docked on the left
+]]></system-out></testcase></testsuite></testsuites>

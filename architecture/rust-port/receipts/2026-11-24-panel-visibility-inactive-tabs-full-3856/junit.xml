@@ -1,0 +1,610 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon panel visibility: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" package="testsuite/Feature: Ribbon panel visibility: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" tests="55" errors="0" failures="20" hostname="localhost" timestamp="2026-11-24T09:41:23.491673809Z" time="1043.643873732"><testcase name="Scenario: Show and hides a ribbon panel: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:5:3" time="12.988381611"><system-out><![CDATA[  Scenario: Show and hides a ribbon panel
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the expanded 3D Model ribbon shows the Modify panel
+   ✔  And the Parameters panel is hidden
+   ✔  When the user clicks the direct panel selector
+   ✔  Then Parameters is unchecked
+   ✔  And Modify is checked
+   ✔  When the user selects Parameters in the panel list
+   ✔  Then the Parameters panel appears in the ribbon
+   ✔  And the panel list remains open with Parameters checked
+   ✔  When the user selects Parameters again
+   ✔  Then the Parameters panel disappears from the ribbon
+   ✔  And the panel list remains open with Parameters unchecked
+   ✔  And the part remains active
+]]></system-out></testcase><testcase name="Scenario: Retain panel visibility while switching tabs and parts: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:20:3" time="30.934704536"><system-out><![CDATA[  Scenario: Retain panel visibility while switching tabs and parts
+   ✔  Given two part documents are open in the MCAD Software
+   ✔  And the first part is active with the 3D Model ribbon expanded
+   ✔  And the Parameters panel is visible
+   ✔  When the user selects the View ribbon tab
+   ✔  And the user returns to the 3D Model ribbon tab
+   ✔  Then the Parameters panel is still visible
+   ✔  When the user activates the second part document
+   ✔  Then its 3D Model ribbon also shows the Parameters panel
+   ✔  When the user returns to the first part document
+   ✔  Then its Parameters panel remains visible
+]]></system-out></testcase><testcase name="Scenario: Hide and restore a View ribbon panel: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:32:3" time="28.615140479"><system-out><![CDATA[  Scenario: Hide and restore a View ribbon panel
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the View ribbon is expanded with Visibility, Appearance, Windows and Navigate visible
+   ✔  When the user opens the View ribbon context menu and expand Show Panels
+   ✔  Then Visibility, Appearance, Windows and Navigate are checked
+   ✔  When the user selects Navigate in Show Panels
+   ✔  Then the Navigate panel disappears from the View ribbon
+   ✔  When the user switches to 3D Model and returns to View
+   ✔  Then the Navigate panel remains hidden
+   ✔  When the user reopens Show Panels on the View ribbon
+   ✔  Then Navigate is unchecked
+   ✔  When the user selects Navigate in Show Panels
+   ✔  Then the Navigate panel reappears on the View ribbon
+]]></system-out></testcase><testcase name="Scenario: Hide a panel while the ribbon shows compact group buttons: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:46:3" time="28.352700767"><system-out><![CDATA[  Scenario: Hide a panel while the ribbon shows compact group buttons
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the 3D Model ribbon shows compact group buttons
+   ✔  And the Parameters group button is visible
+   ✔  When the user opens the compact ribbon context menu and expand Show Panels
+   ✔  Then Parameters is checked
+   ✔  When the user selects Parameters in Show Panels
+   ✔  Then the Parameters group button disappears
+   ✔  And the other compact group buttons remain visible and close the gap
+   ✔  When the user returns the ribbon to its expanded display
+   ✔  Then the Parameters panel is absent from the expanded ribbon
+]]></system-out></testcase><testcase name="Scenario: Hide and restore a panel on the side-docked ribbon: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:58:3" time="19.927718077"><system-out><![CDATA[  Scenario: Hide and restore a panel on the side-docked ribbon
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the 3D Model ribbon is docked on the left
+   ✔  And the Modify group is visible
+   ✔  When the user opens the direct panel selector
+   ✔  Then Modify is checked
+   ✔  When the user selects Modify in the panel selector
+   ✔  Then the Modify group disappears from the side-docked ribbon
+   ✔  And the remaining ribbon groups reflow vertically
+   ✔  And the panel selector remains open with Modify unchecked
+   ✔  When the user selects Modify in the panel selector
+   ✔  Then the Modify group returns to the side-docked ribbon
+   ✔  And the panel selector remains open with Modify checked
+]]></system-out></testcase><testcase name="Scenario: Hide and restore a panel from the left-docked ribbon context menu: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:72:3" time="40.521006739"><system-out><![CDATA[  Scenario: Hide and restore a panel from the left-docked ribbon context menu
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the 3D Model ribbon is docked on the left
+   ✔  And the Modify group is visible
+   ✔  When the user opens the ribbon context menu and expand Show Panels
+   ✔  Then Modify is checked
+   ✔  When the user selects Modify in Show Panels
+   ✔  Then the Modify group disappears from the side-docked ribbon
+   ✔  And the remaining ribbon groups reflow vertically
+   ✔  When the user reopens Show Panels from the ribbon context menu
+   ✔  Then Modify is unchecked
+   ✔  When the user selects Modify in Show Panels
+   ✔  Then the Modify group returns to the side-docked ribbon
+   ✔  And Modify is checked
+   ✔  And the remaining ribbon groups return to their earlier positions
+   ✔  And the part remains active
+]]></system-out></testcase><testcase name="Scenario: Preserve a hidden panel when changing ribbon docking position: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:88:3" time="36.107920655"><system-out><![CDATA[  Scenario: Preserve a hidden panel when changing ribbon docking position
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the 3D Model ribbon is docked at the top with Modify visible
+   ✔  When the user hides Modify through Show Panels
+   ✔  Then the Modify panel disappears from the ribbon
+   ✔  When the user docks the ribbon on the left
+   ✔  Then the ribbon is docked on the left
+   ✔  And the Modify group remains hidden
+   ✔  When the user opens Show Panels on the left-docked ribbon
+   ✔  Then Modify is unchecked
+   ✔  When the user selects Modify
+   ✔  Then the Modify group returns to the left-docked ribbon
+]]></system-out></testcase><testcase name="Scenario: Restore a hidden panel in the undocked ribbon: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:101:3" time="24.715206285"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Restore a hidden panel in the undocked ribbon
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the 3D Model ribbon is docked at the top with Modify visible
+   ✔  When the user hides Modify through Show Panels
+   ✔  And the user undocks the ribbon
+   ✔  Then the floating ribbon does not show the Modify group
+   ✘  When the user opens Show Panels on the floating ribbon
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:107:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Keep a panel hidden when redocking the floating ribbon: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:114:3" time="44.252536258"><system-out><![CDATA[  Scenario: Keep a panel hidden when redocking the floating ribbon
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the floating 3D Model ribbon shows the Modify group
+   ✔  When the user hides Modify through Show Panels
+   ✔  Then the floating ribbon no longer shows the Modify group
+   ✔  When the user docks the ribbon at the top
+   ✔  Then the top ribbon does not show the Modify panel
+   ✔  When the user opens Show Panels on the top ribbon
+   ✔  Then Modify is unchecked
+   ✔  When the user selects Modify
+   ✔  Then the Modify panel is visible again
+]]></system-out></testcase><testcase name="Scenario: Set visibility of two ribbon panels independently: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:126:3" time="40.166961477"><system-out><![CDATA[  Scenario: Set visibility of two ribbon panels independently
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the full Tools ribbon is visible
+   ✔  And the Find and Tutorials panels are both visible
+   ✔  When the user opens Show Panels from the Options panel title context menu
+   ✔  And the user selects Find
+   ✔  Then the Find panel disappears from the ribbon
+   ✔  And Tutorials remains visible
+   ✔  And Find is unchecked while Tutorials remains checked
+   ✔  When the user opens Show Panels again
+   ✔  And the user selects Find
+   ✔  Then the Find panel reappears before Team Web
+   ✔  And Tutorials remains visible
+   ✔  And Find and Tutorials are both checked
+]]></system-out></testcase><testcase name="Scenario: Retain independent panel visibility across ribbon tabs: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:141:3" time="23.645635738"><system-out><![CDATA[  Scenario: Retain independent panel visibility across ribbon tabs
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the 3D Model ribbon is docked on the left with Modify visible
+   ✔  And Navigate is visible on the View ribbon
+   ✔  When the user hides Modify through the direct panel selector
+   ✔  Then the Modify panel disappears from the 3D Model ribbon
+   ✔  When the user switches to the View ribbon
+   ✔  Then Navigate remains visible
+   ✔  When the user returns to the 3D Model ribbon
+   ✔  And the user opens the direct panel selector
+   ✔  Then Modify is unchecked
+   ✔  When the user selects Modify in the panel selector
+   ✔  Then the Modify panel returns to the 3D Model ribbon
+   ✔  And the panel selector remains open with Modify checked
+]]></system-out></testcase><testcase name="Scenario: Dismiss the panel list without changing visibility: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:155:3" time="23.854946865"><system-out><![CDATA[  Scenario: Dismiss the panel list without changing visibility
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the 3D Model ribbon is expanded and docked at the top
+   ✔  And Modify is visible while Parameters is hidden
+   ✔  When the user opens the ribbon context menu and expand Show Panels
+   ✔  Then Modify is checked and Parameters is unchecked
+   ✔  When the user presses Escape
+   ✔  Then the Show Panels submenu closes
+   ✔  And the ribbon context menu remains open
+   ✔  When the user presses Escape again
+   ✔  Then the ribbon context menu closes
+   ✔  And Modify remains visible
+   ✔  And Parameters remains hidden
+]]></system-out></testcase><testcase name="Scenario: Toggle a panel from the ribbon panel selector: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:168:3" time="18.603946193"><system-out><![CDATA[  Scenario: Toggle a panel from the ribbon panel selector
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the expanded 3D Model ribbon is docked at the top
+   ✔  And the Parameters panel is hidden
+   ✔  When the user clicks the panel selector at the right end of the ribbon
+   ✔  Then the panel list opens with Parameters unchecked
+   ✔  When the user selects Parameters in the list
+   ✔  Then Parameters is checked and its panel appears in the ribbon
+   ✔  And the panel list remains open
+   ✔  When the user selects Parameters again
+   ✔  Then Parameters is unchecked and its panel disappears
+   ✔  And the panel list remains open
+   ✔  When the user presses Escape
+   ✔  Then the panel list closes
+]]></system-out></testcase><testcase name="Scenario: Hide and restore a panel while its expansion is pinned: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:183:3" time="21.137910228"><system-out><![CDATA[  Scenario: Hide and restore a panel while its expansion is pinned
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the expanded 3D Model ribbon is docked at the top
+   ✔  And the Modify panel is visible with its additional commands expanded and pinned
+   ✔  When the user opens the ribbon panel selector
+   ✔  And the user clears Modify in the panel list
+   ✔  Then the Modify panel and its expanded command area disappear
+   ✔  And the panel list remains open with Modify unchecked
+   ✔  When the user selects Modify in the panel list
+   ✔  Then the Modify panel returns to the ribbon
+   ✔  And its additional command area is not open
+   ✔  And the panel list remains open with Modify checked
+   ✔  When the user presses Escape
+   ✔  Then the panel list closes
+   ✔  When the user opens the Modify additional command area
+   ✔  And the user clicks empty viewport space
+   ✔  Then the additional command area closes
+]]></system-out></testcase><testcase name="Scenario: Switch ribbon tabs while the direct panel list is open: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:201:3" time="12.962309737"><system-out><![CDATA[  Scenario: Switch ribbon tabs while the direct panel list is open
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the expanded 3D Model ribbon is docked at the top
+   ✔  And Modify is visible and Parameters is hidden
+   ✔  When the user opens the ribbon panel selector
+   ✔  Then the panel list shows Modify checked and Parameters unchecked
+   ✔  When the user selects the View ribbon tab
+   ✔  Then the panel list closes
+   ✔  And the View ribbon is displayed
+   ✔  When the user returns to the 3D Model ribbon tab
+   ✔  Then the panel list remains closed
+   ✔  And Modify remains visible and Parameters remains hidden
+]]></system-out></testcase><testcase name="Scenario: Dismiss the panel selector and expansion with Escape: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:214:3" time="19.993330849"><system-out><![CDATA[  Scenario: Dismiss the panel selector and expansion with Escape
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the 3D Model ribbon is docked on the left with the Modify panel visible
+   ✔  And the Modify additional command area is open
+   ✔  When the user opens the direct panel selector
+   ✔  Then the panel list opens with Modify checked
+   ✔  And the Modify additional command area remains visible
+   ✔  When the user presses Escape
+   ✔  Then the panel list closes
+   ✔  And the Modify additional command area closes
+   ✔  And the Modify panel remains visible
+]]></system-out></testcase><testcase name="Scenario: Toggle the direct panel list without changing a checkbox: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:225:3" time="18.636948747"><failure type="Step Panicked" message="Step panicked. Captured output: expected the direct panel list closed"/><system-out><![CDATA[  Scenario: Toggle the direct panel list without changing a checkbox
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the 3D Model ribbon is docked on the left with the Modify panel visible
+   ✔  When the user clicks the direct panel selector arrow
+   ✔  Then the panel list opens with Modify checked
+   ✔  When the user clicks the direct panel selector arrow again
+   ✘  Then the panel list closes
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:231:5
+      Matched: crates/head/src/../tests/application/ribbon-panel-visibility/panel_selector.rs:128:1
+      Step panicked. Captured output: expected the direct panel list closed
+      ApplicationWorld {
+          text: "W\nP\nZ\nv\nO\nv\nFRONT\nModel\nMaterialBrow\u{85}\nAppearanceBr\u{85}\nMenu\nSearch\nPart1<Primary>\nRepresentations\nModelState\n<Primary>\n1\nView\n<Primary>\nOrigin\nYZPlane\nXZPlane\nXYPlane\nXAxis\nYAxis\nZAxis\nCenterPoint\nParameters\nSketches\nFeatures\nEndofPart\nABS(Black)\nAppearance\nAssigntopart\nClose\nReady\n...\nPart1\nFile\nHome\nPart1<Primary>*\nDocuments\nX\nY\nZ\nv\n3DModel\nSketch\nTools\nManage\nView\nAnnotate\nSketch\nCreate\nModify\nWorkFeatures\nPattern\nSimplification\nSketch\nCreate\nModify\nWorkFeatures\nPattern\nSimplification\nParameters",
+          ..
+      }
+]]></system-out></testcase><testcase name="Scenario: Toggle a ribbon panel with Space from keyboard navigation: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:233:3" time="5.918341977"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Toggle a ribbon panel with Space from keyboard navigation
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the full 3D Model ribbon is visible
+   ✘  And the Primitives panel is hidden
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:236:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Wrap keyboard focus at the ends of the panel list: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:249:3" time="5.879173561"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Wrap keyboard focus at the ends of the panel list
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the full 3D Model ribbon is visible
+   ✘  And the ribbon panel selector is open
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:252:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Show active-tab panels from an inactive tab context menu: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:276:5" time="5.977015077"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario Outline: Show active-tab panels from an inactive tab context menu
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the full 3D Model ribbon is visible
+   ✘  And the Primitives panel is hidden and the Modify panel is visible
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:265:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Show active-tab panels from an inactive tab context menu: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:277:5" time="5.926345188"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario Outline: Show active-tab panels from an inactive tab context menu
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the full 3D Model ribbon is visible
+   ✘  And the Primitives panel is hidden and the Modify panel is visible
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:265:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Home and End leave the focused panel row unchanged: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:279:3" time="18.53201172"><system-out><![CDATA[  Scenario: Home and End leave the focused panel row unchanged
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the full top-docked 3D Model ribbon is visible
+   ✔  And the direct panel selector is open with Create focused and checked
+   ✔  When the user presses Home
+   ✔  Then Create remains focused and checked
+   ✔  And the panel selector remains open
+   ✔  When the user presses End
+   ✔  Then Create remains focused and checked
+   ✔  And the panel selector remains open
+   ✔  When the user presses Escape
+   ✔  Then the panel selector closes
+]]></system-out></testcase><testcase name="Scenario: Inspect panel visibility from a minimized ribbon tab: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:291:3" time="16.552653659"><system-out><![CDATA[  Scenario: Inspect panel visibility from a minimized ribbon tab
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the top-docked ribbon is minimized to tabs with 3D Model active
+   ✔  And the Modify panel is visible and Parameters is hidden
+   ✔  When the user right-clicks the 3D Model tab
+   ✔  Then the ribbon context menu opens
+   ✔  When the user opens Show Panels
+   ✔  Then the submenu lists the 3D Model panels
+   ✔  And Modify is checked and Parameters is unchecked
+   ✔  And the ribbon remains minimized to tabs
+   ✔  When the user clicks an empty area of the viewport
+   ✔  Then both menus close
+   ✔  And the ribbon remains minimized to tabs
+]]></system-out></testcase><testcase name="Scenario: Enable a panel while the ribbon is minimized: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:304:3" time="15.848303479"><system-out><![CDATA[  Scenario: Enable a panel while the ribbon is minimized
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the top-docked ribbon is minimized to tabs with 3D Model active
+   ✔  And the Parameters panel is hidden
+   ✔  When the user right-clicks the 3D Model tab
+   ✔  And the user opens Show Panels
+   ✔  And the user selects the unchecked Parameters entry
+   ✔  Then the menus close and the ribbon remains minimized to tabs
+   ✔  When the user clicks the 3D Model tab once
+   ✔  Then the temporary command area opens
+   ✔  And it contains the Parameters panel
+   ✔  When the user double-clicks the 3D Model tab
+   ✔  Then the full ribbon is restored
+   ✔  And the Parameters panel is visible
+]]></system-out></testcase><testcase name="Scenario: Hide and restore a panel while editing a sketch: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:319:3" time="46.635796279"><system-out><![CDATA[  Scenario: Hide and restore a panel while editing a sketch
+   ✔  Given an existing sketch is being edited in the MCAD Software
+   ✔  And the full Sketch ribbon displays the Pattern panel and the Finish action
+   ✔  When the user right-clicks the Sketch tab
+   ✔  And the user opens Show Panels
+   ✔  Then Pattern is checked in the panel list
+   ✔  When the user selects Pattern
+   ✔  Then the menus close and the Pattern panel disappears from the ribbon
+   ✔  And the remaining ribbon panels reflow and Finish remains visible
+   ✔  When the user reopens Show Panels from the Sketch tab context menu
+   ✔  Then Pattern is unchecked
+   ✔  When the user selects Pattern
+   ✔  Then the Pattern panel returns to the Sketch ribbon
+   ✔  And Finish remains visible
+]]></system-out></testcase><testcase name="Scenario: Retain a hidden sketch panel after reopening the sketch: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:334:3" time="59.059211818"><system-out><![CDATA[  Scenario: Retain a hidden sketch panel after reopening the sketch
+   ✔  Given an existing sketch is being edited in the MCAD Software
+   ✔  And the full Sketch ribbon displays the Pattern panel
+   ✔  When the user hides Pattern using Show Panels in the Sketch tab context menu
+   ✔  And the user finishes the sketch without changing geometry
+   ✔  And the user reopens the same sketch from the model browser
+   ✔  Then the Sketch ribbon is visible without the Pattern panel
+   ✔  When the user opens Show Panels from the Sketch tab context menu
+   ✔  Then Pattern is unchecked
+   ✔  When the user selects Pattern
+   ✔  Then the Pattern panel returns to the Sketch ribbon
+]]></system-out></testcase><testcase name="Scenario: Dismiss the panel selector while an expansion is pinned: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:346:3" time="16.349153943"><system-out><![CDATA[  Scenario: Dismiss the panel selector while an expansion is pinned
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the full 3D Model ribbon shows the Modify panel
+   ✔  And the Modify additional command area is open and pinned
+   ✔  When the user opens the ribbon panel selector
+   ✔  Then the panel list opens with Modify checked
+   ✔  And the Modify additional command area remains visible
+   ✔  When the user presses Escape
+   ✔  Then the panel list closes
+   ✔  And the Modify additional command area remains visible
+   ✔  And the Modify panel remains visible
+   ✔  When the user unpins the Modify additional command area
+   ✔  And the user clicks empty viewport space
+   ✔  Then the additional command area closes
+]]></system-out></testcase><testcase name="Scenario: Minimize the ribbon while the direct panel list is open: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:361:3" time="6.068277478"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Minimize the ribbon while the direct panel list is open
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the full 3D Model ribbon is visible
+   ✘  And the ribbon display control is set to toggle between the full ribbon and tabs only
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:364:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Preserve Tools panel choices while switching to Home: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:379:3" time="16.766265369"><system-out><![CDATA[  Scenario: Preserve Tools panel choices while switching to Home
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is open and the Home workspace is available in the MCAD Software
+   ✔  And the part is active with the full Tools ribbon visible
+   ✔  And the Tools panel selector is open
+   ✔  And Measure, Material and Appearance, Options, Clipboard, Find and Team Web are checked
+   ✔  And Tutorials is unchecked
+   ✔  When the user selects the Home workspace tab
+   ✔  Then Home is displayed and the part panel selector is no longer visible
+   ✔  When the user returns to the part document tab
+   ✔  Then the Tools ribbon is visible and the panel selector is closed
+   ✔  When the user opens the Tools panel selector
+   ✔  Then Measure, Material and Appearance, Options, Clipboard, Find and Team Web are checked
+   ✔  And Tutorials is unchecked
+   ✔  When the user presses Escape
+   ✔  Then the panel selector closes
+   ✔  And the part and Tools ribbon remain visible
+]]></system-out></testcase><testcase name="Scenario: Right-click a solid face while the panel selector is open: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:396:3" time="4.304753839"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Right-click a solid face while the panel selector is open
+   ✘  Given `fixtures/cad/docking-visible-solid-current.opd` is open with a visible solid in the MCAD Software
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:397:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Open customization while the panel selector is open: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:405:3" time="9.941847759"><system-out><![CDATA[  Scenario: Open customization while the panel selector is open
+   ✔  Given a part is active in the MCAD Software with the full Tools ribbon visible
+   ✔  And the Tools panel selector is open
+   ✔  When the user clicks Customize in the Tools ribbon
+   ✔  Then the panel selector closes
+   ✔  And the customization dialog opens on the Ribbon tab
+   ✔  And the selected target is Part Tools
+   ✔  When the user closes customization without making changes
+   ✔  Then the customization dialog closes
+   ✔  And the Tools ribbon remains visible
+]]></system-out></testcase><testcase name="Scenario: Switch between panel visibility and ribbon display menus: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:416:3" time="9.932128913"><system-out><![CDATA[  Scenario: Switch between panel visibility and ribbon display menus
+   ✔  Given a part is active in the MCAD Software with the full Tools ribbon visible
+   ✔  And the direct panel selector is open
+   ✔  When the user opens the ribbon display policy menu
+   ✔  Then the panel selector closes
+   ✔  And the display policy menu opens with Minimize to Tabs selected
+   ✔  When the user opens the direct panel selector
+   ✔  Then the display policy menu closes
+   ✔  And the panel selector opens
+   ✔  When the user closes the panel selector
+   ✔  Then the full Tools ribbon remains visible
+]]></system-out></testcase><testcase name="Scenario: Open a ribbon context menu while the panel selector is open: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:428:3" time="11.355553703"><system-out><![CDATA[  Scenario: Open a ribbon context menu while the panel selector is open
+   ✔  Given a part is active in the MCAD Software with the full Tools ribbon visible
+   ✔  And the direct panel selector is open
+   ✔  When the user right-clicks the Options panel title
+   ✔  Then the panel selector closes
+   ✔  And the ribbon context menu opens
+   ✔  And the context menu offers Ribbon Appearance, Show Panels, Customize User Commands, Undock Ribbon and Docking Positions
+   ✔  And Show Panel Titles is checked
+   ✔  When the user presses Escape
+   ✔  Then the ribbon context menu closes
+   ✔  And the Tools ribbon remains visible
+]]></system-out></testcase><testcase name="Scenario: Expand a panel while the panel selector is open: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:440:3" time="7.963106168"><system-out><![CDATA[  Scenario: Expand a panel while the panel selector is open
+   ✔  Given a part is active in the MCAD Software with the full Tools ribbon visible
+   ✔  And the direct panel selector is open
+   ✔  When the user clicks the Options panel title
+   ✔  Then the panel selector closes
+   ✔  And the Options panel displays its additional commands
+   ✔  And the Tools ribbon remains visible
+]]></system-out></testcase><testcase name="Scenario: Hide and restore a panel from the minimized ribbon: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:448:3" time="7.45631983"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Hide and restore a panel from the minimized ribbon
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the top-docked ribbon is minimized to tabs with 3D Model active
+   ✘  And the Simulation panel is enabled for 3D Model
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:451:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Toggle a panel from the left-docked ribbon selector: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:467:3" time="17.61627063"><system-out><![CDATA[  Scenario: Toggle a panel from the left-docked ribbon selector
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the 3D Model ribbon is docked on the left with Modify visible
+   ✔  When the user clicks the direct panel selector at the bottom of the ribbon
+   ✔  Then the panel checklist opens with Modify checked
+   ✔  When the user clicks Modify in the checklist
+   ✔  Then Modify is unchecked and its panel is absent from the ribbon
+   ✔  And the checklist remains open
+   ✔  When the user clicks Modify in the checklist again
+   ✔  Then Modify is checked and its panel is visible on the left-docked ribbon
+   ✔  And the checklist remains open
+]]></system-out></testcase><testcase name="Scenario: Toggle a panel from the right-docked ribbon selector: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:479:3" time="19.574879352"><failure type="Step Panicked" message="Step panicked. Captured output: assertion `left == right` failed: expected selector popup closed
+  left: 1
+ right: 0"/><system-out><![CDATA[  Scenario: Toggle a panel from the right-docked ribbon selector
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the 3D Model ribbon is docked on the right with Modify visible
+   ✔  When the user clicks the direct panel selector at the bottom of the ribbon
+   ✔  Then the panel checklist opens with Modify checked
+   ✔  When the user clicks Modify in the checklist
+   ✔  Then Modify is unchecked and its panel is absent from the ribbon
+   ✔  And the checklist remains open
+   ✔  When the user clicks Modify in the checklist again
+   ✔  Then Modify is checked and its panel is visible on the right-docked ribbon
+   ✔  And the checklist remains open
+   ✔  When the user clicks the direct panel selector again
+   ✘  Then the checklist closes and the ribbon remains docked on the right
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:491:5
+      Matched: crates/head/src/../tests/application/ribbon-panel-visibility/side_selector.rs:181:1
+      Step panicked. Captured output: assertion `left == right` failed: expected selector popup closed
+        left: 1
+       right: 0
+      ApplicationWorld {
+          text: "W\nP\nZ\nv\nO\nv\nFRONT\nModel\nMaterialBrow\u{85}\nAppearanceBr\u{85}\nMenu\nSearch\nPart1<Primary>\nRepresentations\nModelState\n<Primary>\n1\nView\n<Primary>\nOrigin\nYZPlane\nXZPlane\nXYPlane\nXAxis\nYAxis\nZAxis\nCenterPoint\nParameters\nSketches\nFeatures\nEndofPart\nABS(Black)\nAppearance\nAssigntopart\nClose\nReady\n...\nPart1\nFile\nHome\nPart1<Primary>*\nDocuments\nX\nY\nZ\nv\n3DModel\nSketch\nTools\nManage\nView\nAnnotate\nSketch\nCreate\nModify\nWorkFeatures\nPattern\nSimplification\nSketch\nCreate\nModify\nWorkFeatures\nPattern\nSimplification\nParameters",
+          ..
+      }
+]]></system-out></testcase><testcase name="Scenario: Hide and restore a panel while its unpinned expansion is open: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:493:3" time="5.767154639"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Hide and restore a panel while its unpinned expansion is open
+   ✔  Given a part is active in the MCAD Software with the full 3D Model ribbon docked at the top
+   ✘  And the Modify panel is visible with its additional command area open and unpinned
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:495:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Dismiss the remaining title strip of a hidden expanded panel: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:506:3" time="7.215237973"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Dismiss the remaining title strip of a hidden expanded panel
+   ✔  Given a part is active in the MCAD Software with the full 3D Model ribbon at the top
+   ✔  And the Modify additional command area is open and unpinned
+   ✘  When the user opens the panel selector and clears Modify
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:509:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Reflow an expanded panel when an adjacent panel is hidden: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:523:3" time="11.133576983"><system-out><![CDATA[  Scenario: Reflow an expanded panel when an adjacent panel is hidden
+   ✔  Given a part is active in the MCAD Software with the full 3D Model ribbon docked at the top
+   ✔  And the Create and Modify panels are visible, with Create before Modify
+   ✔  And the Modify additional command area is open and unpinned
+   ✔  When the user opens the panel selector and clears Create
+   ✔  Then Create is unchecked and its panel is hidden
+   ✔  And the Modify panel shifts left while its additional commands remain open
+   ✔  And the panel selector remains open
+   ✔  When the user selects Create in the panel selector
+   ✔  Then Create is checked and returns before Modify
+   ✔  And the Modify panel and its open additional commands return to their earlier position
+   ✔  And the panel selector remains open
+]]></system-out></testcase><testcase name="Scenario: Enable a preceding panel while an expansion is open: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:536:3" time="5.771106533"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Enable a preceding panel while an expansion is open
+   ✔  Given a part is active in the MCAD Software with the full 3D Model ribbon docked at the top
+   ✘  And Primitives is hidden and Create and Modify are visible
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:538:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Hide and restore the panel of an active modeling command: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:550:3" time="4.233785135"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Hide and restore the panel of an active modeling command
+   ✘  Given `fixtures/cad/docking-visible-solid-current.opd` is open with its solid block in the MCAD Software
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:551:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Cancel an active command while the panel selector is open: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:576:3" time="4.322841243"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Cancel an active command while the panel selector is open
+   ✘  Given `fixtures/cad/docking-visible-solid-current.opd` is open with its solid block in the MCAD Software
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:577:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Inspect the panel selector with a custom panel present: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:590:3" time="19.750107139"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Inspect the panel selector with a custom panel present
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is open in the MCAD Software
+   ✔  And the full Tools ribbon is visible
+   ✔  And the Part Tools custom panel target is initially empty
+   ✔  When the user opens Customize from Tools
+   ✔  And the user adds 2D Sketches to the Part Tools target
+   ✔  And the user confirms the customization
+   ✔  Then a User Commands panel is visible on Tools
+   ✘  When the user opens the direct ribbon panel selector
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:598:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Show and hides the Layout panel during sketch editing: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:607:3" time="38.443407911"><system-out><![CDATA[  Scenario: Show and hides the Layout panel during sketch editing
+   ✔  Given a part document is in sketch edit in the MCAD Software
+   ✔  And the Sketch tab is active
+   ✔  And the Layout panel is hidden
+   ✔  When the user opens the Create panel title context menu
+   ✔  And the user opens Show Panels
+   ✔  Then Layout is unchecked in the panel list
+   ✔  When the user selects Layout
+   ✔  Then the Layout panel appears between Constrain and Insert
+   ✔  And Make Part and Make Components are disabled
+   ✔  And Create Block is enabled
+   ✔  When the user opens the Create panel title context menu
+   ✔  And the user opens Show Panels
+   ✔  And the user selects Layout
+   ✔  Then the Layout panel is hidden again
+   ✔  And the other visible Sketch panels remain in place
+   ✔  And the sketch remains in edit mode
+]]></system-out></testcase><testcase name="Scenario: Show and hides the Parameters panel during sketch editing: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:625:3" time="38.423123934"><system-out><![CDATA[  Scenario: Show and hides the Parameters panel during sketch editing
+   ✔  Given a part document is in sketch edit in the MCAD Software
+   ✔  And the Sketch tab is active
+   ✔  And the Parameters panel is hidden
+   ✔  When the user opens the Create panel title context menu
+   ✔  And the user opens Show Panels
+   ✔  Then Parameters is unchecked in the panel list
+   ✔  When the user selects Parameters
+   ✔  Then the Parameters panel appears after Format and before Exit
+   ✔  And the panel displays a large parameter symbol
+   ✔  When the user opens the Create panel title context menu
+   ✔  And the user opens Show Panels
+   ✔  And the user selects Parameters
+   ✔  Then the Parameters panel is hidden again
+   ✔  And the sketch remains in edit mode
+]]></system-out></testcase><testcase name="Scenario: Show and hides the Tutorials panel from the Tools tab: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:641:3" time="6.557569882"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Show and hides the Tutorials panel from the Tools tab
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the full Tools ribbon is visible
+   ✘  And the Tutorials panel is visible
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:644:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: List active Tools panels from an inactive tab menu: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:655:3" time="16.423584063"><system-out><![CDATA[  Scenario: List active Tools panels from an inactive tab menu
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the full Tools ribbon is active
+   ✔  When the user right-clicks the inactive 3D Model tab
+   ✔  Then the Tools ribbon remains active
+   ✔  And the ribbon context menu is visible
+   ✔  When the user opens Show Panels from that menu
+   ✔  Then the submenu lists Measure, Material and Appearance, Options, Clipboard, Find, Team Web and Tutorials
+   ✔  And each listed Tools panel is checked
+   ✔  And the 3D Model tab remains inactive
+]]></system-out></testcase><testcase name="Scenario: Hide and restore Team Web from Show Panels: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:667:3" time="25.838424953"><system-out><![CDATA[  Scenario: Hide and restore Team Web from Show Panels
+   ✔  Given a part is active in the MCAD Software with the full Tools ribbon visible
+   ✔  And the Team Web panel is visible
+   ✔  When the user opens Show Panels from the Options panel title menu
+   ✔  Then Team Web is checked
+   ✔  When the user selects Team Web
+   ✔  Then the Team Web panel disappears from the Tools ribbon
+   ✔  And the other visible Tools panels remain available
+   ✔  When the user reopens Show Panels from the Options panel title menu
+   ✔  Then Team Web is unchecked
+   ✔  When the user selects Team Web
+   ✔  Then the Team Web panel appears on the Tools ribbon
+   ✔  And Show Panels marks Team Web as visible
+]]></system-out></testcase><testcase name="Scenario: Hide and restore Tutorials from Show Panels: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:681:3" time="32.701638399"><system-out><![CDATA[  Scenario: Hide and restore Tutorials from Show Panels
+   ✔  Given a part is active in the MCAD Software with the full Tools ribbon visible
+   ✔  And the Tutorials panel is visible after Team Web
+   ✔  When the user opens Show Panels from the Tools tab context menu
+   ✔  Then Tutorials is checked
+   ✔  When the user selects Tutorials
+   ✔  Then the Tutorials panel disappears from the Tools ribbon
+   ✔  And the other visible Tools panels remain available
+   ✔  When the user reopens Show Panels
+   ✔  Then Tutorials is unchecked
+   ✔  When the user selects Tutorials
+   ✔  Then the Tutorials panel reappears after Team Web
+   ✔  And Show Panels marks Tutorials as visible
+]]></system-out></testcase><testcase name="Scenario: Retain a hidden Tools panel after switching ribbon tabs: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:695:3" time="29.895675012"><system-out><![CDATA[  Scenario: Retain a hidden Tools panel after switching ribbon tabs
+   ✔  Given a part is active in the MCAD Software with the full Tools ribbon visible
+   ✔  And the Find panel is visible
+   ✔  When the user hides Find from Show Panels on the Tools tab
+   ✔  Then the Find panel disappears from the Tools ribbon
+   ✔  When the user switches to 3D Model and returns to Tools
+   ✔  Then the Find panel remains hidden
+   ✔  When the user opens Show Panels on the Tools tab
+   ✔  Then Find is unchecked and Tutorials remains checked
+   ✔  When the user selects Find
+   ✔  Then the Find panel reappears before Team Web
+   ✔  And Find and Tutorials are both visible
+]]></system-out></testcase><testcase name="Scenario: Read and dismisses the direct panel selector help: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:708:3" time="8.991479367"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Read and dismisses the direct panel selector help
+   ✔  Given a part is active in the MCAD Software with the full 3D Model ribbon visible
+   ✔  When the user opens the direct panel selector
+   ✘  And the user closes it with the same selector control
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:711:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: List visible panels from the Manage ribbon context menu: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:720:3" time="5.762731584"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: List visible panels from the Manage ribbon context menu
+   ✔  Given a part is active in the MCAD Software
+   ✘  And the full Manage ribbon is active
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:722:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: List 3D Model panels from the side-docked tab menu: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:728:3" time="4.196439583"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: List 3D Model panels from the side-docked tab menu
+   ✘  Given a part containing a solid block is active in the MCAD Software
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:729:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Toggle Modify from Show Panels while its additional commands are open: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:737:3" time="25.141274416"><system-out><![CDATA[  Scenario: Toggle Modify from Show Panels while its additional commands are open
+   ✔  Given a part is active with the full 3D Model ribbon docked at the top
+   ✔  And the Modify additional command area is open
+   ✔  When the user opens Show Panels from the active tab context menu
+   ✔  Then Modify is checked in the panel list
+   ✔  When the user selects Modify
+   ✔  Then the menu closes
+   ✔  And the Modify panel and its additional command area are hidden
+   ✔  When the user reopens Show Panels from the active tab context menu
+   ✔  Then Modify is unchecked
+   ✔  When the user selects Modify
+   ✔  Then the menu closes
+   ✔  And the main Modify panel is visible
+   ✔  And the additional command area remains closed
+]]></system-out></testcase></testsuite></testsuites>

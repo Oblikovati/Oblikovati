@@ -1,9 +1,13 @@
 # Verification, compatibility, and release
 
-This document defines application acceptance gates. The branch now has a Rust
-build-tool workspace and the [local/CI gate](../../RELEASING.md). The GUI and CLI
-are not yet ported. Tool tests and package-plan checks do not provide native
-application acceptance or R9 release evidence.
+This document defines application acceptance gates. The Rust workspace includes
+the CLI, desktop GUI, and [local/CI gate](../../RELEASING.md). Implemented paths
+have partial evidence in [status](STATUS.md); they do not establish full port or
+R9 release acceptance.
+
+Recent native evidence is from Linux. Windows and macOS acceptance remains
+outstanding, and their pipeline failures must remain visible. The broader
+platform acceptance requirements below still apply.
 
 ## Behavior ledger
 
@@ -154,7 +158,9 @@ window proof local until that host is ready. Do not waive the live-test gate.
 R0 must add **one command: `make gate`**. Its implementation derives the crate
 set from Cargo metadata and the fixture-module set from the tree. It includes
 the CLI, GUI, native bindings, examples, integration tests, and add-in test
-libraries; no default workspace subset may omit them.
+libraries; no default workspace subset may omit them. Source discovery excludes
+`.slim/worktrees` task checkouts, but includes nested modules and fixtures in the
+active checkout.
 
 The complete gate includes:
 
@@ -231,3 +237,7 @@ The final review must state which existing Go roadmap items remain unfinished
 and which deliberate behavior changes have their own decisions. A port can
 preserve an unfinished baseline feature without falsely marking that feature
 complete. It cannot omit working baseline behavior and still claim full parity.
+
+The [viewport integration evidence](implementation-viewport.md) records the
+independent Linux native-GPU window check against the updated Martensite source,
+package availability, and the remaining R1V application/composition work.

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon display modes: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature" package="testsuite/Feature: Ribbon display modes: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T02:44:57.61012933Z" time="15.660013494"><testcase name="Scenario: Switch ribbon tabs with a command panel open: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature:563:3" time="15.660013494"><system-out><![CDATA[  Scenario: Switch ribbon tabs with a command panel open
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part is active in the MCAD Software
+   ✔  And the full Tools ribbon is visible
+   ✔  When the user selects Measure
+   ✔  Then the Measure panel opens over the workspace
+   ✔  When the user selects the View tab
+   ✔  Then the View ribbon command groups are displayed
+   ✔  And the Measure panel remains open
+   ✔  When the user selects Done in the Measure panel
+   ✔  Then the Measure panel closes
+   ✔  And the View ribbon remains visible
+]]></system-out></testcase></testsuite></testsuites>

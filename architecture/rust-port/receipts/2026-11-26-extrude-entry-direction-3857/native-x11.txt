@@ -1,0 +1,31 @@
+
+running 14 tests
+test native::gui_loop_tests::application_bdd::solid_extrusion::acceptance::browser_distance_edit_previews_cancels_commits_and_reopens ... ok
+test native::gui_loop_tests::application_bdd::solid_extrusion::acceptance::extrusion_acceptance_and_history_restore_a_visible_solid ... ok
+test native::gui_loop_tests::application_bdd::solid_extrusion::acceptance::free_rectangle_extrusion_survives_undo_and_redo ... ok
+test native::gui_loop_tests::application_bdd::solid_extrusion::direction::flipped_literal_preview_and_commit_use_the_same_direction ... ok
+test native::gui_loop_tests::application_bdd::solid_extrusion::direction::native_asymmetric_flip_changes_both_distances_and_one_history_step ... ok
+test native::gui_loop_tests::application_bdd::solid_extrusion::direction_selector::native_extrude_selector_preserves_direction_and_remembers_style_on_cancel ... ok
+test native::gui_loop_tests::application_bdd::solid_extrusion::distance_editor::native_dimension_picker_inserts_a_feature_parameter_into_the_draft ... ok
+test native::gui_loop_tests::application_bdd::solid_extrusion::invalid_distance_then_valid_distance_restores_the_preview ... ok
+test native::gui_loop_tests::application_bdd::solid_extrusion::native_invalid_distance_recovery_and_cancel_preserve_the_sketch ... ok
+test native::gui_loop_tests::application_bdd::solid_extrusion::preview_tracks_a_named_parameter_edit_and_cancel ... FAILED
+test native::gui_loop_tests::application_bdd::solid_extrusion::reference_extent::from_dropdown_restores_the_numeric_preview ... ok
+test native::gui_loop_tests::application_bdd::solid_extrusion::reference_extent::viewport_face_pick_previews_and_commits_reference_extent ... ok
+test native::gui_loop_tests::application_bdd::solid_extrusion::unconstrained_rectangle_resumes_waiting_extrusion_with_preview ... ok
+test native::gui_loop_tests::application_bdd::solid_extrusion::viewport_interaction::preview_difference_excludes_unchanged_and_covered_pixels ... ok
+
+failures:
+
+---- native::gui_loop_tests::application_bdd::solid_extrusion::preview_tracks_a_named_parameter_edit_and_cancel stdout ----
+
+thread 'native::gui_loop_tests::application_bdd::solid_extrusion::preview_tracks_a_named_parameter_edit_and_cancel' (2078000) panicked at crates/head/src/../tests/application/../solid-model/extrusion/steps.rs:334:5:
+assertion failed: viewport_interaction::preview_changed_outside_windows(&before, &after,
+    &windows)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    native::gui_loop_tests::application_bdd::solid_extrusion::preview_tracks_a_named_parameter_edit_and_cancel
+
+test result: FAILED. 13 passed; 1 failed; 0 ignored; 0 measured; 1771 filtered out; finished in 88.93s

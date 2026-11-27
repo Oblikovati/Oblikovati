@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Dockable workspace panels: target/native-scratch.HSqCy5/current-docking-system-source/features/application/docking-system/docking-system.feature" package="testsuite/Feature: Dockable workspace panels: target/native-scratch.HSqCy5/current-docking-system-source/features/application/docking-system/docking-system.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T22:48:58.064899338Z" time="65.511821654"><testcase name="Scenario: Resize a docked panel from its shared boundary: target/native-scratch.HSqCy5/current-docking-system-source/features/application/docking-system/docking-system.feature:31:3" time="65.511821654"><system-out><![CDATA[  Scenario: Resize a docked panel from its shared boundary
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open and active
+   ✔  And a dockable panel is docked beside the viewport
+   ✔  When the user drags the panel boundary away from the viewport
+   ✔  Then the panel becomes wider
+   ✔  And the viewport becomes narrower by the corresponding amount
+   ✔  And the panel contents and active part remain visible
+   ✔  When the user drags the boundary back
+   ✔  Then the panel and viewport return to their previous proportions
+]]></system-out></testcase></testsuite></testsuites>

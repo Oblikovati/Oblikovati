@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Workspace layout and panel visibility: tmp/obk-workspace-4066/features/application/workspace-layout/workspace-layout.feature" package="testsuite/Feature: Workspace layout and panel visibility: tmp/obk-workspace-4066/features/application/workspace-layout/workspace-layout.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-17T12:43:31.311651523Z" time="27.763569205"><testcase name="Scenario: Resize the docked model browser: tmp/obk-workspace-4066/features/application/workspace-layout/workspace-layout.feature:142:3" time="27.763569205"><system-out><![CDATA[  Scenario: Resize the docked model browser
+   ✔  Given a part document is open in the MCAD Software
+   ✔  And the model browser is docked to the left of the viewport
+   ✔  When the user drags the boundary between the model browser and viewport to the right
+   ✔  Then the model browser becomes wider
+   ✔  And the viewport becomes narrower
+   ✔  And the document and model tree remain displayed
+   ✔  When the user drags the boundary back to its original position
+   ✔  Then the model browser and viewport return to their previous widths
+]]></system-out></testcase></testsuite></testsuites>

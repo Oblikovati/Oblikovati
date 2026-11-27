@@ -1,0 +1,24 @@
+{
+  "kind": "diagnostic",
+  "application_commit": "e9c57772c7c81f58c3083aa6dbc3be36e81677fa",
+  "scenario_snapshot": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+  "feature_sha256": "d87eaf041fc93701e0de5c911dd3b4c0622386d184f05954a8409400e412c0d0",
+  "source_changed": false,
+  "scenarios_passed": 3,
+  "steps_passed": 14,
+  "command": "OBK_BDD_FEATURE=application-closing OBK_BDD_REPORTS=<empty output directory> XMODIFIERS=@im=none VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json tools/with-xvfb.sh cargo test --locked --offline -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
+  "environment": "Linux X11, Xvfb 1920x1080, Vulkan Lavapipe; WM_DELETE_WINDOW and XTEST Cancel; fixture setup uses frame-loop input",
+  "visual_review": "Prompt names Part1 and displays Yes, No and Cancel.",
+  "limitations": [
+    "Scenario snapshot is derived from unversioned source.",
+    "Clean and no-document scenarios still need source-owner capture.",
+    "Compiler and build inputs are not bounded; this is not a reusable acceptance receipt (#3978).",
+    "Multi-document once-per-operation behavior remains open (#4056)."
+  ],
+  "artifacts_sha256": {
+    "application-closing-dirty-prompt.png": "c629a2b164eb3cfac8941a14de96ed4c7254126e9c67604aded7a00543cc12aa",
+    "cucumber.json": "9bc382076d1901f2160e510e86824d1388324df0e4dd3827094cc719100cbfaa",
+    "junit.xml": "1df07f6b7e167e8bfe6561c0d505a1ac0382c1380cb2510afb056a9d3303420e",
+    "source-revision.json": "70275b812ba24480c19e319bcda0cafd44b402fd63c85de67e321d44bded719f"
+  }
+}

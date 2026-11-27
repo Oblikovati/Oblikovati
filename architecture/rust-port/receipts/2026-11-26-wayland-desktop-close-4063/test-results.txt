@@ -1,0 +1,32 @@
+
+final-wayland
+[04:21:42.196846] xdg_toplevel#12.close()
+1 scenario (1 passed)
+7 steps (7 passed)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1733 filtered out; finished in 7.31s
+
+final-x11
+1 scenario (1 passed)
+7 steps (7 passed)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1733 filtered out; finished in 7.75s
+
+save
+[04:19:43.423367] xdg_toplevel#12.close()
+1 scenario (1 passed)
+9 steps (9 passed)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1733 filtered out; finished in 9.63s
+
+first-save
+[04:19:50.799632] xdg_toplevel#12.close()
+1 scenario (1 passed)
+8 steps (8 passed)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1733 filtered out; finished in 4.33s
+
+assembly
+[04:19:57.049169] xdg_toplevel#12.close()
+1 scenario (1 passed)
+10 steps (10 passed)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1733 filtered out; finished in 5.60s
+
+Workspace Clippy
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 55.71s

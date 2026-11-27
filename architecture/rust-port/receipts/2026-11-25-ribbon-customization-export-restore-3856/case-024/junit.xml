@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T04:08:53.430973986Z" time="128.071943908"><testcase name="Scenario: Handle a missing customization import file: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature:326:3" time="128.071943908"><system-out><![CDATA[  Scenario: Handle a missing customization import file
+   ✔> Given the MCAD Software starts with a writable copy of `fixtures/preferences/ribbon-normal` as its configuration directory
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And the ribbon customization dialog is open with no pending changes
+   ✔  And the customization import file picker is open
+   ✔  When the user enters a path to a nonexistent XML file and clicks "Open"
+   ✔  Then a warning says the file was not found and asks the user to check its name
+   ✔  When the user acknowledges the warning
+   ✔  Then the import file picker remains open with the filename selected
+   ✔  When the user cancels the file picker
+   ✔  Then the customization dialog remains open without a pending-change marker
+   ✔  And "Apply" is unavailable
+]]></system-out></testcase></testsuite></testsuites>

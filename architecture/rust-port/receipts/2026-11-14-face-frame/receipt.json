@@ -1,0 +1,31 @@
+{
+  "kind": "named prism planar face frame verification",
+  "application_commit": "d1d38d801",
+  "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+  "go_application_commit": "aa8297d1b0ac33c024f19e54821536d76e8a447a",
+  "results": {
+    "library_tests": "83 passed",
+    "prism_tests": "51 passed",
+    "clippy": "Martensite adapter all targets passed",
+    "go_oracle": "Six cube face normals recorded from Go analytic planes.",
+    "history": "Named frames checked for all six faces at 10 mm and 20 mm, undo, redo and Rust recipe reopen; stale and wrong-kind keys refused."
+  },
+  "observations": [
+    "The provenance-generated side face is Forward while its unique solid occurrence is Reversed. The query uses the solid occurrence orientation.",
+    "For Go side 1, Go in-plane axes are (0,0,1) and (0,-1,0), while kernel-derived axes are (0,1,0) and (0,0,1). Origin and normal agree, but legacy sketch coordinates need an explicit basis mapping."
+  ],
+  "limitations": [
+    "This provides a named prism face frame only. It does not migrate a Go face key, import the dependent work plane, or prove arbitrary non-prism support.",
+    "The Go axis witness is an observational printout; Rust assertions compare the six analytic origins and normals, not matching in-plane axes.",
+    "No full gate or foreground user journey was run."
+  ],
+  "artifacts": {
+    "axes.log.gz": "2ec70aa39b0d05fcfe703c74663a3070ab1dc29e88ad5098bc9c125580cb558e",
+    "go-face-frames.go": "004fde4b100404626803b1c344d8becd32984254b4f30bd7b0e0418d49630b94",
+    "go-final.log.gz": "69b6e774296d72e1a7016651b40cb45bd5f897157ba70ce7d56e80df7cb6cce3",
+    "orient2.log.gz": "716f820c76dc61a5023903110573f75d242b9855b6afcc8fbcb3df23541e474e",
+    "clippy-final.log.gz": "e9bf5c133643f2a70a0674de7dd28c92cb9d9f6d976f56251cadd27a2c622343",
+    "lib.log.gz": "65ea231a5b4df04ecaa04f9ebf84836f3774292a0b3da30d9d3299962c31bbf5",
+    "suite-final.log.gz": "ace6c615a49ac2c3e85f0b7c9fa94d24f3b87f5304c8767705107d57950ea478"
+  }
+}

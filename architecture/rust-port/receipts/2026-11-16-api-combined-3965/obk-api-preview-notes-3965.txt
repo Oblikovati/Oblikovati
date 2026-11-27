@@ -1,0 +1,54 @@
+### Added
+
+- feat(sketch): add fail-closed associative entity contract
+
+### Changed
+
+- Mark sketch expression behavior as breaking
+- Describe sketch expression migration
+- Define live bindings for existing sketch creation
+- Keep duplication checks focused
+- Include migration notes in API releases
+- Gate API releases on the tested commit
+- Define explicit sketch move planning and commit
+- Enforce the API duplication limit
+- Expose part sketch startup and view preferences
+- Test example add-in lifecycle and version output
+- Share generated DTO field rules
+- Share generated scalar definitions
+- Define express assembly loading operations
+- Report nonfatal warnings for saved documents
+
+### Fixed
+
+- fix(release): group untyped subjects as changes
+- fix(release): allow explicit additive scope correction
+
+### Added
+
+- Constraint-aware sketch Move planning and commit operations with explicit
+  policies, impact reporting, approval, and stale-plan refusal (#304).
+
+- Express assembly open state and a typed Load Full operation.
+
+- Typed nonfatal save warnings for single saves, batch saves, and save-on-close.
+
+- Optional Part options for sketch-facing behavior and the startup sketch
+  plane. Hosts must reject unknown startup plane values and preserve omitted
+  options on write.
+
+- A distinct associative sketch entity operation that older hosts reject
+  instead of silently discarding the parameter binding.
+
+### Changed
+
+- Rust callers that construct `OpenDocumentArgs`, `DocumentInfo`,
+  `SaveDocumentResult`, `CloseDocumentsResult`, `BatchSaveItemResult`, or
+  `PartOptionsView` with exhaustive struct literals must supply their new fields
+  or use defaults.
+  Go callers using unkeyed literals for the corresponding structs must update
+  them. Existing wire payloads without the new fields retain their defaults.
+
+- Named parameter expressions in sketch entity size fields now create driving
+  dimensions. Callers that previously added a separate dimension for the same
+  size must remove that duplicate to avoid overconstraining the sketch.

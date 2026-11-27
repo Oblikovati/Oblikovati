@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Workspace layout and panel visibility: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature" package="testsuite/Feature: Workspace layout and panel visibility: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T02:55:38.378823712Z" time="18.372846465"><testcase name="Scenario: Hide and restore the model browser: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature:112:3" time="18.372846465"><system-out><![CDATA[  Scenario: Hide and restore the model browser
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open in the MCAD Software
+   ✔  And the model browser is visible at the left of the workspace
+   ✔  When the user opens the User Interface menu from the View ribbon tab
+   ✔  And the user clears the Model Browser option
+   ✔  Then the model browser is hidden
+   ✔  And the viewport extends into the space it occupied
+   ✔  When the user reopens the User Interface menu
+   ✔  Then the Model Browser option is unchecked
+   ✔  When the user selects the Model Browser option again
+   ✔  Then the model browser returns to the left of the workspace
+   ✔  When the user reopens the User Interface menu
+   ✔  Then the Model Browser option is checked
+]]></system-out></testcase></testsuite></testsuites>

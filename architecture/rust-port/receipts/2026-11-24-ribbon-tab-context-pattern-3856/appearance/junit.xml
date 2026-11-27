@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon appearance: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-appearance/ribbon-appearance.feature" package="testsuite/Feature: Ribbon appearance: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-appearance/ribbon-appearance.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T09:33:13.946297551Z" time="26.006716603"><testcase name="Scenario: Change panel title visibility from an inactive tab: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-appearance/ribbon-appearance.feature:166:3" time="26.006716603"><system-out><![CDATA[  Scenario: Change panel title visibility from an inactive tab
+   ✔  Given a part is active in the MCAD Software with the full 3D Model ribbon selected
+   ✔  And panel titles are visible
+   ✔  When the user opens the inactive Sketch tab context menu
+   ✔  Then 3D Model remains selected and Show Panel Titles is checked
+   ✔  When the user clears Show Panel Titles
+   ✔  Then the menu closes and the 3D Model panel titles are hidden
+   ✔  And 3D Model remains selected
+   ✔  When the user selects Tools
+   ✔  Then the Tools panel titles are also hidden
+   ✔  When the user opens the Tools tab context menu
+   ✔  Then Show Panel Titles is unchecked and Tools remains selected
+   ✔  When the user selects Show Panel Titles
+   ✔  Then the menu closes and the Tools panel titles are visible
+   ✔  And Tools remains selected
+   ✔  When the user returns to 3D Model
+   ✔  Then the 3D Model panel titles are visible
+]]></system-out></testcase></testsuite></testsuites>

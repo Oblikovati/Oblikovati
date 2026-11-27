@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Save and reopen part documents: git/oblikovati-workspace/oblikovati-rust/target/native-scratch.HSqCy5/current-document-saving-source/features/application/document-saving/document-saving.feature" package="testsuite/Feature: Save and reopen part documents: git/oblikovati-workspace/oblikovati-rust/target/native-scratch.HSqCy5/current-document-saving-source/features/application/document-saving/document-saving.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T02:26:22.23661056Z" time="14.511550222"><testcase name="Scenario: Select an existing part in the first-save dialog: git/oblikovati-workspace/oblikovati-rust/target/native-scratch.HSqCy5/current-document-saving-source/features/application/document-saving/document-saving.feature:159:3" time="14.511550222"><system-out><![CDATA[  Scenario: Select an existing part in the first-save dialog
+   ✔  Given the user creates a new unsaved metric part in the MCAD Software
+   ✔  And the user presses Control+S to open Save As
+   ✔  And the Save As dialog is open for a new part in the MCAD Software
+   ✔  And the current folder is a writable copy of `fixtures/cad/document-saving/SaveAsNativeFolder` with its existing part files
+   ✔  When the user selects `ExistingPart.opd` in the file list
+   ✔  Then the selected file row is highlighted
+   ✔  And the file name field displays the selected file's name
+   ✔  And the status area reports one selected item
+   ✔  When the user cancels the dialog
+   ✔  Then the unsaved part remains active
+]]></system-out></testcase></testsuite></testsuites>

@@ -1,0 +1,8 @@
+{
+  "mode": "continuous",
+  "app_pid": 2151888,
+  "fixture": "docking-visible-solid-current.opd",
+  "dpi": 144,
+  "validation_checks_disabled": "VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT,VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT,VK_VALIDATION_FEATURE_DISABLE_API_PARAMETERS_EXT,VK_VALIDATION_FEATURE_DISABLE_OBJECT_LIFETIMES_EXT",
+  "total_rows": 800
+}

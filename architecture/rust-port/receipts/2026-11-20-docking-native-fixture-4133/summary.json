@@ -1,0 +1,8 @@
+{
+  "classification": "diagnostic only; support notes still require Inventor fixture",
+  "scenarios_passed": 10,
+  "steps_passed": 96,
+  "feature_and_support_unchanged": true,
+  "native_fixture_sha256": "f631ff7cb37606f518e7d28a73c999a11362c0683d9c78e31306ba835beb2eef",
+  "environment": "Xvfb and Vulkan Lavapipe, native window and X11 pointer input"
+}

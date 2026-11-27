@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Move: tmp/obk-move-modes-source/features/sketch/move/scenario.feature" package="testsuite/Feature: Move: tmp/obk-move-modes-source/features/sketch/move/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-16T04:05:36.122629659Z" time="26.96219453"><testcase name="Scenario: move-13 Choose Distance and X axis angle fields: tmp/obk-move-modes-source/features/sketch/move/scenario.feature:86:3" time="26.96219453"><system-out><![CDATA[  Scenario: move-13 Choose Distance and X axis angle fields
+   ✔  Given an editable sketch with eligible geometry
+   ✔  Given the selected ellipse is at the precise Base Point stage
+   ✔  When the user opens the coordinate-mode dropdown
+   ✔  Then four coordinate and angle combinations are listed
+   ✔  When the user chooses Distance and X axis angle
+   ✔  Then the toolbar exposes Distance in mm and Angle in degrees
+]]></system-out></testcase></testsuite></testsuites>

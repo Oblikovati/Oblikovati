@@ -41,3 +41,28 @@ fn apple_rejection_stops_publication_and_nested_code_is_signed_first() {
         .is_err()
     );
 }
+
+#[test]
+fn standalone_gui_and_cli_executables_are_both_signed() {
+    let tree = FixtureTree::new();
+    tree.put("bin/oblikovati", "gui");
+    tree.put("bin/oblikovati-cli", "cli");
+    let runner = FakeRunner::default();
+    let identity = SigningIdentity {
+        developer_id: "Developer ID".into(),
+        keychain: "temporary.keychain".into(),
+    };
+    sign_tree(tree.root(), &runner, &tree.root().join("bin"), &identity).unwrap();
+    let calls = runner.calls.borrow();
+    assert_eq!(calls.len(), 2, "expected GUI and CLI signatures: {calls:?}");
+    assert!(
+        calls
+            .iter()
+            .any(|call| call.last().unwrap().ends_with("oblikovati"))
+    );
+    assert!(
+        calls
+            .iter()
+            .any(|call| call.last().unwrap().ends_with("oblikovati-cli"))
+    );
+}

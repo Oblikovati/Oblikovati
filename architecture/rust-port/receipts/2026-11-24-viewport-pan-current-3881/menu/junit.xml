@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Viewport pan: tmp/oblikovati-ribbon-relocated.RcZVDl/current-viewport-pan-source/features/application/viewport-pan/viewport-pan.feature" package="testsuite/Feature: Viewport pan: tmp/oblikovati-ribbon-relocated.RcZVDl/current-viewport-pan-source/features/application/viewport-pan/viewport-pan.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T21:50:35.892589871Z" time="27.03982214"><testcase name="Scenario: End Pan using its context menu: tmp/oblikovati-ribbon-relocated.RcZVDl/current-viewport-pan-source/features/application/viewport-pan/viewport-pan.feature:24:3" time="27.03982214"><system-out><![CDATA[  Scenario: End Pan using its context menu
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open with its solid visible in the MCAD Software
+   ✔  And Pan is active from the viewport navigation bar
+   ✔  When the user right-clicks an empty area of the viewport
+   ✔  Then a contextual menu offers Done, OK, Home View, Orbit, Zoom and Previous View
+   ✔  And the status area still indicates Pan is active
+   ✔  When the user chooses Done
+   ✔  Then the contextual menu closes and the status area displays Ready
+   ✔  And the same part and solid remain visible
+]]></system-out></testcase></testsuite></testsuites>

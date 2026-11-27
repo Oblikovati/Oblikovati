@@ -1,0 +1,9 @@
+{
+  "application_commit": "26c4342be",
+  "feature": "features/application/workspace-layout/workspace-layout.feature",
+  "feature_sha256": "3910a3c0a4e77f5417ae7e6b08019330b2fdc621c6af1c4f7f42ff9acb329b1a",
+  "scenario": "Show an empty browser search result",
+  "result": "1 scenario, 8 steps passed",
+  "environment": "Linux X11, Xvfb, software Vulkan; scripted window input",
+  "scope": "Focused scenario only; not a full-feature run. Source was unversioned."
+}

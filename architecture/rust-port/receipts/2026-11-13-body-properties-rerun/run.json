@@ -1,0 +1,38 @@
+{
+  "date": "2026-11-13",
+  "issue": "https://github.com/Oblikovati/Oblikovati/issues/3859",
+  "application_commit": "3af2b5091dd6c0b4c5eeb3a0624876cf3e7de151",
+  "scenario_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+  "feature": "application/body-properties",
+  "runner": "application_scenarios_use_the_native_window",
+  "environment": "Linux, Xvfb, Vulkan Lavapipe",
+  "result": {
+    "scenarios_passed": 6,
+    "scenarios_total": 6,
+    "steps_passed": 69,
+    "steps_total": 69
+  },
+  "notes": [
+    "The source checkout and application inputs were clean before and after the run.",
+    "The final-state capture was visually inspected and supplements the scenario assertions.",
+    "This is a selected-scenario result, not a milestone exit."
+  ],
+  "artifacts_sha256": {
+    "Apply-and-restore-a-body-appearance.png": "98c0f358d98f7248481c7eb97a6c05eda13dbcabedaeccd660a3b72f3cbda6d8",
+    "Cancel-a-body-appearance-selection.png": "a0437ac16c790a3c48ffad99b17ebd536584ada472eb2a4399115c84d47b35a5",
+    "Discard-a-pending-appearance-using-the-title-bar-close-control.png": "a0437ac16c790a3c48ffad99b17ebd536584ada472eb2a4399115c84d47b35a5",
+    "Discard-a-pending-appearance-with-Escape.png": "a0437ac16c790a3c48ffad99b17ebd536584ada472eb2a4399115c84d47b35a5",
+    "Dismiss-body-properties-with-Escape.png": "a0437ac16c790a3c48ffad99b17ebd536584ada472eb2a4399115c84d47b35a5",
+    "Update-unavailable-physical-properties-for-a-solid-body.png": "a0437ac16c790a3c48ffad99b17ebd536584ada472eb2a4399115c84d47b35a5",
+    "cucumber.json": "721aa201c2177a193e1f83db006918ca3621c8cfdc8f23fb027480cd1dfadcff",
+    "junit.xml": "567d5f1c9523b289254eb63d83c84ca39f4848964014b48131e9e0ed00664a0d",
+    "native-test.log.gz": "b07853ea8ef1fc8159bc5b1ff50a59834cef48a53e3c4af96a2e709b63a20040",
+    "receipt-137ba03d06c38c43.json": "affa6fb1b3cd1c584f58e56b1d20efd29712fd2172ac5f7418bbd15fb02b43b2",
+    "receipt-290c0844328af2d2.json": "6122539fdacda8985a4fcd2d1a3b9287bf8238de827847a7270d420c02249a02",
+    "receipt-48efe943e9ecc0d7.json": "7a7978c106ea87f613ab95d11a5bf14b0f401e56dd9a929312971dc61ea9eff0",
+    "receipt-e22ccad1ec1386a7.json": "f17e4a87ac11b610daf2b347c633ab4115c2f63618e9a91d4dcc35624608d29f",
+    "receipt-f024b2250132b323.json": "beb85440fb0cf97fd9c6a2e4439f40a9700ce55056e6b802327fc0e3c9b9cb61",
+    "receipt-fe23247614f79aca.json": "13a3fb800697a2e6bd1fe827a3555b439ce0f89ae655ed323b3c71f7a145457a",
+    "source-revision.json": "afdcde4b44bdbec6b08878f72ff7111f069221d84273b826035e73b15a5d3457"
+  }
+}

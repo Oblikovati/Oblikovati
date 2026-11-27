@@ -1,0 +1,148 @@
+// SPDX-License-Identifier: GPL-2.0-only
+use super::*;
+use crate::{
+    feature::{
+        FeatureReadKey,
+        work_geometry::plane_key,
+        work_plane::{WorkPlaneReference, WorkPlaneResolver},
+    },
+    sketch::SketchPlane,
+};
+
+/// Associative bounds projected onto the profile normal, in document units.
+#[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "kebab-case", deny_unknown_fields)]
+pub enum SketchPrismExtent {
+    ThroughAll {
+        direction: ThroughAllDirection,
+    },
+    ToFace {
+        to: WorkPlaneReference,
+    },
+    DistanceFromPlane {
+        from: WorkPlaneReference,
+    },
+    FromTo {
+        from: WorkPlaneReference,
+        to: WorkPlaneReference,
+    },
+}
+
+/// Sides of the sketch plane covered by a through-all Cut.
+#[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum ThroughAllDirection {
+    Positive,
+    Negative,
+    Symmetric,
+}
+
+pub(super) fn missing_target_bounds(
+    _plane: SketchPlane,
+    _direction: ThroughAllDirection,
+) -> Result<(f64, f64), String> {
+    Err("through-all extent: expected current target body bounds".into())
+}
+
+impl SketchPrismDefinition {
+    /// Start a numeric extrusion at an associative plane parallel to the profile.
+    /// Example: `definition.with_start_plane(WorkPlaneReference::Feature(id))?`.
+    pub fn with_start_plane(mut self, from: WorkPlaneReference) -> Result<Self, SketchPrismError> {
+        self.extent = Some(SketchPrismExtent::DistanceFromPlane { from });
+        validation::validate_sources(&self).map_err(|cause| self.decline(cause))?;
+        Ok(self)
+    }
+
+    /// Author a prism bounded by associative geometry.
+    /// Example: `SketchPrismDefinition::between_planes(sketch, selection, extent)?`.
+    pub fn between_planes(
+        sketch: DocumentSketchId,
+        selection: SketchPrismSelection,
+        extent: SketchPrismExtent,
+    ) -> Result<Self, SketchPrismError> {
+        let definition = Self {
+            sketch,
+            selection,
+            additional_outputs: Vec::new(),
+            displacement: [DatumLength::Constant(0.); 3],
+            direction: SketchPrismDirection::Positive,
+            second_depth: None,
+            taper: None,
+            extent: Some(extent),
+            boolean_target: None,
+        };
+        validation::validate_sources(&definition).map_err(|cause| definition.decline(cause))?;
+        Ok(definition)
+    }
+}
+
+impl SketchPrismExtent {
+    pub(super) fn reads(&self) -> impl Iterator<Item = FeatureReadKey> + '_ {
+        self.references()
+            .into_iter()
+            .flatten()
+            .filter_map(plane_key)
+    }
+
+    fn references(&self) -> [Option<&WorkPlaneReference>; 2] {
+        match self {
+            Self::ThroughAll { .. } => [None, None],
+            Self::DistanceFromPlane { from } => [Some(from), None],
+            Self::ToFace { to } => [None, Some(to)],
+            Self::FromTo { from, to } => [Some(from), Some(to)],
+        }
+    }
+
+    pub(super) fn span(
+        &self,
+        sketch: SketchPlane,
+        resolver: &impl WorkPlaneResolver,
+        target_span: impl FnOnce(SketchPlane, ThroughAllDirection) -> Result<(f64, f64), String>,
+    ) -> Result<(f64, f64), SketchPrismCause> {
+        if let Self::ThroughAll { direction } = self {
+            return target_span(sketch, *direction).map_err(SketchPrismCause::Definition);
+        }
+        let [start, end] = self.references().map(|reference| {
+            reference
+                .map(|plane| plane_offset(sketch, plane, resolver))
+                .transpose()
+        });
+        let start = start?.unwrap_or(0.);
+        let end = end?.unwrap_or(0.);
+        let depth = (end - start).abs();
+        if !depth.is_finite() || depth == 0. {
+            return Err(SketchPrismCause::Definition(format!(
+                "extent planes at offsets {start:?} and {end:?}: expected distinct finite bounds"
+            )));
+        }
+        Ok((start.min(end), depth))
+    }
+}
+
+pub(super) fn plane_offset(
+    sketch: SketchPlane,
+    reference: &WorkPlaneReference,
+    resolver: &impl WorkPlaneResolver,
+) -> Result<f64, SketchPrismCause> {
+    let target = reference
+        .clone()
+        .frame(resolver)
+        .map_err(SketchPrismCause::Extent)?;
+    let normal = sketch.normal();
+    let other = target.normal();
+    let cross: [f64; 3] = std::array::from_fn(|axis| {
+        let i = (axis + 1) % 3;
+        let j = (axis + 2) % 3;
+        normal[i] * other[j] - normal[j] * other[i]
+    });
+    if cross.into_iter().map(|v| v * v).sum::<f64>().sqrt() > sketch.options().angular_deviation {
+        return Err(SketchPrismCause::Definition(format!(
+            "extent plane {reference:?}: expected a plane parallel to the profile"
+        )));
+    }
+    let origin = sketch.recipe().origin;
+    let target = target.recipe().origin;
+    Ok((0..3)
+        .map(|axis| (target[axis] - origin[axis]) * normal[axis])
+        .sum())
+}

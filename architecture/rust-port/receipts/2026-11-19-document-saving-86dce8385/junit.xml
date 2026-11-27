@@ -1,0 +1,242 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Save and reopen part documents: mnt/vininas-projects/MCAD-Scenarios/features/application/document-saving/document-saving.feature" package="testsuite/Feature: Save and reopen part documents: mnt/vininas-projects/MCAD-Scenarios/features/application/document-saving/document-saving.feature" tests="23" errors="0" failures="0" hostname="localhost" timestamp="2026-11-19T02:57:48.839757052Z" time="237.491778313"><testcase name="Scenario: Open and cancel the first save: mnt/vininas-projects/MCAD-Scenarios/features/application/document-saving/document-saving.feature:5:3" time="24.322746789"><system-out><![CDATA[  Scenario: Open and cancel the first save
+   ✔  Given a new unsaved part is active in the MCAD Software
+   ✔  When the user presses Control+S
+   ✔  Then a Save As dialog opens
+   ✔  And a proposed document name is selected in the file name field
+   ✔  And a location, file type and preview options are displayed
+   ✔  When the user cancels the dialog
+   ✔  Then the Save As dialog closes
+   ✔  And the unsaved part remains active
+   ✔  When the user presses Control+S again in the same session
+   ✔  Then the Save As dialog reopens with the same proposed document name selected
+   ✔  When the user cancels the dialog again
+   ✔  Then the unsaved part remains active
+]]></system-out></testcase><testcase name="Scenario: Save and reopen a newly created empty part: mnt/vininas-projects/MCAD-Scenarios/features/application/document-saving/document-saving.feature:21:3" time="10.041488723"><system-out><![CDATA[  Scenario: Save and reopen a newly created empty part
+   ✔  Given a new unsaved empty part is active in the MCAD Software
+   ✔  And the proposed file name does not already exist in the selected folder
+   ✔  When the user presses Control+S
+   ✔  And the user accepts the proposed file name in the Save As dialog
+   ✔  Then the dialog closes
+   ✔  And the active document tab displays the saved file name
+   ✔  And the model browser root displays the saved file name
+   ✔  When the user closes that document tab
+   ✔  And the user opens the saved file from the same folder
+   ✔  Then the saved part becomes active
+   ✔  And its viewport contains no visible model geometry
+   ✔  And its model browser displays the origin and end-of-part marker
+]]></system-out></testcase><testcase name="Scenario: Save changes to an existing part and reopen its sketch: mnt/vininas-projects/MCAD-Scenarios/features/application/document-saving/document-saving.feature:36:3" time="13.620751126"><system-out><![CDATA[  Scenario: Save changes to an existing part and reopen its sketch
+   ✔  Given a saved empty part is open in the MCAD Software
+   ✔  When the user creates a planar sketch with a rectangular profile
+   ✔  And the user finishes the sketch
+   ✔  And the user presses Control+S
+   ✔  Then the existing document remains open without a Save As dialog
+   ✔  When the user closes the document tab
+   ✔  And the user opens the file-opening dialog in the same session
+   ✔  And the user selects the saved part
+   ✔  And the user opens the selected part
+   ✔  Then the model browser contains the sketch
+   ✔  And the rectangular sketch profile is visible in the viewport
+]]></system-out></testcase><testcase name="Scenario: Toggle the preview picture controls before saving: mnt/vininas-projects/MCAD-Scenarios/features/application/document-saving/document-saving.feature:49:3" time="7.833465472"><system-out><![CDATA[  Scenario: Toggle the preview picture controls before saving
+   ✔  Given the Save As dialog is open for a new part in the MCAD Software
+   ✔  And Save Preview Picture is selected
+   ✔  When the user clears Save Preview Picture
+   ✔  Then the preview source choices are hidden
+   ✔  And the preview area displays a placeholder
+   ✔  When the user selects Save Preview Picture again
+   ✔  Then the preview source choices reappear
+   ✔  When the user chooses Active Window on Save
+   ✔  Then that preview source is selected
+   ✔  And Active Component Iso View on Save is not selected
+   ✔  When the user chooses Active Component Iso View on Save
+   ✔  And the user cancels the dialog
+   ✔  Then the unsaved part remains active
+]]></system-out></testcase><testcase name="Scenario: Browse for a preview image and cancel the image chooser: mnt/vininas-projects/MCAD-Scenarios/features/application/document-saving/document-saving.feature:64:3" time="7.496179796"><system-out><![CDATA[  Scenario: Browse for a preview image and cancel the image chooser
+   ✔  Given the Save As dialog is open for a new part in the MCAD Software
+   ✔  And Save Preview Picture is selected
+   ✔  When the user chooses Import From File as the preview source
+   ✔  Then a browse control appears beside that option
+   ✔  And the preview area displays a placeholder
+   ✔  When the user chooses the browse control
+   ✔  Then an image file chooser opens above the Save As dialog
+   ✔  When the user cancels the image file chooser
+   ✔  Then the Save As dialog remains open
+   ✔  And Import From File remains selected
+   ✔  And the preview area still displays a placeholder
+   ✔  When the user chooses Active Component Iso View on Save
+   ✔  And the user cancels Save As
+   ✔  Then the unsaved part remains active
+]]></system-out></testcase><testcase name="Scenario: Inspect file type choices when saving a part: mnt/vininas-projects/MCAD-Scenarios/features/application/document-saving/document-saving.feature:80:3" time="5.288161204"><system-out><![CDATA[  Scenario: Inspect file type choices when saving a part
+   ✔  Given the Save As dialog is open for a new part in the MCAD Software
+   ✔  When the user opens the file type list
+   ✔  Then the list offers the native part file type and an All Files filter
+]]></system-out></testcase><testcase name="Scenario: Cancel closing a modified unsaved part: mnt/vininas-projects/MCAD-Scenarios/features/application/document-saving/document-saving.feature:85:3" time="7.987339264"><system-out><![CDATA[  Scenario: Cancel closing a modified unsaved part
+   ✔  Given an unsaved part containing a finished empty sketch is active in the MCAD Software
+   ✔  And save-change prompts are configured to always show
+   ✔  When the user closes the document tab
+   ✔  Then a save-changes prompt offers Yes, No and Cancel
+   ✔  When the user chooses Cancel
+   ✔  Then the part remains active
+   ✔  And its sketch remains in the model browser
+]]></system-out></testcase><testcase name="Scenario: Cancel the first save requested while closing a part: mnt/vininas-projects/MCAD-Scenarios/features/application/document-saving/document-saving.feature:94:3" time="8.505905813"><system-out><![CDATA[  Scenario: Cancel the first save requested while closing a part
+   ✔  Given an unsaved part containing a finished empty sketch is active in the MCAD Software
+   ✔  And save-change prompts are configured to always show
+   ✔  When the user closes the document tab
+   ✔  And the user chooses Yes in the save-changes prompt
+   ✔  Then the Save As dialog opens
+   ✔  When the user cancels Save As
+   ✔  Then the part remains active
+   ✔  And its sketch remains in the model browser
+]]></system-out></testcase><testcase name="Scenario: Inspect save-change prompt frequency choices: mnt/vininas-projects/MCAD-Scenarios/features/application/document-saving/document-saving.feature:104:3" time="9.153237155"><system-out><![CDATA[  Scenario: Inspect save-change prompt frequency choices
+   ✔  Given an unsaved modified part is active in the MCAD Software
+   ✔  And save-change prompts are configured to always show
+   ✔  When the user closes the document tab
+   ✔  And the user opens the prompt-frequency list
+   ✔  Then the list offers always show, once per operation, suppress for this session and suppress permanently
+   ✔  When the user dismisses the list without changing its selection
+   ✔  And the user cancels the save-changes prompt
+   ✔  Then the part remains active
+]]></system-out></testcase><testcase name="Scenario: Save a new modified part while closing it: mnt/vininas-projects/MCAD-Scenarios/features/application/document-saving/document-saving.feature:115:3" time="13.928999877999999"><system-out><![CDATA[  Scenario: Save a new modified part while closing it
+   ✔  Given an unsaved part containing a finished empty sketch is active in the MCAD Software
+   ✔  And save-change prompts are configured to always show
+   ✔  And another document is open
+   ✔  And the proposed file name does not exist in the selected folder
+   ✔  When the user closes the document tab
+   ✔  And the user chooses Yes in the save-changes prompt
+   ✔  And the user accepts the proposed file name in Save As
+   ✔  Then the document closes
+   ✔  And another open document becomes active
+   ✔  When the user reopens the newly saved part in the same session
+   ✔  Then the part becomes active
+   ✔  And its model browser contains the finished sketch
+]]></system-out></testcase><testcase name="Scenario: Capture an active window preview before saving: mnt/vininas-projects/MCAD-Scenarios/features/application/document-saving/document-saving.feature:129:3" time="7.742124575"><system-out><![CDATA[  Scenario: Capture an active window preview before saving
+   ✔  Given the Save As dialog is open for a new empty part in the MCAD Software
+   ✔  And Save Preview Picture is selected
+   ✔  When the user chooses Active Window as the preview source
+   ✔  Then a capture control appears beside Active Window
+   ✔  And the preview area displays a placeholder
+   ✔  When the user activates the capture control
+   ✔  Then the preview area displays a dark image matching the empty workspace
+   ✔  And the Save As dialog remains open
+   ✔  When the user cancels the dialog
+   ✔  Then the unsaved part remains active
+]]></system-out></testcase><testcase name="Scenario: Select an existing part in the first-save dialog: mnt/vininas-projects/MCAD-Scenarios/features/application/document-saving/document-saving.feature:142:3" time="7.581223576"><system-out><![CDATA[  Scenario: Select an existing part in the first-save dialog
+   ✔  Given the Save As dialog is open for a new part in the MCAD Software
+   ✔  And the current folder contains an existing part file
+   ✔  When the user selects that part file in the file list
+   ✔  Then the selected file row is highlighted
+   ✔  And the file name field displays the selected file's name
+   ✔  And the status area reports one selected item
+   ✔  When the user cancels the dialog
+   ✔  Then the unsaved part remains active
+]]></system-out></testcase><testcase name="Scenario: Navigate to a subfolder and back while choosing a save location: mnt/vininas-projects/MCAD-Scenarios/features/application/document-saving/document-saving.feature:153:3" time="5.779072444"><system-out><![CDATA[  Scenario: Navigate to a subfolder and back while choosing a save location
+   ✔  Given the Save As dialog is open for a new part in the MCAD Software
+   ✔  And the initial folder contains a subfolder
+   ✔  And the dialog displays a proposed file name
+   ✔  When the user opens the subfolder
+   ✔  Then the location breadcrumb and file list show the subfolder
+   ✔  And the proposed file name remains in the file name field
+   ✔  When the user chooses Back
+   ✔  Then the initial folder and its file list are displayed
+   ✔  And the proposed file name remains in the file name field
+]]></system-out></testcase><testcase name="Scenario: Reopen first save after cancelling in a subfolder: mnt/vininas-projects/MCAD-Scenarios/features/application/document-saving/document-saving.feature:164:3" time="15.453437935"><system-out><![CDATA[  Scenario: Reopen first save after cancelling in a subfolder
+   ✔  Given the Save As dialog is open for a new part in the MCAD Software
+   ✔  And the user has navigated from the initial folder into a subfolder
+   ✔  When the user cancels the dialog
+   ✔  And the user presses Control+S again for the same part
+   ✔  Then the Save As dialog opens in the initial folder
+   ✔  And the original proposed file name is selected
+]]></system-out></testcase><testcase name="Scenario: Cancel disabling the preview picture: mnt/vininas-projects/MCAD-Scenarios/features/application/document-saving/document-saving.feature:172:3" time="6.490417559"><system-out><![CDATA[  Scenario: Cancel disabling the preview picture
+   ✔  Given the Save As dialog is open for a new part in the MCAD Software
+   ✔  And Save Preview Picture is selected
+   ✔  When the user clears Save Preview Picture
+   ✔  And the user cancels the dialog
+   ✔  And the user presses Control+S again for the same part
+   ✔  Then Save Preview Picture is selected
+   ✔  And the preview source choices are displayed
+]]></system-out></testcase><testcase name="Scenario: Cancel a change to the preview source: mnt/vininas-projects/MCAD-Scenarios/features/application/document-saving/document-saving.feature:181:3" time="7.133158712"><system-out><![CDATA[  Scenario: Cancel a change to the preview source
+   ✔  Given the Save As dialog is open for a new part in the MCAD Software
+   ✔  And Save Preview Picture is selected
+   ✔  And Active Component Iso View on Save is selected
+   ✔  When the user chooses Active Window on Save
+   ✔  And the user cancels the dialog
+   ✔  And the user presses Control+S again for the same part
+   ✔  Then Active Component Iso View on Save is selected
+   ✔  And Active Window on Save is not selected
+]]></system-out></testcase><testcase name="Scenario: Switch save-dialog navigation modes: mnt/vininas-projects/MCAD-Scenarios/features/application/document-saving/document-saving.feature:192:3" time="6.023904655"><system-out><![CDATA[  Scenario: Switch save-dialog navigation modes
+   ✔  Given the Save As dialog is open for a new part in the MCAD Software
+   ✔  And the navigation pane shows libraries and recent folders
+   ✔  And the dialog displays a current folder and proposed file name
+   ✔  When the user switches to system-location navigation
+   ✔  Then the navigation pane displays system locations and drives
+   ✔  And the current folder and proposed file name remain displayed
+   ✔  And the preview settings remain displayed
+   ✔  When the user switches back to recent-folder navigation
+   ✔  Then the navigation pane displays libraries and recent folders
+   ✔  And the current folder and proposed file name remain displayed
+   ✔  When the user cancels Save As
+   ✔  Then the unsaved part remains active
+]]></system-out></testcase><testcase name="Scenario: Reopen Save As after switching navigation mode: mnt/vininas-projects/MCAD-Scenarios/features/application/document-saving/document-saving.feature:207:3" time="15.890479331"><system-out><![CDATA[  Scenario: Reopen Save As after switching navigation mode
+   ✔  Given the Save As dialog is open for a new part in the MCAD Software
+   ✔  And the navigation pane shows libraries and recent folders
+   ✔  When the user switches to system-location navigation
+   ✔  And the user cancels Save As
+   ✔  And the user opens Save As again for the same part
+   ✔  Then the navigation pane shows libraries and recent folders
+   ✔  And the proposed file name is selected
+   ✔  When the user cancels Save As
+   ✔  Then the unsaved part remains active
+]]></system-out></testcase><testcase name="Scenario: Change the file-list presentation in Save As: mnt/vininas-projects/MCAD-Scenarios/features/application/document-saving/document-saving.feature:219:3" time="7.593950094"><system-out><![CDATA[  Scenario: Change the file-list presentation in Save As
+   ✔  Given the Save As dialog is open for a new part in the MCAD Software
+   ✔  And the current folder contains part files and subfolders
+   ✔  And the file list is displayed in Details view
+   ✔  And a proposed file name is displayed
+   ✔  When the user activates the file-list view control
+   ✔  Then the file list displays thumbnail tiles with names and file information
+   ✔  And the proposed file name and preview settings remain displayed
+   ✔  When the user chooses the Details view shortcut
+   ✔  Then the file list displays rows with name, modification date, type and size columns
+   ✔  And the proposed file name remains displayed
+   ✔  When the user cancels Save As
+   ✔  Then the unsaved part remains active
+]]></system-out></testcase><testcase name="Scenario: Decline replacing an existing part during first save: mnt/vininas-projects/MCAD-Scenarios/features/application/document-saving/document-saving.feature:234:3" time="9.108821337"><system-out><![CDATA[  Scenario: Decline replacing an existing part during first save
+   ✔  Given the Save As dialog is open for a new part in the MCAD Software
+   ✔  And the current folder contains an existing part file
+   ✔  When the user selects the existing part file
+   ✔  And the user chooses Save
+   ✔  Then a confirmation identifies the existing file and asks whether to replace it
+   ✔  And the confirmation offers Yes and No
+   ✔  And the Save As dialog remains behind the confirmation
+   ✔  When the user chooses No
+   ✔  Then the confirmation closes
+   ✔  And Save As remains open with the existing file name displayed
+   ✔  When the user cancels Save As
+   ✔  Then the new unsaved part remains active
+]]></system-out></testcase><testcase name="Scenario: Inspect Save As commands for a saved part: mnt/vininas-projects/MCAD-Scenarios/features/application/document-saving/document-saving.feature:248:3" time="6.307794234"><system-out><![CDATA[  Scenario: Inspect Save As commands for a saved part
+   ✔  Given a saved part is active in the MCAD Software
+   ✔  When the user opens the application menu
+   ✔  And the user expands Save As
+   ✔  Then the menu offers Save As and Save Copy As
+   ✔  And it offers Save Copy As Template and Pack and Go
+   ✔  And the Save Copy As description says the original file remains open
+]]></system-out></testcase><testcase name="Scenario: Inspect the first-save preview of a solid part: mnt/vininas-projects/MCAD-Scenarios/features/application/document-saving/document-saving.feature:260:3" time="24.340884235"><system-out><![CDATA[  Scenario: Inspect the first-save preview of a solid part
+   ✔  Given an unsaved part containing a visible rectangular solid is active in the MCAD Software
+   ✔  And the first-save preview settings are configured to save an isometric component view
+   ✔  When the user presses Control+S
+   ✔  Then the Save As dialog opens with a proposed part filename selected
+   ✔  And Save Preview Picture is checked
+   ✔  And Active Component Iso View on Save is selected
+   ✔  And the preview area displays a shaded isometric block
+]]></system-out></testcase><testcase name="Scenario: Retain a selected file name after changing the file-list selection: mnt/vininas-projects/MCAD-Scenarios/features/application/document-saving/document-saving.feature:270:3" time="9.868234406"><system-out><![CDATA[  Scenario: Retain a selected file name after changing the file-list selection
+   ✔  Given the Save As dialog is open for a new part in the MCAD Software
+   ✔  And the current folder contains a part file and a subfolder
+   ✔  When the user selects the part file in the file list
+   ✔  Then the file is highlighted and its name appears in the file name field
+   ✔  When the user selects the subfolder with a single click
+   ✔  Then the subfolder is highlighted without opening
+   ✔  And the file name field still displays the selected part file name
+   ✔  When the user clicks empty space in the file list
+   ✔  Then no file or folder is highlighted
+   ✔  And the file name field still displays the part file name
+   ✔  When the user cancels Save As
+   ✔  Then the new unsaved part remains active
+]]></system-out></testcase></testsuite></testsuites>

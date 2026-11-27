@@ -1,0 +1,222 @@
+// SPDX-License-Identifier: GPL-2.0-only
+use super::*;
+use crate::{
+    feature::{
+        FeatureReadFootprint, FeatureReadKey, work_geometry::WorkGeometryEvaluation,
+        work_plane::WorkPlaneResolver,
+    },
+    history::{DocumentSnapshot, ResolvedDocumentSketch},
+    sketch::SketchPlane,
+};
+/// Current immutable inputs borrowed from their owners; never a saved frame or a stored kernel result.
+#[derive(Debug)]
+pub struct ResolvedSketchPrism<'a> {
+    pub sketch: ResolvedDocumentSketch<'a>,
+    pub sweep_start: SketchPlane,
+    pub selection: &'a SketchPrismSelection,
+    pub additional_outputs: &'a [SketchPrismOutput],
+    pub displacement: [f64; 3],
+    pub taper_radians: f64,
+}
+impl SketchPrismDefinition {
+    /// Require current converged geometry, placement and finite length inputs without side effects.
+    /// Example: `let input = definition.resolve(&snapshot)?; input.sketch.plane`.
+    pub fn resolve<'a>(
+        &'a self,
+        snapshot: &'a DocumentSnapshot,
+    ) -> Result<ResolvedSketchPrism<'a>, SketchPrismError> {
+        let sketch = snapshot
+            .require_converged_resolved_sketch(self.sketch)
+            .map_err(|cause| self.decline(SketchPrismCause::Placement(cause)))?;
+        let datums = self.resolve_unbound_extent_datums(snapshot)?;
+        self.resolve_current_sketch(snapshot, sketch, &datums, extent::missing_target_bounds)
+    }
+    fn resolve_unbound_extent_datums(
+        &self,
+        snapshot: &DocumentSnapshot,
+    ) -> Result<WorkGeometryEvaluation, SketchPrismError> {
+        use crate::feature::work_plane::WorkPlaneReference;
+        if matches!(
+            self.extent,
+            Some(SketchPrismExtent::DistanceFromPlane {
+                from: WorkPlaneReference::Feature(_)
+            })
+        ) {
+            return snapshot
+                .effective_work_geometry()
+                .evaluate_work_geometry_unbound(&snapshot.parameters)
+                .map_err(|cause| self.decline(SketchPrismCause::Definition(cause.to_string())));
+        }
+        Ok(WorkGeometryEvaluation::default())
+    }
+    pub(crate) fn resolve_with_datums<'a>(
+        &'a self,
+        snapshot: &'a DocumentSnapshot,
+        datums: &WorkGeometryEvaluation,
+        resolver: &impl WorkPlaneResolver,
+        target_span: impl FnOnce(SketchPlane, ThroughAllDirection) -> Result<(f64, f64), String>,
+    ) -> Result<ResolvedSketchPrism<'a>, SketchPrismError> {
+        let sketch = snapshot
+            .require_converged_sketch_with_datums(self.sketch, datums)
+            .map_err(|cause| self.decline(SketchPrismCause::Placement(cause)))?;
+        self.resolve_current_sketch(snapshot, sketch, resolver, target_span)
+    }
+    fn resolve_current_sketch<'a>(
+        &'a self,
+        snapshot: &'a DocumentSnapshot,
+        sketch: ResolvedDocumentSketch<'a>,
+        resolver: &impl WorkPlaneResolver,
+        target_span: impl FnOnce(SketchPlane, ThroughAllDirection) -> Result<(f64, f64), String>,
+    ) -> Result<ResolvedSketchPrism<'a>, SketchPrismError> {
+        let mut displacement = self.resolve_displacement(snapshot)?;
+        let (offset, depth) = self.resolve_span(
+            snapshot,
+            sketch.plane,
+            resolver,
+            target_span,
+            displacement[2],
+        )?;
+        displacement[2] = depth;
+        let sweep_start = self.sweep_start(sketch.plane, offset)?;
+        let taper_radians = self
+            .taper
+            .map(|source| source.resolve(&snapshot.parameters))
+            .transpose()
+            .map_err(|cause| self.decline(SketchPrismCause::Definition(cause.to_string())))?
+            .unwrap_or_default();
+        validation::require_taper_angle(taper_radians).map_err(|cause| self.decline(cause))?;
+        Ok(ResolvedSketchPrism {
+            sketch,
+            sweep_start,
+            selection: &self.selection,
+            additional_outputs: &self.additional_outputs,
+            displacement,
+            taper_radians,
+        })
+    }
+    fn resolve_span(
+        &self,
+        snapshot: &DocumentSnapshot,
+        plane: SketchPlane,
+        resolver: &impl WorkPlaneResolver,
+        target: impl FnOnce(SketchPlane, ThroughAllDirection) -> Result<(f64, f64), String>,
+        depth: f64,
+    ) -> Result<(f64, f64), SketchPrismError> {
+        let start = match &self.extent {
+            Some(SketchPrismExtent::DistanceFromPlane { from }) => {
+                extent::plane_offset(plane, from, resolver).map_err(|cause| self.decline(cause))?
+            }
+            Some(extent) => {
+                return extent
+                    .span(plane, resolver, target)
+                    .map_err(|cause| self.decline(cause));
+            }
+            None => 0.,
+        };
+        self.validate_normal_source(depth)
+            .map_err(|cause| self.decline(cause))?;
+        let (offset, span) = self.normal_span(snapshot, depth)?;
+        Ok((start + offset, span))
+    }
+    fn normal_span(
+        &self,
+        snapshot: &DocumentSnapshot,
+        depth: f64,
+    ) -> Result<(f64, f64), SketchPrismError> {
+        if let Some(source) = self.second_depth {
+            let second = source.resolve(&snapshot.parameters).map_err(|cause| {
+                self.decline(SketchPrismCause::Length {
+                    axis: 3,
+                    source,
+                    cause,
+                })
+            })?;
+            validation::require_second_depth(second).map_err(|cause| self.decline(cause))?;
+            let span = depth + second;
+            if !span.is_finite() {
+                return Err(self.decline(SketchPrismCause::Definition(format!(
+                    "prism depths {depth:?} and {second:?}: expected a finite total span"
+                ))));
+            }
+            return Ok((-second, span));
+        }
+        Ok(match self.direction {
+            SketchPrismDirection::Negative => (0., -depth),
+            SketchPrismDirection::Symmetric => (-depth / 2., depth),
+            _ => (0., depth),
+        })
+    }
+    fn sweep_start(
+        &self,
+        plane: SketchPlane,
+        offset: f64,
+    ) -> Result<SketchPlane, SketchPrismError> {
+        if offset == 0. {
+            return Ok(plane);
+        }
+        let mut start = plane.recipe();
+        let normal = plane.normal();
+        start.origin = std::array::from_fn(|axis| normal[axis].mul_add(offset, start.origin[axis]));
+        SketchPlane::from_recipe(start, plane.options())
+            .map_err(|cause| self.decline(SketchPrismCause::Sketch(cause)))
+    }
+    fn resolve_displacement(
+        &self,
+        snapshot: &DocumentSnapshot,
+    ) -> Result<[f64; 3], SketchPrismError> {
+        let mut values = [0.; 3];
+        for (axis, source) in self.displacement.into_iter().enumerate() {
+            values[axis] = source.resolve(&snapshot.parameters).map_err(|cause| {
+                self.decline(SketchPrismCause::Length {
+                    axis,
+                    source,
+                    cause,
+                })
+            })?;
+        }
+        Ok(values)
+    }
+    /// Attribute the sketch, placement, dimensions and displacement sources in the current document.
+    /// Example: `definition.reads(&snapshot)?` for the shared feature graph.
+    pub fn reads(
+        &self,
+        snapshot: &DocumentSnapshot,
+    ) -> Result<FeatureReadFootprint, SketchPrismError> {
+        let sketch = snapshot
+            .sketches
+            .get(self.sketch)
+            .map_err(|cause| self.decline(SketchPrismCause::Sketch(cause)))?;
+        let reads = sketch.read_footprint();
+        let mut keys = reads.keys().clone();
+        keys.extend(self.source_reads().keys());
+        Ok(FeatureReadFootprint::new(
+            keys,
+            reads.has_unattributed_reads(),
+        ))
+    }
+}
+
+impl SketchPrismDefinition {
+    /// Attribute direct authored sources without requiring evaluated geometry; example: `definition.source_reads()` before program restore.
+    pub fn source_reads(&self) -> FeatureReadFootprint {
+        let keys = std::iter::once(FeatureReadKey::Sketch(self.sketch.0))
+            .chain(
+                self.displacement
+                    .into_iter()
+                    .chain(self.second_depth)
+                    .filter_map(DatumLength::parameter)
+                    .map(FeatureReadKey::Parameter),
+            )
+            .chain(
+                self.taper
+                    .and_then(DatumAngle::parameter_id)
+                    .map(FeatureReadKey::Parameter),
+            )
+            .chain(self.extent.iter().flat_map(SketchPrismExtent::reads))
+            .chain(
+                self.boolean_target()
+                    .map(|target| FeatureReadKey::Feature(target.source())),
+            );
+        FeatureReadFootprint::new(keys, false)
+    }
+}

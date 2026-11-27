@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="1" hostname="localhost" timestamp="2026-11-25T03:47:09.991915472Z" time="60.75904177"><testcase name="Scenario: Parameter interface follows the active model state: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature:1489:3" time="60.75904177"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Parameter interface follows the active model state
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is open in the MCAD Software
+   ✔  And the user creates an undimensioned rectangular sketch and extrudes it 1 in with zero taper
+   ✔  And the user creates model states Capture State and Copy State and activates Copy State
+   ✘  And the user adds d0 and d1 to the model-state table and sets Copy State d0 to 1 in + 0.5 in and d1 to 5 degrees
+      Step failed:
+      Defined: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature:1493:5
+      Step doesn't match any function
+]]></system-out></testcase></testsuite></testsuites>

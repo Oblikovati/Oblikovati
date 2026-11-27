@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Workspace layout and panel visibility: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature" package="testsuite/Feature: Workspace layout and panel visibility: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:00:48.179366372Z" time="50.806827962"><testcase name="Scenario: Select an origin axis from filtered browser results: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature:595:3" time="50.806827962"><system-out><![CDATA[  Scenario: Select an origin axis from filtered browser results
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is active in the MCAD Software with a visible solid
+   ✔  And the model browser contains X Axis, Y Axis and Z Axis under Origin
+   ✔  When the user opens browser search and enters "axis"
+   ✔  Then the browser shows the three matching axes under Origin
+   ✔  And the matching text is highlighted
+   ✔  When the user selects X Axis in the filtered results
+   ✔  Then the X Axis row is highlighted
+   ✔  And its corresponding axis is highlighted in the viewport
+   ✔  When the user clears the search using the search close control
+   ✔  Then the unfiltered browser tree returns
+   ✔  And X Axis remains selected and highlighted in the viewport
+   ✔  When the user activates the search close control again
+   ✔  Then the search field closes
+   ✔  When the user clicks empty viewport space
+   ✔  Then the axis highlight disappears from the viewport
+   ✔  And the solid remains visible
+]]></system-out></testcase></testsuite></testsuites>

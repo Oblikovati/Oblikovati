@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T13:27:25.618991757Z" time="22.850413539"><testcase name="Scenario: Select visible available commands with the keyboard: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature:1375:3" time="22.850413539"><system-out><![CDATA[  Scenario: Select visible available commands with the keyboard
+   ✔  Given a part is active in the MCAD Software with the full Tools ribbon visible
+   ✔  And ribbon customization shows All Commands and an empty Part Tools target
+   ✔  When the user selects 2D Sketches in the available command list
+   ✔  And the user presses Ctrl+A while the available command list has focus
+   ✔  Then every currently visible available-command row is highlighted
+   ✔  And the Part Tools target remains empty
+   ✔  When the user clicks 3D Annotations in the available command list
+   ✔  Then 3D Annotations is highlighted
+   ✔  And the other currently visible available-command rows are not highlighted
+   ✔  And the Part Tools target remains empty
+]]></system-out></testcase></testsuite></testsuites>

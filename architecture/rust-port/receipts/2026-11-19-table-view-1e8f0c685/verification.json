@@ -1,0 +1,13 @@
+{
+  "application_commit": "1e8f0c685",
+  "feature": "features/application/model-browser/model-browser.feature",
+  "feature_sha256": "603382ec4009d73a74e960c5981d255c4ca9ac5489b94fcf57193c7b09458b2e",
+  "environment": "Linux X11, Xvfb, software Vulkan, native mouse and keyboard input",
+  "scenarios": [
+    "Accept and cancels edits to a model-state property cell",
+    "Report an unevaluable model-state parameter equation",
+    "Restore a saved camera for an active view representation"
+  ],
+  "result": "3 of 3 scenarios passed",
+  "scope": "Focused scenarios only; this is not a full-feature run. The source was unversioned."
+}

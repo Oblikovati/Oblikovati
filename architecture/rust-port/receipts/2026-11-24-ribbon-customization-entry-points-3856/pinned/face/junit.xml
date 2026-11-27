@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T13:37:35.94293703Z" time="17.904523855"><testcase name="Scenario: Open and close customization while one face is selected: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature:1654:3" time="17.904523855"><system-out><![CDATA[  Scenario: Open and close customization while one face is selected
+   ✔  Given a part with a solid body is active in the MCAD Software
+   ✔  And one face is selected
+   ✔  And the Tools ribbon tab is selected
+   ✔  When the user opens Customize from the Tools ribbon
+   ✔  Then the customization dialog opens on the Ribbon tab
+   ✔  And the command category is All Commands
+   ✔  And the target is Part Tools with an empty custom panel list
+   ✔  And Close is available while Cancel and Apply are disabled
+   ✔  When the user closes customization without making changes
+   ✔  Then the part remains visible
+   ✔  And the selection indicator reports one face
+]]></system-out></testcase></testsuite></testsuites>

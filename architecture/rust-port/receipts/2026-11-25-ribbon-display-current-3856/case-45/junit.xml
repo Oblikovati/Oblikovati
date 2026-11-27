@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon display modes: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature" package="testsuite/Feature: Ribbon display modes: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature" tests="1" errors="0" failures="1" hostname="localhost" timestamp="2026-11-25T02:42:53.373092208Z" time="12.234022294"><testcase name="Scenario: Continue a modeling command after switching ribbon tabs: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature:660:3" time="12.234022294"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Continue a modeling command after switching ribbon tabs
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✘  And a part containing a solid block is active in the MCAD Software
+      Step failed:
+      Defined: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature:662:5
+      Step doesn't match any function
+]]></system-out></testcase></testsuite></testsuites>

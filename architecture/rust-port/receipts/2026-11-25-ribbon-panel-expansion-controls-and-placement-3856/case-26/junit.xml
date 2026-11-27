@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" package="testsuite/Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:19:22.777608598Z" time="30.709948134"><testcase name="Scenario: Move an unavailable command to an expanded panel and back: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:340:3" time="30.709948134"><system-out><![CDATA[  Scenario: Move an unavailable command to an expanded panel and back
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open and active
+   ✔  And the full Tools ribbon shows an unavailable Copy command in the Clipboard main panel
+   ✔  When the user right-clicks Copy and selects "Move to Expanded Panel"
+   ✔  Then Copy is no longer visible in the Clipboard main panel
+   ✔  And the Clipboard panel has an expansion arrow
+   ✔  When the user opens the Clipboard expanded panel
+   ✔  Then Copy appears there as an unavailable command
+   ✔  When the user clicks Copy in the expanded panel
+   ✔  Then the expanded panel remains open and no command opens
+   ✔  When the user right-clicks Copy in the expanded panel
+   ✔  Then the context menu offers "Move to Main Panel" and "Add to Quick Access Toolbar"
+   ✔  When the user selects "Move to Main Panel"
+   ✔  Then the expansion closes
+   ✔  And the unavailable Copy command appears in the Clipboard main panel again
+   ✔  And the part remains visible
+]]></system-out></testcase></testsuite></testsuites>

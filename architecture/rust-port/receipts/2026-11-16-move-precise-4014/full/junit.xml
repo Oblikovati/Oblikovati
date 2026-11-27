@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Move: tmp/obk-move-precise-source/features/sketch/move/scenario.feature" package="testsuite/Feature: Move: tmp/obk-move-precise-source/features/sketch/move/scenario.feature" tests="27" errors="0" failures="25" hostname="localhost" timestamp="2026-11-16T03:18:31.678554308Z" time="486.480735531"><testcase name="Scenario: move-06 Enter a precise ellipse Move endpoint: tmp/obk-move-precise-source/features/sketch/move/scenario.feature:5:3" time="31.814031407"><system-out><![CDATA[  Scenario: move-06 Enter a precise ellipse Move endpoint
+   ✔  Given an editable sketch with eligible geometry
+   ✔  Given the ellipse is selected in Move with Copy off and Precise Input on
+   ✔  When the user chooses Base Point and clicks its center
+   ✔  Then the coordinate toolbar appears and the status requests an endpoint
+   ✔  When the user types 1 then 0 into X and presses Tab to Y
+   ✔  And the user types 0 and presses Enter
+   ✔  Then Move returns to geometry selection without an error dialog
+   ✔  And the ellipse appears above its original position
+   ✔  When the user clicks Done
+   ✔  Then Move closes and the displaced ellipse remains
+]]></system-out></testcase><testcase name="Scenario: move-07 Undo and redoes the accepted precise endpoint: tmp/obk-move-precise-source/features/sketch/move/scenario.feature:18:3" time="24.460092588"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: move-07 Undo and redoes the accepted precise endpoint
+   ✔  Given an editable sketch with eligible geometry
+   ✘  Given the precise ellipse Move has been accepted and Move closed
+      Step failed:
+      Defined: tmp/obk-move-precise-source/features/sketch/move/scenario.feature:20:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: move-08 Retain the source when Copy is enabled: tmp/obk-move-precise-source/features/sketch/move/scenario.feature:29:3" time="35.89701065"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: move-08 Retain the source when Copy is enabled
+   ✔  Given an editable sketch with eligible geometry
+   ✔  Given Move has reopened with Precise Input checked and Copy unchecked
+   ✘  When the user enables Copy and selects the original ellipse
+      Step failed:
+      Defined: tmp/obk-move-precise-source/features/sketch/move/scenario.feature:32:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: move-09 undo and redoes a copied ellipse: tmp/obk-move-precise-source/features/sketch/move/scenario.feature:40:3" time="28.618350205"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: move-09 undo and redoes a copied ellipse
+   ✔  Given an editable sketch with eligible geometry
+   ✔  Given Move Copy has created the displaced ellipse and Move is closed
+   ✘  When the user undoes
+      Step failed:
+      Defined: tmp/obk-move-precise-source/features/sketch/move/scenario.feature:43:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: move-10 automatically advance to Base Point after one selection: tmp/obk-move-precise-source/features/sketch/move/scenario.feature:51:3" time="23.559598244"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: move-10 automatically advance to Base Point after one selection
+   ✔  Given an editable sketch with eligible geometry
+   ✘  Given Move has Copy and Precise Input off
+      Step failed:
+      Defined: tmp/obk-move-precise-source/features/sketch/move/scenario.feature:53:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: move-11 Cancel after choosing a base point: tmp/obk-move-precise-source/features/sketch/move/scenario.feature:61:3" time="26.303583175"><system-out><![CDATA[  Scenario: move-11 Cancel after choosing a base point
+   ✔  Given an editable sketch with eligible geometry
+   ✔  Given Move reopens with Optimize for Single Selection checked
+   ✔  And Copy and Precise Input are unchecked
+   ✔  When the user selects the ellipse and clicks its center as base point
+   ✔  Then the status requests an endpoint for Move
+   ✔  When the user presses Escape before accepting an endpoint
+   ✔  Then Move closes and the ellipse remains in its original position
+]]></system-out></testcase><testcase name="Scenario: move-12 reject an identical canvas base and endpoint in this fixture: tmp/obk-move-precise-source/features/sketch/move/scenario.feature:71:3" time="24.594535166"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: move-12 reject an identical canvas base and endpoint in this fixture
+   ✔  Given an editable sketch with eligible geometry
+   ✘  Given the ellipse is selected with optimization on and Copy and Precise Input off
+      Step failed:
+      Defined: tmp/obk-move-precise-source/features/sketch/move/scenario.feature:73:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: move-13 Choose Distance and X axis angle fields: tmp/obk-move-precise-source/features/sketch/move/scenario.feature:86:3" time="25.66075259"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: move-13 Choose Distance and X axis angle fields
+   ✔  Given an editable sketch with eligible geometry
+   ✔  Given the selected ellipse is at the precise Base Point stage
+   ✘  When the user opens the coordinate-mode dropdown
+      Step failed:
+      Defined: tmp/obk-move-precise-source/features/sketch/move/scenario.feature:89:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: move-14 reset the triad without placing geometry: tmp/obk-move-precise-source/features/sketch/move/scenario.feature:95:3" time="24.836828717"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: move-14 reset the triad without placing geometry
+   ✔  Given an editable sketch with eligible geometry
+   ✘  Given the ellipse is selected in precise Base Point mode
+      Step failed:
+      Defined: tmp/obk-move-precise-source/features/sketch/move/scenario.feature:97:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: move-15 accept a numeric distance-and-angle endpoint: tmp/obk-move-precise-source/features/sketch/move/scenario.feature:107:3" time="24.380744176"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: move-15 accept a numeric distance-and-angle endpoint
+   ✔  Given an editable sketch with eligible geometry
+   ✘  Given Move reopens with Precise Input and single-selection optimization on and Copy off
+      Step failed:
+      Defined: tmp/obk-move-precise-source/features/sketch/move/scenario.feature:109:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: move-16 Inspect Relative and Absolute coordinate modes: tmp/obk-move-precise-source/features/sketch/move/scenario.feature:123:3" time="26.356300283"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: move-16 Inspect Relative and Absolute coordinate modes
+   ✔  Given an editable sketch with eligible geometry
+   ✔  Given the selected ellipse is in precise Base Point mode
+   ✘  When the user opens the left toolbar dropdown
+      Step failed:
+      Defined: tmp/obk-move-precise-source/features/sketch/move/scenario.feature:126:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: move-17 close the mini-toolbar while retaining Move: tmp/obk-move-precise-source/features/sketch/move/scenario.feature:136:3" time="23.745472605"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: move-17 close the mini-toolbar while retaining Move
+   ✔  Given an editable sketch with eligible geometry
+   ✘  Given the precise toolbar is visible in Move Base Point mode
+      Step failed:
+      Defined: tmp/obk-move-precise-source/features/sketch/move/scenario.feature:138:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: move-18 Never policies permit observed coupled line displacement: tmp/obk-move-precise-source/features/sketch/move/scenario.feature:148:3" time="23.758686682"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: move-18 Never policies permit observed coupled line displacement
+   ✔  Given an editable sketch with eligible geometry
+   ✘  Given the recorded fixture has two horizontal lines and their 25 +/-1 separation annotation
+      Step failed:
+      Defined: tmp/obk-move-precise-source/features/sketch/move/scenario.feature:150:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: move-19 Mixed X coordinate and angle endpoint accepts: tmp/obk-move-precise-source/features/sketch/move/scenario.feature:161:3" time="23.652375423"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: move-19 Mixed X coordinate and angle endpoint accepts
+   ✔  Given an editable sketch with eligible geometry
+   ✘  Given Move has Copy off and Precise Input and Optimize for Single Selection on
+      Step failed:
+      Defined: tmp/obk-move-precise-source/features/sketch/move/scenario.feature:163:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: move-20 Mixed Y coordinate and angle endpoint accepts: tmp/obk-move-precise-source/features/sketch/move/scenario.feature:174:3" time="23.753692072"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: move-20 Mixed Y coordinate and angle endpoint accepts
+   ✔  Given an editable sketch with eligible geometry
+   ✘  Given reopening Move retains the previously selected mixed X/angle mode
+      Step failed:
+      Defined: tmp/obk-move-precise-source/features/sketch/move/scenario.feature:176:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: move-21 Mini-toolbar Pin check state toggles: tmp/obk-move-precise-source/features/sketch/move/scenario.feature:187:3" time="23.825959429"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: move-21 Mini-toolbar Pin check state toggles
+   ✔  Given an editable sketch with eligible geometry
+   ✘  Given the precise-input mini-toolbar is visible at Move Base Point stage
+      Step failed:
+      Defined: tmp/obk-move-precise-source/features/sketch/move/scenario.feature:189:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: move-22 Auto Fade reduces toolbar and hover restores it: tmp/obk-move-precise-source/features/sketch/move/scenario.feature:197:3" time="23.640366135"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: move-22 Auto Fade reduces toolbar and hover restores it
+   ✔  Given an editable sketch with eligible geometry
+   ✘  Given the mini-toolbar is visible with Pin checked and Auto Fade unchecked
+      Step failed:
+      Defined: tmp/obk-move-precise-source/features/sketch/move/scenario.feature:199:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: move-23 Never policies reject the white-curve selection: tmp/obk-move-precise-source/features/sketch/move/scenario.feature:209:3" time="23.763634645"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: move-23 Never policies reject the white-curve selection
+   ✔  Given an editable sketch with eligible geometry
+   ✘  Given both Move constraint policies are Never and precise input is off
+      Step failed:
+      Defined: tmp/obk-move-precise-source/features/sketch/move/scenario.feature:211:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: move-24 Geometric Always changes the outcome for the same clicks: tmp/obk-move-precise-source/features/sketch/move/scenario.feature:220:3" time="23.852454906"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: move-24 Geometric Always changes the outcome for the same clicks
+   ✔  Given an editable sketch with eligible geometry
+   ✘  Given the failed trial has returned to geometry selection
+      Step failed:
+      Defined: tmp/obk-move-precise-source/features/sketch/move/scenario.feature:222:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: move-25 Accept the Always dimensional policy trial: tmp/obk-move-precise-source/features/sketch/move/scenario.feature:233:3" time="0.001715394"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: move-25 Accept the Always dimensional policy trial
+   ✘  Given the recorded rectangle fixture is present
+      Step failed:
+      Defined: tmp/obk-move-precise-source/features/sketch/move/scenario.feature:234:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: move-26 Accept the same placement under If No Equation: tmp/obk-move-precise-source/features/sketch/move/scenario.feature:247:3" time="0.00078356"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: move-26 Accept the same placement under If No Equation
+   ✘  Given the earlier Always trial was undone
+      Step failed:
+      Defined: tmp/obk-move-precise-source/features/sketch/move/scenario.feature:248:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: move-27 Answer Yes to prompted dimensional relaxation: tmp/obk-move-precise-source/features/sketch/move/scenario.feature:257:3" time="0.000984281"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: move-27 Answer Yes to prompted dimensional relaxation
+   ✘  Given both Move constraint policies are Prompt
+      Step failed:
+      Defined: tmp/obk-move-precise-source/features/sketch/move/scenario.feature:258:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: move-28 Measure the final accepted endpoint: tmp/obk-move-precise-source/features/sketch/move/scenario.feature:268:3" time="0.000807243"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: move-28 Measure the final accepted endpoint
+   ✘  Given the recorded conditional and prompted rectangle placements are retained
+      Step failed:
+      Defined: tmp/obk-move-precise-source/features/sketch/move/scenario.feature:269:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: move-29 Retain the measured placement after actual disk reopen: tmp/obk-move-precise-source/features/sketch/move/scenario.feature:274:3" time="0.000493994"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: move-29 Retain the measured placement after actual disk reopen
+   ✘  Given the recorded sketch is finished and its part saved
+      Step failed:
+      Defined: tmp/obk-move-precise-source/features/sketch/move/scenario.feature:275:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: move-30 Select and move two sources without optimization: tmp/obk-move-precise-source/features/sketch/move/scenario.feature:283:3" time="0.000385192"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: move-30 Select and move two sources without optimization
+   ✘  Given Copy and Precise Input are off and optimization is off
+      Step failed:
+      Defined: tmp/obk-move-precise-source/features/sketch/move/scenario.feature:284:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: move-31 Undo and redoes the two-source operation together: tmp/obk-move-precise-source/features/sketch/move/scenario.feature:292:3" time="0.00035696"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: move-31 Undo and redoes the two-source operation together
+   ✘  Given the two-source Move has been accepted and Done clicked
+      Step failed:
+      Defined: tmp/obk-move-precise-source/features/sketch/move/scenario.feature:293:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: move-32 Reject invalid text and recover with signed numeric input: tmp/obk-move-precise-source/features/sketch/move/scenario.feature:302:3" time="0.000739809"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: move-32 Reject invalid text and recover with signed numeric input
+   ✘  Given the upper line is selected with precise X and Y endpoint entry active
+      Step failed:
+      Defined: tmp/obk-move-precise-source/features/sketch/move/scenario.feature:303:5
+      Step doesn't match any function
+]]></system-out></testcase></testsuite></testsuites>

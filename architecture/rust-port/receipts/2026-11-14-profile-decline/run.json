@@ -1,0 +1,11 @@
+{
+  "kind": "native-diagnostic",
+  "application_commit": "0f86c41824b2c386d2de243320250b8405e93cb0",
+  "environment": "Linux; native test on Xvfb and Vulkan Lavapipe",
+  "result": "The adapter test checks the typed kernel admission decline. The native test checks feature health, strict and accepting public update calls, and recovery after a valid width.",
+  "classification": "The pinned kernel classifies DegenerateCurve at Admission as InvalidInput.",
+  "artifacts_sha256": {
+    "adapter.log.gz": "28b9c9cbbd3499c39d4ea46a24b267152e83e2bb3737a96b53f1da4a65f0c44a",
+    "native.log.gz": "711d54c282fc3600e60126841cfe9fa640b4b71cd88fd366ae058a77f67a60fa"
+  }
+}

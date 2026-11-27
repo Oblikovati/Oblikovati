@@ -1,0 +1,6 @@
+running 3 tests
+test native::gui_loop_tests::application_bdd::project_dialog::projects_window_closes_to_the_document_chooser ... ok
+test native::gui_loop_tests::application_bdd::workspace_layout::external_close_native::docked_projects_reveals_the_other_tab_and_restores_its_dock ... ok
+test native::gui_loop_tests::application_bdd::workspace_layout::external_close_native::restored_project_dock_survives_parent_closure ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 1702 filtered out; finished in 19.83s

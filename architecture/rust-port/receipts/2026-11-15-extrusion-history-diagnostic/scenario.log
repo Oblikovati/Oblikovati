@@ -1,0 +1,34 @@
+    Finished `test` profile [unoptimized] target(s) in 0.19s
+     Running unittests src/lib.rs (/tmp/obk-extrusion-history-target/debug/deps/oblikovati_head-d4ccfccc04854620)
+
+running 1 test
+Feature: Extrude a profile in a part document
+  Scenario: extrusion-06 Accepted creation supports Undo and Redo
+   ✔  Given Distance A 8 mm and zero taper
+   ✔  When OK is clicked then Undo then Redo
+   ✔  Then Extrusion1 and Solid Bodies(1) return with the shaded solid
+   ✘  And the subsequent Measure result lists two extrusion edges of length 8.000 mm
+      Step failed:
+      Defined: tmp/obk-quick-access-3955-source/features/solid-model/extrusion/extrusion.feature:70:5
+      Step doesn't match any function
+[Summary]
+1 feature
+1 scenario (1 failed)
+4 steps (3 passed, 1 failed)
+
+thread 'application-scenarios' (3173281) panicked at crates/head/src/../tests/application/benchmark.rs:280:5:
+scenario benchmark: expected no failed, undefined, or skipped steps
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'native::gui_loop_tests::application_bdd::application_scenarios_use_the_native_window' (3173280) panicked at crates/head/src/../tests/application/benchmark.rs:170:10:
+called `Result::unwrap()` on an `Err` value: Any { .. }
+test native::gui_loop_tests::application_bdd::application_scenarios_use_the_native_window ... FAILED
+
+failures:
+
+failures:
+    native::gui_loop_tests::application_bdd::application_scenarios_use_the_native_window
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 976 filtered out; finished in 15.05s
+
+error: test failed, to rerun pass `-p oblikovati-head --lib`

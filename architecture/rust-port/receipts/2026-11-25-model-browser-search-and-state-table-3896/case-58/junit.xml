@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:33:40.510479867Z" time="96.987662186"><testcase name="Scenario: Accept a property column in the model-state table: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature:906:3" time="96.987662186"><system-out><![CDATA[  Scenario: Accept a property column in the model-state table
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is active in the MCAD Software
+   ✔  And the user creates model states Capture State and Copy State and activates Copy State
+   ✔  And an empty part with Primary and two named model states is active in the MCAD Software
+   ✔  And the Model State branch is expanded
+   ✔  And the model-state table has no Category column
+   ✔  When the user chooses Edit Table from the Model State branch context menu
+   ✔  And the user selects the Properties category
+   ✔  And the user selects Category under the Summary group
+   ✔  And the user adds the selected property to the table
+   ✔  Then Category appears in the chosen-property list
+   ✔  And a Category column appears in the member table
+   ✔  When the user accepts the table change
+   ✔  And the user reopens Edit Table in the same session
+   ✔  Then the member table has Member and Category columns
+   ✔  And it lists Primary and both named states
+   ✔  When the user cancels the dialog
+   ✔  Then the same part remains active
+]]></system-out></testcase></testsuite></testsuites>

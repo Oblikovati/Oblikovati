@@ -1,0 +1,27 @@
+{
+  "kind": "native-acceptance",
+  "scenario_id": "scenario:414a8cdb8182b258369735ab0aaa1bebf2a7968f607002055b4282dcbf29716f",
+  "scenario_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+  "source_sha256": "e9a93d4c096090667952b8080a0cad01c48f480022a4b8ac72ae210607ca138d",
+  "application_commit": "78672c5362fd3c1b660463eb60571a1520304f95",
+  "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+  "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+  "runner": "application_scenarios_use_the_native_window",
+  "exit_code": 0,
+  "environment": {
+    "os": "Linux",
+    "renderer": "Vulkan with Lavapipe under Xvfb"
+  },
+  "cucumber": {
+    "path": "architecture/rust-port/receipts/2026-11-14-refresh-create-part-current/cucumber.json",
+    "sha256": "6939a1beb24238cad737bee9e8e330dc1039131ddde4bd844c0ccb4703c9e35c"
+  },
+  "source_report": {
+    "path": "architecture/rust-port/receipts/2026-11-14-refresh-create-part-current/source-revision.json",
+    "sha256": "d75e938bdec4e9b0ad2c5ec090d49d3da79b0eb8431fe1ed9265296427ee182b"
+  },
+  "capture": {
+    "path": "architecture/rust-port/receipts/2026-11-14-refresh-create-part-current/Create-a-standard-metric-part.png",
+    "sha256": "5094e20b2ceda62edc9f4ac3b475e560f271766cc438d3bb40d2ecc8f5f46b16"
+  }
+}

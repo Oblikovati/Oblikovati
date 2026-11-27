@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T15:25:58.302516752Z" time="25.197013006"><testcase name="Scenario: Inspect the part root context menu: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature:229:3" time="25.197013006"><system-out><![CDATA[  Scenario: Inspect the part root context menu
+   ✔  Given an active saved part in the MCAD Software contains one visible solid block
+   ✔  And the document root row is visible in the model browser
+   ✔  When the user right-clicks the document root row
+   ✔  Then the root row is highlighted and the visible block edges are blue
+   ✔  And the context menu offers file-location and file-path actions
+   ✔  And the context menu offers drawing actions
+   ✔  And the context menu offers Expand All Children, Collapse All Children and Find in Window
+   ✔  When the user presses Escape
+   ✔  Then the context menu closes and the block edges remain highlighted
+   ✔  When the user clicks empty viewport space
+   ✔  Then the blue edge highlighting disappears and the block remains visible
+]]></system-out></testcase></testsuite></testsuites>

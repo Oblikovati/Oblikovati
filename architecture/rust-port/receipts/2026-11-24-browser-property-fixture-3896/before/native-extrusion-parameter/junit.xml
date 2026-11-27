@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="1" hostname="localhost" timestamp="2026-11-24T11:46:09.764248383Z" time="29.455877176"><testcase name="Scenario: Cancel a staged model-state parameter column and value: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1390:3" time="29.455877176"><failure type="Step Panicked" message="Step panicked. Captured output: assertion failed: view.available_parameters.unwrap().iter().any(|parameter|
+        parameter.name == &quot;d0&quot; &amp;&amp; parameter.base_expression == &quot;1 in&quot; &amp;&amp;
+            parameter.feature_id != 0)"/><system-out><![CDATA[  Scenario: Cancel a staged model-state parameter column and value
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is open in the MCAD Software
+   ✘  And the user creates an undimensioned rectangular sketch and extrudes it 1 in with zero taper
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1392:5
+      Matched: crates/head/src/../tests/application/model-browser/model_state_parameter_fixture.rs:9:1
+      Step panicked. Captured output: assertion failed: view.available_parameters.unwrap().iter().any(|parameter|
+              parameter.name == "d0" && parameter.base_expression == "1 in" &&
+                  parameter.feature_id != 0)
+      ApplicationWorld {
+          text: "W\nP\nZ\nv\nO\nv\nFRONT\nModel\nMaterialBrow\u{85}\nAppearanceBr\u{85}\nMenu\nSearch\nBlankmetricpart<Primary>\nRepresentations\nModelState\n<Primary>\n1\nView\n<Primary>\nSolidBodies\nOrigin\nYZPlane\nXZPlane\nXYPlane\nXAxis\nYAxis\nZAxis\nCenterPoint\nParameters\nSketches\nFeatures\nExtrusion1\nSketch1\n[DOF4]\nEndofPart\nABS(Black)\nAppearance\nAssigntopart\nClose\nSketchfinished.\nRibbonDisplay\nv\nv\n...\nBlankmetricpart\nFile\n3DModel\nSketch\nTools\nManage\nView\nAnnotate\nStart2DSketch\nSketch\nExtrude\nRevolve\nCreate\nHole\nFillet\nChamfer\nShell\nModifyv\nPlane\nv\nAxis\nPoint\nUCS\nWorkFeatures\nRectangular\nCircular\nPattern\nSimplify\nSimplificationv\nHome\nBlankmetricpart<Primary>*\nDocuments\nX\nY\nZ",
+          ..
+      }
+]]></system-out></testcase></testsuite></testsuites>

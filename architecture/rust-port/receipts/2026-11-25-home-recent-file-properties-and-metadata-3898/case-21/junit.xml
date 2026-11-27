@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Recent documents on Home: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature" package="testsuite/Feature: Recent documents on Home: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T01:25:50.649420888Z" time="23.111597978"><testcase name="Scenario: Inspect a recent part&apos;s file properties after an informational notice: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature:276:3" time="23.111597978"><system-out><![CDATA[  Scenario: Inspect a recent part's file properties after an informational notice
+   ✔  Given a fresh MCAD Software process starts with an isolated Recent profile prepared from a disposable copy of `fixtures/cad/home-recent-native`
+   ✔  And the Home workspace is active in the MCAD Software
+   ✔  And the disposable copy of `fixtures/cad/home-recent-native/Part23.opd` is displayed in List View
+   ✔  And no Recent-file properties action has been requested in this process
+   ✔  And the user chooses the part's document properties action and an informational notice is displayed
+   ✔  When the user dismisses the informational notice
+   ✔  Then a file properties window for the part is displayed
+   ✔  And its General page shows the file name, type, location, sizes, dates and attributes
+   ✔  When the user dismisses the properties window
+   ✔  Then the Recent list is visible again
+]]></system-out></testcase></testsuite></testsuites>

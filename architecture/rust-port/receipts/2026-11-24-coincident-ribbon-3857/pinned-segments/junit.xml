@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Coincident: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/sketch/coincident/scenario.feature" package="testsuite/Feature: Coincident: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/sketch/coincident/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T15:16:27.675860216Z" time="40.492162184"><testcase name="Scenario: coincident-09 Join endpoints of separate oblique segments: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/sketch/coincident/scenario.feature:69:3" time="40.492162184"><system-out><![CDATA[  Scenario: coincident-09 Join endpoints of separate oblique segments
+   ✔  Given two separate oblique segments in the recorded endpoint-join fixture
+   ✔  When the user invoke Coincident
+   ✔  And the user select the first segment end followed by the second segment start
+   ✔  Then the endpoints meet at a new shared visible location
+   ✔  And both segments change their visible extent or placement
+   ✔  And the prompt returns to first curve or point
+   ✔  When the user presses Escape
+   ✔  Then the joined geometry remains
+   ✔  When the user press F8
+   ✔  Then constraint markers are displayed including the marker at the joint
+]]></system-out></testcase></testsuite></testsuites>

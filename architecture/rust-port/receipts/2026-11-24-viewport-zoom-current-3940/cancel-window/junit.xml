@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Viewport zoom: tmp/oblikovati-ribbon-relocated.RcZVDl/current-viewport-zoom-source/features/application/viewport-zoom/viewport-zoom.feature" package="testsuite/Feature: Viewport zoom: tmp/oblikovati-ribbon-relocated.RcZVDl/current-viewport-zoom-source/features/application/viewport-zoom/viewport-zoom.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T22:00:10.96025702Z" time="40.215944989"><testcase name="Scenario: Cancel a zoom window after its first corner: tmp/oblikovati-ribbon-relocated.RcZVDl/current-viewport-zoom-source/features/application/viewport-zoom/viewport-zoom.feature:83:3" time="40.215944989"><system-out><![CDATA[  Scenario: Cancel a zoom window after its first corner
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open with its rectangular solid active in the MCAD Software
+   ✔  And its visible planar face occupies most of the viewport
+   ✔  When the user chooses Zoom Window from the navigation bar Zoom menu
+   ✔  And the user clicks a first corner within the face
+   ✔  And the user presses Escape before choosing the opposite corner
+   ✔  Then the status area displays Ready
+   ✔  And the face retains its previous apparent size and position
+   ✔  And the same part and orientation remain active
+]]></system-out></testcase></testsuite></testsuites>

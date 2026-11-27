@@ -1,0 +1,164 @@
+// SPDX-License-Identifier: GPL-2.0-only
+use super::*;
+use martensite_tkmath::gp::Point3;
+use oblikovati_model::sketch::SketchPlane;
+impl Viewport {
+    /// Read the camera and surface revisions that govern viewport projection.
+    /// Example: `view.projection_generations()` keys a screen-coordinate display cache.
+    pub fn projection_generations(&self) -> [u64; 2] {
+        [self.camera, self.surface]
+    }
+
+    /// Map a framebuffer pixel to the unsnapped sketch plane; edge-on planes return `None`.
+    /// Example: `view.sketch_point([320,240], SketchPlane::xy())?`.
+    pub fn sketch_point(
+        &self,
+        pixel: [i32; 2],
+        plane: SketchPlane,
+    ) -> Result<Option<[f64; 2]>, String> {
+        self.require_projection_pixel(pixel)?;
+        let [x, y, z, dx, dy, dz] = self
+            .live()?
+            .view
+            .convert_with_proj(pixel[0], pixel[1])
+            .map_err(|cause| format!("viewport pixel {pixel:?}: {cause}"))?;
+        // UI conditioning only: retain Go aa8297d1 screenToSketch's DefaultTolerance.
+        oblikovati_martensite::sketch_projection(
+            plane,
+            [x, y, z],
+            [dx, dy, dz],
+            oblikovati_martensite::SKETCH_PROJECTION_MIN_NORMAL_COSINE,
+        )
+    }
+    /// The line of sight through a pixel: a point on it, and its direction into the view.
+    /// Example: `view.view_line([320, 240])?` to find what lies under the pointer.
+    pub fn view_line(&self, pixel: [i32; 2]) -> Result<[[f64; 3]; 2], String> {
+        self.require_projection_pixel(pixel)?;
+        let [x, y, z, dx, dy, dz] = self
+            .live()?
+            .view
+            .convert_with_proj(pixel[0], pixel[1])
+            .map_err(|cause| format!("viewport pixel {pixel:?}: {cause}"))?;
+        Ok([[x, y, z], [dx, dy, dz]])
+    }
+    /// Project a sketch point to the kernel's integer framebuffer pixel convention.
+    /// Example: `view.sketch_pixel(SketchPlane::xy(), [2.,3.])?` for a witness endpoint.
+    pub fn sketch_pixel(&self, plane: SketchPlane, point: [f64; 2]) -> Result<[i32; 2], String> {
+        let model = plane.to_model(point).map_err(|cause| cause.to_string())?;
+        self.model_pixel(model)
+    }
+    /// Project a batch against one checked drawable extent.
+    /// Example: `view.sketch_pixels(plane, &points)?` for one pick pass.
+    pub fn sketch_pixels(
+        &self,
+        plane: SketchPlane,
+        points: &[[f64; 2]],
+    ) -> Result<Vec<[i32; 2]>, String> {
+        if points.is_empty() {
+            return Ok(Vec::new());
+        }
+        self.require_projection_extent()?;
+        let key = super::projection_cache::ProjectionKey {
+            plane,
+            camera: self.camera,
+            surface: self.surface,
+        };
+        if let Some(projected) = self.projection_cache.borrow_mut().get(key, points) {
+            self.require_projection_extent()?;
+            return Ok(projected);
+        }
+        let projected = self.project_sketch_points(plane, points)?;
+        self.require_projection_extent()?;
+        self.projection_cache
+            .borrow_mut()
+            .store(key, points, &projected);
+        Ok(projected)
+    }
+    fn project_sketch_points(
+        &self,
+        plane: SketchPlane,
+        points: &[[f64; 2]],
+    ) -> Result<Vec<[i32; 2]>, String> {
+        points
+            .iter()
+            .map(|point| {
+                let model = plane.to_model(*point).map_err(|cause| cause.to_string())?;
+                self.model_pixel_checked_extent(model)
+            })
+            .collect()
+    }
+    /// Project each point while retaining its own error under one extent check.
+    /// Example: `view.sketch_pixel_results(plane, &points)?` for ordered picks.
+    pub fn sketch_pixel_results(
+        &self,
+        plane: SketchPlane,
+        points: &[[f64; 2]],
+    ) -> Result<Vec<Result<[i32; 2], String>>, String> {
+        if points.is_empty() {
+            return Ok(Vec::new());
+        }
+        self.require_projection_extent()?;
+        let projected = points
+            .iter()
+            .map(|point| {
+                plane
+                    .to_model(*point)
+                    .map_err(|cause| cause.to_string())
+                    .and_then(|model| self.model_pixel_checked_extent(model))
+            })
+            .collect();
+        self.require_projection_extent()?;
+        Ok(projected)
+    }
+    /// The pixel a model position shows at; example: to draw a solid's edges over the view.
+    pub fn model_pixel(&self, [x, y, z]: [f64; 3]) -> Result<[i32; 2], String> {
+        self.require_projection_extent()?;
+        self.model_pixel_checked_extent([x, y, z])
+    }
+    fn model_pixel_checked_extent(&self, [x, y, z]: [f64; 3]) -> Result<[i32; 2], String> {
+        self.require_representable_projection(Point3::new(x, y, z))?;
+        self.live()?
+            .view
+            .convert_world_to_pixels(x, y, z)
+            .map(|(x, y)| [x, y])
+            .map_err(|cause| cause.to_string())
+    }
+    fn require_projection_pixel(&self, pixel: [i32; 2]) -> Result<(), String> {
+        let [_, height] = self.require_projection_extent()?;
+        if (height - 1).checked_sub(pixel[1]).is_none() {
+            return Err(format!(
+                "viewport pixel {pixel:?}: expected representable inverted Y for height {height}"
+            ));
+        }
+        Ok(())
+    }
+    fn require_projection_extent(&self) -> Result<[i32; 2], String> {
+        self.live()?;
+        let actual = self.target.as_ref().expect("live target").extent();
+        if actual != self.extent {
+            return Err(format!(
+                "viewport extent {actual:?}: expected observed camera extent {:?}; poll events first",
+                self.extent
+            ));
+        }
+        crate::types::valid_extent(actual)
+    }
+    fn require_representable_projection(&self, point: Point3) -> Result<(), String> {
+        let projected = self.live()?.view.camera().project(&point);
+        let [width, height] = self.extent.map(f64::from);
+        let pixel = [
+            (projected.x() + 1.) * 0.5 * width,
+            height - 1. - (projected.y() + 1.) * 0.5 * height,
+        ];
+        if pixel.iter().any(|value| {
+            !value.is_finite()
+                || *value < f64::from(i32::MIN) + 1.
+                || *value > f64::from(i32::MAX) - 1.
+        }) {
+            return Err(format!(
+                "viewport projected pixel {pixel:?}: expected finite signed 32-bit coordinates with rounding headroom"
+            ));
+        }
+        Ok(())
+    }
+}

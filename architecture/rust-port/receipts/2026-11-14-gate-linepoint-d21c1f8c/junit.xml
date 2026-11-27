@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Point: tmp/obk-linepoint-refresh/features/sketch/point/scenario.feature" package="testsuite/Feature: Point: tmp/obk-linepoint-refresh/features/sketch/point/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T18:40:30.48341466Z" time="8.253359448"><testcase name="Scenario: point-04 Undo and redo the recorded placement: tmp/obk-linepoint-refresh/features/sketch/point/scenario.feature:17:3" time="8.253359448"><system-out><![CDATA[  Scenario: point-04 Undo and redo the recorded placement
+   ✔  Given the MCAD Software is running
+   ✔  And an editable planar sketch is active
+   ✔  And a center point remains after placement and Escape
+   ✔  When the user press Ctrl+Z
+   ✔  Then the point cross disappears
+   ✔  When the user press Ctrl+Y
+   ✔  Then the point cross returns at its prior visible location
+]]></system-out></testcase></testsuite></testsuites>

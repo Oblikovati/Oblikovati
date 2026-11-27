@@ -1,0 +1,103 @@
+# SPDX-License-Identifier: GPL-2.0-only
+[package]
+name = "oblikovati-martensite"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+autotests = false
+
+[dependencies]
+martensite-tkg2d = { git = "https://github.com/Oblikovati/Martensite", rev = "db01546bb032659682715c6120e628b95fe5773d", version = "=0.4.1" }
+martensite-tkgeomalgo = { git = "https://github.com/Oblikovati/Martensite", rev = "db01546bb032659682715c6120e628b95fe5773d", version = "=0.4.1" }
+martensite-tkgeombase = { git = "https://github.com/Oblikovati/Martensite", rev = "db01546bb032659682715c6120e628b95fe5773d", version = "=0.4.1" }
+martensite-tkernel = { git = "https://github.com/Oblikovati/Martensite", rev = "db01546bb032659682715c6120e628b95fe5773d", version = "=0.5.1" }
+martensite-tkmath = { git = "https://github.com/Oblikovati/Martensite", rev = "db01546bb032659682715c6120e628b95fe5773d", version = "=0.4.1" }
+oblikovati-api = { git = "https://github.com/Oblikovati/Oblikovati.API.git", rev = "c8200b2da97c9a7dde43afb25debc977ff23b2fd", version = "=0.166.0" }
+oblikovati-solve = { path = "../solve" }
+oblikovati-model = { path = "../model" }
+martensite-tkhlr = { git = "https://github.com/Oblikovati/Martensite", rev = "db01546bb032659682715c6120e628b95fe5773d", version = "=0.4.1" }
+martensite-tkmesh = { git = "https://github.com/Oblikovati/Martensite", rev = "db01546bb032659682715c6120e628b95fe5773d", version = "=0.4.1" }
+martensite-tkg3d = { git = "https://github.com/Oblikovati/Martensite", rev = "db01546bb032659682715c6120e628b95fe5773d", version = "=0.4.1" }
+martensite-tkprim = { git = "https://github.com/Oblikovati/Martensite", rev = "db01546bb032659682715c6120e628b95fe5773d", version = "=0.4.1" }
+martensite-tkbrep = { git = "https://github.com/Oblikovati/Martensite", rev = "db01546bb032659682715c6120e628b95fe5773d", version = "=0.4.1" }
+martensite-tktopalgo = { git = "https://github.com/Oblikovati/Martensite", rev = "db01546bb032659682715c6120e628b95fe5773d", version = "=0.5.1" }
+martensite-tkservice = { git = "https://github.com/Oblikovati/Martensite", rev = "db01546bb032659682715c6120e628b95fe5773d", version = "=0.5.2" }
+martensite-tkv3d = { git = "https://github.com/Oblikovati/Martensite", rev = "db01546bb032659682715c6120e628b95fe5773d", version = "=0.8.1" }
+
+martensite-tkbo = { git = "https://github.com/Oblikovati/Martensite", rev = "db01546bb032659682715c6120e628b95fe5773d", version = "=0.9.1" }
+martensite-tkfillet = { git = "https://github.com/Oblikovati/Martensite", rev = "db01546bb032659682715c6120e628b95fe5773d", version = "=0.9.1" }
+martensite-tkoffset = { git = "https://github.com/Oblikovati/Martensite", rev = "db01546bb032659682715c6120e628b95fe5773d", version = "=0.11.1" }
+
+[lints]
+workspace = true
+
+[dev-dependencies]
+oblikovati-session = { path = "../session" }
+oblikovati-persistence = { path = "../persistence" }
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = { version = "1", features = ["float_roundtrip"] }
+
+[[test]]
+name = "release_probe"
+path = "tests/release_probe.rs"
+[[test]]
+name = "planar_spline"
+path = "tests/planar_spline.rs"
+[[test]]
+name = "go_spline_recipe"
+path = "tests/go_spline_recipe.rs"
+[[test]]
+name = "prism"
+path = "tests/prism.rs"
+[[test]]
+name = "sketch_prism"
+path = "tests/sketch_prism.rs"
+
+[[test]]
+name = "profile_regions"
+path = "tests/profile_regions.rs"
+
+[[test]]
+name = "planar_intersections"
+path = "tests/planar_intersections.rs"
+
+[[test]]
+name = "planar_curve_boundary"
+path = "tests/planar_curve_boundary.rs"
+
+[[test]]
+name = "sketch_curve_incidences"
+path = "tests/sketch_curve_incidences.rs"
+
+[[test]]
+name = "circumcircle"
+path = "tests/circumcircle.rs"
+
+[[test]]
+name = "sketch_projection"
+path = "tests/sketch_projection.rs"
+
+[[test]]
+name = "placement_preview"
+path = "tests/placement_preview.rs"
+
+[[test]]
+name = "sketch_display"
+path = "tests/sketch_display.rs"
+
+[[test]]
+name = "planar_pick"
+path = "tests/planar_pick.rs"
+
+[[test]]
+name = "revolve"
+path = "tests/revolve.rs"
+
+[[test]]
+name = "fillet_history_probe"
+path = "tests/fillet_history_probe.rs"
+[[test]]
+name = "hole_history_probe"
+path = "tests/hole_history_probe.rs"

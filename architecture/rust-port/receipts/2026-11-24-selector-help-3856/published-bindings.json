@@ -1,0 +1,721 @@
+{
+  "features": 1,
+  "scenarios": 55,
+  "excluded_capture_only": 0,
+  "blocked_capture_host_only": 0,
+  "steps": 647,
+  "unresolved": [
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Restore a hidden panel in the undocked ribbon",
+      "line": 107,
+      "step": "the user opens Show Panels on the floating ribbon",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Restore a hidden panel in the undocked ribbon",
+      "line": 111,
+      "step": "the user docks the floating ribbon at the left",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Restore a hidden panel in the undocked ribbon",
+      "line": 112,
+      "step": "the Modify group is visible in the side-docked ribbon",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Toggle a ribbon panel with Space from keyboard navigation",
+      "line": 236,
+      "step": "the Primitives panel is hidden",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Toggle a ribbon panel with Space from keyboard navigation",
+      "line": 238,
+      "step": "the user presses Down twice",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Toggle a ribbon panel with Space from keyboard navigation",
+      "line": 239,
+      "step": "the Primitives row has keyboard focus and is unchecked",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Toggle a ribbon panel with Space from keyboard navigation",
+      "line": 240,
+      "step": "the user presses Space",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Toggle a ribbon panel with Space from keyboard navigation",
+      "line": 241,
+      "step": "Primitives is checked and its panel appears in the ribbon",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Toggle a ribbon panel with Space from keyboard navigation",
+      "line": 243,
+      "step": "the user presses Space again",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Toggle a ribbon panel with Space from keyboard navigation",
+      "line": 244,
+      "step": "Primitives is unchecked and its panel disappears",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Wrap keyboard focus at the ends of the panel list",
+      "line": 252,
+      "step": "the ribbon panel selector is open",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Wrap keyboard focus at the ends of the panel list",
+      "line": 253,
+      "step": "the Sketch row is the first row and 3D Print is the last row",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Wrap keyboard focus at the ends of the panel list",
+      "line": 254,
+      "step": "the user presses Down to focus the Sketch row",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Wrap keyboard focus at the ends of the panel list",
+      "line": 256,
+      "step": "keyboard focus moves to the 3D Print row",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Wrap keyboard focus at the ends of the panel list",
+      "line": 258,
+      "step": "keyboard focus moves to the Sketch row",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Wrap keyboard focus at the ends of the panel list",
+      "line": 260,
+      "step": "no panel checkbox has changed",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Show active-tab panels from an inactive tab context menu",
+      "line": 265,
+      "step": "the Primitives panel is hidden and the Modify panel is visible",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Show active-tab panels from an inactive tab context menu",
+      "line": 266,
+      "step": "the user right-clicks the inactive View ribbon tab",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Show active-tab panels from an inactive tab context menu",
+      "line": 267,
+      "step": "the 3D Model ribbon remains active",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Show active-tab panels from an inactive tab context menu",
+      "line": 268,
+      "step": "a ribbon context menu opens",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Show active-tab panels from an inactive tab context menu",
+      "line": 269,
+      "step": "the user opens Show Panels in the context menu",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Show active-tab panels from an inactive tab context menu",
+      "line": 270,
+      "step": "the submenu lists panels from the active 3D Model ribbon",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Show active-tab panels from an inactive tab context menu",
+      "line": 271,
+      "step": "Primitives is unchecked and Modify is checked",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Show active-tab panels from an inactive tab context menu",
+      "line": 265,
+      "step": "the Primitives panel is hidden and the Modify panel is visible",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Show active-tab panels from an inactive tab context menu",
+      "line": 266,
+      "step": "the user right-clicks the inactive Tools ribbon tab",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Show active-tab panels from an inactive tab context menu",
+      "line": 267,
+      "step": "the 3D Model ribbon remains active",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Show active-tab panels from an inactive tab context menu",
+      "line": 268,
+      "step": "a ribbon context menu opens",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Show active-tab panels from an inactive tab context menu",
+      "line": 269,
+      "step": "the user opens Show Panels in the context menu",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Show active-tab panels from an inactive tab context menu",
+      "line": 270,
+      "step": "the submenu lists panels from the active 3D Model ribbon",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Show active-tab panels from an inactive tab context menu",
+      "line": 271,
+      "step": "Primitives is unchecked and Modify is checked",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Minimize the ribbon while the direct panel list is open",
+      "line": 364,
+      "step": "the ribbon display control is set to toggle between the full ribbon and tabs only",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Minimize the ribbon while the direct panel list is open",
+      "line": 365,
+      "step": "the direct panel visibility list is open",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Minimize the ribbon while the direct panel list is open",
+      "line": 366,
+      "step": "Modify is checked and Primitives is unchecked",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Minimize the ribbon while the direct panel list is open",
+      "line": 369,
+      "step": "only the ribbon tabs remain visible",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Minimize the ribbon while the direct panel list is open",
+      "line": 372,
+      "step": "the user opens the direct panel visibility list",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Minimize the ribbon while the direct panel list is open",
+      "line": 373,
+      "step": "Modify is still checked and Primitives is still unchecked",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Hide and restore a panel from the minimized ribbon",
+      "line": 451,
+      "step": "the Simulation panel is enabled for 3D Model",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Hide and restore a panel from the minimized ribbon",
+      "line": 454,
+      "step": "Simulation is checked in the panel list",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Hide and restore a panel from the minimized ribbon",
+      "line": 455,
+      "step": "the user selects Simulation",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Hide and restore a panel from the minimized ribbon",
+      "line": 458,
+      "step": "the temporary ribbon opens without a Simulation panel",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Hide and restore a panel from the minimized ribbon",
+      "line": 461,
+      "step": "Simulation is unchecked",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Hide and restore a panel from the minimized ribbon",
+      "line": 462,
+      "step": "the user selects Simulation",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Hide and restore a panel from the minimized ribbon",
+      "line": 463,
+      "step": "the menus and temporary ribbon close",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Hide and restore a panel from the minimized ribbon",
+      "line": 465,
+      "step": "the full ribbon is visible with the Simulation panel",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Enable a preceding panel while an expansion is open",
+      "line": 538,
+      "step": "Primitives is hidden and Create and Modify are visible",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Enable a preceding panel while an expansion is open",
+      "line": 540,
+      "step": "the user opens the panel selector and selects Primitives",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Enable a preceding panel while an expansion is open",
+      "line": 541,
+      "step": "Primitives is checked and appears before Create",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Enable a preceding panel while an expansion is open",
+      "line": 542,
+      "step": "Modify and its open additional command area shift to the right",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Enable a preceding panel while an expansion is open",
+      "line": 544,
+      "step": "the user clears Primitives in the panel selector",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Enable a preceding panel while an expansion is open",
+      "line": 545,
+      "step": "Primitives is unchecked and its panel disappears",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Enable a preceding panel while an expansion is open",
+      "line": 546,
+      "step": "Modify and its open additional command area return to their earlier position",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Hide and restore the panel of an active modeling command",
+      "line": 551,
+      "step": "`fixtures/cad/docking-visible-solid-current.opd` is open with its solid block in the MCAD Software",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Hide and restore the panel of an active modeling command",
+      "line": 552,
+      "step": "the full 3D Model ribbon displays the Modify panel",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Hide and restore the panel of an active modeling command",
+      "line": 553,
+      "step": "the user starts Shell from Modify",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Hide and restore the panel of an active modeling command",
+      "line": 554,
+      "step": "the Shell properties panel and model preview appear",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Hide and restore the panel of an active modeling command",
+      "line": 556,
+      "step": "the user clears Modify in the selector",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Hide and restore the panel of an active modeling command",
+      "line": 557,
+      "step": "the Modify panel disappears and the other ribbon panels reflow",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Hide and restore the panel of an active modeling command",
+      "line": 559,
+      "step": "the Shell properties panel and preview remain visible",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Hide and restore the panel of an active modeling command",
+      "line": 560,
+      "step": "the user clicks a face of the block",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Hide and restore the panel of an active modeling command",
+      "line": 562,
+      "step": "the Shell face selection field still prompts for faces",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Hide and restore the panel of an active modeling command",
+      "line": 563,
+      "step": "the user clicks the same face again",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Hide and restore the panel of an active modeling command",
+      "line": 564,
+      "step": "the Shell properties panel reports one selected face",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Hide and restore the panel of an active modeling command",
+      "line": 565,
+      "step": "the model preview reflects the selected face",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Hide and restore the panel of an active modeling command",
+      "line": 567,
+      "step": "the user selects Modify in the selector",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Hide and restore the panel of an active modeling command",
+      "line": 568,
+      "step": "the Modify panel returns",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Hide and restore the panel of an active modeling command",
+      "line": 569,
+      "step": "the Shell properties panel still reports one selected face",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Hide and restore the panel of an active modeling command",
+      "line": 570,
+      "step": "the selected-face preview remains visible",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Hide and restore the panel of an active modeling command",
+      "line": 571,
+      "step": "the user cancels Shell",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Hide and restore the panel of an active modeling command",
+      "line": 572,
+      "step": "the Shell properties panel and preview close",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Hide and restore the panel of an active modeling command",
+      "line": 573,
+      "step": "the original solid block remains visible",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Cancel an active command while the panel selector is open",
+      "line": 577,
+      "step": "`fixtures/cad/docking-visible-solid-current.opd` is open with its solid block in the MCAD Software",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Cancel an active command while the panel selector is open",
+      "line": 578,
+      "step": "the full 3D Model ribbon displays the Modify panel",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Cancel an active command while the panel selector is open",
+      "line": 579,
+      "step": "the user starts Shell from Modify",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Cancel an active command while the panel selector is open",
+      "line": 580,
+      "step": "the Shell properties panel and model preview appear",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Cancel an active command while the panel selector is open",
+      "line": 582,
+      "step": "the selector and Shell properties panel are both visible",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Cancel an active command while the panel selector is open",
+      "line": 583,
+      "step": "the user clicks Cancel in the Shell properties panel",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Cancel an active command while the panel selector is open",
+      "line": 584,
+      "step": "the selector and Shell properties panel close",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Cancel an active command while the panel selector is open",
+      "line": 585,
+      "step": "the model preview disappears",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Cancel an active command while the panel selector is open",
+      "line": 586,
+      "step": "the original solid block remains visible",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Inspect the panel selector with a custom panel present",
+      "line": 598,
+      "step": "the user opens the direct ribbon panel selector",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Inspect the panel selector with a custom panel present",
+      "line": 599,
+      "step": "the selector lists Measure, Material and Appearance, Options, Clipboard, Find, Team Web, and Tutorials",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Inspect the panel selector with a custom panel present",
+      "line": 600,
+      "step": "the selector does not list User Commands",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Inspect the panel selector with a custom panel present",
+      "line": 601,
+      "step": "the User Commands panel remains visible on the ribbon",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Show and hides the Tutorials panel from the Tools tab",
+      "line": 644,
+      "step": "the Tutorials panel is visible",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Show and hides the Tutorials panel from the Tools tab",
+      "line": 645,
+      "step": "the user opens Show Panels from a ribbon panel title context menu",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Show and hides the Tutorials panel from the Tools tab",
+      "line": 646,
+      "step": "Tutorials is checked in the panel list",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Show and hides the Tutorials panel from the Tools tab",
+      "line": 649,
+      "step": "Tutorials is unchecked in the panel list",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Show and hides the Tutorials panel from the Tools tab",
+      "line": 650,
+      "step": "the user selects Tutorials again",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "Show and hides the Tutorials panel from the Tools tab",
+      "line": 652,
+      "step": "Tutorials is checked in the panel list",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "List visible panels from the Manage ribbon context menu",
+      "line": 722,
+      "step": "the full Manage ribbon is active",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "List visible panels from the Manage ribbon context menu",
+      "line": 723,
+      "step": "the user opens Show Panels from the Manage ribbon context menu",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "List visible panels from the Manage ribbon context menu",
+      "line": 724,
+      "step": "the list contains Update, Parameters, Manage, Styles and Standards, Insert, Point Cloud, Layout, Author, iLogic and Content Center",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "List visible panels from the Manage ribbon context menu",
+      "line": 725,
+      "step": "every listed Manage panel is checked",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "List visible panels from the Manage ribbon context menu",
+      "line": 726,
+      "step": "the Manage ribbon remains active",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "List 3D Model panels from the side-docked tab menu",
+      "line": 729,
+      "step": "a part containing a solid block is active in the MCAD Software",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "List 3D Model panels from the side-docked tab menu",
+      "line": 730,
+      "step": "the 3D Model ribbon is active and docked at the left side",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "List 3D Model panels from the side-docked tab menu",
+      "line": 732,
+      "step": "the user opens Show Panels from the ribbon context menu",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "List 3D Model panels from the side-docked tab menu",
+      "line": 733,
+      "step": "the submenu lists Sketch, Primitives, Create, Modify, Explore, Work Features, Pattern, Create Freeform, Surface, Parameters, Simplification, Plastic Part, Measure, Insert, Harness, iPart/Assembly, Simulation, Convert and 3D Print",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "List 3D Model panels from the side-docked tab menu",
+      "line": 734,
+      "step": "Sketch, Create, Modify, Explore, Work Features, Pattern, Create Freeform, Surface, Simplification, Simulation, Convert and 3D Print are checked",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "List 3D Model panels from the side-docked tab menu",
+      "line": 735,
+      "step": "Primitives, Parameters, Plastic Part, Measure, Insert, Harness and iPart/Assembly are unchecked",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature",
+      "scenario": "List 3D Model panels from the side-docked tab menu",
+      "line": 736,
+      "step": "the 3D Model ribbon remains active and docked at the left side",
+      "cause": "undefined step"
+    }
+  ],
+  "source_revision": {
+    "root": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout",
+    "commit": "d53b12c1115aa35f38876e51976f7a28b3d43a43",
+    "dirty": false
+  }
+}

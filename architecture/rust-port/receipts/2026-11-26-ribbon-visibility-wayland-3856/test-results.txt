@@ -1,0 +1,14 @@
+Retain panel visibility while switching tabs and parts | Wayland 10 steps passed | X11 10 steps passed
+Hide and restore a panel while its expansion is pinned | Wayland 16 steps passed | X11 16 steps passed
+Switch ribbon tabs while the direct panel list is open | Wayland 11 steps passed | X11 11 steps passed
+Dismiss the panel selector and expansion with Escape | Wayland 10 steps passed | X11 10 steps passed
+Show and hides the Parameters panel during sketch editing | Wayland 14 steps passed | X11 14 steps passed
+Wayland coverage: 50 of 55 cases passed, 601 successful steps in passing cases
+Remaining: Wrap keyboard focus at the ends of the panel list
+Remaining: Hide and restore the panel of an active modeling command
+Remaining: Cancel an active command while the panel selector is open
+Remaining: List visible panels from the Manage ribbon context menu
+Remaining: List 3D Model panels from the side-docked tab menu
+
+Head Clippy
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 14.66s

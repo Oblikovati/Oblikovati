@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon display modes: tmp/oblikovati-ribbon-relocated.RcZVDl/display-snapshot/checkout/features/application/ribbon-display/ribbon-display.feature" package="testsuite/Feature: Ribbon display modes: tmp/oblikovati-ribbon-relocated.RcZVDl/display-snapshot/checkout/features/application/ribbon-display/ribbon-display.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T08:46:11.53172448Z" time="15.022130666"><testcase name="Scenario: Launch document settings from a width-compacted ribbon panel: tmp/oblikovati-ribbon-relocated.RcZVDl/display-snapshot/checkout/features/application/ribbon-display/ribbon-display.feature:391:3" time="15.022130666"><system-out><![CDATA[  Scenario: Launch document settings from a width-compacted ribbon panel
+   ✔  Given a part is active in the MCAD Software with the full Tools ribbon displayed
+   ✔  And the narrow window shows Options as a compact panel button
+   ✔  When the user opens the Options panel
+   ✔  And the user selects Document Settings
+   ✔  Then the Document Settings dialog opens for the active part
+   ✔  When the user closes the dialog without changing settings
+   ✔  Then the dialog and temporary Options panel are closed
+   ✔  And the Tools ribbon and part remain visible
+]]></system-out></testcase></testsuite></testsuites>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Loft: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/loft/loft.feature" package="testsuite/Feature: Loft: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/loft/loft.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-27T00:32:26.929946903Z" time="9.719496708"><testcase name="Scenario: loft-13 Place an intermediate section on a center-line loft: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/loft/loft.feature:130:3" time="9.719496708"><system-out><![CDATA[  Scenario: loft-13 Place an intermediate section on a center-line loft
+   ✔  Given a disposable copy of the native fixture "fixtures/cad/loft/circles-center-line-20.opd" is open
+   ✔  And the user creates Loft1 from the two circular profiles and the 20 mm center line
+   ✔  And Loft1 is reopened for editing with its two sections and center line selected
+   ✔  When the user selects placed-sections mode and clicks the center line near its midpoint
+   ✔  Then a Point1 entry and the Section Dimensions dialog appear
+   ✔  And the preview shows an intermediate section with position and area annotations
+   ✔  When the user accepts the section dimensions and the Loft dialog
+   ✔  Then Loft1 remains in the browser and a solid is visible
+]]></system-out></testcase></testsuite></testsuites>

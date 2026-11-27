@@ -1,0 +1,24 @@
+Wayland resize requests in scenario example order
+[03:45:18.995424]  -> xdg_toplevel#8.resize(wl_seat#9, 11, 4)
+[03:45:23.024159]  -> xdg_toplevel#8.resize(wl_seat#9, 33, 8)
+[03:45:26.868976]  -> xdg_toplevel#8.resize(wl_seat#9, 55, 1)
+[03:45:30.610179]  -> xdg_toplevel#8.resize(wl_seat#9, 77, 2)
+[03:45:34.422927]  -> xdg_toplevel#8.resize(wl_seat#9, 99, 5)
+[03:45:38.484887]  -> xdg_toplevel#8.resize(wl_seat#9, 121, 10)
+[03:45:42.310343]  -> xdg_toplevel#8.resize(wl_seat#9, 143, 9)
+[03:45:46.113169]  -> xdg_toplevel#8.resize(wl_seat#9, 165, 6)
+
+final-wayland
+8 scenarios (8 passed)
+80 steps (80 passed)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1733 filtered out; finished in 32.01s
+
+final-x11
+8 scenarios (8 passed)
+80 steps (80 passed)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1733 filtered out; finished in 34.58s
+
+final-move
+1 scenario (1 passed)
+6 steps (6 passed)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1733 filtered out; finished in 4.57s

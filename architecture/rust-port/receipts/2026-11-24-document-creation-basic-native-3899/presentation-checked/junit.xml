@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Create basic documents from native templates: tmp/oblikovati-ribbon-relocated.RcZVDl/current-document-creation-basic-source/features/application/document-creation/document-creation-basic-native.feature" package="testsuite/Feature: Create basic documents from native templates: tmp/oblikovati-ribbon-relocated.RcZVDl/current-document-creation-basic-source/features/application/document-creation/document-creation-basic-native.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T19:32:16.193681224Z" time="19.01984154"><testcase name="Scenario: Create a presentation and cancel initial model insertion: tmp/oblikovati-ribbon-relocated.RcZVDl/current-document-creation-basic-source/features/application/document-creation/document-creation-basic-native.feature:65:3" time="19.01984154"><system-out><![CDATA[  Scenario: Create a presentation and cancel initial model insertion
+   ✔> Given a fresh MCAD Software session loads `fixtures/cad/document-creation-native-candidate.opj` as its active project
+   ✔> And its Metric catalog contains the native standard part, assembly, drawing, sheet-metal and presentation templates
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And the user presses Control+N to open the new-document template chooser
+   ✔  And the new-document template chooser is open in the MCAD Software
+   ✔  When the user selects the metric presentation template
+   ✔  And the user chooses Create
+   ✔  Then a new presentation document becomes active
+   ✔  And an Insert dialog opens for an assembly file
+   ✔  When the user cancels the Insert dialog
+   ✔  Then the presentation remains open with an empty viewport
+   ✔  And the browser shows a scene
+   ✔  And the workspace displays a storyboard timeline and snapshot views panel
+   ✔  And the presentation ribbon offers Insert Model
+]]></system-out></testcase></testsuite></testsuites>

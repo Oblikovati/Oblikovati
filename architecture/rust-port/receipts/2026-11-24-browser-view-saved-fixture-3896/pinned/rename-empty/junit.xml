@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T11:36:19.455522278Z" time="128.939094238"><testcase name="Scenario: Submit an empty view representation name: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature:1095:3" time="128.939094238"><system-out><![CDATA[  Scenario: Submit an empty view representation name
+   ✔  Given an empty part is active in the MCAD Software
+   ✔  And an active copied view is named "Capture View"
+   ✔  When the user selects the copied view and presses F2
+   ✔  And the user clears its selected name and presses Enter
+   ✔  Then inline editing closes
+   ✔  And the active view remains named "Capture View"
+   ✔  And the View branch identifies "Capture View" as active
+   ✔  And no message is displayed
+]]></system-out></testcase></testsuite></testsuites>

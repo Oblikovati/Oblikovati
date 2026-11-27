@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Save and reopen part documents: tmp/obk-open-save-48987af/features/application/document-saving/document-saving.feature" package="testsuite/Feature: Save and reopen part documents: tmp/obk-open-save-48987af/features/application/document-saving/document-saving.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T21:04:50.870632085Z" time="6.034135369"><testcase name="Scenario: Decline replacing an existing part during first save: tmp/obk-open-save-48987af/features/application/document-saving/document-saving.feature:232:3" time="6.034135369"><system-out><![CDATA[  Scenario: Decline replacing an existing part during first save
+   ✔  Given the Save As dialog is open for a new part in the MCAD Software
+   ✔  And the current folder contains an existing part file
+   ✔  When the user selects the existing part file
+   ✔  And the user chooses Save
+   ✔  Then a confirmation identifies the existing file and asks whether to replace it
+   ✔  And the confirmation offers Yes and No
+   ✔  And the Save As dialog remains behind the confirmation
+   ✔  When the user chooses No
+   ✔  Then the confirmation closes
+   ✔  And Save As remains open with the existing file name displayed
+   ✔  When the user cancels Save As
+   ✔  Then the new unsaved part remains active
+]]></system-out></testcase></testsuite></testsuites>

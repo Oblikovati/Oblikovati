@@ -1,0 +1,13 @@
+{
+  "pids": [
+    4178760,
+    4181584
+  ],
+  "binary_sha256": "53feb0e912a558e99a9761bd7aeadc1472d23bd425fce5c8e1f376fe1e7ac82b",
+  "fixture_sha256": "58aafeb5ffcba693695903b57e8541178a77e27f7e0a45c27c1f680eb225b1f9",
+  "template_sha256": "41ae38e6bcdb04c0f12056c11def9ac629feb0b6b3961abc6c066b7e31492575",
+  "saved_selection": "document-creation-generic-candidate/Metric/Standard (mm).opd",
+  "details_crop": "265x77+846+278",
+  "selection_crop": "350x16+465+320",
+  "restored_details_and_selection_match": true
+}

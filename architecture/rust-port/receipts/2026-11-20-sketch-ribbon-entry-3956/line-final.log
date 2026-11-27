@@ -1,0 +1,9 @@
+   Compiling oblikovati-gui v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/crates/gui)
+   Compiling oblikovati-head v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/crates/head)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 16.82s
+     Running unittests src/lib.rs (target/debug/deps/oblikovati_head-6711f56a1ed96531)
+
+running 1 test
+test native::gui_loop_tests::application_bdd::ribbon_command_availability::line_from_part_enters_the_only_sketch_without_committing_geometry ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1560 filtered out; finished in 7.74s

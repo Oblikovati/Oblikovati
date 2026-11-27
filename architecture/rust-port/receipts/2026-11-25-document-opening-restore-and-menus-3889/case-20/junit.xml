@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Inspect files before opening a document: target/native-scratch.HSqCy5/current-document-opening-source/features/application/document-opening/document-opening.feature" package="testsuite/Feature: Inspect files before opening a document: target/native-scratch.HSqCy5/current-document-opening-source/features/application/document-opening/document-opening.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T01:58:22.718362192Z" time="74.333831727"><testcase name="Scenario: Inspect and dismisses file-type choices: target/native-scratch.HSqCy5/current-document-opening-source/features/application/document-opening/document-opening.feature:283:3" time="74.333831727"><system-out><![CDATA[  Scenario: Inspect and dismisses file-type choices
+   ✔  Given the Open dialog is open in the MCAD Software
+   ✔  And a saved part is selected with its name and preview displayed
+   ✔  And `fixtures/cad/extrusion/extrusion-rect-8mm.opd` is selected with the native document filter active
+   ✔  When the user opens the file-type filter list
+   ✔  Then the list offers a combined native-document filter
+   ✔  And it includes separate filters for assemblies, drawings, parts and presentations
+   ✔  And additional file-format filters are visible
+   ✔  When the user dismisses the list without choosing a different filter
+   ✔  Then the previous file-type filter remains displayed
+   ✔  And the selected part name and preview remain displayed
+]]></system-out></testcase></testsuite></testsuites>

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Navigate named native part templates: tmp/oblikovati-ribbon-relocated.RcZVDl/current-document-creation-navigation-source/features/application/document-creation/document-creation-navigation-native.feature" package="testsuite/Feature: Navigate named native part templates: tmp/oblikovati-ribbon-relocated.RcZVDl/current-document-creation-navigation-source/features/application/document-creation/document-creation-navigation-native.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T19:19:19.675267115Z" time="54.172837096"><testcase name="Scenario: Navigate adjacent part templates with arrow keys: tmp/oblikovati-ribbon-relocated.RcZVDl/current-document-creation-navigation-source/features/application/document-creation/document-creation-navigation-native.feature:26:3" time="54.172837096"><system-out><![CDATA[  Scenario: Navigate adjacent part templates with arrow keys
+   ✔> Given a fresh MCAD Software session loads `fixtures/cad/document-creation-navigation-candidate.opj` as its active project
+   ✔> And its Metric folder contains exactly the four named native part templates used below
+   ✔> And its English folder contains the standard inch part template
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is active with `Sketch1` visible in the MCAD Software
+   ✔  And the new-document chooser shows the metric folder grouped by type using Medium icons
+   ✔  And the part group displays Sheet Metal (mm) immediately before Standard (DIN)
+   ✔  When the user selects the Sheet Metal (mm) part template
+   ✔  Then its tile is selected and its details identify millimeter units
+   ✔  When the user presses Right
+   ✔  Then the Standard (DIN) part tile is selected
+   ✔  And the details identify Standard (DIN) and millimeter units
+   ✔  When the user presses Left
+   ✔  Then the Sheet Metal (mm) part tile is selected again
+   ✔  And its sheet-metal details are displayed
+   ✔  When the user presses Down
+   ✔  Then the template gallery scrolls down
+   ✔  And Sheet Metal (mm) remains selected with its details displayed
+   ✔  When the user presses Escape
+   ✔  Then the chooser closes and the original part remains active
+]]></system-out></testcase></testsuite></testsuites>

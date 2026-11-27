@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Extrude a profile in a part document: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/solid-model/extrusion/extrusion.feature" package="testsuite/Feature: Extrude a profile in a part document: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/solid-model/extrusion/extrusion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T16:29:26.86394538Z" time="53.679538873"><testcase name="Scenario: extrusion-06 Accepted creation supports Undo and Redo: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/solid-model/extrusion/extrusion.feature:71:3" time="53.679538873"><system-out><![CDATA[  Scenario: extrusion-06 Accepted creation supports Undo and Redo
+   ✔> Given the MCAD Software is displaying a part in the solid modeling workspace
+   ✔> And the viewport pointer is idle
+   ✔  Given Distance A 8 mm and zero taper
+   ✔  When OK is clicked then Undo then Redo
+   ✔  Then Extrusion1 and Solid Bodies(1) return with the shaded solid
+   ✔  And the subsequent Measure result lists two extrusion edges of length 8.000 mm
+]]></system-out></testcase></testsuite></testsuites>

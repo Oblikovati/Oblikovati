@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Inspect files before opening a document: target/native-scratch.HSqCy5/current-document-opening-source/features/application/document-opening/document-opening.feature" package="testsuite/Feature: Inspect files before opening a document: target/native-scratch.HSqCy5/current-document-opening-source/features/application/document-opening/document-opening.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T01:55:46.368726708Z" time="113.658016316"><testcase name="Scenario: Open a different drawing by double-clicking its row: target/native-scratch.HSqCy5/current-document-opening-source/features/application/document-opening/document-opening.feature:239:3" time="113.658016316"><system-out><![CDATA[  Scenario: Open a different drawing by double-clicking its row
+   ✔  Given writable copies of `fixtures/cad/document-opening/OpenDrawingA.odd`, `OpenDrawingB.odd` and `OpenPart.opd` are staged in the same working folder
+   ✔  And the user opens each drawing, inserts a base view referencing the staged OpenPart.opd, saves it and closes it
+   ✔  Given an assembly document is active in the MCAD Software
+   ✔  And the Open dialog displays two saved drawings in a folder
+   ✔  And the first drawing is selected
+   ✔  And the second drawing has a sheet, border and saved views and is not already open
+   ✔  And `fixtures/cad/single-occurrence.oad` is active and `OpenDrawingA.odd` plus `OpenDrawingB.odd` are closed
+   ✔  When the user double-clicks the second drawing's row
+   ✔  Then the Open dialog closes
+   ✔  And the second drawing opens in a new active document tab
+   ✔  And its sheet, border and saved views are displayed
+   ✔  And the assembly tab remains available
+]]></system-out></testcase></testsuite></testsuites>

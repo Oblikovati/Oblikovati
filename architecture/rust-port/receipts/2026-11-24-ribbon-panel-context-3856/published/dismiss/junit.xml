@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon panel visibility: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" package="testsuite/Feature: Ribbon panel visibility: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T09:12:41.305655287Z" time="31.012452865"><testcase name="Scenario: Dismiss the panel list without changing visibility: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:155:3" time="31.012452865"><system-out><![CDATA[  Scenario: Dismiss the panel list without changing visibility
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the 3D Model ribbon is expanded and docked at the top
+   ✔  And Modify is visible while Parameters is hidden
+   ✔  When the user opens the ribbon context menu and expand Show Panels
+   ✔  Then Modify is checked and Parameters is unchecked
+   ✔  When the user presses Escape
+   ✔  Then the Show Panels submenu closes
+   ✔  And the ribbon context menu remains open
+   ✔  When the user presses Escape again
+   ✔  Then the ribbon context menu closes
+   ✔  And Modify remains visible
+   ✔  And Parameters remains hidden
+]]></system-out></testcase></testsuite></testsuites>

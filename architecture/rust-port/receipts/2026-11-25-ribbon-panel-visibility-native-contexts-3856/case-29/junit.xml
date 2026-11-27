@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon panel visibility: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" package="testsuite/Feature: Ribbon panel visibility: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:06:27.266971227Z" time="18.11666839"><testcase name="Scenario: Right-click a solid face while the panel selector is open: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:423:3" time="18.11666839"><system-out><![CDATA[  Scenario: Right-click a solid face while the panel selector is open
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open with a visible solid in the MCAD Software
+   ✔  And the full Tools ribbon and its panel selector are open
+   ✔  When the user right-clicks a visible solid face outside the selector
+   ✔  Then the panel selector closes
+   ✔  And the Tools ribbon and part remain visible
+   ✔  And no face context menu is visible in the captured state
+   ✔  And a small face-selection control appears near the pointer
+]]></system-out></testcase></testsuite></testsuites>

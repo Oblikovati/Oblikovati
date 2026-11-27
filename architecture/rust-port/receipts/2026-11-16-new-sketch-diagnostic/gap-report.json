@@ -1,0 +1,504 @@
+{
+  "kind": "diagnostic only; not acceptance",
+  "source_files": {
+    "/tmp/obk-new-sketch-source/features/sketch/new-sketch/scenario.feature": "@sketch\r\nFeature: New sketch\r\n\r\n  @acceptance @documented_observation\r\n  Scenario: new-sketch-01 Create a sketch on a named origin plane\r\n    Given Part2 has Sketch1 and the Origin browser is expanded\r\n    When the user invoke Start 2D Sketch and choose XZ Plane\r\n    Then Sketch2 is added in the Sketch editing environment\r\n    And the ViewCube reads TOP\r\n    And the empty sketch status reads Fully Constrained\r\n\r\n  @cancel @documented_observation\r\n  Scenario: new-sketch-02 Cancel before selecting a plane\r\n    Given Part2 has only Sketch1\r\n    When the user invoke Start 2D Sketch and press Escape before choosing a plane\r\n    Then the reference-plane previews disappear\r\n    And the browser still contains only Sketch1\r\n\r\n  @documented_observation @escape_after_acceptance\r\n  Scenario: new-sketch-03 Escape after accepting the support plane\r\n    Given selecting XZ Plane has created empty Sketch2\r\n    When the user press Escape\r\n    Then Sketch2 remains active in the Sketch editing environment\r\n    And creation is not rolled back\r\n\r\n  @documented_observation @needs_fixture @undo_redo\r\n  Scenario: new-sketch-04 Creation and finishing have distinct history transactions\r\n    Given the user have created empty Sketch2 and chosen Finish Sketch\r\n    When the user press Ctrl+Z once\r\n    Then Sketch2 remains and its editing environment returns\r\n    When the user press Ctrl+Z again\r\n    Then Sketch2 disappears from the model browser\r\n    When the user press Ctrl+Y twice in sequence\r\n    Then creation and Finish Sketch are restored in order\r\n\r\n  @documented_observation @preselection\r\n  Scenario: new-sketch-05 Start with a preselected support plane\r\n    Given the model browser exposes YZ Plane\r\n    When the user select YZ Plane before invoking Start 2D Sketch\r\n    Then Sketch3 is created without another support-selection click\r\n    And the ViewCube reads RIGHT\r\n    And the empty sketch status reads Fully Constrained\r\n\r\n  @documented_observation @needs_fixture @planar_face\r\n  Scenario: new-sketch-07 Create an empty sketch on a planar solid face\r\n    Given isolated Part3 contains a 10 mm rectangular extrusion\r\n    When the user invoke Start 2D Sketch and select its broad planar face\r\n    Then Sketch2 is added in the Sketch editing environment\r\n    And FRONT view and empty Fully Constrained status are displayed\r\n    When the user choose Finish Sketch\r\n    Then Sketch2 is retained beside Extrusion1\r\n\r\n  @documented_observation @work_plane\r\n  Scenario: new-sketch-08 Create a sketch on a non-origin work plane\r\n    Given Work Plane1 was created 5 mm offset from the planar face\r\n    When the user preselect Work Plane1 and invoke Start 2D Sketch\r\n    Then empty Sketch3 is created without another support click\r\n    And Finish Sketch retains Sketch3 and Work Plane1\r\n\r\n  @automatic_startup @documented_observation @needs_fixture\r\n  Scenario: new-sketch-09 Observe each automatic startup plane and restore the baseline\r\n    Given No new sketch is the starting preference\r\n    When the user accept each automatic startup plane in turn\r\n    And the user create a fresh metric part document after each change\r\n    Then x-y creates Part4 Sketch1 in FRONT view\r\n    And y-z creates Part5 Sketch1 in RIGHT view\r\n    And x-z creates Part6 Sketch1 in TOP orientation\r\n    And no separate Start 2D Sketch action is needed in those routes\r\n    And No new sketch is restored accepted and verified\r\n\r\n  @documented_observation @look_at\r\n  Scenario: new-sketch-10 Compare automatic normal view on creation and edit\r\n    Given Part6 is in an oblique Home View\r\n    When the user disable Part Look at sketch plane and create a sketch on YZ Plane\r\n    Then Sketch2 is created and the oblique view remains\r\n    When the user finish Sketch2 and restore Part Look at sketch plane\r\n    And the user choose Edit Sketch on that same Sketch2\r\n    Then its editing environment opens in RIGHT view\r\n\r\n  @needs_fixture\r\n  Scenario: new-sketch-06 Save close and reopen an accumulated sketch document\r\n    Given Part1 contains an existing sketch with geometry\r\n    When the user finish Sketch3 and save Part1\r\n    And the user close the document using its document Close button\r\n    Then the MCAD Software Home is shown without a save prompt\r\n    When the user open Part1 from Documents using the file picker\r\n    Then the saved model browser and geometry load\r\n    When the user choose Edit Sketch on Sketch3\r\n    Then the Sketch ribbon and editable geometry are available\r\n    And the rectangular and circular pattern entries remain in Sketch3\r\n"
+  },
+  "scenarios": [
+    {
+      "source": "/tmp/obk-new-sketch-source/features/sketch/new-sketch/scenario.feature",
+      "scenario": "new-sketch-01 Create a sketch on a named origin plane",
+      "line": 5,
+      "classification": "passes",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 6,
+          "step": "Part2 has Sketch1 and the Origin browser is expanded",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 7,
+          "step": "the user invoke Start 2D Sketch and choose XZ Plane",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 8,
+          "step": "Sketch2 is added in the Sketch editing environment",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 9,
+          "step": "the ViewCube reads TOP",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 10,
+          "step": "the empty sketch status reads Fully Constrained",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-new-sketch-source/features/sketch/new-sketch/scenario.feature",
+      "scenario": "new-sketch-02 Cancel before selecting a plane",
+      "line": 13,
+      "classification": "passes",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 14,
+          "step": "Part2 has only Sketch1",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 15,
+          "step": "the user invoke Start 2D Sketch and press Escape before choosing a plane",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 16,
+          "step": "the reference-plane previews disappear",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 17,
+          "step": "the browser still contains only Sketch1",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-new-sketch-source/features/sketch/new-sketch/scenario.feature",
+      "scenario": "new-sketch-03 Escape after accepting the support plane",
+      "line": 20,
+      "classification": "passes",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 21,
+          "step": "selecting XZ Plane has created empty Sketch2",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 22,
+          "step": "the user press Escape",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 23,
+          "step": "Sketch2 remains active in the Sketch editing environment",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 24,
+          "step": "creation is not rolled back",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-new-sketch-source/features/sketch/new-sketch/scenario.feature",
+      "scenario": "new-sketch-04 Creation and finishing have distinct history transactions",
+      "line": 27,
+      "classification": "passes",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 28,
+          "step": "the user have created empty Sketch2 and chosen Finish Sketch",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 29,
+          "step": "the user press Ctrl+Z once",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 30,
+          "step": "Sketch2 remains and its editing environment returns",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 31,
+          "step": "the user press Ctrl+Z again",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 32,
+          "step": "Sketch2 disappears from the model browser",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 33,
+          "step": "the user press Ctrl+Y twice in sequence",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 34,
+          "step": "creation and Finish Sketch are restored in order",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-new-sketch-source/features/sketch/new-sketch/scenario.feature",
+      "scenario": "new-sketch-05 Start with a preselected support plane",
+      "line": 37,
+      "classification": "passes",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 38,
+          "step": "the model browser exposes YZ Plane",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 39,
+          "step": "the user select YZ Plane before invoking Start 2D Sketch",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 40,
+          "step": "Sketch3 is created without another support-selection click",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 41,
+          "step": "the ViewCube reads RIGHT",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 42,
+          "step": "the empty sketch status reads Fully Constrained",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-new-sketch-source/features/sketch/new-sketch/scenario.feature",
+      "scenario": "new-sketch-07 Create an empty sketch on a planar solid face",
+      "line": 45,
+      "classification": "passes",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 46,
+          "step": "isolated Part3 contains a 10 mm rectangular extrusion",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 47,
+          "step": "the user invoke Start 2D Sketch and select its broad planar face",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 48,
+          "step": "Sketch2 is added in the Sketch editing environment",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 49,
+          "step": "FRONT view and empty Fully Constrained status are displayed",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 50,
+          "step": "the user choose Finish Sketch",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 51,
+          "step": "Sketch2 is retained beside Extrusion1",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-new-sketch-source/features/sketch/new-sketch/scenario.feature",
+      "scenario": "new-sketch-08 Create a sketch on a non-origin work plane",
+      "line": 54,
+      "classification": "passes",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 55,
+          "step": "Work Plane1 was created 5 mm offset from the planar face",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 56,
+          "step": "the user preselect Work Plane1 and invoke Start 2D Sketch",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 57,
+          "step": "empty Sketch3 is created without another support click",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 58,
+          "step": "Finish Sketch retains Sketch3 and Work Plane1",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-new-sketch-source/features/sketch/new-sketch/scenario.feature",
+      "scenario": "new-sketch-09 Observe each automatic startup plane and restore the baseline",
+      "line": 61,
+      "classification": "unbound step",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 62,
+          "step": "No new sketch is the starting preference",
+          "result": "unbound",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 63,
+          "step": "the user accept each automatic startup plane in turn",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 64,
+          "step": "the user create a fresh metric part document after each change",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 65,
+          "step": "x-y creates Part4 Sketch1 in FRONT view",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 66,
+          "step": "y-z creates Part5 Sketch1 in RIGHT view",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 67,
+          "step": "x-z creates Part6 Sketch1 in TOP orientation",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 68,
+          "step": "no separate Start 2D Sketch action is needed in those routes",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 69,
+          "step": "No new sketch is restored accepted and verified",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-new-sketch-source/features/sketch/new-sketch/scenario.feature",
+      "scenario": "new-sketch-10 Compare automatic normal view on creation and edit",
+      "line": 72,
+      "classification": "unbound step",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 73,
+          "step": "Part6 is in an oblique Home View",
+          "result": "unbound",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 74,
+          "step": "the user disable Part Look at sketch plane and create a sketch on YZ Plane",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 75,
+          "step": "Sketch2 is created and the oblique view remains",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 76,
+          "step": "the user finish Sketch2 and restore Part Look at sketch plane",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 77,
+          "step": "the user choose Edit Sketch on that same Sketch2",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 78,
+          "step": "its editing environment opens in RIGHT view",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-new-sketch-source/features/sketch/new-sketch/scenario.feature",
+      "scenario": "new-sketch-06 Save close and reopen an accumulated sketch document",
+      "line": 81,
+      "classification": "unbound step",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 82,
+          "step": "Part1 contains an existing sketch with geometry",
+          "result": "unbound",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 83,
+          "step": "the user finish Sketch3 and save Part1",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 84,
+          "step": "the user close the document using its document Close button",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 85,
+          "step": "the MCAD Software Home is shown without a save prompt",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 86,
+          "step": "the user open Part1 from Documents using the file picker",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 87,
+          "step": "the saved model browser and geometry load",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 88,
+          "step": "the user choose Edit Sketch on Sketch3",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 89,
+          "step": "the Sketch ribbon and editable geometry are available",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 90,
+          "step": "the rectangular and circular pattern entries remain in Sketch3",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    }
+  ]
+}

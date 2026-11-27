@@ -1,0 +1,14 @@
+GUI Projects
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 826 filtered out; finished in 0.00s
+
+Library transfer on wayland
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1711 filtered out; finished in 11.50s
+
+Finish with no libraries on wayland
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1711 filtered out; finished in 11.14s
+
+Library transfer on x11
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1711 filtered out; finished in 11.69s
+
+Finish with no libraries on x11
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1711 filtered out; finished in 12.05s

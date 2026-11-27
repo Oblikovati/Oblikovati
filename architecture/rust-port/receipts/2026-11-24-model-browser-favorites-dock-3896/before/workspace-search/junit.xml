@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Workspace layout and panel visibility: tmp/oblikovati-ribbon-relocated.RcZVDl/workspace-layout-dock-search-snapshot/checkout/features/application/workspace-layout/workspace-layout.feature" package="testsuite/Feature: Workspace layout and panel visibility: tmp/oblikovati-ribbon-relocated.RcZVDl/workspace-layout-dock-search-snapshot/checkout/features/application/workspace-layout/workspace-layout.feature" tests="1" errors="0" failures="1" hostname="localhost" timestamp="2026-11-24T11:01:56.517918068Z" time="14.195846002"><testcase name="Scenario: Search the Model tree from another active dock tab: tmp/oblikovati-ribbon-relocated.RcZVDl/workspace-layout-dock-search-snapshot/checkout/features/application/workspace-layout/workspace-layout.feature:177:3" time="14.195846002"><failure type="Step Panicked" message="Step panicked. Captured output: assertion `left == right` failed
+  left: Some(false)
+ right: Some(true)"/><system-out><![CDATA[  Scenario: Search the Model tree from another active dock tab
+   ✔  Given `fixtures/cad/workspace-layout-points.opd` is open in the MCAD Software
+   ✘  And Model and Log occupy one dock tab bar with Log active
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/workspace-layout-dock-search-snapshot/checkout/features/application/workspace-layout/workspace-layout.feature:179:5
+      Matched: crates/head/src/../tests/application/workspace-layout/dock_search.rs:8:1
+      Step panicked. Captured output: assertion `left == right` failed
+        left: Some(false)
+       right: Some(true)
+      ApplicationWorld {
+          text: "40\n30\nW\nP\nZ\nv\nO\nv\nFRONT\nModel\nMaterialBrow\u{85}\nAppearanceBr\u{85}\nMenu\nSearch\ndocking-visible-solid-current<Primary>\nRepresentations\nModelState\n<Primary>\n1\nView\n<Primary>\nSolidBodies\nOrigin\nYZPlane\nXZPlane\nXYPlane\nXAxis\nYAxis\nZAxis\nCenterPoint\nParameters\nSketches\nFeatures\nExtrusion1\nSketch1\n[DOF0]\nInspectionPointA\nInspectionPointB\nInspectionPointC\nEndofPart\nABS(Black)\nAppearance\nAssigntopart\nClose\nOpeneddocument1:/tmp/oblikovati-ribbon-relocated.RcZVDl/workspace-layout-dock-search-snapshot/checkout/fixtures/cad/workspace-layout-points.opd\nRibbonDisplay\nv\nv\n...\ndocking-visible-solid-current\nFile\n3DModel\nSketch\nTools\nManage\nView\nAnnotate\nStart2DSketch\nSketch\nExtrude\nRevolve\nCreate\nHole\nFillet\nChamfer\nShell\nModifyv\nPlane\nv\nAxis\nPoint\nUCS\nWorkFeatures\nRectangular\nCircular\nPattern\nSimplify\nSimplificationv\nHome\ndocking-visible-solid-current<Primary>\nDocuments\nX\nY\nZ",
+          ..
+      }
+]]></system-out></testcase></testsuite></testsuites>

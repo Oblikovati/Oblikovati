@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:37:00.125194007Z" time="39.885962915"><testcase name="Scenario: Inspect the center point context menu: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature:314:3" time="39.885962915"><system-out><![CDATA[  Scenario: Inspect the center point context menu
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is active in the MCAD Software
+   ✔  And an active part with a visible block is open in the MCAD Software
+   ✔  And the Origin branch is expanded in the model browser
+   ✔  When the user right-clicks the Center Point row
+   ✔  Then the Center Point row is highlighted
+   ✔  And its context menu offers Copy, Measure, Create Note and Visibility
+   ✔  And the menu offers Relationships
+   ✔  When the user presses Escape
+   ✔  Then the context menu closes
+   ✔  And the block remains visible in the same apparent view
+]]></system-out></testcase></testsuite></testsuites>

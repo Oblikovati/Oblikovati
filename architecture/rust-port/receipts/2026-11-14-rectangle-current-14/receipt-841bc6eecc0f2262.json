@@ -1,0 +1,27 @@
+{
+  "kind": "native-acceptance",
+  "scenario_id": "scenario:841bc6eecc0f22624f0096f9d14e6fae6d64b60d913f2fea0ed3de284acf8ae2",
+  "scenario_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+  "source_sha256": "fbdae71cbf4f67f7d8165002799ba77b0727fa89cb7b620f1298fdb27725916c",
+  "application_commit": "fa1bbc802d865d4d3dd685a6e405a4b29645e4b9",
+  "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+  "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+  "runner": "sketch_scenarios_use_the_native_window",
+  "exit_code": 0,
+  "environment": {
+    "os": "Linux",
+    "renderer": "Vulkan with Lavapipe under Xvfb"
+  },
+  "cucumber": {
+    "path": "architecture/rust-port/receipts/2026-11-14-rectangle-current-14/cucumber.json",
+    "sha256": "144710c9f7321f68a7773d2634dfe050468dc9dd79fd8e8edec4fe764cb96e1b"
+  },
+  "source_report": {
+    "path": "architecture/rust-port/receipts/2026-11-14-rectangle-current-14/source-revision.json",
+    "sha256": "323bec8099c532fce3284f1c7abfbd0e0edca136974adfa9add106ee21be16c0"
+  },
+  "capture": {
+    "path": "architecture/rust-port/receipts/2026-11-14-rectangle-current-14/rectangle-two-point-14-Observe-a-zero-second-size.png",
+    "sha256": "337c811a56d3bcea215fc5e237447befb7e8f9f682c12ac8e4c2dec971993f47"
+  }
+}

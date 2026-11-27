@@ -1,0 +1,27 @@
+{
+  "kind": "native-acceptance",
+  "scenario_id": "scenario:3e4b9e33e44dffb2c65edec2817081f095cd3ee4e2dd0a4018e976b135f897bb",
+  "scenario_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+  "source_sha256": "835ba9fd1dfa3e007e9555b4b890cbf75a006e40c4e14b4285709f93ab5889d4",
+  "application_commit": "e86e22b84a52f92a4cf02a7cac98b82e23656fc1",
+  "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+  "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+  "runner": "application_scenarios_use_the_native_window",
+  "exit_code": 0,
+  "environment": {
+    "os": "Linux",
+    "renderer": "Vulkan with Lavapipe under Xvfb"
+  },
+  "cucumber": {
+    "path": "architecture/rust-port/receipts/2026-11-14-ui-current-3e4b9e33/cucumber.json",
+    "sha256": "9eca42e4842b582c203802074e36c0e3809d333cd5c91955202499214fe4f779"
+  },
+  "source_report": {
+    "path": "architecture/rust-port/receipts/2026-11-14-ui-current-3e4b9e33/source-revision.json",
+    "sha256": "123a7ef8c5a0d7443eeb040f700a7b7335f6ee3f60788a6414630db1a47c9b27"
+  },
+  "capture": {
+    "path": "architecture/rust-port/receipts/2026-11-14-ui-current-3e4b9e33/Keep-ribbon-key-tips-visible-while-arrow-keys-change-the-model-view.png",
+    "sha256": "126bcbc56a01a6434a529a63d6cdf3a0ff73c10f65fb4b5d7672862b0d996c60"
+  }
+}

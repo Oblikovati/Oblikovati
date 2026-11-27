@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon panel visibility: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" package="testsuite/Feature: Ribbon panel visibility: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T09:38:36.907501788Z" time="20.175328829"><testcase name="Scenario: Toggle the direct panel list without changing a checkbox: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:225:3" time="20.175328829"><system-out><![CDATA[  Scenario: Toggle the direct panel list without changing a checkbox
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the 3D Model ribbon is docked on the left with the Modify panel visible
+   ✔  When the user clicks the direct panel selector arrow
+   ✔  Then the panel list opens with Modify checked
+   ✔  When the user clicks the direct panel selector arrow again
+   ✔  Then the panel list closes
+   ✔  And the Modify panel remains visible
+]]></system-out></testcase></testsuite></testsuites>

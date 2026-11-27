@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-labelledby="t d">
+  <title id="t">Equal Constraint</title>
+  <desc id="d">Bold geometric equals symbol equating lengths or radii of sketch curves.</desc>
+  <g id="layer-body">
+    <line x1="6" y1="12" x2="26" y2="12" stroke="var(--icon-line-active, #8172FA)" stroke-width="2.6" stroke-linecap="round"/>
+  </g>
+  <g id="layer-accent">
+    <line x1="6" y1="20" x2="26" y2="20" stroke="var(--accent-selection-bright, #2DD4BF)" stroke-width="2.6" stroke-linecap="round"/>
+  </g>
+</svg>

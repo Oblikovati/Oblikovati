@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" package="testsuite/Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:22:23.19875006Z" time="45.159234072"><testcase name="Scenario: Switch ribbon tabs with the Sketch Constrain context menu open: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:65:3" time="45.159234072"><system-out><![CDATA[  Scenario: Switch ribbon tabs with the Sketch Constrain context menu open
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open with an active editable `Sketch1` in the MCAD Software
+   ✔  And the full Sketch ribbon is visible
+   ✔  And the Constrain additional command area is open
+   ✔  When the user right-clicks Edit Coordinate System
+   ✔  Then the command context menu is visible
+   ✔  And the Constrain additional command area remains open
+   ✔  When the user selects the Tools ribbon tab
+   ✔  Then the command context menu and Constrain additional command area close
+   ✔  And the full Tools ribbon is visible
+   ✔  And sketch edit remains active
+   ✔  When the user returns to the Sketch ribbon tab
+   ✔  Then the full Sketch ribbon is visible
+   ✔  And the Constrain additional command area remains closed
+   ✔  And the editable sketch remains active and unchanged
+]]></system-out></testcase></testsuite></testsuites>

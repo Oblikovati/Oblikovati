@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Create basic documents from native templates: tmp/oblikovati-ribbon-relocated.RcZVDl/current-document-creation-basic-source/features/application/document-creation/document-creation-basic-native.feature" package="testsuite/Feature: Create basic documents from native templates: tmp/oblikovati-ribbon-relocated.RcZVDl/current-document-creation-basic-source/features/application/document-creation/document-creation-basic-native.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T19:31:38.932551207Z" time="17.353903469"><testcase name="Scenario: Create a drawing from a sheet template: tmp/oblikovati-ribbon-relocated.RcZVDl/current-document-creation-basic-source/features/application/document-creation/document-creation-basic-native.feature:37:3" time="17.353903469"><system-out><![CDATA[  Scenario: Create a drawing from a sheet template
+   ✔> Given a fresh MCAD Software session loads `fixtures/cad/document-creation-native-candidate.opj` as its active project
+   ✔> And its Metric catalog contains the native standard part, assembly, drawing, sheet-metal and presentation templates
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And the user presses Control+N to open the new-document template chooser
+   ✔  And the new-document template chooser is open in the MCAD Software
+   ✔  And a drawing template with a border and title block is available
+   ✔  When the user selects the drawing template
+   ✔  And the user chooses its Use Template preview
+   ✔  And the user chooses Create
+   ✔  Then a new drawing document becomes active
+   ✔  And its viewport displays a sheet with a border and title block
+   ✔  And the drawing browser lists the sheet and its border
+   ✔  And the ribbon offers drawing view commands
+   ✔  And a new document tab is visible
+]]></system-out></testcase></testsuite></testsuites>

@@ -1,0 +1,35 @@
+{
+  "features": 1,
+  "scenarios": 18,
+  "excluded_capture_only": 0,
+  "blocked_capture_host_only": 0,
+  "steps": 219,
+  "unresolved": [
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/keyboard-navigation-published-snapshot/checkout/features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature",
+      "scenario": "Keep ribbon key tips visible while arrow keys change the model view",
+      "line": 193,
+      "step": "`fixtures/cad/workspace-layout-native.opd` is open with its asymmetric solid visible in the MCAD Software",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/keyboard-navigation-published-snapshot/checkout/features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature",
+      "scenario": "Select a solid face while command key tips are visible",
+      "line": 209,
+      "step": "`fixtures/cad/workspace-layout-native.opd` is open with its asymmetric solid visible in the MCAD Software",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/keyboard-navigation-published-snapshot/checkout/features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature",
+      "scenario": "Navigate an expanded model browser while ribbon key tips are visible",
+      "line": 222,
+      "step": "`fixtures/cad/workspace-layout-native.opd` is open with the full 3D Model ribbon visible in the MCAD Software",
+      "cause": "undefined step"
+    }
+  ],
+  "source_revision": {
+    "root": "/tmp/oblikovati-ribbon-relocated.RcZVDl/keyboard-navigation-published-snapshot/checkout",
+    "commit": "f5d798970cc9f38cbf57e32b2358fedc3a85de8a",
+    "dirty": false
+  }
+}

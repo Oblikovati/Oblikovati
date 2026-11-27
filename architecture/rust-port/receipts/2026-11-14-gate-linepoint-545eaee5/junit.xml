@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Point: tmp/obk-linepoint-refresh/features/sketch/point/scenario.feature" package="testsuite/Feature: Point: tmp/obk-linepoint-refresh/features/sketch/point/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T18:40:50.096888626Z" time="10.736935497"><testcase name="Scenario: point-08 Create a center point using the Format toggle: tmp/obk-linepoint-refresh/features/sketch/point/scenario.feature:64:3" time="10.736935497"><system-out><![CDATA[  Scenario: point-08 Create a center point using the Format toggle
+   ✔  Given the MCAD Software is running
+   ✔  And an editable planar sketch is active
+   ✔  And no geometry is selected and Center Point is enabled in Format
+   ✔  When the user invoke Point
+   ✔  Then the prompt is Select center point
+   ✔  When the user click empty canvas and press Escape
+   ✔  Then a center point remains at that location
+   ✔  And existing regular points retain their dot-style type
+]]></system-out></testcase></testsuite></testsuites>

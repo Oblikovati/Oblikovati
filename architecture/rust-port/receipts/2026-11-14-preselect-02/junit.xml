@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: New sketch: home/vmiguel/git/oblikovati-workspace/oblikovati-rust/target/benchmarks/mcad-scenarios-35f4a77b/features/sketch/new-sketch/scenario.feature" package="testsuite/Feature: New sketch: home/vmiguel/git/oblikovati-workspace/oblikovati-rust/target/benchmarks/mcad-scenarios-35f4a77b/features/sketch/new-sketch/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T02:16:35.058431564Z" time="7.491789388"><testcase name="Scenario: new-sketch-02 Cancel before selecting a plane: home/vmiguel/git/oblikovati-workspace/oblikovati-rust/target/benchmarks/mcad-scenarios-35f4a77b/features/sketch/new-sketch/scenario.feature:13:3" time="7.491789388"><system-out><![CDATA[  Scenario: new-sketch-02 Cancel before selecting a plane
+   ✔  Given Part2 has only Sketch1
+   ✔  When the user invoke Start 2D Sketch and press Escape before choosing a plane
+   ✔  Then the reference-plane previews disappear
+   ✔  And the browser still contains only Sketch1
+]]></system-out></testcase></testsuite></testsuites>

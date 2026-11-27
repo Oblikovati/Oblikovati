@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T11:28:30.061540378Z" time="69.29817779"><testcase name="Scenario: Hide and show a solid using the active view commands: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1284:3" time="69.29817779"><system-out><![CDATA[  Scenario: Hide and show a solid using the active view commands
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software
+   ✔  And the user copies Primary as BrowserView and activates the copied view
+   ✔  And The MCAD Software has a part containing one solid body
+   ✔  And a copied view is active
+   ✔  And the solid body is visible
+   ✔  When the user chooses All Hidden from the active view context menu
+   ✔  Then the solid body is not displayed in the viewport
+   ✔  And the solid body and its extrusion remain in the model browser
+   ✔  When the user chooses All Visible from the active view context menu
+   ✔  Then the solid body is displayed in the viewport
+   ✔  And the solid body and its extrusion remain in the model browser
+]]></system-out></testcase></testsuite></testsuites>

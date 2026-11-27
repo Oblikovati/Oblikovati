@@ -1,0 +1,23 @@
+window#waybar {
+  background: #171717;
+}
+
+#taskbar button {
+  min-width: 180px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: #333333;
+  color: #ffffff;
+}
+
+#taskbar button.minimized,
+#taskbar button.minimized:hover {
+  background: #335599;
+}
+
+#taskbar button.active,
+#taskbar button.active:hover {
+  background: #287044;
+}

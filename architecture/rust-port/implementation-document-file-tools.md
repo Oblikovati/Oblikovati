@@ -1,0 +1,64 @@
+# Document file tools
+
+The File menu uses the current document owner for New Part, Open, Save, Save As,
+and Close. Open and Save As display an owned path draft. Accepting a draft sends
+the canonical API request through the typed document client. The GUI performs no
+file reads or writes. An unsaved Save request opens the same path dialog through
+the owner's typed `SavePathRequired` notice, including a request received before
+the first GUI frame.
+
+The path field receives keyboard focus when the dialog appears. Enter submits
+a nonempty path; Escape and Cancel close the draft without a file operation.
+Changing documents clears a document-bound Save As draft. Open remains available
+without an active document. Save As and Close keep the selected document ID and
+are disabled during an open transaction. NUL text is refused before widget
+submission, and Unicode paths remain intact in the canonical request.
+
+Close sends `force: false`. Unsaved changes cause a local error and preserve the
+document. Failed Open and an unsupported saved-package version also preserve
+the current document and its history. File operations use the existing save
+binding, atomic package publication, document restore, and close guards.
+
+When opening several files at once, the picker processes already open paths
+first. It compares paths using the host path syntax, so different separators
+can still identify the same open document and a newly opened drawing ends in
+front.
+
+The desktop command state publishes Open dialog file inspections while Home
+is active. A saved drawing preview remains available after the last drawing
+is closed, as verified by the
+[native drawing scenarios](receipts/2026-11-25-document-opening-drawing-previews-3889/README.md).
+Home Recent highlights hovered rows and reveals the row actions control.
+The [native Recent runs](receipts/2026-11-26-home-recent-wayland-3898/README.md)
+verify the highlight and actions menu on Wayland and X11.
+Save As captures drawing sheets using the workspace renderer on an offscreen
+surface. The [capture rerun](receipts/2026-11-25-document-opening-sheet-capture-3889/README.md)
+checks the saved paper pixels and the reopened preview.
+
+The GUI frame tests exercise menu choices, keyboard submit, mouse and keyboard
+cancellation, empty paths, document switches, and canonical request fields. They
+drain pending input, layout, and navigation transitions before typing. Host
+tests use the named memory-file adapter to check save/close/reopen and refusal
+paths. The native authoring test creates and edits the parameter-driven
+rectangle, cancels a Save, saves it, closes its document, and reopens it through
+menu and text input. It verifies the restored dimensions and zero DOF. A second
+native test covers the Save notice before GUI initialization.
+
+Linux live acceptance uses OS mouse and keyboard input with the real MCPBridge
+loaded. It creates the Part and rectangle, changes `size` from 10 mm to 20 mm,
+uses Undo and Redo, saves a package, closes its document, and reopens it through
+the File menu. It repeats Open in a fresh desktop. Read-only MCP queries confirm a healthy zero-DOF sketch,
+`size = 20 mm`, and both dimension expressions still equal to `size`. MCP PNG
+captures show the dialog and restored rectangle. Window-close protocol requests
+retire the saved desktop and add-in normally. Each isolated Xvfb server closes
+after its driver exits.
+
+The initial OS driver used Xlib symbol-name lookup for literal punctuation.
+Xlib returned `NoSymbol` for `/`, `-`, and `.`, so the entered name lost those
+characters. The driver now uses character keysyms for single characters and
+rejects `NoSymbol`. The two malformed test files were removed, and the corrected
+run published the exact selected path. No native text-input fallback was added.
+
+These are path-entry dialogs. Directory browsing, recent-file menus, complete
+ribbon parity, and the general Extrude UI remain open. The production profile
+prerequisite is tracked in Martensite #390.

@@ -1,0 +1,42 @@
+wayland
+  Pick and clear disjoint solid profiles independently
+9 steps (9 passed)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1794 filtered out; finished in 11.66s
+  Pick more than one closed profile directly for Extrude
+8 steps (8 passed)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1794 filtered out; finished in 8.26s
+  extrusion-15 Cut selects inward direction and supports history
+9 steps (9 passed)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1794 filtered out; finished in 12.24s
+  native_extrude_commits_multiple_bodies_in_one_feature_and_reopens
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1794 filtered out; finished in 10.92s
+
+x11
+  Pick and clear disjoint solid profiles independently
+9 steps (9 passed)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1794 filtered out; finished in 12.75s
+  Pick more than one closed profile directly for Extrude
+8 steps (8 passed)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1794 filtered out; finished in 8.48s
+  extrusion-15 Cut selects inward direction and supports history
+9 steps (9 passed)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1794 filtered out; finished in 12.44s
+  native_extrude_commits_multiple_bodies_in_one_feature_and_reopens
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1794 filtered out; finished in 11.85s
+
+GUI Extrude ribbon
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 43 filtered out; finished in 12.03s
+
+Automation library
+test result: ok. 77 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.85s
+
+Named face selection cache
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 1793 filtered out; finished in 0.00s
+
+Clippy, all targets and features for model, session, automation, GUI and head
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 41.63s
+
+SHA-256 of the published scenario and CAD fixtures
+eb9f67a67883299bc561b30c0573c13072eedd72e18989c3a1519433f4c84df2  features/solid-model/extrusion/extrusion.feature
+d714bc2237823cb4bdbe1a74f89631f46d5ba2492515e16c1ddd6a1ec10a63e0  fixtures/cad/extrusion/extrusion-dimension-pick.opd
+427f7eb5427e8eac6472eba09c0205ef3de5a6a3c967e43f14c81ec6f2e5dfb8  fixtures/cad/region-properties/two-rectangles.opd

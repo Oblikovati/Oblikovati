@@ -1,0 +1,66 @@
+....................................................................................remote: error: inflate: data stream error (incorrect header check)        
+remote: error: unable to unpack c7654c636f53f0c2b65e05071b365d398b338909 header        
+remote: error: inflate: data stream error (incorrect header check)        
+remote: error: unable to unpack c7654c636f53f0c2b65e05071b365d398b338909 header        
+remote: fatal: loose object c7654c636f53f0c2b65e05071b365d398b338909 (stored in ./objects/c7/654c636f53f0c2b65e05071b365d398b338909) is corrupt        
+error: git upload-pack: git-pack-objects died with error.
+fatal: git upload-pack: aborting due to possible repository corruption on the remote side.
+remote: aborting due to possible repository corruption on the remote side.\0
+fatal: protocol error: bad pack header
+.....    Updating git repository `file:///tmp/tmpf53p2nq8/dependency`
+     Locking 1 package to highest compatible version
+   Compiling witness v1.0.0 (file:///tmp/tmpf53p2nq8/dependency?rev=c8e5aedb00609d1c305ca7624e26a6bee8769174#c8e5aedb)
+   Compiling oblikovati-build v0.1.0 (/tmp/oblikovati-capture-inventory-rcq913d_/source)
+    Finished `dev` profile [unoptimized] target(s) in 0.09s
+     Running `/tmp/oblikovati-capture-inventory-rcq913d_/target/debug/oblikovati-build scenario-ledger /tmp/tmpf53p2nq8/tool 1111111111111111111111111111111111111111`
+    Updating git repository `file:///tmp/tmp8t69406_/dependency`
+     Locking 1 package to highest compatible version
+   Compiling witness v1.0.0 (file:///tmp/tmp8t69406_/dependency?tag=test-ref#a16a1934)
+   Compiling oblikovati-build v0.1.0 (/tmp/oblikovati-capture-inventory-fsqiol7n/source)
+    Finished `dev` profile [unoptimized] target(s) in 0.08s
+     Running `/tmp/oblikovati-capture-inventory-fsqiol7n/target/debug/oblikovati-build scenario-ledger /tmp/tmp8t69406_/tool 1111111111111111111111111111111111111111`
+    Updating git repository `file:///tmp/tmps4ox255m/dependency`
+     Locking 1 package to highest compatible version
+   Compiling witness v1.0.0 (file:///tmp/tmps4ox255m/dependency?branch=test-ref#a16a1934)
+   Compiling oblikovati-build v0.1.0 (/tmp/oblikovati-capture-inventory-djdn541z/source)
+    Finished `dev` profile [unoptimized] target(s) in 0.09s
+     Running `/tmp/oblikovati-capture-inventory-djdn541z/target/debug/oblikovati-build scenario-ledger /tmp/tmps4ox255m/tool 1111111111111111111111111111111111111111`
+..   Compiling oblikovati-build v0.1.0 (/tmp/oblikovati-capture-inventory-t4mizsqv/source)
+warning: unexpected `cfg` condition name: `probe_override`
+ --> src/main.rs:1:27
+  |
+1 | fn main() { assert!(!cfg!(probe_override)); println!("trusted inventory"); }
+  |                           ^^^^^^^^^^^^^^
+  |
+  = help: expected names are: `docsrs`, `feature`, and `test` and 34 more
+  = help: consider using a Cargo feature instead
+  = help: or consider adding in `Cargo.toml` the `check-cfg` lint config for the lint:
+           [lints.rust]
+           unexpected_cfgs = { level = "warn", check-cfg = ['cfg(probe_override)'] }
+  = help: or consider adding `println!("cargo::rustc-check-cfg=cfg(probe_override)");` to the top of the `build.rs`
+  = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+  = note: `#[warn(unexpected_cfgs)]` on by default
+
+warning: `oblikovati-build` (bin "oblikovati-build") generated 1 warning
+    Finished `dev` profile [unoptimized] target(s) in 0.07s
+     Running `/tmp/oblikovati-capture-inventory-t4mizsqv/target/debug/oblikovati-build scenario-ledger /tmp/tmphph4l81u/repo 1111111111111111111111111111111111111111`
+.........   Compiling itoa v1.0.18
+   Compiling oblikovati-build v0.1.0 (/tmp/oblikovati-capture-inventory-7_yvwiag/source)
+    Finished `dev` profile [unoptimized] target(s) in 0.14s
+     Running `/tmp/oblikovati-capture-inventory-7_yvwiag/target/debug/oblikovati-build scenario-ledger /tmp/tmpimv6g8ey/repo 1111111111111111111111111111111111111111`
+.....................................................................................................................................................................Switched to a new branch 'other'
+.............................................................................
+----------------------------------------------------------------------
+Ran 342 tests in 7.447s
+
+OK
+{
+  "scenario": "one",
+  "changed_inputs": [],
+  "runtime_coverage": "unbounded",
+  "changed_runtime_inputs": null,
+  "receipt_reuse": {
+    "reusable": false,
+    "reason": "runtime inputs are not bounded"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "kind": "partial-native-selection-priority",
+  "application_commit": "77e8fb9633c426a54ea3d8aa26d16861189e9cc6",
+  "issue": "https://github.com/Oblikovati/Oblikovati/issues/3890",
+  "environment": "Linux Xvfb 1920x1200 Vulkan Lavapipe",
+  "results": {
+    "candidate_arbitration": "6 passed",
+    "owner_browser": "19 passed",
+    "native_browser": "3 passed",
+    "selection_filter_gui": "4 passed",
+    "native_cube_journey": "1 passed",
+    "clippy": "head and gui all targets passed with -D warnings"
+  },
+  "limitations": [
+    "Part body and face candidates only; occurrence and face do not compete.",
+    "Work-plane and other snap producers, persistent priorities, and depth-specific perspective scaling remain open.",
+    "Native measure tool was started through owner API; its selection was a native viewport click.",
+    "The full gate and platform matrix have not passed."
+  ]
+}

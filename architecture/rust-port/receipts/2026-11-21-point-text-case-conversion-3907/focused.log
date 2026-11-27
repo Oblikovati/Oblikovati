@@ -1,0 +1,9 @@
+    Blocking waiting for file lock on build directory
+   Compiling oblikovati-head v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/crates/head)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2m 00s
+     Running unittests src/lib.rs (target/debug/deps/oblikovati_head-422152f5f0046b19)
+
+running 1 test
+test native::gui_loop_tests::application_bdd::ribbon_command_availability::text_native::text_case::native_uppercase_only_changes_selected_sketch_text ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1611 filtered out; finished in 45.29s

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Extrude a profile in a part document: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature" package="testsuite/Feature: Extrude a profile in a part document: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-27T02:56:26.78056237Z" time="5.441627185"><testcase name="Scenario: extrusion-live-01 Reopen Extrusion1 and cancel its edit: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature:248:3" time="5.441627185"><system-out><![CDATA[  Scenario: extrusion-live-01 Reopen Extrusion1 and cancel its edit
+   ✔> Given the MCAD Software is displaying a part in the solid modeling workspace
+   ✔> And the viewport pointer is idle
+   ✔  Given `fixtures/cad/extrusion/extrusion-rect-20mm.opd` is open with Extrusion1 and one solid body
+   ✔  When the user double-clicks Extrusion1 in the model browser
+   ✔  Then the Extrusion panel restores 1 Profile from 1 Sketch Plane
+   ✔  And Distance A is 20 mm and a body name is displayed
+   ✔  And Taper A is 0 degrees with Match Shape checked and disabled
+   ✔  And a 20 mm viewport preview appears
+   ✔  When the user cancels the edit
+   ✔  Then the panel closes and the committed solid remains unchanged
+]]></system-out></testcase></testsuite></testsuites>

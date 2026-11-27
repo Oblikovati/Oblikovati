@@ -1,0 +1,29 @@
+schemaVersion: 3
+documentType: 1
+model:
+  planarSketches:
+    sketchHighWater: 9
+    entityHighWater: 15
+    recipe:
+      version: 1
+      sketches:
+        - id: 3
+          name: 'Mount: 日本語'
+          plane:
+            origin: [0.0, 0.0, 0.0]
+            x_axis: [1.0, 0.0, 0.0]
+            y_axis: [0.0, 0.0, 1.0]
+          plane_options:
+            version: 1
+            unit_deviation: 1e-9
+            angular_deviation: 1e-9
+          geometry:
+            version: 1
+            points:
+              - {id: 2, position: [0.0, 0.0]}
+              - {id: 4, position: [4.0, 0.0]}
+            lines:
+              - {id: 7, endpoints: [2, 4]}
+            circles: []
+            arcs: []
+            constraints: []

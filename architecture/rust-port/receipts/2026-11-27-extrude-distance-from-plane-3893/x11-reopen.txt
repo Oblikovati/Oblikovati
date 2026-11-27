@@ -1,0 +1,6 @@
+running 4 tests
+test native::gui_loop_tests::application_bdd::solid_extrusion::reference_extent::distance_from_plane::numeric_extrusion_from_plane_commits_and_reopens ... ok
+test native::gui_loop_tests::application_bdd::solid_extrusion::reference_extent::from_dropdown_restores_the_numeric_preview ... ok
+test native::gui_loop_tests::application_bdd::solid_extrusion::reference_extent::plane_reference::browser_plane_picks_preview_and_commit_reference_extent ... ok
+test native::gui_loop_tests::application_bdd::solid_extrusion::reference_extent::viewport_face_pick_previews_and_commits_reference_extent ... ok
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 1785 filtered out; finished in 33.49s

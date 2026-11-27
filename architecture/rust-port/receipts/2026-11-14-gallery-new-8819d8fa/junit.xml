@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Create a document from a template: tmp/obk-gallery-new/features/application/document-creation/document-creation.feature" package="testsuite/Feature: Create a document from a template: tmp/obk-gallery-new/features/application/document-creation/document-creation.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T18:46:33.346444777Z" time="2.668266294"><testcase name="Scenario: Collapse and expand a template group: tmp/obk-gallery-new/features/application/document-creation/document-creation.feature:91:3" time="2.668266294"><system-out><![CDATA[  Scenario: Collapse and expand a template group
+   ✔  Given the new-document template chooser is open in the MCAD Software
+   ✔  And the metric part template group is expanded
+   ✔  And a sheet-metal part template is selected
+   ✔  When the user collapses the part template group
+   ✔  Then its template tiles are hidden
+   ✔  And the assembly and drawing groups remain visible
+   ✔  And the selected template's details remain displayed
+   ✔  When the user expands the part template group
+   ✔  Then its template tiles are visible again
+   ✔  And the sheet-metal template remains selected
+]]></system-out></testcase></testsuite></testsuites>

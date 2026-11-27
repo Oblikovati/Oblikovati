@@ -1,0 +1,14 @@
+{
+  "source_feature_sha256": "2f5ff90bae8bd0246b49b0c5c3c930af0ae6ba5409c86d5f416ac9be557bb5bc",
+  "source_revision": null,
+  "application_base": "82eea0786",
+  "application_changes_commit": "c453e3cde",
+  "provenance": "Diagnostic: unversioned copied scenario source and working-tree build; edge and tab tests preceded later test-only changes.",
+  "results": {
+    "resize": "1 scenario, 8 steps passed",
+    "edge_tests": "left, top and bottom tool dock targets passed; left target is beside the custom model browser",
+    "tab_test": "two tool windows joined one dock and each tab was selected",
+    "float_test": "docked tool floated and redocked"
+  },
+  "environment": "Linux Xvfb with Mesa lavapipe"
+}

@@ -1,0 +1,16 @@
+Wayland range selection
+test native::gui_loop_tests::application_bdd::ribbon_customization::list_keyboard_steps::shift_selection_keeps_the_range_endpoint_visible_and_the_target_clean ... ok
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1728 filtered out; finished in 9.07s
+
+X11 range selection
+test native::gui_loop_tests::application_bdd::ribbon_customization::list_keyboard_steps::shift_selection_keeps_the_range_endpoint_visible_and_the_target_clean ... ok
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1728 filtered out; finished in 9.94s
+
+Wayland source navigation
+test native::gui_loop_tests::application_bdd::ribbon_customization::native_tests::available_commands_support_keyboard_navigation_and_scrolling ... ok
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1728 filtered out; finished in 3.54s
+
+X11 source navigation and range selection
+test native::gui_loop_tests::application_bdd::ribbon_customization::list_keyboard_steps::shift_selection_keeps_the_range_endpoint_visible_and_the_target_clean ... ok
+test native::gui_loop_tests::application_bdd::ribbon_customization::native_tests::available_commands_support_keyboard_navigation_and_scrolling ... ok
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 1727 filtered out; finished in 15.03s

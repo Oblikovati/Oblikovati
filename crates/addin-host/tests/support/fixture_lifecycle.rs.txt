@@ -1,0 +1,94 @@
+// SPDX-License-Identifier: GPL-2.0-only
+use std::{collections::BTreeMap, ffi::CStr, sync::{Mutex, OnceLock, atomic::{AtomicUsize, Ordering}}};
+static CLEANUP_CALLBACKS: Mutex<Option<(ffi::ObkHostCall, ffi::ObkHostFree)>> = Mutex::new(None);
+static CLEANUPS: AtomicUsize = AtomicUsize::new(0);
+static AFFINITY: Mutex<Option<std::thread::ThreadId>> = Mutex::new(None);
+static RELEASES: AtomicUsize = AtomicUsize::new(0);
+#[derive(Default)]
+struct FixtureBuffers { live: BTreeMap<usize, Box<[u8]>>, retired: Vec<Box<[u8]>> }
+fn fixture_buffers() -> &'static Mutex<FixtureBuffers> {
+    static BUFFERS: OnceLock<Mutex<FixtureBuffers>> = OnceLock::new();
+    BUFFERS.get_or_init(|| Mutex::new(FixtureBuffers::default()))
+}
+#[unsafe(no_mangle)]
+pub extern "C" fn ObkAddInActivate(call: Option<ffi::ObkHostCall>, free: Option<ffi::ObkHostFree>) -> c_int {
+    if cfg!(check_affinity) && !fixture_thread_matches() { return ffi::OBK_ERR; }
+    if cfg!(deactivate_echo) {
+        let (Some(call), Some(free)) = (call, free) else { return ffi::OBK_ERR; };
+        *CLEANUP_CALLBACKS.lock().unwrap() = Some((call, free));
+    }
+    if cfg!(activate_error) { return ffi::OBK_ERR; }
+    if cfg!(callback_echo) { return unsafe { fixture_host_echo(call, free) }; }
+    ffi::OBK_OK
+}
+#[unsafe(no_mangle)]
+pub extern "C" fn ObkAddInDeactivate() -> c_int {
+    if cfg!(check_affinity) && !fixture_thread_matches() { return ffi::OBK_ERR; }
+    if cfg!(deactivate_echo) {
+        let callbacks = *CLEANUP_CALLBACKS.lock().unwrap();
+        let Some((call, free)) = callbacks else { return ffi::OBK_ERR; };
+        return unsafe { fixture_host_echo(Some(call), Some(free)) };
+    }
+    if cfg!(deactivate_error) { return ffi::OBK_ERR; }
+    if cfg!(deactivate_once_error) && CLEANUPS.fetch_add(1, Ordering::SeqCst) == 0 { return ffi::OBK_ERR; }
+    ffi::OBK_OK
+}
+#[cfg(not(missing_notify))]
+#[unsafe(no_mangle)]
+pub extern "C" fn ObkAddInNotify(pointer: *const u8, length: c_int) -> c_int {
+    if cfg!(check_affinity) && !fixture_thread_matches() { return ffi::OBK_ERR; }
+    if cfg!(notify_error) || length < 0 { return ffi::OBK_ERR; }
+    if (length == 0) != pointer.is_null() { return ffi::OBK_ERR; }
+    ffi::OBK_OK
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn ObkFree(pointer: *mut u8) {
+    let mut buffers = fixture_buffers().lock().unwrap();
+    let mut bytes = buffers.live.remove(&(pointer as usize)).expect("matching add-in allocator");
+    bytes.fill(0xee);
+    buffers.retired.push(bytes);
+    RELEASES.fetch_add(1, Ordering::SeqCst);
+}
+#[cfg(automation)]
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn ObkAddInAutomation(method: *const c_char, request: *const u8, length: c_int, reply: *mut *mut u8, reply_length: *mut c_int) -> c_int {
+    if cfg!(check_affinity) && !fixture_thread_matches() { return ffi::OBK_ERR; }
+    let name = unsafe { CStr::from_ptr(method) }.to_bytes();
+    if name == b"null_nonzero" { unsafe { *reply = std::ptr::null_mut(); *reply_length = 3; } return ffi::OBK_OK; }
+    if name == b"empty" { unsafe { *reply = std::ptr::null_mut(); *reply_length = 0; } return ffi::OBK_OK; }
+    let bytes = fixture_reply(name, request, length);
+    let mut bytes = bytes.into_boxed_slice();
+    unsafe { *reply = bytes.as_mut_ptr(); *reply_length = bytes.len() as c_int; }
+    if name == b"negative" { unsafe { *reply_length = -1; } }
+    fixture_buffers().lock().unwrap().live.insert(bytes.as_mut_ptr() as usize, bytes);
+    if name == b"error" || name == b"bad_utf8" { return ffi::OBK_ERR; }
+    ffi::OBK_OK
+}
+fn fixture_reply(name: &[u8], request: *const u8, length: c_int) -> Vec<u8> {
+    match name {
+        b"free_count" => RELEASES.load(Ordering::SeqCst).to_string().into_bytes(),
+        b"error" => b"fixture refused".to_vec(),
+        b"bad_utf8" => vec![0xff],
+        b"zero" => Vec::new(),
+        _ if length == 0 => Vec::new(),
+        _ => unsafe { std::slice::from_raw_parts(request, length as usize) }.to_vec(),
+    }
+}
+const _: ffi::ObkAddInActivate = ObkAddInActivate;
+
+unsafe fn fixture_host_echo(call: Option<ffi::ObkHostCall>, free: Option<ffi::ObkHostFree>) -> c_int {
+    let (Some(call), Some(free)) = (call, free) else { return ffi::OBK_ERR; };
+    let mut response = std::ptr::null_mut();
+    let mut length = 0;
+    let status = unsafe { call(c"echo".as_ptr(), b"ping".as_ptr(), 4, &mut response, &mut length) };
+    let copied = if !response.is_null() && length > 0 { unsafe { std::slice::from_raw_parts(response, length as usize) }.to_vec() } else { Vec::new() };
+    if !response.is_null() { unsafe { free(response) }; }
+    if status == ffi::OBK_OK && copied == b"ping" { return ffi::OBK_OK; }
+    ffi::OBK_ERR
+}
+
+fn fixture_thread_matches() -> bool {
+    let current = std::thread::current().id();
+    let mut expected = AFFINITY.lock().unwrap();
+    *expected.get_or_insert(current) == current
+}

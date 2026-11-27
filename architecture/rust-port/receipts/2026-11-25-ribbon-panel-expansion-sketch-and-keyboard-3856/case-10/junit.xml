@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" package="testsuite/Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:19:28.765622852Z" time="20.411792288"><testcase name="Scenario: Close an expanded Modify panel using its title: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:134:3" time="20.411792288"><system-out><![CDATA[  Scenario: Close an expanded Modify panel using its title
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open and active
+   ✔  And the 3D Model Modify panel is expanded and unpinned
+   ✔  When the user clicks the Modify title at the bottom of the expanded area
+   ✔  Then the additional command area closes
+   ✔  And the 3D Model ribbon and part remain visible
+]]></system-out></testcase></testsuite></testsuites>

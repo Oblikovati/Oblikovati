@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon docking: target/native-scratch.HSqCy5/current-ribbon-docking-source/features/application/ribbon-docking/ribbon-docking.feature" package="testsuite/Feature: Ribbon docking: target/native-scratch.HSqCy5/current-ribbon-docking-source/features/application/ribbon-docking/ribbon-docking.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T23:41:37.721245759Z" time="29.275990982"><testcase name="Scenario: Inspect available ribbon docking positions: target/native-scratch.HSqCy5/current-ribbon-docking-source/features/application/ribbon-docking/ribbon-docking.feature:29:3" time="29.275990982"><system-out><![CDATA[  Scenario: Inspect available ribbon docking positions
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part is active in the MCAD Software
+   ✔  And the full 3D Model ribbon is docked at the top
+   ✔  When the user right-clicks the active 3D Model tab
+   ✔  And opens Docking Positions
+   ✔  Then the submenu offers Top, Left and Right
+   ✔  And Top is checked
+   ✔  When the user presses Escape
+   ✔  Then the Docking Positions submenu closes and the context menu remains open
+   ✔  When the user presses Escape again
+   ✔  Then the context menu closes and the 3D Model ribbon remains docked at the top
+]]></system-out></testcase></testsuite></testsuites>

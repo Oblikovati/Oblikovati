@@ -1,0 +1,24 @@
+   Compiling oblikovati-head v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/docking-menu-4133/crates/head)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 52.12s
+     Running unittests src/lib.rs (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/target/debug/deps/oblikovati_head-a63049949246ef13)
+
+running 1 test
+Feature: Dockable workspace panels
+  Scenario: Join panels in one dock region as selectable tabs
+   ✔  Given a part document is active in the MCAD Software
+   ✔  And two dockable panels are open in separate workspace regions
+   ✔  When the user drags one panel onto the center of the other panel's dock region
+   ✔  Then the destination region indicates a tab insertion target
+   ✔  When the user releases the panel over that target
+   ✔  Then both panels occupy the same dock region as tabs
+   ✔  And one panel is active while the other remains available
+   ✔  When the user selects the other panel tab
+   ✔  Then its contents replace the active panel contents in that region
+   ✔  And the viewport and active document remain available
+[Summary]
+1 feature
+1 scenario (1 passed)
+10 steps (10 passed)
+test native::gui_loop_tests::application_bdd::application_scenarios_use_the_native_window ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1546 filtered out; finished in 34.14s

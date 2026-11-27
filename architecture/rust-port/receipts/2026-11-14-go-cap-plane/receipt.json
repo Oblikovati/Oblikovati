@@ -1,0 +1,22 @@
+{
+  "kind": "Go dependent end-cap plane fixture and Rust candidate replay",
+  "go_application_commit": "aa8297d1b0ac33c024f19e54821536d76e8a447a",
+  "rust_base_commit": "46357c724",
+  "go_version": "go1.27.0 linux/amd64",
+  "source_fixture": "architecture/rust-port/receipts/2026-11-14-go-cube-fixture/go-cube.obk",
+  "go_command": "Run generate.go in the Go application checkout with the source fixture and an output path.",
+  "rust_command": "cargo test --locked -p oblikovati-martensite --test sketch_prism legacy_cap_witness",
+  "observations": [
+    "Go creates, saves, reopens and edits the cube with an end-cap offset plane.",
+    "Rust converts the Go cap reference and plane into a candidate, verifies its named body, and checks the plane frame and cap area through edit, undo, redo and native package reopen."
+  ],
+  "limitations": [
+    "The Rust test prepares the prism candidate and adopts the resulting definitions in a test history; it does not open or migrate the entire Go package through the application.",
+    "The Go saved extrusion has fixed depth. Side-face key migration and solver-precision qualification remain open."
+  ],
+  "artifacts": {
+    "generate.go": "490bee10c78ed6e63a47251ca855f4d0a02b5190747afd21585fa5d503fba9c6",
+    "cube-with-cap-plane.obk": "e9b574cbce39e0229cfef324dd90f965333595a587b3695df5e184bdeb078c05",
+    "observations.json": "171ec014302c177e19f0045bff6dd09875774f10c8ade3f84ff33103bd08deb5"
+  }
+}

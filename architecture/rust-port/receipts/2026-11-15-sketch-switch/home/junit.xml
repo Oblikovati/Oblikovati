@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Open document tabs: tmp/obk-sketch-switch-source/features/application/document-tabs/document-tabs.feature" package="testsuite/Feature: Open document tabs: tmp/obk-sketch-switch-source/features/application/document-tabs/document-tabs.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-15T15:33:46.173996886Z" time="10.321441144"><testcase name="Scenario: Visit Home without leaving an active sketch: tmp/obk-sketch-switch-source/features/application/document-tabs/document-tabs.feature:285:3" time="10.321441144"><system-out><![CDATA[  Scenario: Visit Home without leaving an active sketch
+   ✔  Given a part is open in the MCAD Software
+   ✔  And the part has an active sketch editing environment
+   ✔  When the user chooses Home from the View tab's Switch menu
+   ✔  Then the Home workspace displays its recent documents
+   ✔  And the part remains available in the document tab strip
+   ✔  When the user selects the part's document tab
+   ✔  Then the part's sketch viewport and model browser are displayed
+   ✔  And the sketch editing environment remains active
+]]></system-out></testcase></testsuite></testsuites>

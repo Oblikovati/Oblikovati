@@ -25,6 +25,9 @@ occurrences can refer to the same component while keeping distinct identities.
 **Reference key**: A persistent name for a model entity in its document and,
 where required, occurrence context. It identifies the entity across recompute.
 
+**Construction role**: An entity’s stable function in the operation that created
+it, such as a sweep start face, end face, or side from a particular profile edge.
+
 **Provenance**: The generating, modifying, and deleting relationships between
 an operation's input and output entities.
 
@@ -42,3 +45,34 @@ and directional properties where applicable.
 
 **Appearance**: The visual properties assigned to a model. An appearance does
 not determine its physical material properties.
+
+**Asset assignment**: An explicit choice of a material or appearance for a part,
+body, or face, within the relevant occurrence context.
+
+**Appearance override**: An explicit visual choice that takes precedence over
+the appearance associated with a physical material.
+
+**Datum**: A reference plane, axis, or point used to locate design geometry.
+A construction datum is tied to its consumers and can be removed when its last
+consumer is removed.
+
+**Ground constraint**: A sketch relation that holds each defining point of an
+entity at its current position. Grounding an ellipse holds its center, while
+its radii and orientation remain free.
+
+**Offset spline**: A derived curve at a signed distance from a named parent spline.
+A positive distance is to the left of the parent's forward direction; its
+geometric distance dimension measures the magnitude while retaining the side.
+
+**Defining point**: An owned sketch point that locates one or more curves.
+It does not have a standalone point marker of its own.
+
+**Standalone point marker**: An independently authored sketch point entity.
+It can also define curves, and remains when its last curve is removed.
+
+**Orphan defining point**: A defining point that no surviving curve requires.
+It is removed with its bound relations when geometry is deleted.
+
+**Exchange format**: An external CAD file representation used to transfer
+geometry and related design content. It is distinct from an Oblikovati native
+document that retains the editable recipe.

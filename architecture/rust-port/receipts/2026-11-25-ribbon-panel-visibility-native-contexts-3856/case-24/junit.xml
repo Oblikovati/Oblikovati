@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon panel visibility: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" package="testsuite/Feature: Ribbon panel visibility: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:06:46.885549306Z" time="47.40773235"><testcase name="Scenario: Hide and restore a panel while editing a sketch: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:343:3" time="47.40773235"><system-out><![CDATA[  Scenario: Hide and restore a panel while editing a sketch
+   ✔  Given `fixtures/cad/planar-sketch-empty-xy.opd` is open with Sketch1 being edited
+   ✔  And the full Sketch ribbon displays the Pattern panel and the Finish action
+   ✔  When the user right-clicks the Sketch tab
+   ✔  And the user opens Show Panels
+   ✔  Then Pattern is checked in the panel list
+   ✔  When the user selects Pattern
+   ✔  Then the menus close and the Pattern panel disappears from the ribbon
+   ✔  And the remaining ribbon panels reflow and Finish remains visible
+   ✔  When the user reopens Show Panels from the Sketch tab context menu
+   ✔  Then Pattern is unchecked
+   ✔  When the user selects Pattern
+   ✔  Then the Pattern panel returns to the Sketch ribbon
+   ✔  And Finish remains visible
+]]></system-out></testcase></testsuite></testsuites>

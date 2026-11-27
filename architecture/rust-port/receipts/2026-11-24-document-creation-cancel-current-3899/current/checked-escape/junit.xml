@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Cancel document creation: tmp/oblikovati-ribbon-relocated.RcZVDl/current-document-creation-cancel-source/features/application/document-creation/document-creation-cancel.feature" package="testsuite/Feature: Cancel document creation: tmp/oblikovati-ribbon-relocated.RcZVDl/current-document-creation-cancel-source/features/application/document-creation/document-creation-cancel.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T18:43:54.429163369Z" time="14.71730785"><testcase name="Scenario: Dismiss the template chooser with Escape: tmp/oblikovati-ribbon-relocated.RcZVDl/current-document-creation-cancel-source/features/application/document-creation/document-creation-cancel.feature:12:3" time="14.71730785"><system-out><![CDATA[  Scenario: Dismiss the template chooser with Escape
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is active with `Sketch1` visible in the MCAD Software
+   ✔  And the new-document template chooser is open
+   ✔  When the user presses Escape
+   ✔  Then the chooser closes
+   ✔  And the original part remains active
+   ✔  And its viewport and browser are displayed
+   ✔  And no new document tab is created
+]]></system-out></testcase></testsuite></testsuites>

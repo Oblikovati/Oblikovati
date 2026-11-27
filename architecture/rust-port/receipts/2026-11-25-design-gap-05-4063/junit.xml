@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Extrude a profile in a part document: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature" package="testsuite/Feature: Extrude a profile in a part document: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T10:03:26.703180462Z" time="41.233076287"><testcase name="Scenario: extrusion-12a Inspect the Distance A editor menu: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature:118:3" time="41.233076287"><system-out><![CDATA[  Scenario: extrusion-12a Inspect the Distance A editor menu
+   ✔> Given the MCAD Software is displaying a part in the solid modeling workspace
+   ✔> And the viewport pointer is idle
+   ✔  Given a copy of `fixtures/cad/extrusion/extrusion-rect-8mm.opd` is open with Edit Feature active
+   ✔  When the user opens the Distance A editor menu
+   ✔  Then it offers Measure, Select Feature Dimension, Parameters, Tolerance and List Parameters
+   ✔  When the user chooses List Parameters
+   ✔  Then a list of parameters available in the active part appears
+   ✔  When the user dismisses the list and clicks Cancel
+   ✔  Then the extrusion edit closes without changing the feature
+]]></system-out></testcase></testsuite></testsuites>

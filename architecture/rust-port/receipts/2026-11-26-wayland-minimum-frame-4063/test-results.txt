@@ -1,0 +1,40 @@
+Stock Weston 13 overshoot with native bindings
+[03:49:51.637058]  -> xdg_toplevel#8.set_min_size(640, 480)
+[03:49:54.550849]  -> xdg_toplevel#8.resize(wl_seat#9, 11, 10)
+[03:49:54.649012] xdg_toplevel#8.configure(102, 102, array[8])
+
+Private Weston 13 overshoot before resetting resize input state
+[03:56:35.760234]  -> xdg_toplevel#8.resize(wl_seat#9, 11, 10)
+[03:56:35.904605] xdg_toplevel#8.configure(640, 480, array[8])
+      Step panicked. Captured output: expected maximized=true
+
+Private Weston 13 overshoot with the pointer fix
+[03:57:27.186325]  -> xdg_toplevel#8.set_min_size(640, 480)
+[03:57:30.197783]  -> xdg_toplevel#8.resize(wl_seat#9, 11, 10)
+[03:57:30.297920] xdg_toplevel#8.configure(640, 480, array[8])
+[03:57:30.823329]  -> xdg_toplevel#8.set_maximized()
+[03:57:31.305500]  -> xdg_toplevel#8.unset_maximized()
+[03:57:31.649987]  -> xdg_toplevel#8.set_minimized()
+6 steps (6 passed)
+7 Layer 5 (pos 0x50000000):
+8 Oblikovati absent from displayed layers
+9 Layer 5 (pos 0x50000000):
+10 Layer 5 (pos 0x50000000):
+
+X11 overshoot with the pointer fix
+1 scenario (1 passed)
+6 steps (6 passed)
+
+Direct native close at minimum on stock Weston 13
+[03:59:05.649171] xdg_toplevel#8.configure(640, 480, array[8])
+[03:59:06.670291] xdg_toplevel#8.configure(640, 480, array[8])
+[03:59:07.199741]  -> xdg_toplevel#8.destroy()
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1733 filtered out; finished in 4.67s
+
+Direct native close at minimum on X11
+test native::gui_loop_tests::application_bdd::main_window_frame::native_close_at_minimum_size_exits_with_a_clean_part ... ok
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1733 filtered out; finished in 5.30s
+
+Wayland pointer unit tests and workspace Clippy
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 190 filtered out; finished in 0.00s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 16.87s

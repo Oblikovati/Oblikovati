@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:57:30.98367876Z" time="59.279198862"><testcase name="Scenario: Return to a command category after selecting a source row: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature:1253:3" time="59.279198862"><system-out><![CDATA[  Scenario: Return to a command category after selecting a source row
+   ✔> Given the MCAD Software starts with a writable copy of `fixtures/preferences/ribbon-normal` as its configuration directory
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part is active in the MCAD Software with the full 3D Model ribbon visible
+   ✔  And the Ribbon customization dialog shows All Commands and an empty Part 3D Model target
+   ✔  When the user selects "2D Sketches" in the available commands list
+   ✔  And the user changes the command source to Sketch Tab
+   ✔  And the user returns the command source to All Commands
+   ✔  And the user clicks the add command button
+   ✔  Then a "<Separator>" row appears in the target list
+   ✔  And "2D Sketches" is not added to the target list
+   ✔  And the target shows a pending-change marker
+   ✔  When the user cancels customization
+   ✔  Then the customization dialog closes
+]]></system-out></testcase></testsuite></testsuites>

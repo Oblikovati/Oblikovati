@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" package="testsuite/Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:22:34.547619872Z" time="41.812860274"><testcase name="Scenario: Select the current appearance from an expanded panel title: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:688:3" time="41.812860274"><system-out><![CDATA[  Scenario: Select the current appearance from an expanded panel title
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open and active
+   ✔  And the full 3D Model ribbon is at the top
+   ✔  And the ribbon appearance is "Normal"
+   ✔  And the Modify additional command area is open and unpinned
+   ✔  When the user right-clicks the lower Modify title and opens "Ribbon Appearance"
+   ✔  Then "Normal" is checked and the Modify additional commands remain visible
+   ✔  When the user selects the checked "Normal" option
+   ✔  Then the menus and Modify additional command area close
+   ✔  And the full ribbon remains visible with command labels
+]]></system-out></testcase></testsuite></testsuites>

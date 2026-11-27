@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-labelledby="t d">
+  <title id="t">Two-Point Rectangle</title>
+  <desc id="d">Axis-aligned rectangle defined by two opposing diagonal corner nodes.</desc>
+  <g id="layer-body">
+    <rect x="5.5" y="7.5" width="21" height="17" rx="1" fill="var(--accent-brand-subtle, rgba(129,114,250,0.12))" stroke="var(--icon-line-general, #D2D7E2)" stroke-width="1.75"/>
+  </g>
+  <g id="layer-accent">
+    <circle cx="5.5" cy="7.5" r="2.4" fill="var(--icon-line-active, #8172FA)" stroke="var(--icon-cutout, #121317)" stroke-width="0.7"/><circle cx="26.5" cy="24.5" r="2.4" fill="var(--accent-selection-bright, #2DD4BF)" stroke="var(--icon-cutout, #121317)" stroke-width="0.7"/>
+  </g>
+</svg>

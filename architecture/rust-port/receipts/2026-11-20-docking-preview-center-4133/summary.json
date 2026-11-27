@@ -1,0 +1,10 @@
+{
+  "kind": "unsealed focused diagnostic",
+  "application_base_commit": "6f4fa66a6",
+  "feature_sha256": "3a0703dc9df2a77830b6b90402210ba9dffd10a0e370763015a46904744fbfce",
+  "test_source_sha256": "8c97ac22cf560418088adbf6d980ae7493753fc832721eb032651790c35e80f7",
+  "scenario": "Join panels in one dock region as selectable tabs",
+  "scenarios_passed": 1,
+  "steps_passed": 10,
+  "limitations": "Focused run only; live scenario source is unversioned; the test build also included an unrelated unfinished native dock-menu test."
+}

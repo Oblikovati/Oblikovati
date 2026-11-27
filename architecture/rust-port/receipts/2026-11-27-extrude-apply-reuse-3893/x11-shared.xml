@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Properties panel for creating and editing a modeled feature: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/feature-properties/feature-properties.feature" package="testsuite/Feature: Properties panel for creating and editing a modeled feature: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/feature-properties/feature-properties.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-27T05:46:58.859325035Z" time="6.771298723"><testcase name="Rule: Dockable Properties commands reuse the Properties shell: Scenario: Reuse a sketch after Apply and create new: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/feature-properties/feature-properties.feature:122:5" time="6.771298723"><system-out><![CDATA[  Scenario: Reuse a sketch after Apply and create new
+   ✔  Given a part-feature draft uses one profile in a sketch with another eligible profile
+   ✔  And Keep sketches visible on (+) is checked in Advanced Settings
+   ✔  When the user clicks Apply and create new
+   ✔  Then the first feature is committed
+   ✔  And the sketch remains visible for selecting a profile for the next feature
+]]></system-out></testcase></testsuite></testsuites>

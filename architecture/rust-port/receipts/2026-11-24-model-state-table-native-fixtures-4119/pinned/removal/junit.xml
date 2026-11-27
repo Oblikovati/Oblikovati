@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T12:11:11.104111972Z" time="25.018393155"><testcase name="Scenario: Cancel removal of a model-state parameter column: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature:1306:3" time="25.018393155"><system-out><![CDATA[  Scenario: Cancel removal of a model-state parameter column
+   ✔  Given The MCAD Software has a model-state table containing parameter d0
+   ✔  And the d0 values for Primary, Capture State, and Copy State are 1 in, 1 in, and 2 in respectively
+   ✔  When the user selects d0 in the chosen parameters
+   ✔  And transfers it out of the chosen parameters
+   ✔  Then d0 is absent from the chosen parameters and the grid
+   ✔  And OK is enabled
+   ✔  When the user cancels and reopens the model-state table
+   ✔  Then d0 is present in the chosen parameters and the grid
+   ✔  And the d0 values for Primary, Capture State, and Copy State are 1 in, 1 in, and 2 in respectively
+]]></system-out></testcase></testsuite></testsuites>

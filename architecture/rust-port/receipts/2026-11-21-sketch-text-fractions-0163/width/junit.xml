@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Text: tmp/oblikovati-bdd-rhbFsC/checkout/features/sketch/text/scenario.feature" package="testsuite/Feature: Text: tmp/oblikovati-bdd-rhbFsC/checkout/features/sketch/text/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-21T00:45:39.949907386Z" time="74.582996428"><testcase name="Scenario: text-36 Reject zero width and recover the formatting editor: tmp/oblikovati-bdd-rhbFsC/checkout/features/sketch/text/scenario.feature:367:3" time="74.582996428"><system-out><![CDATA[  Scenario: text-36 Reject zero width and recover the formatting editor
+   ✔  Given the existing fraction editor shows width 50
+   ✔  When the user focuses width, select its value, enter 0, and press Tab
+   ✔  Then a separate out-of-expected-range warning appears
+   ✔  When the user acknowledges the warning
+   ✔  Then zero is selected for correction
+   ✔  When the user enters 5 then 0 and press Tab
+   ✔  Then width 50 is displayed without another warning
+]]></system-out></testcase></testsuite></testsuites>

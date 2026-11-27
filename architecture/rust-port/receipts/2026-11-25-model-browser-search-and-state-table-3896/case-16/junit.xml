@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:38:41.4683838Z" time="75.555460769"><testcase name="Scenario: Collapse and expands descendants of the solid bodies folder: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature:217:3" time="75.555460769"><system-out><![CDATA[  Scenario: Collapse and expands descendants of the solid bodies folder
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is active in the MCAD Software
+   ✔  And an active part in the MCAD Software has one solid body made by an extrusion from a sketch
+   ✔  And the Solid Bodies folder shows the body, its extrusion and nested sketch
+   ✔  When the user right-clicks Solid Bodies and chooses Collapse All Children
+   ✔  Then the body row remains visible under the folder
+   ✔  And the extrusion and sketch rows under the body are hidden
+   ✔  And the solid remains visible in the viewport
+   ✔  When the user right-clicks Solid Bodies and chooses Expand All Children
+   ✔  Then the body's extrusion and nested sketch rows are visible again
+   ✔  And the solid remains visible in the same apparent view
+]]></system-out></testcase></testsuite></testsuites>

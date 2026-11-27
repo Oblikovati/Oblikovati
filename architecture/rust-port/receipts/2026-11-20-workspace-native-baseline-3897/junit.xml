@@ -1,0 +1,366 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Workspace layout and panel visibility: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature" package="testsuite/Feature: Workspace layout and panel visibility: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature" tests="53" errors="0" failures="38" hostname="localhost" timestamp="2026-11-20T16:01:31.123445063Z" time="391.902216683"><testcase name="Scenario: Show the main regions of an active part workspace: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:8:3" time="10.985050187"><system-out><![CDATA[  Scenario: Show the main regions of an active part workspace
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is active in the MCAD Software
+   ✔  And the model browser is docked at the left
+   ✔  And the 3D Model ribbon is expanded at the top
+   ✔  Then the application controls occupy the top row
+   ✔  And the ribbon tabs appear below the application controls
+   ✔  And the active ribbon tab displays grouped commands below the tab row
+   ✔  And the model browser and viewport occupy the workspace below the ribbon
+   ✔  And the model browser shows the part hierarchy at the left
+   ✔  And the viewport displays the part to the right of the browser
+   ✔  And the document tab strip shows Home and the active part below the workspace
+   ✔  And the status area is visible along the bottom
+]]></system-out></testcase><testcase name="Scenario: Keep document tabs below the modeling workspace: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:22:3" time="11.37718125"><failure type="Step Panicked" message="Step panicked. Captured output: assertion `left == right` failed
+  left: Some(1)
+ right: None"/><system-out><![CDATA[  Scenario: Keep document tabs below the modeling workspace
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is active in the MCAD Software
+   ✔  And the ribbon and model browser are visible
+   ✔  When the user inspects the workspace layout
+   ✔  Then the document tab strip appears below the model browser and viewport
+   ✔  And the status area appears below the document tab strip
+   ✔  And no document tab strip separates the ribbon from the viewport
+   ✘  And the active document remains visible in the viewport
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:29:5
+      Matched: crates/head/src/../tests/application/workspace-layout/wireframe_tabs.rs:54:1
+      Step panicked. Captured output: assertion `left == right` failed
+        left: Some(1)
+       right: None
+      ApplicationWorld {
+          text: "W\nP\nZ\nv\nO\nv\nFRONT\nModel\nMenu\nSearch\ndocking-visible-solid-current<Primary>\nRepresentations\nModelState\n<Primary>\n1\nView\n<Primary>\nSolidBodies\nOrigin\nYZPlane\nXZPlane\nXYPlane\nXAxis\nYAxis\nZAxis\nCenterPoint\nParameters\nSketches\nFeatures\nExtrude1\nProfile\n[DOF0]\nEndofPart\nOpeneddocument1:/mnt/vininas-projects/MCAD-Scenarios/fixtures/cad/docking-visible-solid-current.opd\nRibbonDisplay\nv\nv\n...\ndocking-visible-solid-current\nFile\n3DModel\nSketch\nTools\nManage\nView\nAnnotate\nStart2DSketch\nSketch\nExtrude\nRevolve\nCreate\nHole\nFillet\nChamfer\nShell\nModifyv\nPlane\nv\nAxis\nPoint\nUCS\nWorkFeatures\nRectangular\nCircular\nPattern\nSimplify\nSimplificationv\nDocuments\nX\nY\nZ\nHome\ndocking-visible-solid-current<Primary>*",
+          ..
+      }
+]]></system-out></testcase><testcase name="Scenario: Keep the default model browser dock compact: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:32:3" time="12.514400398"><system-out><![CDATA[  Scenario: Keep the default model browser dock compact
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is active in the MCAD Software
+   ✔  And the model browser is docked at the left with its default width
+   ✔  When the user inspects the workspace proportions
+   ✔  Then the model browser occupies about one quarter of the available workspace width
+   ✔  And the viewport occupies the remaining width beside the browser
+   ✔  And the active part remains visible
+]]></system-out></testcase><testcase name="Scenario: Align the model browser and viewport to the workspace frame: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:41:3" time="11.69292709"><system-out><![CDATA[  Scenario: Align the model browser and viewport to the workspace frame
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is active in the MCAD Software
+   ✔  And the model browser is docked at the left
+   ✔  When the user inspects the workspace boundaries
+   ✔  Then the model browser begins at the left content edge directly below the ribbon
+   ✔  And the viewport begins at the browser's shared divider without an empty gutter
+   ✔  And the viewport fills the remaining content width
+   ✔  And the ribbon, browser, viewport and status area use aligned outer edges
+]]></system-out></testcase><testcase name="Scenario: Use consistent spacing within and between workspace regions: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:51:3" time="11.925933316"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Use consistent spacing within and between workspace regions
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is active in the MCAD Software
+   ✘  And the ribbon, model browser, viewport, document tabs and status area are visible
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:53:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Align the document tabs with the viewport instead of the browser: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:62:3" time="12.902061953"><system-out><![CDATA[  Scenario: Align the document tabs with the viewport instead of the browser
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is active in the MCAD Software
+   ✔  And the model browser is docked at the left
+   ✔  When the user inspects the bottom workspace rows
+   ✔  Then the browser extends to the status area above the bottom row
+   ✔  And the document tab strip begins at the viewport's left edge
+   ✔  And the document tab strip ends at the viewport's right edge
+   ✔  And no document tabs appear below the model browser
+   ✔  And the status area spans the full application width
+]]></system-out></testcase><testcase name="Scenario: Give quick access and ribbon tabs separate rows: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:73:3" time="13.262473279"><system-out><![CDATA[  Scenario: Give quick access and ribbon tabs separate rows
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is active in the MCAD Software
+   ✔  And the quick access toolbar is configured to appear above the ribbon
+   ✔  And the ribbon is docked at the top in its expanded Normal appearance
+   ✔  When the user selects the View ribbon tab
+   ✔  Then quick access remains in the top application bar alongside document context
+   ✔  And File appears at the leading edge of the ribbon tab row beneath that bar
+   ✔  And the ribbon tabs share that row with File
+   ✔  And the selected View tab is visually distinct from the other tabs
+   ✔  And the View command panels occupy a separate row beneath the tabs
+   ✔  And each visible panel title sits below its commands
+]]></system-out></testcase><testcase name="Scenario: Show the Tools tab once in the ribbon navigation row: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:86:3" time="12.253025299"><failure type="Step Panicked" message="Step panicked. Captured output: assertion failed: world.previous_document.is_some()"/><system-out><![CDATA[  Scenario: Show the Tools tab once in the ribbon navigation row
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is active in the MCAD Software
+   ✔  And the ribbon is docked at the top in its expanded Normal appearance
+   ✔  When the user inspects the ribbon navigation row
+   ✔  Then File and the command tabs share one row beneath the application bar
+   ✔  And the Tools ribbon tab appears once in that row
+   ✔  And no separate Tools menu appears before the ribbon tabs
+   ✘  And the active part remains displayed
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:93:5
+      Matched: crates/head/src/../tests/application/workspace-layout/wireframe_ribbon.rs:164:1
+      Step panicked. Captured output: assertion failed: world.previous_document.is_some()
+      ApplicationWorld {
+          text: "W\nP\nZ\nv\nO\nv\nFRONT\nModel\nMenu\nSearch\ndocking-visible-solid-current<Primary>\nRepresentations\nModelState\n<Primary>\n1\nView\n<Primary>\nSolidBodies\nOrigin\nYZPlane\nXZPlane\nXYPlane\nXAxis\nYAxis\nZAxis\nCenterPoint\nParameters\nSketches\nFeatures\nExtrude1\nProfile\n[DOF0]\nEndofPart\nOpeneddocument1:/mnt/vininas-projects/MCAD-Scenarios/fixtures/cad/docking-visible-solid-current.opd\nRibbonDisplay\nv\nv\n...\ndocking-visible-solid-current\nFile\n3DModel\nSketch\nTools\nManage\nView\nAnnotate\nStart2DSketch\nSketch\nExtrude\nRevolve\nCreate\nHole\nFillet\nChamfer\nShell\nModifyv\nPlane\nv\nAxis\nPoint\nUCS\nWorkFeatures\nRectangular\nCircular\nPattern\nSimplify\nSimplificationv\nDocuments\nX\nY\nZ\nHome\ndocking-visible-solid-current<Primary>*",
+          ..
+      }
+]]></system-out></testcase><testcase name="Scenario: Switch the ribbon to the View tab: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:95:3" time="6.283269722"><system-out><![CDATA[  Scenario: Switch the ribbon to the View tab
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open in the MCAD Software
+   ✔  And the 3D Model ribbon tab is active
+   ✔  When the user selects the View ribbon tab
+   ✔  Then the ribbon displays Visibility, Appearance and Windows panels
+   ✔  And the viewport navigation controls remain at the right edge
+   ✔  And the active document remains displayed
+]]></system-out></testcase><testcase name="Scenario: Inspect the View tab user interface options: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:103:3" time="6.037923522"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Inspect the View tab user interface options
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open in the MCAD Software
+   ✘  And the View ribbon tab is active
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:105:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Hide and restore the model browser: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:112:3" time="7.806188281"><system-out><![CDATA[  Scenario: Hide and restore the model browser
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open in the MCAD Software
+   ✔  And the model browser is visible at the left of the workspace
+   ✔  When the user opens the User Interface menu from the View ribbon tab
+   ✔  And the user clears the Model Browser option
+   ✔  Then the model browser is hidden
+   ✔  And the viewport extends into the space it occupied
+   ✔  When the user reopens the User Interface menu
+   ✔  Then the Model Browser option is unchecked
+   ✔  When the user selects the Model Browser option again
+   ✔  Then the model browser returns to the left of the workspace
+   ✔  When the user reopens the User Interface menu
+   ✔  Then the Model Browser option is checked
+]]></system-out></testcase><testcase name="Scenario: Float and redock the model browser: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:127:3" time="20.965114428"><system-out><![CDATA[  Scenario: Float and redock the model browser
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open in the MCAD Software
+   ✔  And the model browser is docked to the left edge of the workspace
+   ✔  When the user drags the model browser by its header into the viewport
+   ✔  Then the model browser becomes a floating panel over the viewport
+   ✔  And the viewport occupies the space previously used by the docked browser
+   ✔  When the user drags the floating browser by its header to the left edge of the workspace
+   ✔  Then the model browser docks at the left edge
+   ✔  And the viewport occupies the remaining workspace
+]]></system-out></testcase><testcase name="Scenario: Move the model browser between side docks: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:138:3" time="22.738221876"><system-out><![CDATA[  Scenario: Move the model browser between side docks
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open in the MCAD Software
+   ✔  And the model browser is docked to the left edge of the workspace
+   ✔  When the user drags its header to the right edge of the workspace
+   ✔  Then the model browser docks at the right edge
+   ✔  And the viewport occupies the workspace to its left
+   ✔  When the user drags its header to the left edge of the workspace
+   ✔  Then the model browser docks at the left edge
+]]></system-out></testcase><testcase name="Scenario: Resize the docked model browser: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:148:3" time="15.657943388"><system-out><![CDATA[  Scenario: Resize the docked model browser
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open in the MCAD Software
+   ✔  And the model browser is docked to the left of the viewport
+   ✔  When the user drags the boundary between the model browser and viewport to the right
+   ✔  Then the model browser becomes wider
+   ✔  And the viewport becomes narrower
+   ✔  And the document and model tree remain displayed
+   ✔  When the user drags the boundary back to its original position
+   ✔  Then the model browser and viewport return to their previous widths
+]]></system-out></testcase><testcase name="Scenario: Inspect the model browser menu: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:158:3" time="8.522065441"><system-out><![CDATA[  Scenario: Inspect the model browser menu
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open in the MCAD Software
+   ✔  And the model browser is visible
+   ✔  When the user opens the model browser menu
+   ✔  Then the menu offers Autoscroll, Expand All and Collapse All
+   ✔  And it offers Find, Display Preferences and Help
+]]></system-out></testcase><testcase name="Scenario: Open and close an empty browser search in a part: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:165:3" time="10.604325468"><system-out><![CDATA[  Scenario: Open and close an empty browser search in a part
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open in the MCAD Software
+   ✔  And the model browser is visible with no search field open
+   ✔  When the user opens browser search
+   ✔  Then an empty search field appears beneath the browser header
+   ✔  And the field shows the placeholder "Type Keyword"
+   ✔  And the browser tree and solid remain visible
+   ✔  When the user closes the empty search field
+   ✔  Then the search field is hidden
+   ✔  And the browser tree and solid remain visible
+]]></system-out></testcase><testcase name="Scenario: Search the Model tree from another active dock tab: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:177:3" time="4.144679206"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Search the Model tree from another active dock tab
+   ✘  Given `fixtures/cad/workspace-layout-points.opd` is open in the MCAD Software
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:178:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Collapse and expands model browser branches: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:190:3" time="4.122738348"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Collapse and expands model browser branches
+   ✘  Given `fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software with nested model browser branches
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:191:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Collapse and expands a feature branch: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:202:3" time="4.108127728"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Collapse and expands a feature branch
+   ✘  Given `fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software with an expanded Extrusion1 branch
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:203:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Filter model browser entries by name: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:213:3" time="4.223073251"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Filter model browser entries by name
+   ✘  Given `fixtures/cad/workspace-layout-points.opd` is open in the MCAD Software with multiple work points and other features
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:214:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Show an empty browser search result: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:228:3" time="8.917636167"><failure type="Step Panicked" message="Step panicked. Captured output: expected the query in the field"/><system-out><![CDATA[  Scenario: Show an empty browser search result
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open in the MCAD Software
+   ✔  And the model browser search field is open
+   ✔  When the user enters "zzq-nomatch"
+   ✔  Then the browser shows a no-results message instead of feature rows
+   ✘  And the search query remains visible in the field
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:233:5
+      Matched: crates/head/src/../tests/application/refinements.rs:356:1
+      Step panicked. Captured output: expected the query in the field
+      ApplicationWorld {
+          text: "40\n30\nW\nP\nZ\nv\nO\nv\nFRONT\nModel\nMenu\nSearch\nzzq-nomatch\nx\ndocking-visible-solid-current<Primary>\nNomatchingentries\nOpeneddocument1:/mnt/vininas-projects/MCAD-Scenarios/fixtures/cad/docking-visible-solid-current.opd\nRibbonDisplay\nv\nv\n...\ndocking-visible-solid-current\nFile\n3DModel\nSketch\nTools\nManage\nView\nAnnotate\nStart2DSketch\nSketch\nExtrude\nRevolve\nCreate\nHole\nFillet\nChamfer\nShell\nModifyv\nPlane\nv\nAxis\nPoint\nUCS\nWorkFeatures\nRectangular\nCircular\nPattern\nSimplify\nSimplificationv\nHome\ndocking-visible-solid-current<Primary>\nDocuments\nX\nY\nZ",
+          ..
+      }
+]]></system-out></testcase><testcase name="Scenario: Float and redock the drawing browser: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:239:3" time="4.285581894"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Float and redock the drawing browser
+   ✘  Given `fixtures/cad/blank-drawing.odd` is active in the MCAD Software
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:240:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Close and restore the drawing browser from its tab area: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:250:3" time="4.079003485"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Close and restore the drawing browser from its tab area
+   ✘  Given `fixtures/cad/blank-drawing.odd` is active in the MCAD Software
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:251:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Add and switch between browser panel tabs: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:264:3" time="4.318445371"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Add and switch between browser panel tabs
+   ✘  Given `fixtures/cad/blank-drawing.odd` is active in the MCAD Software
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:265:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Inspect the drawing browser tree menu: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:279:3" time="4.44518019"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Inspect the drawing browser tree menu
+   ✘  Given `fixtures/cad/blank-drawing.odd` is active in the MCAD Software
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:280:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Collapse and expands the drawing browser tree: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:286:3" time="4.29610829"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Collapse and expands the drawing browser tree
+   ✘  Given `fixtures/cad/blank-drawing.odd` is open in the MCAD Software with drawing resources and a sheet
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:287:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Filter drawing browser entries while retaining their parent branches: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:299:3" time="4.223242524"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Filter drawing browser entries while retaining their parent branches
+   ✘  Given `fixtures/cad/blank-drawing.odd` is open in the MCAD Software with border entries in its resources and sheet
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:300:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Show an empty drawing browser search result: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:313:3" time="4.210921224"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Show an empty drawing browser search result
+   ✘  Given `fixtures/cad/blank-drawing.odd` is open in the MCAD Software with browser entries
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:314:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Switch the selected drawing browser entry: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:322:3" time="4.184503084"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Switch the selected drawing browser entry
+   ✘  Given `fixtures/cad/blank-drawing.odd` is open in the MCAD Software with a border and title block
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:323:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Search while the drawing browser floats: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:333:3" time="4.251616325"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Search while the drawing browser floats
+   ✘  Given `fixtures/cad/blank-drawing.odd` is open in the MCAD Software with browser entries
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:334:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Move the drawing browser between side docks: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:347:3" time="4.177893042"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Move the drawing browser between side docks
+   ✘  Given `fixtures/cad/blank-drawing.odd` is active in the MCAD Software
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:348:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Collapse and reopens one drawing browser branch: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:359:3" time="4.1703714"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Collapse and reopens one drawing browser branch
+   ✘  Given `fixtures/cad/blank-drawing.odd` is open in the MCAD Software with a sheet and drawing resources
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:360:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Find drawing entries inside a collapsed resource branch: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:372:3" time="4.126991545"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Find drawing entries inside a collapsed resource branch
+   ✘  Given `fixtures/cad/blank-drawing.odd` is open in the MCAD Software with a border resource and a sheet border
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:373:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Collapse and reopens the part origin branch during sketch editing: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:386:3" time="4.206745339"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Collapse and reopens the part origin branch during sketch editing
+   ✘  Given `fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:387:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Open and closes an empty browser search while editing a sketch: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:399:3" time="4.26437147"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Open and closes an empty browser search while editing a sketch
+   ✘  Given `fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:400:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Select an origin axis from the browser during sketch editing: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:410:3" time="4.110931681"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Select an origin axis from the browser during sketch editing
+   ✘  Given `fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:411:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Close and restore the model browser while editing a sketch: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:418:3" time="4.184459072"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Close and restore the model browser while editing a sketch
+   ✘  Given `fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:419:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Inspect browser display preferences during sketch editing: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:432:3" time="4.052221753"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Inspect browser display preferences during sketch editing
+   ✘  Given `fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:433:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Hide and restore work-feature entries in the part browser: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:445:3" time="3.674168322"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Hide and restore work-feature entries in the part browser
+   ✘  Given `fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:446:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Show and hide extended feature names in the browser: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:459:3" time="3.7228999099999998"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Show and hide extended feature names in the browser
+   ✘  Given `fixtures/cad/workspace-layout-native.opd` is active in the MCAD Software with a 20 mm new-solid extrusion
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:460:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Inspect the context menu for a browser feature: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:472:3" time="3.751150984"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Inspect the context menu for a browser feature
+   ✘  Given `fixtures/cad/docking-visible-solid-current.opd` is active in the MCAD Software with a solid extrusion
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:473:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Expand and collapse an extrusion&apos;s browser children: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:486:3" time="3.688633523"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Expand and collapse an extrusion's browser children
+   ✘  Given `fixtures/cad/docking-visible-solid-current.opd` is active in the MCAD Software with an extrusion and its underlying sketch
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:487:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Inspect the context menu for a sketch under an extrusion: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:496:3" time="3.791696458"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Inspect the context menu for a sketch under an extrusion
+   ✘  Given `fixtures/cad/workspace-layout-native.opd` is active in the MCAD Software with an extrusion and its underlying dimensioned sketch
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:497:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Expand and collapse Origin children from its context menu: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:515:3" time="3.668910996"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Expand and collapse Origin children from its context menu
+   ✘  Given `fixtures/cad/docking-visible-solid-current.opd` is active in the MCAD Software with a visible solid
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:516:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Inspect the context menu for an Origin plane: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:527:3" time="3.699594936"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Inspect the context menu for an Origin plane
+   ✘  Given `fixtures/cad/docking-visible-solid-current.opd` is active in the MCAD Software with a visible solid
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:528:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Inspect the context menu for an Origin axis: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:546:3" time="3.724224021"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Inspect the context menu for an Origin axis
+   ✘  Given `fixtures/cad/docking-visible-solid-current.opd` is active in the MCAD Software with a visible solid
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:547:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Inspect the context menu for the Origin center point: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:566:3" time="3.831770491"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Inspect the context menu for the Origin center point
+   ✘  Given `fixtures/cad/docking-visible-solid-current.opd` is active in the MCAD Software with a visible solid
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:567:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Expand and collapse nested entries in the solid-bodies folder: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:582:3" time="3.919781798"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Expand and collapse nested entries in the solid-bodies folder
+   ✘  Given `fixtures/cad/docking-visible-solid-current.opd` is active in the MCAD Software with one solid body made from an extrusion and sketch
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:583:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Select an origin axis from filtered browser results: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:596:3" time="3.91655911"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Select an origin axis from filtered browser results
+   ✘  Given `fixtures/cad/docking-visible-solid-current.opd` is active in the MCAD Software with a visible solid
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:597:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Find origin axes with different query capitalization: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:625:5" time="17.058149758"><system-out><![CDATA[  Scenario Outline: Find origin axes with different query capitalization
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is active in the MCAD Software
+   ✔  And its model browser contains X Axis, Y Axis and Z Axis under Origin
+   ✔  When the user opens browser search and enters "axis"
+   ✔  Then the browser displays X Axis, Y Axis and Z Axis under Origin
+   ✔  And the matching text is highlighted
+   ✔  When the user clears the search and closes the empty search field
+   ✔  Then the unfiltered browser tree is displayed
+]]></system-out></testcase><testcase name="Scenario: Find origin axes with different query capitalization: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:626:5" time="16.873327896"><system-out><![CDATA[  Scenario Outline: Find origin axes with different query capitalization
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is active in the MCAD Software
+   ✔  And its model browser contains X Axis, Y Axis and Z Axis under Origin
+   ✔  When the user opens browser search and enters "AXIS"
+   ✔  Then the browser displays X Axis, Y Axis and Z Axis under Origin
+   ✔  And the matching text is highlighted
+   ✔  When the user clears the search and closes the empty search field
+   ✔  Then the unfiltered browser tree is displayed
+]]></system-out></testcase><testcase name="Scenario: Replace a browser query across matching and empty results: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:628:3" time="20.264931063"><system-out><![CDATA[  Scenario: Replace a browser query across matching and empty results
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is active in the MCAD Software
+   ✔  And the browser search field contains "axis"
+   ✔  And X Axis, Y Axis and Z Axis are displayed under Origin
+   ✔  When the user selects all search text and replaces it with "zzq-nomatch"
+   ✔  Then the browser displays a no-results message instead of the axis rows
+   ✔  And the solid remains visible in the viewport
+   ✔  When the user selects all search text and replaces it with "plane"
+   ✔  Then the browser displays YZ Plane, XZ Plane and XY Plane under Origin
+   ✔  And matching text is highlighted
+   ✔  And the solid remains visible
+   ✔  When the user clears the query and closes the empty search field
+   ✔  Then the unfiltered browser tree is displayed
+]]></system-out></testcase><testcase name="Scenario: Expand a parent folder that matches browser search: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:642:3" time="3.68347013"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Expand a parent folder that matches browser search
+   ✘  Given `fixtures/cad/docking-visible-solid-current.opd` is active in the MCAD Software with a visible solid
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:643:5
+      Step doesn't match any function
+]]></system-out></testcase></testsuite></testsuites>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" package="testsuite/Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:24:01.568761195Z" time="26.470342399"><testcase name="Scenario: Open the 3D Model Modify panel expansion with keyboard tips: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:97:3" time="26.470342399"><system-out><![CDATA[  Scenario: Open the 3D Model Modify panel expansion with keyboard tips
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open and active
+   ✔  And the full 3D Model ribbon is visible with the Modify panel
+   ✔  And the Modify panel's additional command area is closed
+   ✔  When the user presses Alt, then M, then Y
+   ✔  Then the Modify additional command area opens below the ribbon over the browser area
+   ✔  And Move Bodies, Bend Part and Copy Object are visible
+   ✔  And the solid body and model browser remain visible
+   ✔  When the user clicks the lower Modify title
+   ✔  Then the additional command area closes and keyboard tips disappear
+]]></system-out></testcase></testsuite></testsuites>

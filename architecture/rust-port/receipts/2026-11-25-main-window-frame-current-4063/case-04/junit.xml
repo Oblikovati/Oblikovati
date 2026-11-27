@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Main application window frame: git/oblikovati-workspace/oblikovati-rust/target/native-scratch.HSqCy5/current-main-window-frame-source/features/application/main-window-frame/main-window-frame.feature" package="testsuite/Feature: Main application window frame: git/oblikovati-workspace/oblikovati-rust/target/native-scratch.HSqCy5/current-main-window-frame-source/features/application/main-window-frame/main-window-frame.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T23:18:00.23996444Z" time="25.703932211"><testcase name="Scenario: Maximize and restore using the application bar: git/oblikovati-workspace/oblikovati-rust/target/native-scratch.HSqCy5/current-main-window-frame-source/features/application/main-window-frame/main-window-frame.feature:49:3" time="25.703932211"><system-out><![CDATA[  Scenario: Maximize and restore using the application bar
+   ✔  Given `fixtures/cad/main-window-frame-start.opd` is open and active in the MCAD Software
+   ✔  And a part document is active in the MCAD Software
+   ✔  And the restored main window occupies a known size and position within the desktop work area
+   ✔  When the user selects Maximize in the application bar
+   ✔  Then the window fills the monitor's work area and respects the taskbar
+   ✔  And Restore replaces Maximize in the same position
+   ✔  And the ribbon and viewport lay out within the enlarged window
+   ✔  When the user selects Restore in the application bar
+   ✔  Then the window returns to its previous size and position
+   ✔  And Maximize replaces Restore in the same position
+   ✔  And the same part remains active
+]]></system-out></testcase></testsuite></testsuites>

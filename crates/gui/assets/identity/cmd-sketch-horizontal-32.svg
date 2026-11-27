@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-labelledby="t d">
+  <title id="t">Horizontal Constraint</title>
+  <desc id="d">Horizontal bar with level alignment ticks constraining slope to 0 degrees.</desc>
+  <g id="layer-body">
+    <line x1="4" y1="16" x2="28" y2="16" stroke="var(--icon-line-active, #8172FA)" stroke-width="2.4" stroke-linecap="round"/>
+  </g>
+  <g id="layer-accent">
+    <path d="M6,11 V21 M26,11 V21" stroke="var(--accent-selection-bright, #2DD4BF)" stroke-width="1.6" stroke-linecap="round"/>
+  </g>
+</svg>

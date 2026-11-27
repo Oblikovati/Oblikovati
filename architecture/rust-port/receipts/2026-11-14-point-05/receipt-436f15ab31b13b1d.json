@@ -1,0 +1,27 @@
+{
+  "kind": "native-acceptance",
+  "scenario_id": "scenario:436f15ab31b13b1dfef8458be1b83d8a3be1c7438819c5c0929b93c9b46729ef",
+  "scenario_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+  "source_sha256": "f88b2e19cf22dae22f91dbd57e319e819d47e9f1daf9edc00b3da4c122111bf5",
+  "application_commit": "563a43d3fc08d53b2910935929025d5b04b98f07",
+  "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+  "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+  "runner": "sketch_scenarios_use_the_native_window",
+  "exit_code": 0,
+  "environment": {
+    "os": "Linux",
+    "renderer": "Vulkan Lavapipe under Xvfb"
+  },
+  "cucumber": {
+    "path": "architecture/rust-port/receipts/2026-11-14-point-05/cucumber.json",
+    "sha256": "dd47c8f0699a0a1d3c8706ab3d882dee7ac85f7cb994bea525fceec524918c54"
+  },
+  "source_report": {
+    "path": "architecture/rust-port/receipts/2026-11-14-point-05/source-revision.json",
+    "sha256": "d16ea46c629defee8f5174f4a20c9ef37c41c0d92212f94a11107084dae58c59"
+  },
+  "capture": {
+    "path": "architecture/rust-port/receipts/2026-11-14-point-05/point-05-Continue-regular-point-placement-without-restarting-Point.png",
+    "sha256": "5650402093a4e38642fd5f2e585a527f3d98ae8e98681849a89c7acdb0ec2bd1"
+  }
+}

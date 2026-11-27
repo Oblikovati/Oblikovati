@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Open document tabs: target/native-scratch.HSqCy5/current-document-tabs-source/features/application/document-tabs/document-tabs.feature" package="testsuite/Feature: Open document tabs: target/native-scratch.HSqCy5/current-document-tabs-source/features/application/document-tabs/document-tabs.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T00:48:43.554877002Z" time="24.63720516"><testcase name="Scenario: Inspect the inactive Home tab without switching documents: target/native-scratch.HSqCy5/current-document-tabs-source/features/application/document-tabs/document-tabs.feature:343:3" time="24.63720516"><system-out><![CDATA[  Scenario: Inspect the inactive Home tab without switching documents
+   ✔  Given `fixtures/cad/planar-sketch-empty-xy.opd` is open with Sketch1 being edited
+   ✔  And the Home tab is visible but inactive
+   ✔  When the user right-clicks the Home tab
+   ✔  Then its context menu offers separate Close Tabs and Close All items
+   ✔  And the part's sketch remains displayed and active
+   ✔  When the user presses Escape
+   ✔  Then the context menu closes
+   ✔  And the part's sketch remains active
+]]></system-out></testcase></testsuite></testsuites>

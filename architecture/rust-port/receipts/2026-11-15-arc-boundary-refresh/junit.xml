@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Arc three point: tmp/obk-quick-access-3955-source/features/sketch/arc-three-point/scenario.feature" package="testsuite/Feature: Arc three point: tmp/obk-quick-access-3955-source/features/sketch/arc-three-point/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-15T04:18:05.331304147Z" time="21.969604278"><testcase name="Scenario: arc-three-point-02 Exercise feature-specific boundary behavior: tmp/obk-quick-access-3955-source/features/sketch/arc-three-point/scenario.feature:13:3" time="21.969604278"><system-out><![CDATA[  Scenario: arc-three-point-02 Exercise feature-specific boundary behavior
+   ✔  Given the MCAD Software is running
+   ✔  And an editable planar sketch
+   ✔  When the user select endpoints and then click their screen row between them
+   ✔  Then Select point on arc remains active without a committed arc or error dialog
+]]></system-out></testcase></testsuite></testsuites>

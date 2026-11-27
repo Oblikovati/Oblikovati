@@ -1,0 +1,25 @@
+{
+  "kind": "focused-implementation-evidence",
+  "application_commit": "eb655840f288e820110547bf866cab52c0604a23",
+  "fixture": "architecture/rust-port/receipts/2026-11-14-go-cube-fixture/go-cube.obk",
+  "checks": [
+    {
+      "command": "cargo test --locked -p oblikovati-persistence",
+      "exit_code": 0,
+      "path": "architecture/rust-port/receipts/2026-11-14-legacy-sketch-candidate/persistence.log.gz",
+      "sha256": "88dc30db138183b8fe3113724670b161241091bb489f89e4375e559780c8e525"
+    },
+    {
+      "command": "cargo clippy --locked -p oblikovati-persistence --all-targets -- -D warnings",
+      "exit_code": 0,
+      "path": "architecture/rust-port/receipts/2026-11-14-legacy-sketch-candidate/clippy.log.gz",
+      "sha256": "a4233a7319227e32d8006f8a64062188d35cc4434504c3f472eaa34d7d61c99c"
+    }
+  ],
+  "scope": "Strict isolated conversion of Go point/line sketches, selected geometric constraints, and distance dimensions; validates zero DOF and parameter dependencies on the Go cube.",
+  "limitations": [
+    "Normal document open and save still refuse legacy sketch and feature records.",
+    "The candidate does not import solid features or map their face keys.",
+    "Unsupported sketch fields, geometry, and unresolved dimensions are declined."
+  ]
+}

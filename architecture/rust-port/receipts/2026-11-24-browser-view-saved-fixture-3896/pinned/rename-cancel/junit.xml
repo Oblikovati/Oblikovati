@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T11:36:23.456746583Z" time="98.552757775"><testcase name="Scenario: Cancel a duplicate view representation name: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature:1069:3" time="98.552757775"><system-out><![CDATA[  Scenario: Cancel a duplicate view representation name
+   ✔  Given an empty part is active in the MCAD Software
+   ✔  And an active copied view is named "Capture View"
+   ✔  And a sibling view is named "Front"
+   ✔  When the user selects the copied view and presses F2
+   ✔  And the user replaces its name with "Front" and presses Enter
+   ✔  Then a message says the new name is already used
+   ✔  And the message offers Edit and cancels
+   ✔  When the user chooses Cancel
+   ✔  Then the active view is named "Capture View"
+   ✔  And the View branch identifies "Capture View" as active
+]]></system-out></testcase></testsuite></testsuites>

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-labelledby="t d">
+  <title id="t">New Document View</title>
+  <desc id="d">Overlapping document window frames with lower-right add badge.</desc>
+  <g id="layer-body">
+    <rect x="4" y="5" width="17" height="14" rx="2" fill="var(--icon-body-front, #9EA6B8)" stroke="var(--icon-body-stroke, #181B22)" stroke-width="1.2"/><rect x="4.5" y="5.5" width="16" height="3.5" fill="var(--icon-body-side, #677084)"/>
+  </g>
+  <g id="layer-accent">
+    <rect x="11" y="12" width="17" height="14" rx="2" fill="var(--icon-mod-front, #8172FA)" stroke="var(--icon-mod-stroke, #1D1840)" stroke-width="1.2"/><rect x="11.5" y="12.5" width="16" height="3.5" fill="var(--icon-mod-top, #B4AAFF)"/>
+  </g>
+  <g id="layer-badge">
+    <circle cx="25" cy="25" r="5.6" fill="var(--icon-cutout, #121317)"/>
+    <circle cx="25" cy="25" r="4.5" fill="var(--status-success, #22C55E)" stroke="#0B2E18" stroke-width="0.9"/><path d="M25,22.7 L25,27.3 M22.7,25 L27.3,25" stroke="#FFF" stroke-width="1.5" stroke-linecap="round"/>
+  </g>
+</svg>

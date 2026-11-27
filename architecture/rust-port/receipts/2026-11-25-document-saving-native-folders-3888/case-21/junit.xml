@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Save and reopen part documents: target/native-scratch.HSqCy5/current-document-saving-source/features/application/document-saving/document-saving.feature" package="testsuite/Feature: Save and reopen part documents: target/native-scratch.HSqCy5/current-document-saving-source/features/application/document-saving/document-saving.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T02:29:53.189497736Z" time="19.592596959"><testcase name="Scenario: Inspect Save As commands for a saved part: target/native-scratch.HSqCy5/current-document-saving-source/features/application/document-saving/document-saving.feature:288:3" time="19.592596959"><system-out><![CDATA[  Scenario: Inspect Save As commands for a saved part
+   ✔  Given a writable copy of `fixtures/cad/blank-metric-part.opd` is open as a saved active part in the MCAD Software
+   ✔  When the user opens the application menu
+   ✔  And the user expands Save As
+   ✔  Then the menu offers Save As and Save Copy As
+   ✔  And it offers Save Copy As Template and Pack and Go
+   ✔  And the Save Copy As description says the original file remains open
+]]></system-out></testcase></testsuite></testsuites>

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-labelledby="t d">
+  <title id="t">Concentric Constraint</title>
+  <desc id="d">Two circular rings sharing a single highlighted Teal center point.</desc>
+  <g id="layer-body">
+    <circle cx="16" cy="16" r="11" fill="none" stroke="var(--icon-line-general, #D2D7E2)" stroke-width="1.75"/>
+  </g>
+  <g id="layer-accent">
+    <circle cx="16" cy="16" r="6" fill="none" stroke="var(--icon-line-active, #8172FA)" stroke-width="1.8"/><circle cx="16" cy="16" r="2.5" fill="var(--accent-selection-bright, #2DD4BF)" stroke="var(--icon-cutout, #121317)" stroke-width="0.7"/>
+  </g>
+</svg>

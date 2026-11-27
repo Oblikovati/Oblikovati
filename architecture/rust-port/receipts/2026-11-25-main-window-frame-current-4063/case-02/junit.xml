@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Main application window frame: git/oblikovati-workspace/oblikovati-rust/target/native-scratch.HSqCy5/current-main-window-frame-source/features/application/main-window-frame/main-window-frame.feature" package="testsuite/Feature: Main application window frame: git/oblikovati-workspace/oblikovati-rust/target/native-scratch.HSqCy5/current-main-window-frame-source/features/application/main-window-frame/main-window-frame.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T23:17:07.692429551Z" time="12.434146642"><testcase name="Scenario: Keep the ribbon below the application bar: git/oblikovati-workspace/oblikovati-rust/target/native-scratch.HSqCy5/current-main-window-frame-source/features/application/main-window-frame/main-window-frame.feature:22:3" time="12.434146642"><system-out><![CDATA[  Scenario: Keep the ribbon below the application bar
+   ✔  Given `fixtures/cad/main-window-frame-start.opd` is open and active in the MCAD Software
+   ✔  And a part document is active in the MCAD Software
+   ✔  And the quick access toolbar is configured to appear above the ribbon
+   ✔  And the ribbon is docked at the top in its expanded Normal appearance
+   ✔  Then File and the ribbon tabs appear on a separate row beneath the application bar
+   ✔  And the active tab's command panels are below the ribbon tab row
+   ✔  And the window controls remain in the application bar
+]]></system-out></testcase></testsuite></testsuites>

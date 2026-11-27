@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Close the application: tmp/oblikovati-ribbon-relocated.RcZVDl/current-application-closing-source/features/application/application-closing/application-closing.feature" package="testsuite/Feature: Close the application: tmp/oblikovati-ribbon-relocated.RcZVDl/current-application-closing-source/features/application/application-closing/application-closing.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T21:33:10.09691433Z" time="24.014318047"><testcase name="Scenario: Cancel closing the application when a document has unsaved changes: tmp/oblikovati-ribbon-relocated.RcZVDl/current-application-closing-source/features/application/application-closing/application-closing.feature:5:3" time="24.014318047"><system-out><![CDATA[  Scenario: Cancel closing the application when a document has unsaved changes
+   ✔  Given a writable copy of `fixtures/cad/extrusion/extrusion-rect-8mm.opd` is open in the MCAD Software
+   ✔  And the user creates a sketch on the XY datum plane without saving the document
+   ✔  When the user selects the application window's Close control
+   ✔  Then a save-changes prompt identifies the part document
+   ✔  And the prompt offers Yes, No and Cancel
+   ✔  When the user chooses Cancel
+   ✔  Then the save-changes prompt closes
+   ✔  And the part document remains open
+   ✔  And the MCAD Software remains open
+]]></system-out></testcase></testsuite></testsuites>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Inspect files before opening a document: target/native-scratch.HSqCy5/current-document-opening-source/features/application/document-opening/document-opening.feature" package="testsuite/Feature: Inspect files before opening a document: target/native-scratch.HSqCy5/current-document-opening-source/features/application/document-opening/document-opening.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T01:49:51.658342258Z" time="59.808224996"><testcase name="Scenario: Inspect and dismisses available design views for a part: target/native-scratch.HSqCy5/current-document-opening-source/features/application/document-opening/document-opening.feature:110:3" time="59.808224996"><system-out><![CDATA[  Scenario: Inspect and dismisses available design views for a part
+   ✔  Given the user opens a writable copy of `fixtures/cad/extrusion/extrusion-rect-8mm.opd`, creates named views Open Dialog Blue and Open Dialog Neutral, saves and closes it
+   ✔  Given the Open dialog is open in the MCAD Software
+   ✔  And a saved part with named design views is selected
+   ✔  And its Design View field displays Last Active
+   ✔  And the saved working native part has named design views `Open Dialog Blue` and `Open Dialog Neutral`
+   ✔  When the user opens the Design View list
+   ✔  Then Last Active, the primary view, and the part's named design views are displayed
+   ✔  And the part preview remains visible
+   ✔  When the user presses Escape
+   ✔  Then the Design View list closes
+   ✔  And the Design View field still displays Last Active
+   ✔  And the Open dialog remains open
+]]></system-out></testcase></testsuite></testsuites>

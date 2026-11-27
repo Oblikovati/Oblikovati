@@ -1,0 +1,23 @@
+Wayland baseline
+      Step panicked. Captured output: X11 application windows []: expected exactly one Oblikovati window
+2 steps (1 passed, 1 failed)
+
+wayland
+1 scenario (1 passed)
+14 steps (14 passed)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1733 filtered out; finished in 16.56s
+
+x11-verified
+1 scenario (1 passed)
+14 steps (14 passed)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1733 filtered out; finished in 14.82s
+
+X11 native model-state table regressions
+test native::gui_loop_tests::application_bdd::model_browser::model_state_table_parameter_steps::native_invalid_equation_is_checked_without_changing_the_part ... ok
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1733 filtered out; finished in 4.37s
+test native::gui_loop_tests::application_bdd::model_browser::model_state_table_extra::native_parameter_and_inserted_row_cancel_without_changes ... ok
+test native::gui_loop_tests::application_bdd::model_browser::model_state_table_extra::native_parameter_edit_accepts_and_survives_undo_redo ... ok
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 1732 filtered out; finished in 7.98s
+
+Workspace Clippy
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 13.44s
