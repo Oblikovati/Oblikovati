@@ -5,8 +5,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$test = 'application::document_creation::tests::opening_the_chooser_does_not_create_a_document_and_escape_cancels'
-$binary = 'oblikovati_gui'
+$binary = '(?:oblikovati_gui|oblikovati_head|ribbon_click)'
 $exception = 'c0000409'
 $exceptionMode = 'sxe'
 if ($Architecture -eq 'x64') {
@@ -16,10 +15,24 @@ if ($Architecture -eq 'x64') {
     # Let the application handle first-chance exceptions before recording an unhandled fault.
     $exceptionMode = 'sxd'
 }
-$testPattern = '^test ' + [regex]::Escape($test) + ' \.\.\.(?!\s*(?:ok|FAILED|ignored)\b)'
 $abortPattern = '(?<executable>[A-Z]:[^\x60]+[\\/]' + $binary + '-[a-f0-9]+\.exe)[^\x60]*\x60 \(exit code: 0x' + $exception
 $abort = Select-String -LiteralPath $NativeLog -Pattern $abortPattern | Select-Object -First 1
-if ($null -eq $abort -or -not (Select-String -LiteralPath $NativeLog -Pattern $testPattern -Quiet)) {
+if ($null -eq $abort) {
+    Write-Host "The native test log has no matching $Architecture GUI crash."
+    return
+}
+$unfinished = ' \.\.\.(?!\s*(?:ok|FAILED|ignored)\b)'
+if ($Architecture -eq 'arm64') {
+    # Tests run serially. Match the unfinished test immediately before Cargo reports the abort.
+    $started = Select-String -LiteralPath $NativeLog -Pattern ('^test (?<test>\w+(?:::\w+)*)' + $unfinished) |
+        Where-Object LineNumber -lt $abort.LineNumber |
+        Select-Object -Last 1
+    if ($null -eq $started) {
+        Write-Host 'The native GUI abort has no unfinished test to rerun.'
+        return
+    }
+    $test = $started.Matches[0].Groups['test'].Value
+} elseif (-not (Select-String -LiteralPath $NativeLog -Pattern ('^test ' + [regex]::Escape($test) + $unfinished) -Quiet)) {
     Write-Host "The native test log has no matching $test crash."
     return
 }
