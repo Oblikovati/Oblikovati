@@ -264,7 +264,7 @@ impl NavigationWheel {
             self.wheel_controls(ui, center, side);
         }
         ui.set_cursor_screen_pos(cursor);
-        ui.invisible_button("##wheel-area", [side, side]);
+        crate::widget_abi::invisible_button(ui, c"##wheel-area", [side, side]);
         let hovered = ui.is_item_hovered();
         let right_clicked = ui.is_item_clicked_with_button(MouseButton::Right);
         let under = hovered.then(|| tool_at(self.layout, offset)).flatten();

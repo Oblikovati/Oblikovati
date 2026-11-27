@@ -277,7 +277,7 @@ impl OrientationControl {
                 .size([side, side], imgui::Condition::Always)
                 .flags(control_flags());
             window.build(|| {
-                ui.invisible_button("##orientation-area", [side, side]);
+                crate::widget_abi::invisible_button(ui, c"##orientation-area", [side, side]);
                 let layout = GuiOrientationLayout::for_side(side);
                 let hovered = ui.is_item_hovered();
                 let step = ui.io().delta_time / 0.08;
