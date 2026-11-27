@@ -7,7 +7,29 @@ use oblikovati_model::ui_scale::UiScaleOptions;
 // ImGui's default font is 13 pixels. Refuse unbounded atlas allocations at the input boundary.
 const DEFAULT_FONT_PIXELS: f32 = 13.;
 const MAX_FONT_PIXELS: f32 = 256.;
-const NUMERIC_FACE: &[u8] = include_bytes!("../assets/fonts/JetBrainsMono-Regular.ttf");
+const INTER_REGULAR: &[u8] = include_bytes!("../assets/fonts/Inter-Regular.ttf");
+const INTER_MEDIUM: &[u8] = include_bytes!("../assets/fonts/Inter-Medium.ttf");
+const INTER_SEMIBOLD: &[u8] = include_bytes!("../assets/fonts/Inter-SemiBold.ttf");
+const NUMERIC_FACE: &[u8] = include_bytes!("../assets/fonts/JetBrainsMono-Medium.ttf");
+const CHROME_GLYPH_RANGES: &[u32] = &[
+    0x0020, 0x007E, // Basic Latin
+    0x00B0, 0x00B1, // degree °, plus-minus ±
+    0x00D7, 0x00D8, // multiply ×, diameter Ø
+    0x2013, 0x2014, // en-dash, em-dash
+    0x2022, 0x2022, // bullet •
+    0x2026, 0x2026, // ellipsis …
+    0x2039, 0x203A, // single angle quotes ‹ ›
+    0x2190, 0x2193, // arrows ← ↑ → ↓
+    0x2212, 0x2212, // minus −
+    0x22EE, 0x22EE, // vertical ellipsis ⋮
+    0x2300, 0x2300, // diameter ⌀
+    0x25B4, 0x25B4, // small up triangle ▴
+    0x25B8, 0x25B8, // small right triangle ▸
+    0x25BC, 0x25BC, // down triangle ▼
+    0x25BE, 0x25BE, // small down triangle ▾
+    0x2713, 0x2713, // check mark ✓
+    0,
+];
 pub(crate) fn font_raster_scale(request: &GuiFrameRequest) -> Result<f32, String> {
     let scale = request.layout_scale().into_iter().fold(0., f32::max);
     let pixels = DEFAULT_FONT_PIXELS * scale;
@@ -28,31 +50,41 @@ pub(crate) fn rebuild_font_atlas(context: &mut Context, scale: f32) -> GuiAtlas 
     context.fonts().tex_id = TextureId::new(crate::snapshot::FONT_TEXTURE_ID);
     atlas
 }
+fn chrome_font_config(size_pixels: f32, glyph_ranges: FontGlyphRanges) -> FontConfig {
+    FontConfig {
+        size_pixels,
+        oversample_h: if size_pixels <= 26. { 2 } else { 1 },
+        oversample_v: 1,
+        pixel_snap_h: true,
+        glyph_ranges,
+        ..FontConfig::default()
+    }
+}
 fn install_editor_fonts(context: &mut Context, scale: f32) {
-    let config = FontConfig {
-        size_pixels: DEFAULT_FONT_PIXELS * scale,
+    let base_pixels = DEFAULT_FONT_PIXELS * scale;
+    let content_config = FontConfig {
+        size_pixels: base_pixels,
         oversample_h: 1,
         oversample_v: 1,
         pixel_snap_h: true,
         ..Default::default()
     };
+    let chrome_ranges = FontGlyphRanges::from_slice(CHROME_GLYPH_RANGES);
+    let base_chrome = chrome_font_config(base_pixels, chrome_ranges.clone());
     let symbols = FontConfig {
         glyph_ranges: FontGlyphRanges::from_slice(&[0x2022, 0x2022, 0x2300, 0x2300, 0]),
-        ..config.clone()
+        ..content_config.clone()
     };
+    // Slot 0: Primary UI (Inter Regular 400)
     context.fonts().add_font(&[
         FontSource::TtfData {
-            data: include_bytes!("../assets/fonts/Inter-Regular.ttf"),
-            size_pixels: config.size_pixels,
-            config: Some(FontConfig {
-                glyph_ranges: FontGlyphRanges::from_slice(&[
-                    0x20, 0xff, 0x2014, 0x2014, 0x203a, 0x203a, 0x25bc, 0x25bc, 0,
-                ]),
-                ..config.clone()
-            }),
+            data: INTER_REGULAR,
+            size_pixels: base_pixels,
+            config: Some(base_chrome.clone()),
         },
         sketch_symbols(symbols.clone()),
     ]);
+    // Slots 1..=4: Sketch content faces (Liberation Sans Regular/Bold/Italic/BoldItalic)
     for face in [
         include_bytes!("../assets/fonts/LiberationSans-Regular.ttf").as_slice(),
         include_bytes!("../assets/fonts/LiberationSans-Bold.ttf").as_slice(),
@@ -62,33 +94,57 @@ fn install_editor_fonts(context: &mut Context, scale: f32) {
         context.fonts().add_font(&[
             FontSource::TtfData {
                 data: face,
-                size_pixels: config.size_pixels,
-                config: Some(config.clone()),
+                size_pixels: base_pixels,
+                config: Some(content_config.clone()),
             },
             sketch_symbols(symbols.clone()),
         ]);
     }
+    // Slot 5: Numeric / parameter value face (JetBrains Mono Medium 500)
     context.fonts().add_font(&[
         FontSource::TtfData {
             data: NUMERIC_FACE,
-            size_pixels: config.size_pixels,
-            config: Some(config),
+            size_pixels: base_pixels,
+            config: Some(base_chrome.clone()),
         },
         sketch_symbols(symbols),
     ]);
+    // Slot 6: Ribbon group caption (Inter Medium 500, 10px)
     context.fonts().add_font(&[FontSource::TtfData {
-        data: include_bytes!("../assets/fonts/Inter-Regular.ttf"),
+        data: INTER_MEDIUM,
         size_pixels: 10. * scale,
-        config: Some(FontConfig {
-            size_pixels: 10. * scale,
-            ..FontConfig::default()
-        }),
+        config: Some(chrome_font_config(10. * scale, chrome_ranges.clone())),
     }]);
+    // Slot 7: Status & key-tip micro monospace (JetBrains Mono Medium 500, 11px min)
     context.fonts().add_font(&[FontSource::TtfData {
         data: NUMERIC_FACE,
-        size_pixels: 10. * scale,
+        size_pixels: 11. * scale,
+        config: Some(chrome_font_config(11. * scale, chrome_ranges.clone())),
+    }]);
+    // Slot 8: Inter Medium 500 (active tabs, buttons, filenames)
+    context.fonts().add_font(&[FontSource::TtfData {
+        data: INTER_MEDIUM,
+        size_pixels: base_pixels,
+        config: Some(base_chrome.clone()),
+    }]);
+    // Slot 9: Inter SemiBold 600 (section headings, breadcrumbs)
+    context.fonts().add_font(&[FontSource::TtfData {
+        data: INTER_SEMIBOLD,
+        size_pixels: base_pixels,
+        config: Some(base_chrome),
+    }]);
+    // Slot 10: Inter SemiBold 600 14px (dialog titles)
+    context.fonts().add_font(&[FontSource::TtfData {
+        data: INTER_SEMIBOLD,
+        size_pixels: 14. * scale,
+        config: Some(chrome_font_config(14. * scale, chrome_ranges)),
+    }]);
+    // Slot 11: Inter SemiBold 600 20px (Home display heading)
+    context.fonts().add_font(&[FontSource::TtfData {
+        data: INTER_SEMIBOLD,
+        size_pixels: 20. * scale,
         config: Some(FontConfig {
-            size_pixels: 10. * scale,
+            size_pixels: 20. * scale,
             oversample_h: 1,
             oversample_v: 1,
             pixel_snap_h: true,
@@ -122,6 +178,22 @@ pub(crate) fn group_caption_font(ui: &Ui) -> Option<imgui::FontStackToken<'_>> {
 
 pub(crate) fn mono_micro_font(ui: &Ui) -> Option<imgui::FontStackToken<'_>> {
     ui.fonts().fonts().get(7).map(|font| ui.push_font(*font))
+}
+
+pub(crate) fn ui_medium_font(ui: &Ui) -> Option<imgui::FontStackToken<'_>> {
+    ui.fonts().fonts().get(8).map(|font| ui.push_font(*font))
+}
+
+pub(crate) fn ui_semibold_font(ui: &Ui) -> Option<imgui::FontStackToken<'_>> {
+    ui.fonts().fonts().get(9).map(|font| ui.push_font(*font))
+}
+
+pub(crate) fn dialog_title_font(ui: &Ui) -> Option<imgui::FontStackToken<'_>> {
+    ui.fonts().fonts().get(10).map(|font| ui.push_font(*font))
+}
+
+pub(crate) fn display_font(ui: &Ui) -> Option<imgui::FontStackToken<'_>> {
+    ui.fonts().fonts().get(11).map(|font| ui.push_font(*font))
 }
 
 #[derive(Default)]
