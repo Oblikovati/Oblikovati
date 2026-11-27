@@ -8733,8 +8733,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/chrome_ribbon.go; ../Oblikovati/head/ui/ribbon_collapse.go; ../Oblikovati/head/ui/qat.go; ../Oblikovati/head/ui/keymap_window.go",
-      "mapping_reason": "Desktop ribbon, shortcut, or marking-menu customization and settings."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a app/work_datum_flyout_test.go and head/ui/ribbon_collapse_test.go.",
+      "mapping_reason": "Desktop ribbon, shortcut, or marking-menu customization and settings.",
+      "go_test_premise": "TestDatumFlyoutEntriesGateOnTheirSelection checks the Work Features choices, TestStartDatumFallsBackToTheGuidedPick checks guided input, and TestPanelsThatFitCollapsesFromTheRight checks width-dependent panel placement. The pinned scenario specifies the exact native interaction.",
+      "api_revision": "c8200b2da97c9a7dde43afb25debc977ff23b2fd",
+      "kernel_revision": "d463526642b7bf950ba33c7ab4a4c9bc97caffaf",
+      "kernel_capabilities": "Part fixture regeneration and Vulkan presentation of a solid in the modeling viewport.",
+      "platforms": "Linux Wayland under Weston and X11 under Openbox and Xvfb, both with Vulkan Lavapipe.",
+      "kernel_integration": "The desktop host presents the existing Part model. Grouping, resizing, or canceling before a pick preserves its work geometry.",
+      "rust_tests": "crates/head/tests/application/ribbon-panel-expansion/grouped_plane.rs; application_scenarios_use_the_native_window runs Ungroup and regroup a ribbon command family.",
+      "oracle": "The pinned native scenario observes the ribbon controls, active Part, and corresponding command state. See receipts/2026-11-27-pinned-grouped-plane-4184/{x11,wayland}-regroup.json.",
+      "expected_result": "Offset from Plane and Three Points are individually visible when expanded, then return to one grouped Plane control with the same Part active.",
+      "baseline_source_sha256": "c338bc2ca7723cbc58a28c13b97869e61ad0697ed3290c67843149e1e608a73e"
     },
     {
       "id": "scenario:49b9174244a1f4762d6c03879cf0ca24480ef9207e69dcfbfabe497d0a9939f3",
@@ -8750,8 +8760,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/chrome_ribbon.go; ../Oblikovati/head/ui/ribbon_collapse.go; ../Oblikovati/head/ui/qat.go; ../Oblikovati/head/ui/keymap_window.go",
-      "mapping_reason": "Desktop ribbon, shortcut, or marking-menu customization and settings."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a app/work_datum_flyout_test.go and head/ui/ribbon_collapse_test.go.",
+      "mapping_reason": "Desktop ribbon, shortcut, or marking-menu customization and settings.",
+      "go_test_premise": "TestDatumFlyoutEntriesGateOnTheirSelection checks the Work Features choices, TestStartDatumFallsBackToTheGuidedPick checks guided input, and TestPanelsThatFitCollapsesFromTheRight checks width-dependent panel placement. The pinned scenario specifies the exact native interaction.",
+      "api_revision": "c8200b2da97c9a7dde43afb25debc977ff23b2fd",
+      "kernel_revision": "d463526642b7bf950ba33c7ab4a4c9bc97caffaf",
+      "kernel_capabilities": "Part fixture regeneration and Vulkan presentation of a solid in the modeling viewport.",
+      "platforms": "Linux Wayland under Weston and X11 under Openbox and Xvfb, both with Vulkan Lavapipe.",
+      "kernel_integration": "The desktop host presents the existing Part model. Grouping, resizing, or canceling before a pick preserves its work geometry.",
+      "rust_tests": "crates/head/tests/application/ribbon-panel-expansion/grouped_plane.rs; application_scenarios_use_the_native_window runs Reflow the ribbon after changing the application window state.",
+      "oracle": "The pinned native scenario observes the ribbon controls, active Part, and corresponding command state. See receipts/2026-11-27-pinned-grouped-plane-4184/{x11,wayland}-reflow.json.",
+      "expected_result": "Maximizing restores more visible command captions and the expanded Work Features panel while retaining the grouped choices and active Part.",
+      "baseline_source_sha256": "c338bc2ca7723cbc58a28c13b97869e61ad0697ed3290c67843149e1e608a73e"
     },
     {
       "id": "scenario:a267effa5e2fb94aa92ac84529c63830856f036e71281f22ed5e16b251e2a1e5",
@@ -8767,8 +8787,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/chrome_ribbon.go; ../Oblikovati/head/ui/ribbon_collapse.go; ../Oblikovati/head/ui/qat.go; ../Oblikovati/head/ui/keymap_window.go",
-      "mapping_reason": "Desktop ribbon, shortcut, or marking-menu customization and settings."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a app/work_datum_flyout_test.go and head/ui/ribbon_collapse_test.go.",
+      "mapping_reason": "Desktop ribbon, shortcut, or marking-menu customization and settings.",
+      "go_test_premise": "TestDatumFlyoutEntriesGateOnTheirSelection checks the Work Features choices, TestStartDatumFallsBackToTheGuidedPick checks guided input, and TestPanelsThatFitCollapsesFromTheRight checks width-dependent panel placement. The pinned scenario specifies the exact native interaction.",
+      "api_revision": "c8200b2da97c9a7dde43afb25debc977ff23b2fd",
+      "kernel_revision": "d463526642b7bf950ba33c7ab4a4c9bc97caffaf",
+      "kernel_capabilities": "Part fixture regeneration and Vulkan presentation of a solid in the modeling viewport.",
+      "platforms": "Linux Wayland under Weston and X11 under Openbox and Xvfb, both with Vulkan Lavapipe.",
+      "kernel_integration": "The desktop host presents the existing Part model. Grouping, resizing, or canceling before a pick preserves its work geometry.",
+      "rust_tests": "crates/head/tests/application/ribbon-panel-expansion/grouped_plane.rs; application_scenarios_use_the_native_window runs Open and dismisses a grouped command menu.",
+      "oracle": "The pinned native scenario observes the ribbon controls, active Part, and corresponding command state. See receipts/2026-11-27-pinned-grouped-plane-4184/{x11,wayland}-dismiss.json.",
+      "expected_result": "The menu lists the Plane choices with dividers. Escape leaves the same visible solid and no new work plane.",
+      "baseline_source_sha256": "c338bc2ca7723cbc58a28c13b97869e61ad0697ed3290c67843149e1e608a73e"
     },
     {
       "id": "scenario:68fca31a1d58d6994bded3fe7003288ad221bc5e33326abc3e0e5ad75f61f63d",
@@ -8818,8 +8848,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/chrome_ribbon.go; ../Oblikovati/head/ui/ribbon_collapse.go; ../Oblikovati/head/ui/qat.go; ../Oblikovati/head/ui/keymap_window.go",
-      "mapping_reason": "Desktop ribbon, shortcut, or marking-menu customization and settings."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a app/work_datum_flyout_test.go and head/ui/ribbon_collapse_test.go.",
+      "mapping_reason": "Desktop ribbon, shortcut, or marking-menu customization and settings.",
+      "go_test_premise": "TestDatumFlyoutEntriesGateOnTheirSelection checks the Work Features choices, TestStartDatumFallsBackToTheGuidedPick checks guided input, and TestPanelsThatFitCollapsesFromTheRight checks width-dependent panel placement. The pinned scenario specifies the exact native interaction.",
+      "api_revision": "c8200b2da97c9a7dde43afb25debc977ff23b2fd",
+      "kernel_revision": "d463526642b7bf950ba33c7ab4a4c9bc97caffaf",
+      "kernel_capabilities": "Part fixture regeneration and Vulkan presentation of a solid in the modeling viewport.",
+      "platforms": "Linux Wayland under Weston and X11 under Openbox and Xvfb, both with Vulkan Lavapipe.",
+      "kernel_integration": "The desktop host presents the existing Part model. Grouping, resizing, or canceling before a pick preserves its work geometry.",
+      "rust_tests": "crates/head/tests/application/ribbon-panel-expansion/grouped_plane.rs; application_scenarios_use_the_native_window runs Launch a choice from a grouped command menu.",
+      "oracle": "The pinned native scenario observes the ribbon controls, active Part, and corresponding command state. See receipts/2026-11-27-pinned-grouped-plane-4184/{x11,wayland}-launch.json.",
+      "expected_result": "Offset from Plane requests a planar face. Escape ends the command and leaves the original Part and its features intact.",
+      "baseline_source_sha256": "c338bc2ca7723cbc58a28c13b97869e61ad0697ed3290c67843149e1e608a73e"
     },
     {
       "id": "scenario:e7da6d837f6b81a925c535ead3d048e56f28df0a0f51502cdf7775739bb8d226",
