@@ -103,6 +103,11 @@ solid and resolves the extent from the current target. The
 [native Through All receipt](receipts/2026-11-27-extrude-through-all-3870/README.md)
 checks both openings in the preview and accepted body.
 
+The control beside Distance A starts a Through All Cut and keeps the
+inactive numeric distance in parentheses. Undo restores the visible
+circle and intact top face.
+[Auxiliary Cut and full-run receipts](receipts/2026-11-27-extrude-auxiliary-cut-3870/README.md).
+
 Double-clicking a supported Extrude browser row opens its edit draft.
 The panel shows the saved sketch-plane start and the body name, and
 shows Match Shape checked and disabled on the saved closed profile.

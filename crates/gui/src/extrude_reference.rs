@@ -144,6 +144,30 @@ impl ReferenceDraft {
         }
     }
 
+    pub(super) fn through_all_control(
+        &mut self,
+        ui: &Ui,
+        icons: &crate::icons::GuiRibbonIcons,
+    ) -> bool {
+        use crate::icons::IconGlyph;
+        let through = self.through_all();
+        ui.same_line();
+        let label = if through {
+            "Restore Distance"
+        } else {
+            "Through All Cut"
+        };
+        if !icons.navigation_button(ui, label, IconGlyph::ExtrudeCut, [ui.frame_height(); 2]) {
+            return false;
+        }
+        self.set_mode(if through {
+            ExtentMode::Distance
+        } else {
+            ExtentMode::ThroughAll
+        });
+        true
+    }
+
     fn set_mode(&mut self, mode: ExtentMode) {
         self.mode = mode;
         self.active = None;

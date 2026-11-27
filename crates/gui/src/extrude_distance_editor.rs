@@ -13,11 +13,17 @@ const MEASURE_PROMPT: &str = "Select a dimension to reference the parameter.";
 const EDIT_BUTTON: &str = "Edit Distance A";
 const EDIT_BUTTON_WIDTH: f32 = 24.;
 
-fn draw_value(ui: &Ui, distance: &mut String, unit: Option<&str>, error: Option<[f32; 4]>) -> bool {
+fn draw_value(
+    ui: &Ui,
+    distance: &mut String,
+    unit: Option<&str>,
+    error: Option<[f32; 4]>,
+    auxiliary_width: f32,
+) -> bool {
     crate::theme::property_label(ui, "Distance A");
     let available = ui.content_region_avail()[0];
     let spacing = ui.clone_style().item_spacing[0];
-    ui.set_next_item_width((available - EDIT_BUTTON_WIDTH - spacing).max(1.));
+    ui.set_next_item_width((available - EDIT_BUTTON_WIDTH - spacing - auxiliary_width).max(1.));
     let _numeric = crate::ui_scale::numeric_font(ui);
     let _border = ui.push_style_var(imgui::StyleVar::FrameBorderSize(1.));
     let _error = error.map(|color| ui.push_style_color(imgui::StyleColor::Border, color));
@@ -326,17 +332,27 @@ impl super::ExtrudeDialog {
         parameters: &mut crate::parameters::GuiParameterEditor,
     ) -> bool {
         let mut edited = false;
+        let was_through_all = self.reference.through_all();
+        let through_all_available = self.edit_feature.is_none() && super::single_body(state);
         if self.reference.numeric() {
             let error = self.distance_error_ink(state);
             let unit = state
                 .document_units
                 .as_ref()
                 .map(|units| units.length_unit.as_str());
-            edited |= draw_value(ui, &mut self.distance, unit, error);
+            let auxiliary_width = if through_all_available {
+                ui.frame_height() + ui.clone_style().item_spacing[0]
+            } else {
+                0.
+            };
+            edited |= draw_value(ui, &mut self.distance, unit, error, auxiliary_width);
             if edited {
                 parameters.close_tolerance_inspection();
             }
             self.distance_editor.menu_button(ui, icons);
+            if through_all_available {
+                edited |= self.reference.through_all_control(ui, icons);
+            }
             edited |= self.distance_editor.draw(
                 ui,
                 &mut self.distance,
@@ -363,9 +379,24 @@ impl super::ExtrudeDialog {
             crate::theme::property_label(ui, "From");
             ui.text("1 Sketch Plane");
         }
+        if was_through_all {
+            crate::theme::property_label(ui, "Distance A");
+            let distance = self.distance.trim();
+            let unit = state
+                .document_units
+                .as_ref()
+                .filter(|_| distance.parse::<f64>().is_ok());
+            if let Some(unit) = unit {
+                ui.text(format!("({distance} {})", unit.length_unit));
+            } else {
+                ui.text(format!("({distance})"));
+            }
+            if through_all_available {
+                edited |= self.reference.through_all_control(ui, icons);
+            }
+        }
         if self.edit_feature.is_none() {
-            let was_through_all = self.reference.through_all();
-            edited |= self.reference.draw(ui, super::single_body(state));
+            edited |= self.reference.draw(ui, through_all_available);
             if !was_through_all
                 && self.reference.through_all()
                 && matches!(
