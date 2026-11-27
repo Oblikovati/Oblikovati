@@ -323,6 +323,18 @@ void oblikovati_gui_window_position(float x, float y, int condition) {
 void oblikovati_gui_window_size(float width, float height, int condition) {
     ImGui::SetNextWindowSize(ImVec2(width, height), condition);
 }
+void oblikovati_gui_push_style_vector(ImGuiStyleVar index, float x, float y) {
+    ImGui::PushStyleVar(index, ImVec2(x, y));
+}
+void oblikovati_gui_push_style_color(ImGuiCol index, float r, float g, float b, float a) {
+    ImGui::PushStyleColor(index, ImVec4(r, g, b, a));
+}
+void oblikovati_gui_filled_circle(float x, float y, float radius, ImU32 color) {
+    ImGui::GetWindowDrawList()->AddCircleFilled(ImVec2(x, y), radius, color);
+}
+void oblikovati_gui_line(float x1, float y1, float x2, float y2, ImU32 color) {
+    ImGui::GetWindowDrawList()->AddLine(ImVec2(x1, y1), ImVec2(x2, y2), color);
+}
 void oblikovati_gui_cursor_position(float x, float y) {
     ImGui::SetCursorPos(ImVec2(x, y));
 }

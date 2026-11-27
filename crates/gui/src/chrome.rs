@@ -312,7 +312,7 @@ fn application_controls_row(
 ) {
     crate::widget_abi::cursor_position(ui, [10., 4.]);
     let width = (ui.window_size()[0] - APPLICATION_BAR_TRAILING_RESERVED - 10.).max(1.);
-    let _padding = ui.push_style_var(imgui::StyleVar::WindowPadding([0., 0.]));
+    let _padding = crate::widget_abi::window_padding(ui, [0., 0.]);
     let height = application_bar_height(owners.icons);
     let region = crate::widget_abi::child_region(
         ui,
@@ -394,7 +394,7 @@ fn ribbon_menu_row(
         + style.window_padding[0] * 2.)
         .max(40.);
     let height = tab_row_height(ui);
-    let _padding = tab_overflow::tab_item_padding(ui);
+    let _padding = crate::widget_abi::frame_padding(ui, tab_overflow::tab_item_padding(ui));
     let region = crate::widget_abi::child_region(
         ui,
         "##ribbon-menu-row",

@@ -25,7 +25,7 @@ pub(super) fn draw(ui: &Ui, ribbon: &mut DocumentRibbon, frame: &RibbonFrame) {
     };
     let visible = &frame.tabs[..count];
     let changed = ribbon.tabs_changed(visible) || ribbon.tabs_settling();
-    let _padding = ui.push_style_var(imgui::StyleVar::WindowPadding([0., 0.]));
+    let _padding = crate::widget_abi::window_padding(ui, [0., 0.]);
     let region = crate::widget_abi::child_region(
         ui,
         "##ribbon-tab-region",
@@ -34,7 +34,7 @@ pub(super) fn draw(ui: &Ui, ribbon: &mut DocumentRibbon, frame: &RibbonFrame) {
         WindowFlags::NO_SCROLLBAR | WindowFlags::NO_SCROLL_WITH_MOUSE,
     );
     if region.visible {
-        let _padding = tab_item_padding(ui);
+        let _padding = crate::widget_abi::frame_padding(ui, tab_item_padding(ui));
         draw_visible(ui, ribbon, frame, visible, changed);
     }
     drop(region);
@@ -76,11 +76,13 @@ fn draw_visible(
 ) {
     let _neutral = (!visible.contains(&ribbon.active)).then(|| {
         [
-            ui.push_style_color(
+            crate::widget_abi::push_style_color(
+                ui,
                 imgui::StyleColor::TabActive,
                 ui.style_color(imgui::StyleColor::Tab),
             ),
-            ui.push_style_color(
+            crate::widget_abi::push_style_color(
+                ui,
                 imgui::StyleColor::TabUnfocusedActive,
                 ui.style_color(imgui::StyleColor::TabUnfocused),
             ),
@@ -185,13 +187,13 @@ pub(super) fn tab_row_height(ui: &Ui) -> f32 {
     (ui.frame_height() + 2.).ceil().max(28.)
 }
 
-pub(super) fn tab_item_padding(ui: &Ui) -> imgui::StyleStackToken<'_> {
+pub(super) fn tab_item_padding(ui: &Ui) -> [f32; 2] {
     let style = ui.clone_style();
     let height = tab_row_height(ui) - 2.;
-    ui.push_style_var(imgui::StyleVar::FramePadding([
+    [
         style.frame_padding[0],
         ((height - ui.current_font_size()) * 0.5).floor(),
-    ]))
+    ]
 }
 
 #[cfg(test)]

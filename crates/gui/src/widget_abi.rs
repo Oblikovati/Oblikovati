@@ -28,6 +28,11 @@ pub(crate) use text_projection::{projected_background_text, projected_text};
 #[path = "widget_scroll_region.rs"]
 mod scroll_region;
 pub(crate) use scroll_region::{child_region, scroll_region};
+#[path = "widget_scalars.rs"]
+mod scalars;
+pub(crate) use scalars::{
+    filled_circle, frame_padding, line, push_style_color, window_min_size, window_padding,
+};
 #[cfg(test)]
 #[path = "widget_text_line_advance_tests.rs"]
 mod text_line_advance_tests;

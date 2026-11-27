@@ -3,7 +3,7 @@
 use crate::application::document_creation::workspaces::WorkspaceArea;
 use crate::dockable_window::TabbedDockableWindow;
 use crate::{GuiCommandState, GuiShellAction};
-use imgui::{Condition, StyleVar, Ui, WindowFlags};
+use imgui::{Condition, Ui, WindowFlags};
 
 pub(crate) mod body_properties;
 pub(crate) mod browser_feature;
@@ -275,12 +275,16 @@ impl WorkspaceLayout {
         if panels.model_open || panels.log_open || panels.favorites_visible() {
             return None;
         }
-        let _padding = ui.push_style_var(StyleVar::WindowPadding([3., 3.]));
-        let _minimum = ui.push_style_var(StyleVar::WindowMinSize([1., 1.]));
+        let _padding = crate::widget_abi::window_padding(ui, [3., 3.]);
+        let _minimum = crate::widget_abi::window_min_size(ui, [1., 1.]);
         let side = ui.frame_height() + 6.;
+        crate::widget_abi::window_geometry(
+            ui,
+            [area.left + 8., area.top + 4.],
+            [side, side],
+            Condition::Always,
+        );
         ui.window("##panel-plus")
-            .position([area.left + 8., area.top + 4.], Condition::Always)
-            .size([side, side], Condition::Always)
             .flags(panel_launcher_flags())
             .build(|| crate::widget_abi::workspace_panel_menu(ui))
             .flatten()

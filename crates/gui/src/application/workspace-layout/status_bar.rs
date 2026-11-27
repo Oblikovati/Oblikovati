@@ -27,42 +27,42 @@ pub(crate) fn status_bar(
         ]
         .map(|(style, token)| {
             let color = &palette[&token];
-            ui.push_style_color(style, [color.r, color.g, color.b, color.a])
+            crate::widget_abi::push_style_color(ui, style, [color.r, color.g, color.b, color.a])
         })
     });
     // The status line is shorter than ImGui's default minimum window height (#4141).
-    let _minimum = ui.push_style_var(imgui::StyleVar::WindowMinSize([1., 1.]));
-    ui.window("##status-bar")
-        .position([0., height - STATUS_BAR_HEIGHT], imgui::Condition::Always)
-        .size([width, STATUS_BAR_HEIGHT], imgui::Condition::Always)
-        .flags(flags())
-        .build(|| {
-            let prompt = if home {
-                command_status(request.status.as_deref(), None)
-            } else {
-                command_status(tool_prompt.or(request.status.as_deref()), alias)
-            };
-            let origin = ui.window_pos();
-            let y = ((STATUS_BAR_HEIGHT - ui.current_font_size()) * 0.5).floor();
-            ui.get_window_draw_list()
-                .add_circle(
-                    [
-                        origin[0] + STATUS_LEFT_INSET + DOT_RADIUS,
-                        origin[1] + STATUS_BAR_HEIGHT / 2.,
-                    ],
-                    DOT_RADIUS,
-                    ui.style_color(StyleColor::NavHighlight),
-                )
-                .filled(true)
-                .build();
-            let prompt_x = STATUS_LEFT_INSET + 2. * DOT_RADIUS + 7.;
-            crate::widget_abi::cursor_position(ui, [prompt_x, y]);
-            ui.text(&prompt);
-            let prompt_right = prompt_x + ui.calc_text_size(&prompt)[0] + CELL_GAP;
-            if !home {
-                telemetry(ui, &request.commands, width, prompt_right);
-            }
-        });
+    let _minimum = crate::widget_abi::window_min_size(ui, [1., 1.]);
+    crate::widget_abi::window_geometry(
+        ui,
+        [0., height - STATUS_BAR_HEIGHT],
+        [width, STATUS_BAR_HEIGHT],
+        imgui::Condition::Always,
+    );
+    ui.window("##status-bar").flags(flags()).build(|| {
+        let prompt = if home {
+            command_status(request.status.as_deref(), None)
+        } else {
+            command_status(tool_prompt.or(request.status.as_deref()), alias)
+        };
+        let origin = ui.window_pos();
+        let y = ((STATUS_BAR_HEIGHT - ui.current_font_size()) * 0.5).floor();
+        crate::widget_abi::filled_circle(
+            ui,
+            [
+                origin[0] + STATUS_LEFT_INSET + DOT_RADIUS,
+                origin[1] + STATUS_BAR_HEIGHT / 2.,
+            ],
+            DOT_RADIUS,
+            ui.style_color(StyleColor::NavHighlight),
+        );
+        let prompt_x = STATUS_LEFT_INSET + 2. * DOT_RADIUS + 7.;
+        crate::widget_abi::cursor_position(ui, [prompt_x, y]);
+        ui.text(&prompt);
+        let prompt_right = prompt_x + ui.calc_text_size(&prompt)[0] + CELL_GAP;
+        if !home {
+            telemetry(ui, &request.commands, width, prompt_right);
+        }
+    });
 }
 fn telemetry(ui: &Ui, commands: &crate::GuiCommandState, width: f32, prompt_right: f32) {
     let _numeric = crate::ui_scale::mono_micro_font(ui);
@@ -120,11 +120,10 @@ fn draw_telemetry(
             telemetry_separator(ui, right + CELL_GAP);
         }
         crate::widget_abi::cursor_position(ui, [left, y]);
-        if successful {
-            ui.text_colored(constraint_success_color(ui), cell);
-        } else {
-            ui.text(cell);
-        }
+        let _color = successful.then(|| {
+            crate::widget_abi::push_style_color(ui, StyleColor::Text, constraint_success_color(ui))
+        });
+        ui.text(cell);
         right = left - 2. * CELL_GAP;
     }
 }
@@ -132,13 +131,12 @@ fn draw_telemetry(
 fn telemetry_separator(ui: &Ui, offset: f32) {
     let [left, top] = ui.window_pos();
     let x = left + offset;
-    ui.get_window_draw_list()
-        .add_line(
-            [x, top + 5.],
-            [x, top + STATUS_BAR_HEIGHT - 5.],
-            ui.style_color(StyleColor::Border),
-        )
-        .build();
+    crate::widget_abi::line(
+        ui,
+        [x, top + 5.],
+        [x, top + STATUS_BAR_HEIGHT - 5.],
+        ui.style_color(StyleColor::Border),
+    );
 }
 
 fn constraint_success_color(ui: &Ui) -> [f32; 4] {

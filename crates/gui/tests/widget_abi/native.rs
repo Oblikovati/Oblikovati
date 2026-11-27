@@ -111,6 +111,52 @@ fn assert_literal_draw_color(context: &mut imgui::Context) {
 }
 
 #[test]
+fn scalar_shapes_keep_their_colors_and_scoped_styles_restore_the_frame() {
+    let mut context = probe_context();
+    let ui = context.frame();
+    let dot = [0.2, 0.7, 0.4, 1.];
+    let rule = [0.9, 0.3, 0.1, 1.];
+    assert_scoped_styles(ui, dot);
+    window_geometry(ui, [0., 0.], [400., 300.], Condition::Always);
+    ui.window("Scalar shapes").build(|| {
+        filled_circle(ui, [32., 47.], 3., dot);
+        line(ui, [72., 42.], [72., 56.], rule);
+    });
+    let draws = context.render();
+    for color in [dot, rule] {
+        let color = ImColor32::from(color).to_bits().to_ne_bytes();
+        assert!(
+            draws
+                .draw_lists()
+                .flat_map(|list| list.vtx_buffer())
+                .any(|v| v.col == color)
+        );
+    }
+}
+
+fn assert_scoped_styles(ui: &Ui, color: [f32; 4]) {
+    use imgui::StyleColor;
+    let original = ui.clone_style();
+    let text = ui.style_color(StyleColor::Text);
+    {
+        let _minimum = window_min_size(ui, [1., 2.]);
+        let _window = window_padding(ui, [4., 5.]);
+        let _frame = frame_padding(ui, [6., 7.]);
+        let _text = push_style_color(ui, StyleColor::Text, color);
+        let style = ui.clone_style();
+        assert_eq!(style.window_min_size, [1., 2.]);
+        assert_eq!(style.window_padding, [4., 5.]);
+        assert_eq!(style.frame_padding, [6., 7.]);
+        assert_eq!(ui.style_color(StyleColor::Text), color);
+    }
+    let restored = ui.clone_style();
+    assert_eq!(restored.window_min_size, original.window_min_size);
+    assert_eq!(restored.window_padding, original.window_padding);
+    assert_eq!(restored.frame_padding, original.frame_padding);
+    assert_eq!(ui.style_color(StyleColor::Text), text);
+}
+
+#[test]
 fn scalar_background_text_keeps_literal_glyphs_behind_window_geometry() {
     let mut context = probe_context();
     let ui = context.frame();
