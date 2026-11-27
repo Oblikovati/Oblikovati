@@ -1,0 +1,4 @@
+radius=0.25 origin=[0.0, 0.0, 0.0] center=[0.0, 0.0]: certified
+radius=0.25 origin=[0.0, 0.0, -1.2] center=[-2.0, -1.25]: certified
+radius=0.3 origin=[0.0, 0.0, 0.0] center=[0.0, 0.0]: certified
+radius=0.3 origin=[0.0, 0.0, -1.2] center=[-2.0, -1.25]: BuildPlanarRegions declined at Certification (Incomplete): IncompleteCertification { reason: "Joins: PairUnavailable { sources: [RegionSourceId(2), RegionSourceId(4)] }" }

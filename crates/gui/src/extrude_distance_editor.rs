@@ -261,6 +261,7 @@ fn choose_parameter<'a>(
 }
 
 pub(crate) struct ExtrudePanelControls<'a> {
+    pub browser_plane: Option<String>,
     pub icons: &'a crate::icons::GuiRibbonIcons,
     pub parameters: &'a mut crate::parameters::GuiParameterEditor,
     pub popup_was_open: bool,

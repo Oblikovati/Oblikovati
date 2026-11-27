@@ -222,6 +222,12 @@ fn work_plane_reference_uses_identity_and_rejects_other_kinds() {
         second,
         work_plane_reference(&snapshot, FeatureId(2)).unwrap()
     );
+    assert_eq!(
+        resolve_work_plane_reference(&snapshot, &second).unwrap(),
+        FeatureId(2)
+    );
+    assert!(resolve_work_plane_reference(&snapshot, "datum/v1/3").is_err());
+    assert!(resolve_work_plane_reference(&snapshot, "datum/v1/02").is_err());
     assert!(work_plane_reference(&snapshot, FeatureId(3)).is_err());
     assert!(work_plane_reference(&snapshot, FeatureId(99)).is_err());
 }

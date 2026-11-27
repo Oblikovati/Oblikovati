@@ -137,6 +137,9 @@ fn choose_on_press(
             feature: feature.id,
         });
     }
+    if clicked && feature.kind == "Work Plane" && !feature.suppressed {
+        view.picked_plane_reference = Some(format!("datum/v1/{}", feature.id.0));
+    }
     if clicked && ui.is_mouse_double_clicked(MouseButton::Left) {
         let edit = loft_edit_action(feature).unwrap_or(GuiShellAction::OpenExtrudeEdit(feature.id));
         if edit.enabled(state) {

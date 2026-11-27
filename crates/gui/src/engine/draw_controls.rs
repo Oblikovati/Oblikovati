@@ -334,6 +334,7 @@ impl GuiFrameEngine {
                 icons,
                 parameters: &mut self.parameter_editor,
                 popup_was_open: self.popup_was_open,
+                browser_plane: self.workspace.take_picked_plane_reference(),
                 area,
             },
         );

@@ -1,0 +1,4 @@
+running 2 tests
+test native::gui_loop_tests::application_bdd::solid_extrusion::reference_extent::from_dropdown_restores_the_numeric_preview ... ok
+test native::gui_loop_tests::application_bdd::solid_extrusion::reference_extent::plane_reference::browser_plane_picks_preview_and_commit_reference_extent ... ok
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 1786 filtered out; finished in 15.75s

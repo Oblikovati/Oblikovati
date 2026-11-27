@@ -190,6 +190,9 @@ impl ExtrudeDialog {
             controls.parameters.close_tolerance_inspection();
             return;
         };
+        if let Some(reference) = controls.browser_plane.take() {
+            self.reference.pick(reference);
+        }
         if self.update_distance_handle(ui, state, controls.area) {
             controls.parameters.close_tolerance_inspection();
         }
@@ -292,14 +295,6 @@ impl ExtrudeDialog {
         }
         if let Some(error) = &self.commit_error {
             ui.text_colored([1.0, 0.25, 0.25, 1.0], format!("Extrusion failed: {error}"));
-        }
-    }
-    pub(super) fn awaits_reference_pick(&self) -> bool {
-        self.document.is_some() && self.reference.awaits_pick()
-    }
-    pub(super) fn pick_reference(&mut self, document: u64, face: String) {
-        if self.document == Some(document) {
-            self.reference.pick(face);
         }
     }
     fn refresh_preview(

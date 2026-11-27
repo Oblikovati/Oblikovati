@@ -16,6 +16,15 @@ pub enum GuiOriginPlaneKind {
     Yz,
 }
 impl GuiOriginPlaneKind {
+    pub(crate) fn work_reference(self) -> &'static str {
+        use oblikovati_api::types::{WORK_REF_XY_PLANE, WORK_REF_XZ_PLANE, WORK_REF_YZ_PLANE};
+        match self {
+            Self::Xy => WORK_REF_XY_PLANE,
+            Self::Xz => WORK_REF_XZ_PLANE,
+            Self::Yz => WORK_REF_YZ_PLANE,
+        }
+    }
+
     /// Name the plane as the browser does; example: `GuiOriginPlaneKind::Xy.label()`.
     pub fn label(self) -> &'static str {
         match self {

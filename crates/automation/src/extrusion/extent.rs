@@ -98,6 +98,10 @@ fn parse_named_plane(
             _ => Err(Error("expected an ordered work plane".into())),
         };
     }
+    if value.starts_with("datum/v1/") {
+        return crate::datums::resolve_work_plane_reference(snapshot, value)
+            .map(WorkPlaneReference::Feature);
+    }
     let bytes = crate::reference_bytes::hex_bytes(value)?;
     WorkPlaneFaceReference::new(bytes)
         .map(WorkPlaneReference::Face)

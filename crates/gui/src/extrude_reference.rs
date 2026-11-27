@@ -123,16 +123,31 @@ impl ReferenceDraft {
             Slot::To => ("To", &self.to, "extrude-to-face"),
         };
         crate::theme::property_label(ui, label);
-        let caption = if face.is_some() {
-            "Face"
-        } else {
-            "Select Face"
+        let caption = match face.as_deref() {
+            Some(reference)
+                if reference.starts_with("origin/plane/") || reference.starts_with("datum/v1/") =>
+            {
+                "Work Plane"
+            }
+            Some(_) => "Face",
+            None => "Select Face",
         };
         let color = ui.style_color(StyleColor::ButtonActive);
         let _active =
             (self.active == Some(slot)).then(|| ui.push_style_color(StyleColor::Button, color));
         if ui.button(format!("{caption}##{id}")) {
             self.active = Some(slot);
+        }
+    }
+}
+
+impl super::ExtrudeDialog {
+    pub(crate) fn awaits_reference_pick(&self) -> bool {
+        self.document.is_some() && self.reference.awaits_pick()
+    }
+    pub(crate) fn pick_reference(&mut self, document: u64, reference: String) {
+        if self.document == Some(document) {
+            self.reference.pick(reference);
         }
     }
 }

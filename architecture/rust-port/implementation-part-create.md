@@ -141,6 +141,13 @@ verifies caps on opposite faces of a block and an independent midplane
 sketch. The published 3 mm radius fixture still needs Martensite's
 translated-circle certification fix.
 
+Extrude accepts origin planes and authored work planes from the Model
+browser when a reference selector is active. The
+[native plane control](receipts/2026-11-27-extrude-work-plane-3893/README.md)
+checks the resulting cap and verifies that the saved recipe references
+the authored plane by identity. On fractional-scale Wayland, the dock
+layout keeps the Extrude panel clear of browser rows.
+
 ## Sweep, Loft, and Revolve
 
 The [release probes](../../crates/martensite/tests/release_probe/create.rs)

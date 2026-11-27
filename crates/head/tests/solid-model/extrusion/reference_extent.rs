@@ -6,6 +6,9 @@ use super::*;
 #[path = "between_faces.rs"]
 mod between_faces;
 
+#[path = "plane_reference.rs"]
+mod plane_reference;
+
 #[given("a sketch-plane start and numeric distance")]
 #[given("the numeric Distance A extrusion preview")]
 fn numeric_preview(world: &mut ApplicationWorld) {
