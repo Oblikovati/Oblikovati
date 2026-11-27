@@ -283,3 +283,7 @@ intermediate position is normalized along the guide and its size multiplies
 the area of the interpolated section. Part recipe version 38 preserves both
 values. The [native receipt](receipts/2026-11-27-loft-placed-3917/README.md)
 covers the viewport pick, annotations, two acceptance steps, and package replay.
+
+The [section edit receipt](receipts/2026-11-27-loft-section-edit-3917/README.md)
+covers reopening at the projected viewport point, doubling the area and
+checking the larger preview, then moving the point along its 20 mm guide.

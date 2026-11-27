@@ -68,3 +68,32 @@ impl SectionDimensions {
             .build();
     }
 }
+
+pub(crate) fn placed_point_press(
+    ui: &Ui,
+    state: &GuiCommandState,
+    positions: &[Option<crate::dimension_labels::LabelPosition>],
+) -> Option<GuiShellAction> {
+    if !ui.is_mouse_double_clicked(imgui::MouseButton::Left)
+        || state.loft_placed.is_none_or(|placed| placed.editing)
+    {
+        return None;
+    }
+    let (_, position) = state
+        .dimension_labels
+        .iter()
+        .zip(positions)
+        .find(|(label, _)| label.role == crate::GuiDimensionLabelRole::LoftPlacedSection)?;
+    let position = position.as_ref()?;
+    let [x, y] = ui.io().mouse_pos;
+    let [px, py] = position.anchor;
+    let in_caption = (x - position.center[0]).abs() <= position.size[0] * 0.5
+        && (y - position.center[1]).abs() <= position.size[1] * 0.5;
+    if (x - px).hypot(y - py) <= 8. || in_caption {
+        Some(GuiShellAction::Loft(GuiLoftAction::EditPlaced(
+            state.document?,
+        )))
+    } else {
+        None
+    }
+}

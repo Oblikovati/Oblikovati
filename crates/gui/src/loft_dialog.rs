@@ -18,6 +18,7 @@ use oblikovati_model::{
     sketch::SketchEntityId,
 };
 use section_dimensions::SectionDimensions;
+pub(crate) use section_dimensions::placed_point_press;
 
 const TITLE: &str = "Loft";
 const EMPTY_PART: &str = "Loft requires a body or at least two visible sketches.";
@@ -362,12 +363,16 @@ impl LoftDialog {
         }
         match self.path_mode {
             GuiLoftPathMode::Rails => {
-                ui.child_window("##loft-rails")
-                    .size([0., 27.])
-                    .border(true)
-                    .build(|| {
-                        ui.text_disabled("No rails selected");
-                    });
+                let region = crate::widget_abi::scroll_region_with_content_width(
+                    ui,
+                    "##loft-rails",
+                    [0., 27.],
+                    0.,
+                    false,
+                );
+                if region.visible {
+                    ui.text_disabled("No rails selected");
+                }
             }
             GuiLoftPathMode::CenterLine => self.center_line_selector(ui, state, actions),
             GuiLoftPathMode::PlacedSections => self.placed_controls(ui, state, actions),
@@ -423,15 +428,19 @@ impl LoftDialog {
             } else {
                 156.
             };
-            ui.child_window("##loft-mapping-point-sets")
-                .size([0., height])
-                .border(true)
-                .build(|| {
-                    draw_point_set(ui, sections, 1, "");
-                    for index in 0..self.supplemental_point_sets {
-                        draw_point_set(ui, sections, index + 2, " *");
-                    }
-                });
+            let region = crate::widget_abi::scroll_region_with_content_width(
+                ui,
+                "##loft-mapping-point-sets",
+                [0., height],
+                0.,
+                false,
+            );
+            if region.visible {
+                draw_point_set(ui, sections, 1, "");
+                for index in 0..self.supplemental_point_sets {
+                    draw_point_set(ui, sections, index + 2, " *");
+                }
+            }
         }
         if crate::widget_abi::button(ui, "Click to add", [0., 0.]) {
             self.supplemental_point_sets += 1;

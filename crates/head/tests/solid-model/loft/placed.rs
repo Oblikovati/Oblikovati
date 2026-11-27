@@ -64,10 +64,7 @@ fn preview_has_geometric_section_and_annotations(world: &mut ApplicationWorld) {
 
 #[when("the user accepts the section dimensions and the Loft dialog")]
 fn accept_section_and_loft(world: &mut ApplicationWorld) {
-    let ok = diagnostics::pointer_pixels(world.run_in_window(DIMENSIONS, "OK").center());
-    world.click(ok);
-    world.pump(Vec::new());
-    assert!(diagnostics::window_geometry(DIMENSIONS).is_none());
+    accept_section_dimensions(world);
     assert!(
         world
             .state()
@@ -75,6 +72,13 @@ fn accept_section_and_loft(world: &mut ApplicationWorld) {
             .is_some_and(|view| !view.editing && view.dirty)
     );
     accept_loft(world);
+}
+
+fn accept_section_dimensions(world: &mut ApplicationWorld) {
+    let ok = diagnostics::pointer_pixels(world.run_in_window(DIMENSIONS, "OK").center());
+    world.click(ok);
+    world.pump(Vec::new());
+    assert!(diagnostics::window_geometry(DIMENSIONS).is_none());
 }
 
 #[then("Loft1 remains in the browser and a solid is visible")]
@@ -109,4 +113,109 @@ fn committed_section(world: &mut ApplicationWorld) -> SketchLoftPlacedSection {
         panic!("expected Loft1 to have a saved Loft definition");
     };
     definition.recipe().placed.unwrap()
+}
+
+#[given(
+    "the user edits Loft1, selects placed-sections mode, adds an intermediate section near the center-line midpoint and accepts it with alternate section size 1"
+)]
+fn accept_midpoint_section(world: &mut ApplicationWorld) {
+    reopen_with_guide(world);
+    place_one_section(world);
+    section_opens_dimensions(world);
+    accept_section_and_loft(world);
+    assert_eq!(committed_section(world).area_scale, 1.);
+}
+
+#[when("the user edits Loft1 and double-clicks the intermediate point in the preview")]
+fn edit_the_section_at_its_viewport_point(world: &mut ApplicationWorld) {
+    edit::double_click_loft(world);
+    double_click_placed_point(world);
+}
+
+fn double_click_placed_point(world: &mut ApplicationWorld) {
+    let view = world.state().loft_placed.unwrap();
+    let z = view.section.position * view.guide_length_mm / 10.;
+    let pixel = crate::HeadWindow::model_pixel(&world.app().window.native, [0., 0., z]).unwrap();
+    world.pump(crate::native::gui_loop_tests::pointer_click_events(
+        pixel, 2,
+    ));
+    world.pump(Vec::new());
+}
+
+#[then("Section Dimensions opens with the saved section settings")]
+fn saved_section_dimensions_are_visible(world: &mut ApplicationWorld) {
+    section_opens_dimensions(world);
+    assert_eq!(
+        world.state().loft_placed.unwrap().section,
+        committed_section(world)
+    );
+    world.run_in_window(DIMENSIONS, "1.000");
+}
+
+#[when("the user changes the alternate section size from 1 to 2 and accepts it")]
+fn double_the_section_area(world: &mut ApplicationWorld) {
+    replace_section_dimension(world, "1.000", "2");
+    accept_section_dimensions(world);
+}
+
+#[then("the displayed section area doubles and the loft preview bulges")]
+fn doubled_area_changes_the_solid_preview(world: &mut ApplicationWorld) {
+    let view = world.state().loft_placed.unwrap();
+    let original = committed_section(world);
+    assert_eq!(view.section.area_scale, 2.);
+    assert!((view.section.position - original.position).abs() < 0.0001);
+    let starting_radius = 10. - 5. * view.section.position;
+    let before = std::f64::consts::PI * starting_radius.powi(2);
+    assert!((view.area_mm2 / before - 2.).abs() < 1e-8);
+    world.expect_text(&format!("Area {:.3}", view.area_mm2));
+    let maximum_radius = world
+        .app()
+        .window
+        .scene_triangles
+        .iter()
+        .filter(|triangle| triangle.color == crate::part_scene::NEW_SOLID_PREVIEW)
+        .flat_map(|triangle| triangle.positions)
+        .map(|point| point[0].hypot(point[1]))
+        .fold(0.0_f32, f32::max);
+    assert!(maximum_radius > 1.02, "preview radius {maximum_radius}");
+}
+
+#[when("the user accepts and reopens the loft and section dimensions")]
+fn reopen_after_accepting_doubled_area(world: &mut ApplicationWorld) {
+    accept_loft(world);
+    edit_the_section_at_its_viewport_point(world);
+}
+
+#[then("the section size remains 2")]
+fn saved_size_is_two(world: &mut ApplicationWorld) {
+    section_opens_dimensions(world);
+    assert_eq!(committed_section(world).area_scale, 2.);
+    world.run_in_window(DIMENSIONS, "2.000");
+}
+
+#[when("the user sets the section position distance to 5 mm on the 20 mm center line")]
+fn move_section_five_millimeters_from_the_start(world: &mut ApplicationWorld) {
+    let view = world.state().loft_placed.unwrap();
+    replace_section_dimension(
+        world,
+        &format!("{:.3}", view.section.position * view.guide_length_mm),
+        "5",
+    );
+    accept_section_dimensions(world);
+}
+
+#[then("the section moves and its position annotation reads 0.250000")]
+fn section_repositions_in_the_preview(world: &mut ApplicationWorld) {
+    let view = world.state().loft_placed.unwrap();
+    assert_eq!(view.section.position, 0.25);
+    assert!((committed_section(world).position - 0.5).abs() < 0.03);
+    world.expect_text("Position 0.250000");
+    assert_eq!(world.state().loft_preview, Some(Ok(())));
+}
+
+fn replace_section_dimension(world: &mut ApplicationWorld, previous: &str, replacement: &str) {
+    let position = diagnostics::pointer_pixels(world.run_in_window(DIMENSIONS, previous).center());
+    world.click(position);
+    world.key(oblikovati_viewport::ViewportPhysicalKey::A, true);
+    world.type_text(replacement);
 }

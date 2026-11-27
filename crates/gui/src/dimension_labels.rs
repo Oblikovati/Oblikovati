@@ -12,6 +12,7 @@ pub enum GuiDimensionLabelRole {
     Driving,
     Driven,
     Preview,
+    LoftPlacedSection,
 }
 /// Owned physical screen coordinates; example: submit one label after native camera projection.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -65,6 +66,10 @@ pub(crate) fn draw_dimension_labels(
     for (label, position) in request.commands.dimension_labels.iter().zip(positions) {
         let Some(position) = position else { continue };
         let color = label_color(ui, request, label.role);
+        if label.role == GuiDimensionLabelRole::LoftPlacedSection {
+            let anchor = [position.anchor[0] - 3., position.anchor[1] - 7.];
+            crate::widget_abi::background_literal_text(ui, anchor, color, "+");
+        }
         let top_left = std::array::from_fn(|axis| position.center[axis] - position.size[axis] / 2.);
         let lower = std::array::from_fn(|axis| top_left[axis] + position.size[axis] + 2.);
         draw.add_rect(
@@ -127,7 +132,9 @@ fn label_color(ui: &imgui::Ui, request: &GuiFrameRequest, role: GuiDimensionLabe
     let token = match role {
         GuiDimensionLabelRole::Driving => TOKEN_DIMENSION_DRIVING,
         GuiDimensionLabelRole::Driven => TOKEN_DIMENSION_DRIVEN,
-        GuiDimensionLabelRole::Preview => TOKEN_DIMENSION_SKETCH,
+        GuiDimensionLabelRole::Preview | GuiDimensionLabelRole::LoftPlacedSection => {
+            TOKEN_DIMENSION_SKETCH
+        }
     };
     let Some(theme) = request.commands.theme.as_ref() else {
         return ui.style_color(imgui::StyleColor::Text);

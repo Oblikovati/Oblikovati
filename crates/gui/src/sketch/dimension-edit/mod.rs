@@ -118,6 +118,11 @@ impl GuiDimensionValueEditor {
         dimension_positions: &[Option<crate::dimension_labels::LabelPosition>],
         actions: &mut Vec<GuiShellAction>,
     ) {
+        if let Some(action) =
+            crate::loft_dialog::placed_point_press(ui, &request.commands, dimension_positions)
+        {
+            actions.push(action);
+        }
         self.closed_this_frame = false;
         self.choice_open = false;
         if self.dimension_choice(ui, request, actions) {

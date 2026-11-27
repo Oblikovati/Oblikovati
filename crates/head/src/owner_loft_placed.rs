@@ -347,6 +347,7 @@ impl LoftGuide {
             [0., 0.],
             [[0., 0.], [0., self.length]],
             "Center Line".into(),
+            GuiDimensionLabelRole::Preview,
         )];
         if let Some(view) = placed {
             let along = self.length * view.section.position;
@@ -359,6 +360,7 @@ impl LoftGuide {
                     "Point1  Position {:.6}  Area {:.3} mm²",
                     view.section.position, area
                 ),
+                GuiDimensionLabelRole::LoftPlacedSection,
             ));
         }
         Ok(labels)
@@ -370,6 +372,7 @@ fn annotation(
     position: [f64; 2],
     line: [[f64; 2]; 2],
     text: String,
+    role: GuiDimensionLabelRole,
 ) -> HeadDimensionAnnotation {
     HeadDimensionAnnotation {
         plane,
@@ -378,7 +381,7 @@ fn annotation(
         witnesses: None,
         unit: None,
         text,
-        role: GuiDimensionLabelRole::Preview,
+        role,
         edit: None,
     }
 }
