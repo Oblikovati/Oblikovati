@@ -334,8 +334,10 @@ pub(crate) fn glyph_for_uv(
         let original = bounds.map(f32::from_bits);
         let contained =
             (0..2).all(|axis| uv[axis] >= original[axis] && uv[axis + 2] <= original[axis + 2]);
+        // Narrow and negative-bearing glyphs (e.g. Inter 'A' and 'i') can lose up to ~35% of
+        // their oversampled UV width when Dear ImGui clips menu items tightly at pos.x.
         let visible = (0..2)
-            .all(|axis| uv[axis + 2] - uv[axis] >= (original[axis + 2] - original[axis]) * 0.85);
+            .all(|axis| uv[axis + 2] - uv[axis] >= (original[axis + 2] - original[axis]) * 0.65);
         (contained && visible).then_some(*letter)
     })
 }
@@ -343,7 +345,7 @@ pub(crate) fn inside_clip(first: DrawVert, opposite: DrawVert, clip: [f32; 4]) -
     (0..2).all(|axis| {
         let length = opposite.pos[axis] - first.pos[axis];
         let visible = opposite.pos[axis].min(clip[axis + 2]) - first.pos[axis].max(clip[axis]);
-        length > 0. && visible >= length * 0.85
+        length > 0. && visible >= length * 0.65
     })
 }
 /// Check a named popup in its owning window; for example, ribbon overflow at a narrow width.

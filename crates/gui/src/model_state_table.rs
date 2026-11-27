@@ -124,7 +124,7 @@ impl ModelStateTable {
             return;
         }
         let mut open = true;
-        crate::widget_abi::window_size(ui, [760., 480.], imgui::Condition::FirstUseEver);
+        crate::widget_abi::window_size(ui, [760., 540.], imgui::Condition::FirstUseEver);
         Self::dockable_window(ui, "Model State Table", &mut open)
             .build(|| self.contents(ui, state, actions));
         if !open {

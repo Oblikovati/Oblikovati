@@ -151,7 +151,7 @@ fn name_up(world: &mut ApplicationWorld) {
 #[then("Sort by shows Name with an upward direction indicator")]
 fn sort_by_up(world: &mut ApplicationWorld) {
     assert!(home_shows(world, "Sort by Name"), "expected the Name sort");
-    assert!(home_shows(world, "^"), "expected an upward direction");
+    assert!(home_shows(world, "▴"), "expected an upward direction");
 }
 // Empty state
 #[given(regex = r#"^no recent document matches "zzq_no_match_7319"$"#)]

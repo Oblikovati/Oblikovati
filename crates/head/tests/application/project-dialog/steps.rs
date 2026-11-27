@@ -100,8 +100,9 @@ fn project_column_text(world: &ApplicationWorld, header: &str, right: f32) -> St
         .runs
         .iter()
         .filter(|run| {
-            run.minimum[0] >= heading.minimum[0]
-                && run.minimum[0] < right
+            run.list == heading.list
+                && run.minimum[0] >= heading.minimum[0] - 4.
+                && run.minimum[0] < right - 4.
                 && run.minimum[1] > heading.maximum[1]
                 && run.maximum[1] < settings_y
         })

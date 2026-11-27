@@ -16,7 +16,9 @@ pub(super) fn grid_cell_text(world: &ApplicationWorld, column: &str, row: &str) 
         .runs
         .iter()
         .filter(|run| {
-            (run.center()[1] - y).abs() < 5. && run.minimum[0] <= x && run.maximum[0] >= x - 70.
+            (run.center()[1] - y).abs() < 5.
+                && run.minimum[0] <= x + 20.
+                && run.maximum[0] >= x - 70.
         })
         .map(|run| {
             run.text
