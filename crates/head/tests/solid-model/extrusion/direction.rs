@@ -34,7 +34,7 @@ fn choose_symmetric(world: &mut ApplicationWorld) {
 }
 
 #[when("Asymmetric is selected in Direction")]
-fn choose_asymmetric(world: &mut ApplicationWorld) {
+pub(super) fn choose_asymmetric(world: &mut ApplicationWorld) {
     choose_direction_icon(world, 3);
 }
 

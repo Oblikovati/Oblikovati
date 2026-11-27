@@ -172,6 +172,11 @@ for editing. The active underline moves from the feature to the sketch,
 and the extrusion preview clears when sketch editing begins.
 [Source breadcrumb receipt](receipts/2026-11-27-extrude-source-breadcrumb-3893/README.md).
 
+Tab and Shift+Tab move between the active asymmetric distance editors.
+Typing in the focused second field updates the preview, and both
+keyboard moves leave the draft open without adding a history entry.
+[Value focus receipt](receipts/2026-11-27-extrude-value-focus-3893/README.md).
+
 Extrude refreshes the preview as soon as the final reference face is
 selected. A [native From/To control](receipts/2026-11-27-extrude-between-faces-3870/README.md)
 verifies caps on opposite faces of a block and an independent midplane

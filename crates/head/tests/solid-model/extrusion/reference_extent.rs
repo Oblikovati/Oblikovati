@@ -30,6 +30,9 @@ mod enter_preference;
 #[path = "source_breadcrumb.rs"]
 mod source_breadcrumb;
 
+#[path = "value_focus.rs"]
+mod value_focus;
+
 #[given("a sketch-plane start and numeric distance")]
 #[given("the numeric Distance A extrusion preview")]
 fn numeric_preview(world: &mut ApplicationWorld) {
