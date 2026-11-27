@@ -4,7 +4,11 @@ use super::*;
 use oblikovati_automation::PartUpdateAccess;
 use oblikovati_gui::{GuiLoftAction, GuiLoftElement, GuiLoftPathMode, GuiLoftSection};
 use oblikovati_model::{
-    feature::{FeatureId, part::PartFeatureDefinition, sketch_loft::SketchLoftSection},
+    feature::{
+        FeatureId,
+        part::PartFeatureDefinition,
+        sketch_loft::{SketchLoftOutput, SketchLoftSection},
+    },
     history::{DocumentSnapshot, ResolvedDocumentSketch},
 };
 
@@ -13,6 +17,7 @@ pub(super) struct LoftSelection {
     generation: u64,
     feature: Option<FeatureId>,
     path_mode: GuiLoftPathMode,
+    output: SketchLoftOutput,
     sections: Vec<GuiLoftSection>,
     preview: Option<Result<(), String>>,
 }
@@ -38,6 +43,9 @@ impl<
                 Ok(true)
             }
             GuiLoftAction::SetPath { document, mode } => self.choose_loft_path(document, mode),
+            GuiLoftAction::SetOutput { document, output } => {
+                self.choose_loft_output(document, output)
+            }
             GuiLoftAction::Commit(document) => self.commit_loft(document),
             GuiLoftAction::Begin { document, feature } => self.begin_loft(document, feature),
         }
@@ -51,7 +59,7 @@ impl<
             .session(document)
             .map_err(|cause| cause.to_string())?;
         let generation = session.generation();
-        let sections = feature
+        let (sections, output) = feature
             .map(|id| loft_sources(session.snapshot(), id))
             .transpose()?
             .unwrap_or_default();
@@ -65,6 +73,7 @@ impl<
             generation,
             feature,
             path_mode: GuiLoftPathMode::Rails,
+            output,
             sections,
             preview,
         });
@@ -84,7 +93,8 @@ impl<
             return Ok(false);
         };
         let feature = draft.feature;
-        let sections = solid_sections(&draft.sections);
+        let output = draft.output;
+        let sections = circle_sections(&draft.sections);
         self.clear_loft_preview();
         let preview = match (mode, feature, sections) {
             (GuiLoftPathMode::Rails, Some(id), _) => Some(
@@ -92,12 +102,43 @@ impl<
                     .map(|_| ()),
             ),
             (GuiLoftPathMode::Rails, None, Some(sections)) => {
-                Some(self.preview_loft(document, sections))
+                Some(self.preview_loft(document, sections, output))
             }
             _ => None,
         };
         if let Some(draft) = &mut self.loft_selection {
             draft.path_mode = mode;
+            draft.preview = preview;
+        }
+        Ok(true)
+    }
+
+    fn choose_loft_output(
+        &mut self,
+        document: u64,
+        output: SketchLoftOutput,
+    ) -> Result<bool, String> {
+        let generation = self
+            .files
+            .workspace()
+            .session(document)
+            .map_err(|cause| cause.to_string())?
+            .generation();
+        let Some(draft) = self.loft_selection.as_ref().filter(|draft| {
+            draft.document == document
+                && draft.generation == generation
+                && draft.feature.is_none()
+                && draft.output != output
+        }) else {
+            return Ok(false);
+        };
+        let sections = (draft.path_mode == GuiLoftPathMode::Rails)
+            .then(|| circle_sections(&draft.sections))
+            .flatten();
+        self.clear_loft_preview();
+        let preview = sections.map(|sections| self.preview_loft(document, sections, output));
+        if let Some(draft) = &mut self.loft_selection {
+            draft.output = output;
             draft.preview = preview;
         }
         Ok(true)
@@ -152,9 +193,10 @@ impl<
             })
             .ok_or("Loft requires a valid preview in the current Part.")?;
         let sections =
-            solid_sections(&draft.sections).ok_or("Loft requires two circular sections.")?;
-        let prepared = oblikovati_automation::prepare_loft(session.snapshot(), sections)
-            .map_err(|cause| cause.to_string())?;
+            circle_sections(&draft.sections).ok_or("Loft requires two circular sections.")?;
+        let prepared =
+            oblikovati_automation::prepare_loft(session.snapshot(), sections, draft.output)
+                .map_err(|cause| cause.to_string())?;
         oblikovati_automation::edit_part_with_checkpoints(
             &mut self.files,
             &mut self.part_scenes,
@@ -172,13 +214,14 @@ impl<
         &mut self,
         document: u64,
         sections: [SketchLoftSection; 2],
+        output: SketchLoftOutput,
     ) -> Result<(), String> {
         let session = self
             .files
             .workspace()
             .session(document)
             .map_err(|cause| cause.to_string())?;
-        let prepared = oblikovati_automation::prepare_loft(session.snapshot(), sections)
+        let prepared = oblikovati_automation::prepare_loft(session.snapshot(), sections, output)
             .map_err(|cause| cause.to_string())?;
         self.preview_selected_blend(document, |candidate, ids| prepared.create(candidate, ids))?;
         Ok(())
@@ -218,9 +261,10 @@ impl<
             return Ok(Some(false));
         }
         draft.sections.push(section);
-        let sections = solid_sections(&draft.sections);
+        let output = draft.output;
+        let sections = circle_sections(&draft.sections);
         self.clear_loft_preview();
-        let preview = sections.map(|sections| self.preview_loft(document, sections));
+        let preview = sections.map(|sections| self.preview_loft(document, sections, output));
         if let Some(draft) = &mut self.loft_selection {
             draft.preview = preview;
         }
@@ -264,7 +308,26 @@ impl<
     }
 }
 
-fn loft_sources(snapshot: &DocumentSnapshot, id: FeatureId) -> Result<Vec<GuiLoftSection>, String> {
+pub(super) fn loft_outputs(
+    snapshot: &DocumentSnapshot,
+) -> std::collections::BTreeMap<FeatureId, SketchLoftOutput> {
+    snapshot
+        .work_geometry
+        .features()
+        .iter()
+        .filter_map(|feature| match feature.definition() {
+            PartFeatureDefinition::SketchLoft(definition) => {
+                Some((feature.id(), definition.recipe().output))
+            }
+            _ => None,
+        })
+        .collect()
+}
+
+fn loft_sources(
+    snapshot: &DocumentSnapshot,
+    id: FeatureId,
+) -> Result<(Vec<GuiLoftSection>, SketchLoftOutput), String> {
     let authored = snapshot
         .work_geometry
         .get(id)
@@ -272,7 +335,7 @@ fn loft_sources(snapshot: &DocumentSnapshot, id: FeatureId) -> Result<Vec<GuiLof
     let PartFeatureDefinition::SketchLoft(definition) = authored.definition() else {
         return Err(format!("feature {id:?}: expected a Loft"));
     };
-    definition
+    let sections = definition
         .recipe()
         .sections
         .into_iter()
@@ -287,10 +350,11 @@ fn loft_sources(snapshot: &DocumentSnapshot, id: FeatureId) -> Result<Vec<GuiLof
                 element: GuiLoftElement::Profile(section.circle),
             })
         })
-        .collect()
+        .collect::<Result<_, String>>()?;
+    Ok((sections, definition.recipe().output))
 }
 
-fn solid_sections(sections: &[GuiLoftSection]) -> Option<[SketchLoftSection; 2]> {
+fn circle_sections(sections: &[GuiLoftSection]) -> Option<[SketchLoftSection; 2]> {
     let [first, last] = sections else {
         return None;
     };

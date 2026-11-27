@@ -15,11 +15,28 @@ pub struct SketchLoftSection {
     pub circle: SketchEntityId,
 }
 
+/// A closed solid or a shell lofted through the current section boundaries.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum SketchLoftOutput {
+    #[default]
+    Solid,
+    Surface,
+}
+
+impl SketchLoftOutput {
+    fn is_solid(&self) -> bool {
+        *self == Self::Solid
+    }
+}
+
 /// Persisted section identities in the order in which the loft passes through them.
 #[derive(Clone, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct SketchLoftRecipe {
     pub sections: [SketchLoftSection; 2],
+    #[serde(default, skip_serializing_if = "SketchLoftOutput::is_solid")]
+    pub output: SketchLoftOutput,
 }
 
 /// A Loft whose sources are structurally valid and can be resolved for the current Part.
@@ -35,6 +52,12 @@ pub struct ResolvedLoftCircle {
     pub radius: f64,
 }
 
+/// Current resolved source geometry and the authored result kind.
+pub struct ResolvedSketchLoft {
+    pub sections: [ResolvedLoftCircle; 2],
+    pub output: SketchLoftOutput,
+}
+
 impl SketchLoftDefinition {
     /// Validate the authored section pair. Example: `SketchLoftDefinition::new([base, tip])?`.
     pub fn new(sections: [SketchLoftSection; 2]) -> Result<Self, String> {
@@ -47,12 +70,21 @@ impl SketchLoftDefinition {
                 "Loft sections {sections:?}: expected two distinct, named sketch circles"
             ));
         }
-        Ok(Self(SketchLoftRecipe { sections }))
+        Ok(Self(SketchLoftRecipe {
+            sections,
+            output: SketchLoftOutput::Solid,
+        }))
     }
 
     /// Restore ordered section IDs. Example: `SketchLoftDefinition::from_recipe(recipe)?`.
     pub fn from_recipe(recipe: SketchLoftRecipe) -> Result<Self, String> {
-        Self::new(recipe.sections)
+        Self::new(recipe.sections).map(|loft| loft.with_output(recipe.output))
+    }
+
+    /// Choose the result kind over the same sections. Example: `loft.with_output(SketchLoftOutput::Surface)`.
+    pub fn with_output(mut self, output: SketchLoftOutput) -> Self {
+        self.0.output = output;
+        self
     }
 
     /// Read the authored sources without geometry. Example: `loft.recipe().sections`.
@@ -88,7 +120,7 @@ impl SketchLoftDefinition {
         &self,
         snapshot: &DocumentSnapshot,
         datums: &WorkGeometryEvaluation,
-    ) -> Result<[ResolvedLoftCircle; 2], String> {
+    ) -> Result<ResolvedSketchLoft, String> {
         let resolve = |section: SketchLoftSection| {
             let source = snapshot
                 .require_converged_sketch_with_datums(section.sketch, datums)
@@ -96,7 +128,10 @@ impl SketchLoftDefinition {
             circle_in_part(&source, section)
         };
         let [first, last] = self.0.sections;
-        Ok([resolve(first)?, resolve(last)?])
+        Ok(ResolvedSketchLoft {
+            sections: [resolve(first)?, resolve(last)?],
+            output: self.0.output,
+        })
     }
 }
 

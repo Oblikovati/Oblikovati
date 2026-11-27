@@ -52,7 +52,7 @@ impl PartFeatureEvaluator for CertifiedNamedSolidEvaluator<'_> {
     fn evaluate_loft(
         &mut self,
         feature: FeatureId,
-        input: [oblikovati_model::feature::sketch_loft::ResolvedLoftCircle; 2],
+        input: oblikovati_model::feature::sketch_loft::ResolvedSketchLoft,
     ) -> Result<NamedSolid, PartFeatureFailure<EvaluationFailure>> {
         let Some(prism) = &self.prism else {
             return Err(PartFeatureFailure::Unsupported(
@@ -67,7 +67,7 @@ impl PartFeatureEvaluator for CertifiedNamedSolidEvaluator<'_> {
             self.history,
             self.document,
             feature,
-            input.map(|section| section.source),
+            input.sections.map(|section| section.source),
             candidate,
         )
         .map_err(|cause| {

@@ -91,6 +91,30 @@ fn loft_between_the_fixture_sections_returns_a_frustum_with_history() -> Result<
     Ok(())
 }
 
+#[test]
+fn loft_between_the_fixture_sections_retains_both_open_trims() -> Result<(), Failure> {
+    let mut loft = BRepOffsetAPIThruSections::new(false, false, 1e-6);
+    loft.set_mutable_input(true);
+    let sections = [circle(0., 1.)?, circle(3., 0.5)?];
+    for section in &sections {
+        loft.add_wire(&BRepBuilderAPIMakeWire::from_edge(section)?.wire()?);
+    }
+    let shell = loft.shape()?.clone();
+    assert_eq!(shell.shape_type()?, ShapeEnum::Shell);
+    assert!(!martensite_tkbrep::brep::BRepTool::is_closed(&shell)?);
+    assert!(BRepCheckAnalyzer::new(&shell, true, false, true)?.is_valid()?);
+    let wall = loft_wall(&mut loft, &sections[0])?;
+    assert!(wall.is_same(&loft_wall(&mut loft, &sections[1])?));
+    let faces: Vec<_> = Explorer::new(&shell, ShapeEnum::Face, ShapeEnum::Shape)?.collect();
+    assert_eq!(faces.len(), 1);
+    assert!(faces[0].is_same(&wall));
+    let edges: Vec<_> = Explorer::new(&shell, ShapeEnum::Edge, ShapeEnum::Shape)?.collect();
+    for section in &sections {
+        assert!(edges.iter().any(|edge| edge.is_same(section.as_ref())));
+    }
+    verify_surface_area(&shell, 1.5 * PI * 9.25_f64.sqrt())
+}
+
 fn verify_loft(ruled: bool) -> Result<(), Failure> {
     let mut loft = BRepOffsetAPIThruSections::new(true, ruled, 1e-6);
     loft.set_mutable_input(false);

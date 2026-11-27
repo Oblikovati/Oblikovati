@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::{
-    section_body::{bind_section_body, incident_names},
+    section_body::{bind_section_body, incident_names, name_open_shell_edges},
     *,
 };
+use crate::loft::LoftTopology;
 use oblikovati_model::{feature::sketch_loft::SketchLoftSection, identity::SemanticReferenceName};
 
 impl BlendNamedTopology {
@@ -16,24 +17,45 @@ impl BlendNamedTopology {
         let first = [first.sketch.0, first.circle.0];
         let last = [last.sketch.0, last.circle.0];
         let sources = [first[0], first[1], last[0], last[1]];
-        let name = |kind, role, ids: &[u64]| {
+        let name = |kind, role: &str, ids: &[u64]| {
             SemanticReferenceName::new(document, feature.0, kind, "loft", role, ids)?.encode()
         };
         let body = name(4, "body", &sources)?;
-        let [start, end, wall] = candidate.faces;
-        let faces = vec![
-            (name(1, "start", &first)?, start),
-            (name(1, "end", &last)?, end),
-            (name(1, "side", &sources)?, wall),
-        ];
-        let edges = incident_names(
-            document,
-            feature,
-            &candidate.shape,
-            ShapeEnum::Edge,
-            2,
-            &faces,
-        )?;
+        let (faces, edges) = match candidate.history {
+            LoftTopology::Solid {
+                caps: [start, end],
+                wall,
+            } => {
+                let faces = vec![
+                    (name(1, "start", &first)?, start),
+                    (name(1, "end", &last)?, end),
+                    (name(1, "side", &sources)?, wall),
+                ];
+                let edges = incident_names(
+                    document,
+                    feature,
+                    &candidate.shape,
+                    ShapeEnum::Edge,
+                    2,
+                    &faces,
+                )?;
+                (faces, edges)
+            }
+            LoftTopology::Surface {
+                trims: [start, end],
+                wall,
+            } => {
+                let faces = vec![(name(1, "side", &sources)?, wall)];
+                let trims = [
+                    (name(2, "start", &first)?, start),
+                    (name(2, "end", &last)?, end),
+                ];
+                let edges = name_open_shell_edges(&candidate.shape, trims, &|kind, role| {
+                    name(kind, role, &sources)
+                })?;
+                (faces, edges)
+            }
+        };
         let vertices = incident_names(
             document,
             feature,

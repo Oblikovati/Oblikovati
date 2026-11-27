@@ -4,7 +4,7 @@ use oblikovati_api::Error;
 use oblikovati_model::{
     feature::{
         FeatureId,
-        sketch_loft::{SketchLoftDefinition, SketchLoftSection},
+        sketch_loft::{SketchLoftDefinition, SketchLoftOutput, SketchLoftSection},
     },
     history::{DocumentSnapshot, RecipeReservations},
 };
@@ -15,14 +15,21 @@ pub struct PreparedLoft {
     definition: SketchLoftDefinition,
 }
 
-/// Prepare a new solid from two sketch circles. Example: `prepare_loft(snapshot, sections)?`.
+/// Prepare a Loft from two sketch circles. Example: `prepare_loft(snapshot, sections, output)?`.
 pub fn prepare_loft(
     snapshot: &DocumentSnapshot,
     sections: [SketchLoftSection; 2],
+    output: SketchLoftOutput,
 ) -> Result<PreparedLoft, Error> {
+    let prefix = match output {
+        SketchLoftOutput::Solid => "Loft",
+        SketchLoftOutput::Surface => "LoftSrf",
+    };
     Ok(PreparedLoft {
-        name: crate::fillet::next_name(snapshot, "Loft")?,
-        definition: SketchLoftDefinition::new(sections).map_err(Error)?,
+        name: crate::fillet::next_name(snapshot, prefix)?,
+        definition: SketchLoftDefinition::new(sections)
+            .map_err(Error)?
+            .with_output(output),
     })
 }
 

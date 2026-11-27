@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Bind the trims of a single periodic profile independently of shell traversal order.
+use super::super::section_body::name_open_shell_edges;
 use super::*;
 use crate::sweep::SurfaceSweepCandidate;
 
@@ -21,7 +22,7 @@ impl BlendNamedTopology {
         };
         let faces = [(name(1, "side")?, face.clone())];
         let trims = named_trims(candidate.trims(), &name)?;
-        let edges = named_edges(candidate.shell(), trims, &name)?;
+        let edges = name_open_shell_edges(candidate.shell(), trims, &name)?;
         let vertices = incident_names(
             document,
             feature,
@@ -58,22 +59,4 @@ fn named_trims(
         (name(2, "start")?, edge(start)?),
         (name(2, "end")?, edge(end)?),
     ])
-}
-
-fn named_edges(
-    shell: &Shape,
-    trims: [(Vec<u8>, Shape); 2],
-    name: &impl Fn(u32, &str) -> Result<Vec<u8>, String>,
-) -> Result<Vec<(Vec<u8>, Shape)>, String> {
-    let mut other = shapes(shell, ShapeEnum::Edge)?
-        .into_iter()
-        .filter(|edge| trims.iter().all(|(_, trim)| !edge.is_same(trim)));
-    let seam = other.next();
-    if other.next().is_some() {
-        return Err("surface Sweep has more than one unnamed seam".into());
-    }
-    let seam = seam
-        .map(|shape| Ok::<_, String>((name(2, "seam")?, shape)))
-        .transpose()?;
-    Ok(trims.into_iter().chain(seam).collect())
 }

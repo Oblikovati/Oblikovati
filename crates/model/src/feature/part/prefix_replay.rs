@@ -120,7 +120,7 @@ where
     fn evaluate_loft(
         &mut self,
         feature: FeatureId,
-        input: [crate::feature::sketch_loft::ResolvedLoftCircle; 2],
+        input: crate::feature::sketch_loft::ResolvedSketchLoft,
     ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
         self.0
             .evaluate_loft(feature, input)

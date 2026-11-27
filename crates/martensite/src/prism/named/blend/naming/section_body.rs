@@ -57,3 +57,20 @@ pub(super) fn incident_names(
     require_unique(&names)?;
     Ok(names)
 }
+pub(super) fn name_open_shell_edges(
+    shell: &Shape,
+    trims: [(Vec<u8>, Shape); 2],
+    name: &impl Fn(u32, &str) -> Result<Vec<u8>, String>,
+) -> Result<Vec<(Vec<u8>, Shape)>, String> {
+    let mut other = shapes(shell, ShapeEnum::Edge)?
+        .into_iter()
+        .filter(|edge| trims.iter().all(|(_, trim)| !edge.is_same(trim)));
+    let seam = other.next();
+    if other.next().is_some() {
+        return Err("section shell has more than one unnamed seam".into());
+    }
+    let seam = seam
+        .map(|shape| Ok::<_, String>((name(2, "seam")?, shape)))
+        .transpose()?;
+    Ok(trims.into_iter().chain(seam).collect())
+}

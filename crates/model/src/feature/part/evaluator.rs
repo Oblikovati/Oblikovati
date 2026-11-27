@@ -107,7 +107,7 @@ pub trait PartFeatureEvaluator {
     fn evaluate_loft(
         &mut self,
         _feature: FeatureId,
-        _input: [crate::feature::sketch_loft::ResolvedLoftCircle; 2],
+        _input: crate::feature::sketch_loft::ResolvedSketchLoft,
     ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
         Err(PartFeatureFailure::Unsupported(
             "loft: expected an available section evaluator".into(),

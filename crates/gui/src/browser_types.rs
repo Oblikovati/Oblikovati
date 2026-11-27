@@ -29,6 +29,11 @@ pub struct GuiModelBrowser {
     /// Rectangular patterns owned by each sketch.
     pub rectangular_patterns: Vec<GuiBrowserRectangularPattern>,
     pub features: Vec<GuiBrowserFeature>,
+    /// The authored result kind of each saved Loft.
+    pub loft_outputs: std::collections::BTreeMap<
+        FeatureId,
+        oblikovati_model::feature::sketch_loft::SketchLoftOutput,
+    >,
     /// Authored options for editable Sweep features.
     pub sweep_edits: std::collections::BTreeMap<FeatureId, crate::GuiSweepEditSeed>,
     /// Editable extrusion distance sources, indexed by their current feature identities.

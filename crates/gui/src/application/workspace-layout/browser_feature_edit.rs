@@ -21,6 +21,7 @@ pub(super) fn feature_edit_action(
 }
 
 pub(super) fn loft_edit_action(feature: &GuiBrowserFeature) -> Option<GuiShellAction> {
-    (feature.kind == "Loft")
-        .then(|| GuiShellAction::Loft(crate::GuiLoftAction::OpenEdit(feature.id)))
+    (feature.kind == "Loft").then_some(GuiShellAction::Loft(crate::GuiLoftAction::OpenEdit(
+        feature.id,
+    )))
 }

@@ -206,7 +206,10 @@ impl WorkPlaneDefinitionRecipe {
             Self::Hole(_) => 17,
             Self::MoveBody(_) => 18,
             Self::Shell(_) => 19,
-            Self::SketchLoft(_) => 30,
+            Self::SketchLoft(recipe) => match recipe.output {
+                crate::feature::sketch_loft::SketchLoftOutput::Solid => 30,
+                crate::feature::sketch_loft::SketchLoftOutput::Surface => 31,
+            },
             Self::SketchSweep(recipe) => match recipe.version {
                 7 => 29,
                 6 => 28,
@@ -246,7 +249,10 @@ impl WorkPlaneDefinitionRecipe {
             Self::Hole(_) => 22,
             Self::MoveBody(_) => 23,
             Self::Shell(_) => 24,
-            Self::SketchLoft(_) => 35,
+            Self::SketchLoft(recipe) => match recipe.output {
+                crate::feature::sketch_loft::SketchLoftOutput::Solid => 35,
+                crate::feature::sketch_loft::SketchLoftOutput::Surface => 36,
+            },
             Self::SketchSweep(recipe) => match recipe.version {
                 7 => 34,
                 6 => 33,

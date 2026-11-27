@@ -7,6 +7,7 @@ use oblikovati_model::{document_sketch::DocumentSketchId, sketch::SketchEntityId
 use oblikovati_viewport::ViewportNavigation;
 
 mod edit;
+mod surface;
 
 #[given("the part contains no visible sketches or solid bodies")]
 fn empty_part_has_no_loft_inputs(world: &mut ApplicationWorld) {
@@ -93,6 +94,7 @@ fn loft_lists_both_sketch_entities(world: &mut ApplicationWorld) {
 }
 
 #[given("both circular sketches on separate parallel planes are visible")]
+#[given("the two circular sketches on separate parallel planes are visible")]
 fn independent_circles_are_visible(world: &mut ApplicationWorld) {
     let browser = world.state().browser.unwrap();
     let names: Vec<_> = browser

@@ -8,7 +8,9 @@ use crate::{
 };
 use imgui::{TabItemFlags, Ui};
 use oblikovati_model::{
-    document_sketch::DocumentSketchId, feature::FeatureId, sketch::SketchEntityId,
+    document_sketch::DocumentSketchId,
+    feature::{FeatureId, sketch_loft::SketchLoftOutput},
+    sketch::SketchEntityId,
 };
 
 const TITLE: &str = "Loft";
@@ -52,6 +54,10 @@ pub enum GuiLoftAction {
         document: u64,
         mode: GuiLoftPathMode,
     },
+    SetOutput {
+        document: u64,
+        output: SketchLoftOutput,
+    },
     Commit(u64),
     Clear,
 }
@@ -78,7 +84,9 @@ impl GuiLoftAction {
                     && state.document == Some(document)
                     && feature.is_none_or(|id| Self::OpenEdit(id).enabled(state))
             }
-            Self::SetPath { document, .. } => available && state.document == Some(document),
+            Self::SetPath { document, .. } | Self::SetOutput { document, .. } => {
+                available && state.document == Some(document)
+            }
             Self::Commit(document) => {
                 available
                     && state.document == Some(document)
@@ -96,6 +104,7 @@ pub(crate) struct LoftDialog {
     show_help: bool,
     editing: bool,
     path_mode: GuiLoftPathMode,
+    output: SketchLoftOutput,
     closed_loop: bool,
     merge_tangent_faces: bool,
     select_curves: bool,
@@ -128,6 +137,12 @@ impl LoftDialog {
         self.show_help = false;
         self.editing = feature.is_some();
         self.path_mode = GuiLoftPathMode::Rails;
+        self.output = state
+            .browser
+            .as_ref()
+            .and_then(|browser| browser.loft_outputs.get(&feature?))
+            .copied()
+            .unwrap_or_default();
         self.closed_loop = false;
         self.merge_tangent_faces = false;
         self.select_curves = true;
@@ -170,7 +185,7 @@ impl LoftDialog {
             return;
         }
         let tip = state.browser.as_ref().is_none_or(empty_part);
-        let height = if tip { 175. } else { 290. };
+        let height = if tip { 175. } else { 325. };
         crate::widget_abi::fit_viewport_properties(ui, TITLE, area, [300., height]);
         let _border = crate::theme::property_window_border(ui);
         let mut open = true;
@@ -247,12 +262,29 @@ impl LoftDialog {
             if !self.editing {
                 ui.text("Select sections in the viewport");
             }
+            self.output_controls(ui, actions);
             self.path_controls(ui, actions);
             ui.checkbox("Closed Loop", &mut self.closed_loop);
             ui.checkbox("Merge Tangent Faces", &mut self.merge_tangent_faces);
         }
         if let Some(_transition) = ui.tab_item("Transition") {
             self.transition(ui);
+        }
+    }
+
+    fn output_controls(&mut self, ui: &Ui, actions: &mut Vec<GuiShellAction>) {
+        let before = self.output;
+        let _disabled = ui.begin_disabled(self.editing);
+        ui.radio_button("Solid", &mut self.output, SketchLoftOutput::Solid);
+        ui.same_line();
+        ui.radio_button("Surface", &mut self.output, SketchLoftOutput::Surface);
+        if self.output != before
+            && let Some((document, _)) = self.document
+        {
+            actions.push(GuiShellAction::Loft(GuiLoftAction::SetOutput {
+                document,
+                output: self.output,
+            }));
         }
     }
 

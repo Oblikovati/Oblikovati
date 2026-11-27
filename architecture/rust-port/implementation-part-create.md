@@ -254,3 +254,10 @@ covers cancellation and reopening on both Linux display backends.
 The [path mode receipt](receipts/2026-11-27-loft-path-modes-3917/README.md)
 covers choosing both Center Line modes in an existing solid edit and restoring
 the Rails list and preview.
+
+### Loft surface
+
+Surface output keeps the side wall and both named circular trims. The saved
+Part recipe records the output kind at program version 36. The
+[surface receipt](receipts/2026-11-27-loft-surface-3917/README.md) covers the
+preview, Surface Bodies entry, and body identity through save and reopen.
