@@ -211,7 +211,7 @@ impl<
         document: u64,
         generation: u64,
     ) -> Option<GuiDerivePreviewState> {
-        let preview = self.derive_state.preview.as_ref()?;
+        let preview = self.create_features.derive.preview.as_ref()?;
         (preview.request.document == document && preview.request.generation == generation).then(
             || GuiDerivePreviewState {
                 request: preview.request.clone(),
@@ -227,7 +227,8 @@ impl<
         &self,
         document: u64,
     ) -> Option<GuiDeriveSourceSummary> {
-        self.derive_state
+        self.create_features
+            .derive
             .source
             .as_ref()
             .filter(|(doc, _)| *doc == document)
@@ -241,8 +242,8 @@ impl<
         match action {
             GuiDeriveAction::Open | GuiDeriveAction::OpenEdit(_) => Ok(false),
             GuiDeriveAction::Clear => {
-                let cleared = self.derive_state.preview.take().is_some()
-                    | self.derive_state.source.take().is_some()
+                let cleared = self.create_features.derive.preview.take().is_some()
+                    | self.create_features.derive.source.take().is_some()
                     | self.clear_extrusion_preview();
                 Ok(cleared)
             }
@@ -252,7 +253,7 @@ impl<
                     .files
                     .load_derived_source_snapshot(&path, Some(document))?;
                 let summary = summarize_source(&path, &snapshot);
-                self.derive_state.source = Some((document, summary));
+                self.create_features.derive.source = Some((document, summary));
                 Ok(true)
             }
             GuiDeriveAction::OpenSource(feature) => self.open_derive_source(feature),
@@ -260,14 +261,15 @@ impl<
                 let request = *request;
                 self.require_derive_generation(&request)?;
                 let result = self.preview_derive(&request);
-                self.derive_state.preview = Some(DerivePreview { request, result });
+                self.create_features.derive.preview = Some(DerivePreview { request, result });
                 Ok(true)
             }
             GuiDeriveAction::Commit(request) => {
                 let request = *request;
                 self.require_derive_generation(&request)?;
                 let commit = self
-                    .derive_state
+                    .create_features
+                    .derive
                     .preview
                     .as_ref()
                     .filter(|preview| preview.request == request)
@@ -275,8 +277,8 @@ impl<
                     .ok_or("derive: expected a current certified preview")?
                     .clone();
                 self.commit_derive(request.document, &request.source_path, commit)?;
-                self.derive_state.preview = None;
-                self.derive_state.source = None;
+                self.create_features.derive.preview = None;
+                self.create_features.derive.source = None;
                 self.clear_extrusion_preview();
                 Ok(true)
             }

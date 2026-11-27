@@ -206,6 +206,7 @@ fn part_tabs() -> Vec<RibbonTabInfo> {
                         large("Create.Coil", "Coil", "coil"),
                         large("Create.Emboss", "Emboss", "emboss"),
                         large("Create.Rib", "Rib", "rib"),
+                        large("Create.Decal", "Decal", "decal"),
                     ],
                 ),
                 panel(

@@ -257,6 +257,8 @@ impl<
             derive_source: self.gui_derive_source(document),
             rib_preview: self.gui_rib_preview(document, session.generation()),
             rib_sketches: self.gui_rib_sketches(document),
+            decal_preview: self.gui_decal_preview(document, session.generation()),
+            decal_images: self.gui_decal_images(document),
             selected_model_face: self
                 .chosen_model_face(document)
                 .map(|face| face.key.clone()),

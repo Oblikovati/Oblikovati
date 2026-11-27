@@ -90,6 +90,7 @@ pub(super) fn apply(owner: &mut dyn HeadWork, action: &GuiShellAction) -> Result
         GuiShellAction::Emboss(action) => owner.emboss_from_gui(action.clone()),
         GuiShellAction::Derive(action) => owner.derive_from_gui(action.clone()),
         GuiShellAction::Rib(action) => owner.rib_from_gui(action.clone()),
+        GuiShellAction::Decal(action) => owner.decal_from_gui(action.clone()),
         GuiShellAction::Sweep(action) => owner.sweep_from_gui(action.clone()),
         GuiShellAction::OpenMoveBody => Ok(false),
         GuiShellAction::PreviewMoveBody(request) => {

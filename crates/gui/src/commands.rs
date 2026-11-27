@@ -352,6 +352,7 @@ pub enum GuiShellAction {
     Emboss(crate::GuiEmbossAction),
     Derive(crate::GuiDeriveAction),
     Rib(crate::GuiRibAction),
+    Decal(crate::GuiDecalAction),
     OpenFillet,
     OpenMoveBody,
     PreviewMoveBody(Option<GuiMoveBodyRequest>),

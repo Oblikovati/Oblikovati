@@ -3,6 +3,8 @@
 use super::*;
 #[path = "owner_coil.rs"]
 pub(super) mod owner_coil;
+#[path = "owner_decal.rs"]
+pub(super) mod owner_decal;
 #[path = "owner_derive.rs"]
 pub(super) mod owner_derive;
 #[path = "owner_emboss.rs"]
@@ -22,6 +24,14 @@ mod owner_shell_feature;
 #[path = "owner_sweep.rs"]
 pub(super) mod owner_sweep;
 use oblikovati_automation::{PreparedChamfer, PreparedFillet, prepare_chamfer, prepare_fillet};
+
+/// Bundled preview and session state for Part Create feature dialogs on `DesktopOwner`.
+#[derive(Default)]
+pub(super) struct CreateFeatureState {
+    pub(super) derive: owner_derive::DeriveOwnerState,
+    pub(super) rib: Option<owner_rib::RibPreview>,
+    pub(super) decal: Option<owner_decal::DecalPreview>,
+}
 
 impl<
     O: TransactionObserver,

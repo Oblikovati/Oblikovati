@@ -26,6 +26,9 @@ pub(super) fn feature_edit_action(
     if browser.rib_edits.contains_key(&feature.id) {
         return GuiShellAction::Rib(crate::GuiRibAction::OpenEdit(feature.id));
     }
+    if browser.decal_edits.contains_key(&feature.id) {
+        return GuiShellAction::Decal(crate::GuiDecalAction::OpenEdit(feature.id));
+    }
     if browser.chamfer_edits.contains_key(&feature.id) {
         return GuiShellAction::OpenChamferEdit(feature.id);
     }

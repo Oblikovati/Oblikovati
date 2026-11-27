@@ -2,6 +2,8 @@
 use super::*;
 #[path = "commands/blend_enabled.rs"]
 mod blend_enabled;
+#[path = "commands/create_enabled.rs"]
+mod create_enabled;
 #[path = "commands/dispatchable.rs"]
 mod dispatchable;
 #[path = "commands/extrude_enabled.rs"]
@@ -19,6 +21,9 @@ mod sketch_enabled;
 impl GuiShellAction {
     /// Preserve Go empty-stack enablement; example: `GuiShellAction::Undo.enabled(&state)`.
     pub fn enabled(&self, state: &GuiCommandState) -> bool {
+        if let Some(enabled) = create_enabled::enabled(self, state) {
+            return enabled;
+        }
         match self {
             Self::OpenTeamWebInBrowser(_) | Self::ProjectFile(_) => true,
             Self::OpenDocumentFolder(document) => state
@@ -43,23 +48,7 @@ impl GuiShellAction {
             }
             Self::PreviewSketchPattern(None) => true,
             Self::OpenSketchPattern { sketch, pattern } => {
-                state.sketch_pattern_available
-                    && state.sketch_at_ready
-                    && !state.transaction_open
-                    && state.active_sketch == Some(*sketch)
-                    && state.browser.as_ref().is_some_and(|browser| {
-                        browser.rectangular_patterns.iter().any(|row| {
-                            row.sketch == *sketch
-                                && row.pattern.id == *pattern
-                                && row.spacing.is_ok()
-                                && row
-                                    .pattern
-                                    .definition
-                                    .counts
-                                    .iter()
-                                    .all(|count| i32::try_from(*count).is_ok())
-                        })
-                    })
+                sketch_enabled::open_pattern(state, *sketch, *pattern)
             }
             Self::PreviewSketchPattern(Some(_))
             | Self::CreateSketchPattern(_)
@@ -349,13 +338,14 @@ impl GuiShellAction {
             Self::LookAtSelection => state.look_at_available,
             Self::OpenMoveBody | Self::OpenHole => hole_enabled::open(state),
             Self::OpenShellFeature => shell_enabled::open(state),
-            Self::Revolve(action) => action.enabled(state),
-            Self::Sweep(action) => action.enabled(state),
-            Self::Loft(action) => action.enabled(state),
-            Self::Coil(action) => action.enabled(state),
-            Self::Emboss(action) => action.enabled(state),
-            Self::Derive(action) => action.enabled(state),
-            Self::Rib(action) => action.enabled(state),
+            Self::Revolve(_)
+            | Self::Sweep(_)
+            | Self::Loft(_)
+            | Self::Coil(_)
+            | Self::Emboss(_)
+            | Self::Derive(_)
+            | Self::Rib(_)
+            | Self::Decal(_) => false,
             Self::PreviewMoveBody(None)
             | Self::PreviewHole(None)
             | Self::PreviewShellFeature(None) => true,

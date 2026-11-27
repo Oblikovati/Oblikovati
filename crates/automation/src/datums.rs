@@ -166,6 +166,7 @@ impl DatumCollection {
             | WorkGeometryDefinition::SketchCoil(_)
             | WorkGeometryDefinition::SketchEmboss(_)
             | WorkGeometryDefinition::SketchRib(_)
+            | WorkGeometryDefinition::SketchDecal(_)
             | WorkGeometryDefinition::DerivedPart(_)
             | WorkGeometryDefinition::DeleteBody(_)
             | WorkGeometryDefinition::Fillet(_)

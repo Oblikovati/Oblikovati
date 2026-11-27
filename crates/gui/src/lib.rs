@@ -179,6 +179,11 @@ pub use rib_dialog::{
     GuiRibAction, GuiRibEditSeed, GuiRibPreview, GuiRibPreviewState, GuiRibRequest,
     GuiRibSketchCandidate,
 };
+mod decal_dialog;
+pub use decal_dialog::{
+    GuiDecalAction, GuiDecalEditSeed, GuiDecalImageCandidate, GuiDecalPreview,
+    GuiDecalPreviewState, GuiDecalRequest,
+};
 mod revolve_dialog;
 pub use revolve_dialog::{
     GuiRevolveAction, GuiRevolveEditSeed, GuiRevolveExtent, GuiRevolvePreview,

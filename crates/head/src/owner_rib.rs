@@ -119,7 +119,7 @@ impl<
         document: u64,
         generation: u64,
     ) -> Option<GuiRibPreviewState> {
-        let preview = self.rib_preview.as_ref()?;
+        let preview = self.create_features.rib.as_ref()?;
         (preview.request.document == document && preview.request.generation == generation).then(
             || GuiRibPreviewState {
                 request: preview.request.clone(),
@@ -146,20 +146,21 @@ impl<
         match action {
             GuiRibAction::Open | GuiRibAction::OpenEdit(_) => Ok(false),
             GuiRibAction::Clear => {
-                Ok(self.rib_preview.take().is_some() | self.clear_extrusion_preview())
+                Ok(self.create_features.rib.take().is_some() | self.clear_extrusion_preview())
             }
             GuiRibAction::Preview(request) => {
                 let request = *request;
                 self.require_rib_generation(&request)?;
                 let result = self.preview_rib(&request);
-                self.rib_preview = Some(RibPreview { request, result });
+                self.create_features.rib = Some(RibPreview { request, result });
                 Ok(true)
             }
             GuiRibAction::Commit(request) => {
                 let request = *request;
                 self.require_rib_generation(&request)?;
                 let commit = self
-                    .rib_preview
+                    .create_features
+                    .rib
                     .as_ref()
                     .filter(|preview| preview.request == request)
                     .and_then(|preview| preview.result.as_ref().ok())
@@ -170,7 +171,7 @@ impl<
                     .ok_or("rib: expected a current certified preview")?
                     .clone();
                 self.commit_rib(request.document, commit)?;
-                self.rib_preview = None;
+                self.create_features.rib = None;
                 self.clear_extrusion_preview();
                 Ok(true)
             }

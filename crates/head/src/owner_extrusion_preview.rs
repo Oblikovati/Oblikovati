@@ -198,7 +198,7 @@ impl<
             | self.revolve_preview.take().is_some()
             | self.coil_preview.take().is_some()
             | self.emboss_preview.take().is_some()
-            | self.derive_state.preview.take().is_some();
+            | self.create_features.derive.preview.take().is_some();
         if self.extrusion_preview.take().is_none() {
             return sweep_changed;
         }

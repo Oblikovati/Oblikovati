@@ -40,6 +40,13 @@ macro_rules! sweep_work_methods {
         fn rib_from_gui(&mut self, _action: oblikovati_gui::GuiRibAction) -> Result<bool, String> {
             Err("rib: expected an available desktop owner".into())
         }
+        /// Dispatch a Decal command. Example: `work.decal_from_gui(action)?`.
+        fn decal_from_gui(
+            &mut self,
+            _action: oblikovati_gui::GuiDecalAction,
+        ) -> Result<bool, String> {
+            Err("decal: expected an available desktop owner".into())
+        }
         /// Dispatch a Sweep command. Example: `work.sweep_from_gui(action)?`.
         fn sweep_from_gui(
             &mut self,
@@ -77,6 +84,12 @@ macro_rules! forward_sweep_work_methods {
         }
         fn rib_from_gui(&mut self, action: oblikovati_gui::GuiRibAction) -> Result<bool, String> {
             self.$owner.rib_from_gui(action)
+        }
+        fn decal_from_gui(
+            &mut self,
+            action: oblikovati_gui::GuiDecalAction,
+        ) -> Result<bool, String> {
+            self.$owner.decal_from_gui(action)
         }
         fn sweep_from_gui(
             &mut self,

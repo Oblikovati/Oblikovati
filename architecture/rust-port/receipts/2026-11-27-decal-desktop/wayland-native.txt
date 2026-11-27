@@ -1,0 +1,45 @@
+
+running 1 test
+Feature: Decal
+  Scenario: decal-01 Require an image sketch
+   ✔  Given a copy of `fixtures/cad/body-properties-start.opd` is open
+   ✔  And no visible 2D sketch with an inserted image exists in the part
+   ✔  When Decal is opened
+   ✔  Then the MCAD Software shows a tip requesting a visible 2D sketch with an inserted image.
+  Scenario: decal-02 Select an image and face
+   ✔  Given a disposable copy of the native fixture `fixtures/cad/decal/sloped-profile-candidate.opd` is open
+   ✔  And the user extrudes the closed trapezoid 20 mm in the positive Z direction
+   ✔  And the user inserts `fixtures/cad/decal/decal-pattern.png` into the visible sketch on the sloped-face plane at (5, 5) mm with 10 mm width and height
+   ✔  And Decal is open
+   ✔  Then the Image and Face selectors are empty and OK is disabled.
+   ✔  And Automatic Face Chain is checked and Wrap to Face is unchecked.
+   ✔  When the user selects the inserted image
+   ✔  Then the Image selector shows 1 Image.
+   ✔  When the user selects the sloped face
+   ✔  Then Face shows 1 Face and OK becomes enabled.
+   ✔  And Wrap to Face is disabled for the selected face.
+  Scenario: decal-03 Create the decal
+   ✔  Given a disposable copy of the native fixture `fixtures/cad/decal/sloped-profile-candidate.opd` is open
+   ✔  And the user extrudes the closed trapezoid 20 mm in the positive Z direction
+   ✔  And the user inserts `fixtures/cad/decal/decal-pattern.png` into the visible sketch on the sloped-face plane at (5, 5) mm with 10 mm width and height
+   ✔  And Decal is open with the fixture image and sloped face selected
+   ✔  And Automatic Face Chain is enabled
+   ✔  When the user clicks OK
+   ✔  Then the properties close and Decal1 appears in the browser.
+  Scenario: decal-04 Reopen and cancel an edit
+   ✔  Given a disposable copy of the native fixture `fixtures/cad/decal/sloped-profile-candidate.opd` is open
+   ✔  And the user extrudes the closed trapezoid 20 mm in the positive Z direction
+   ✔  And the user inserts `fixtures/cad/decal/decal-pattern.png` into the visible sketch on the sloped-face plane at (5, 5) mm with 10 mm width and height
+   ✔  And the user creates Decal1 from the inserted image and the sloped face
+   ✔  When the user double-clicks Decal1
+   ✔  Then the properties show 1 Image and 1 Face with Automatic Face Chain checked.
+   ✔  When the user clears Automatic Face Chain and clicks Cancel
+   ✔  Then the properties close.
+[Summary]
+1 feature
+4 scenarios (4 passed)
+30 steps (30 passed)
+test native::gui_loop_tests::application_bdd::application_scenarios_use_the_native_window ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1794 filtered out; finished in 27.69s
+

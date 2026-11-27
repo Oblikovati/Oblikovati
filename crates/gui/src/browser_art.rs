@@ -59,6 +59,7 @@ pub(crate) fn feature_glyph(kind: &str) -> Option<IconGlyph> {
         "Coil" => IconGlyph::Coil,
         "Emboss" => IconGlyph::Emboss,
         "Rib" => IconGlyph::Rib,
+        "Decal" => IconGlyph::Decal,
         "Derived Part" => IconGlyph::Derive,
         "Hole" => IconGlyph::Hole,
         "Fillet" => IconGlyph::Fillet,

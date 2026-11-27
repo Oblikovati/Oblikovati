@@ -11,6 +11,7 @@ pub(super) struct CreateFeatureDialogs {
     pub(super) emboss: crate::emboss_dialog::EmbossDialog,
     pub(super) derive: crate::derive_dialog::DeriveDialog,
     pub(super) rib: crate::rib_dialog::RibDialog,
+    pub(super) decal: crate::decal_dialog::DecalDialog,
 }
 
 impl CreateFeatureDialogs {
@@ -24,6 +25,7 @@ impl CreateFeatureDialogs {
         self.emboss.register_dockable(registry)?;
         self.derive.register_dockable(registry)?;
         self.rib.register_dockable(registry)?;
+        self.decal.register_dockable(registry)?;
         self.loft.register_dockable(registry)
     }
 
@@ -37,6 +39,7 @@ impl CreateFeatureDialogs {
         self.emboss.synchronize(state, actions);
         self.derive.synchronize(state, actions);
         self.rib.synchronize(state, actions);
+        self.decal.synchronize(state, actions);
         self.sweep.synchronize(state, actions);
         self.loft.synchronize(state, actions);
     }
@@ -72,5 +75,6 @@ impl CreateFeatureDialogs {
         self.emboss.panel(ui, commands, (area, icons), selected);
         self.derive.panel(ui, commands, (area, icons), selected);
         self.rib.panel(ui, commands, (area, icons), selected);
+        self.decal.panel(ui, commands, (area, icons), selected);
     }
 }

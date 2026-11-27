@@ -18,6 +18,7 @@ mod dimensions;
 mod drive_dimension;
 mod entities;
 mod entity_format;
+mod image;
 mod indices;
 pub(crate) mod inspection;
 mod move_dimension;
@@ -46,7 +47,7 @@ use oblikovati_solve::{
 };
 
 /// Geometry commands require a part or assembly; inference preferences use the workspace owner.
-pub const SKETCH_COMMAND_METHODS: [&str; 30] = [
+pub const SKETCH_COMMAND_METHODS: [&str; 31] = [
     METHOD_SKETCH_ADD_ASSOCIATIVE_ENTITY,
     METHOD_SKETCH_ADD_BLOCK_INSTANCE,
     METHOD_SKETCH_EXPLODE_BLOCK_INSTANCE,
@@ -64,6 +65,7 @@ pub const SKETCH_COMMAND_METHODS: [&str; 30] = [
     METHOD_SKETCH_TRANSFORM,
     METHOD_SKETCH_ADD_PATTERN,
     METHOD_SKETCH_ADD_ENTITY,
+    METHOD_SKETCH_ADD_IMAGE,
     METHOD_SKETCH_RECTANGLE,
     METHOD_SKETCH_OFFSET,
     METHOD_SKETCH_ADD_TEXT,
@@ -212,6 +214,7 @@ fn apply_geometry_command<O: TransactionObserver, W: WorkspaceObserver, F: Docum
         METHOD_SKETCH_ADD_ENTITY => {
             add_entity::apply(files, crate::decode(method, request)?, None, None)
         }
+        METHOD_SKETCH_ADD_IMAGE => image::add(files, crate::decode(method, request)?),
         METHOD_SKETCH_ADD_TEXT => text::add(files, crate::decode(method, request)?),
         METHOD_SKETCH_EDIT_TEXT => text::edit(files, crate::decode(method, request)?),
         METHOD_SKETCH_ADD_ASSOCIATIVE_ENTITY => {

@@ -190,6 +190,7 @@ fn populate_browser<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
     browser.emboss_edits = super::owner_blend::owner_emboss::edit_seeds(snapshot);
     browser.derive_edits = super::owner_blend::owner_derive::edit_seeds(snapshot);
     browser.rib_edits = super::owner_blend::owner_rib::edit_seeds(snapshot);
+    browser.decal_edits = super::owner_blend::owner_decal::edit_seeds(snapshot);
     browser.extrusion_edits = snapshot
         .work_geometry
         .features()
@@ -353,8 +354,8 @@ fn feature_kind_name(
     definition: &oblikovati_model::feature::part::PartFeatureDefinition,
 ) -> &'static str {
     use oblikovati_model::feature::part::PartFeatureDefinition::{
-        Chamfer, DeleteBody, DerivedPart, Fillet, SketchCoil, SketchEmboss, SketchLoft,
-        SketchPrism, SketchRevolve, SketchRib, SketchSweep,
+        Chamfer, DeleteBody, DerivedPart, Fillet, SketchCoil, SketchDecal, SketchEmboss,
+        SketchLoft, SketchPrism, SketchRevolve, SketchRib, SketchSweep,
     };
     match definition {
         SketchPrism(_) => "Extrusion",
@@ -362,6 +363,7 @@ fn feature_kind_name(
         SketchCoil(_) => "Coil",
         SketchEmboss(_) => "Emboss",
         SketchRib(_) => "Rib",
+        SketchDecal(_) => "Decal",
         DerivedPart(_) => "Derived Part",
         SketchSweep(_) => "Sweep",
         SketchLoft(_) => "Loft",

@@ -362,6 +362,16 @@ fn part_create_controls(
         size,
         actions,
     );
+    let (position, size) = owners.icons.appearance.cell(7);
+    owners.icons.cursor(ui, origin, position);
+    owners.icons.command_button(
+        ui,
+        "Decal",
+        GuiShellAction::Decal(crate::GuiDecalAction::Open),
+        state,
+        size,
+        actions,
+    );
 }
 /// Stays lit while the origin planes wait for a choice.
 fn start_sketch_command(

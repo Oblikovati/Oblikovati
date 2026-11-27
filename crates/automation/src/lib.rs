@@ -21,6 +21,7 @@ mod chamfer;
 pub use chamfer::{PreparedChamfer, prepare_chamfer};
 mod coil;
 mod command_owner;
+mod decal;
 mod derive;
 mod edit;
 mod emboss;
@@ -35,6 +36,9 @@ mod rib;
 mod shell;
 mod sweep;
 pub use coil::{CoilInputs, PreparedCoil, build_coil_definition, prepare_coil_definition};
+pub use decal::{
+    DecalInputs, PreparedDecal, build_decal_definition, prepare_decal_definition, replace_decal,
+};
 pub use derive::{
     DeriveInputs, PreparedDerivedPart, build_derived_part_definition,
     prepare_derived_part_definition, replace_derived_part,

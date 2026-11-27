@@ -2,6 +2,8 @@
 //! Exercise the Loft command through native ribbon and viewport input.
 #[path = "../coil/steps.rs"]
 mod solid_coil;
+#[path = "../decal/steps.rs"]
+mod solid_decal;
 #[path = "../derive/steps.rs"]
 mod solid_derive;
 #[path = "../emboss/steps.rs"]

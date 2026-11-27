@@ -59,6 +59,7 @@ glyph_catalog! {
     Coil => "coil",
     Emboss => "emboss",
     Rib => "rib",
+    Decal => "decal",
     Hole => "hole",
     Shell => "shell",
     Fillet => "fillet",

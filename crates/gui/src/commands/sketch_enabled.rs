@@ -114,3 +114,27 @@ pub(super) fn settings_available(state: &GuiCommandState, document: u64) -> bool
         && state.document_sketch_settings.is_some()
         && !state.transaction_open
 }
+
+pub(super) fn open_pattern(
+    state: &GuiCommandState,
+    sketch: oblikovati_model::document_sketch::DocumentSketchId,
+    pattern: oblikovati_model::sketch::SketchEntityId,
+) -> bool {
+    state.sketch_pattern_available
+        && state.sketch_at_ready
+        && !state.transaction_open
+        && state.active_sketch == Some(sketch)
+        && state.browser.as_ref().is_some_and(|browser| {
+            browser.rectangular_patterns.iter().any(|row| {
+                row.sketch == sketch
+                    && row.pattern.id == pattern
+                    && row.spacing.is_ok()
+                    && row
+                        .pattern
+                        .definition
+                        .counts
+                        .iter()
+                        .all(|count| i32::try_from(*count).is_ok())
+            })
+        })
+}
