@@ -248,6 +248,7 @@ impl FolderBrowser {
         }
     }
     fn location(&mut self, ui: &Ui, label: &str) {
+        ui.align_text_to_frame_padding();
         ui.text(label);
         ui.same_line_with_spacing(0., LABEL_GAP);
         ui.set_next_item_width(LOCATION_FIELD_WIDTH);

@@ -39,7 +39,7 @@ impl ModelStateTable {
             }
             ui.table_next_column();
             let _id = ui.push_id(row_key(&row.ref_));
-            ui.small_button(format!("{}##row", index + 1));
+            ui.button(format!("{}##row", index + 1));
             if let Some(action) = menus::row(ui, view, index, None) {
                 row_action = Some(action);
             }

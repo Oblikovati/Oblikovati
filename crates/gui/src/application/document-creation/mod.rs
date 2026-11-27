@@ -180,6 +180,7 @@ impl TemplateChooser {
         }
     }
     fn navigation_bar(&mut self, ui: &Ui) {
+        let _pad = ui.push_style_var(imgui::StyleVar::FramePadding([5., 4.]));
         if crate::widget_abi::button(ui, "Back", [0.; 2]) {
             self.back();
         }

@@ -338,7 +338,7 @@ fn source_control(ui: &Ui, draft: &mut SaveAsDraft, actions: &mut Vec<GuiShellAc
     }
 }
 fn image_chooser(ui: &Ui, draft: &mut SaveAsDraft) {
-    center_dialog(ui, [860., 400.]);
+    center_dialog(ui, [860., 480.]);
     let Some(_chooser) = ui.begin_modal_popup(IMAGE_CHOOSER) else {
         draft.images.selection_redraw = false;
         return;

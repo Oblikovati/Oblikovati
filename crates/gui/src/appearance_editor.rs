@@ -271,7 +271,7 @@ impl AppearanceEditor {
         crate::widget_abi::window_geometry(
             ui,
             [ui.io().display_size[0] * 0.34, 173.],
-            [405., 410.],
+            [405., 520.],
             Condition::FirstUseEver,
         );
         Self::dockable_window(ui, &title, &mut open).build(|| {

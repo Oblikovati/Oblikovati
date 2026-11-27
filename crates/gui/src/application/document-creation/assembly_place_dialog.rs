@@ -96,7 +96,7 @@ impl AssemblyPlaceDialog {
             self.clear_preview(actions);
             return;
         };
-        Self::fit_dockable(ui, "Place Component", [320., 200.], [380., 190.]);
+        Self::fit_dockable(ui, "Place Component", [320., 200.], [440., 210.]);
         let mut open = true;
         Self::dockable_window(ui, "Place Component", &mut open).build(|| {
             self.source_choice(ui, state, assembly);
@@ -183,7 +183,7 @@ impl AssemblyPlaceDialog {
         }
     }
     fn file_chooser(&mut self, ui: &Ui) {
-        center_dialog(ui, [800., 380.]);
+        center_dialog(ui, [800., 480.]);
         let Some(_chooser) = ui.begin_modal_popup(FILE_CHOOSER) else {
             return;
         };
