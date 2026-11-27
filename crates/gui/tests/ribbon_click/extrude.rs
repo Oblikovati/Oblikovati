@@ -104,6 +104,7 @@ fn extrusion_preview_button_and_escape_send_transient_actions() {
             profile: 0,
             distance: "size".into(),
             second_distance: None,
+            operation: None,
             reference_extent: None,
             direction: Default::default(),
         }))]

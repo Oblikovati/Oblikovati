@@ -401,7 +401,7 @@ pub enum GuiShellAction {
     },
     /// Show or clear a transient extrusion preview.
     PreviewExtrude(Option<GuiExtrudePreview>),
-    CommitReferenceExtrude(GuiExtrudePreview),
+    CommitExtrudeDraft(GuiExtrudePreview),
     /// Ask the document owner to validate the current extrusion expression.
     ValidateExtrudeDistance {
         document: u64,

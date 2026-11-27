@@ -29,9 +29,8 @@ fn click_button(world: &mut ApplicationWorld, tool: &str, label: &str) {
 }
 
 fn active_tool() -> &'static str {
-    if super::super::diagnostics::window_geometry("Loft").is_some() {
-        "Loft"
-    } else {
-        "Sweep"
-    }
+    ["Extrude", "Loft", "Sweep"]
+        .into_iter()
+        .find(|tool| super::super::diagnostics::window_geometry(tool).is_some())
+        .expect("expected a Part Create properties window")
 }

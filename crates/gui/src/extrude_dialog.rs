@@ -9,6 +9,9 @@ mod direction;
 #[path = "extrude_distance_editor.rs"]
 mod distance_editor;
 pub(crate) use distance_editor::ExtrudePanelControls;
+#[path = "extrude_output.rs"]
+mod output;
+pub(crate) use output::single_body;
 #[path = "extrude_panel.rs"]
 mod panel;
 #[path = "extrude_pending.rs"]
@@ -35,6 +38,7 @@ pub(crate) struct ExtrudeDialog {
     direction: GuiExtrudeDirection,
     direction_style: direction::SelectorStyle,
     reference: reference::ReferenceDraft,
+    operation: Option<oblikovati_model::feature::sketch_prism::PrismBoolean>,
     previewed: bool,
     preview_hidden: bool,
     size: panel::PropertiesSize,
@@ -68,6 +72,7 @@ impl ExtrudeDialog {
         if document.is_none() || self.document != document {
             self.distance_editor = Default::default();
             self.taper = None;
+            self.operation = None;
             self.preview_hidden = false;
             self.size = Default::default();
         }
@@ -95,6 +100,7 @@ impl ExtrudeDialog {
         self.taper = seed.taper.clone().map(taper::TaperDraft::new);
         self.direction = seed.direction;
         self.reference = Default::default();
+        self.operation = None;
         self.edit_feature = Some(feature);
         self.attempted = None;
         self.commit_error = None;
@@ -244,6 +250,7 @@ impl ExtrudeDialog {
                 edited |= taper.draw(ui);
             }
         }
+        edited |= self.draw_output(ui, state);
         if edited {
             self.commit_error = None;
             if self.previewed {
@@ -332,6 +339,7 @@ impl ExtrudeDialog {
                 distance: String::new(),
                 second_distance: None,
                 direction: GuiExtrudeDirection::Positive,
+                operation: None,
                 reference_extent: Some(self.reference.request()?),
             });
         }
@@ -347,6 +355,7 @@ impl ExtrudeDialog {
             distance: self.distance.clone(),
             second_distance: self.active_second_distance().map(str::to_owned),
             direction: self.direction,
+            operation: self.operation,
             reference_extent: None,
         })
     }
@@ -376,8 +385,8 @@ impl ExtrudeDialog {
         self.sketch != previous
     }
     fn creation_action(&self, request: &crate::GuiExtrudePreview) -> GuiShellAction {
-        if request.reference_extent.is_some() {
-            return GuiShellAction::CommitReferenceExtrude(request.clone());
+        if request.reference_extent.is_some() || request.operation.is_some() {
+            return GuiShellAction::CommitExtrudeDraft(request.clone());
         }
         GuiShellAction::Extrude {
             document: request.document,
@@ -462,6 +471,7 @@ impl ExtrudeDialog {
         }
         self.requested = false;
         self.set_document(Some(request.document));
+        self.operation = request.operation;
         self.commit_error = Some(cause.into());
     }
     pub(crate) fn reject_edit(&mut self, request: &crate::GuiExtrudeEditRequest, cause: &str) {

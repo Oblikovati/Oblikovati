@@ -135,7 +135,7 @@ fn viewport_face_pick_previews_and_commits_reference_extent() {
     click_in_extrude(&mut world, "SelectFace");
     pick_top_face(&mut world);
     assert_eq!(world.state().selected_face_appearances.len(), 1);
-    assert!(world.state().extrude_reference_preview.is_some());
+    assert!(world.state().extrude_draft_preview.is_some());
     assert!(world.run_is_enabled("OK"));
     assert_eq!(feature_count(&mut world), 1);
     click_in_extrude(&mut world, "OK");

@@ -166,7 +166,7 @@ pub(super) fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
         | GuiShellAction::CreateOffsetPlane { .. }
         | GuiShellAction::ValidateExtrudeDistance { .. }
         | GuiShellAction::PreviewExtrude(_)
-        | GuiShellAction::CommitReferenceExtrude(_)
+        | GuiShellAction::CommitExtrudeDraft(_)
         | GuiShellAction::Extrude { .. } => {
             return None;
         }

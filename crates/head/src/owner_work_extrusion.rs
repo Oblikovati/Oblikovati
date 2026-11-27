@@ -147,11 +147,11 @@ macro_rules! desktop_extrusion_work {
                 second_distance,
             )
         }
-        fn commit_reference_extrusion(
+        fn commit_extrusion_draft(
             &mut self,
             draft: &oblikovati_gui::GuiExtrudePreview,
         ) -> Result<bool, String> {
-            self.commit_plane_extrusion(draft)
+            self.commit_extrusion_draft(draft)
         }
         fn extrusion_preview_from_gui(
             &mut self,

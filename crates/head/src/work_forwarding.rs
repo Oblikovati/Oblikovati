@@ -222,11 +222,11 @@ macro_rules! forward_owner_view_work {
                 second_distance,
             )
         }
-        fn commit_reference_extrusion(
+        fn commit_extrusion_draft(
             &mut self,
             draft: &oblikovati_gui::GuiExtrudePreview,
         ) -> Result<bool, String> {
-            self.$owner.commit_reference_extrusion(draft)
+            self.$owner.commit_extrusion_draft(draft)
         }
         fn extrusion_preview_from_gui(
             &mut self,

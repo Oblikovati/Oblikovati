@@ -18,6 +18,7 @@ pub struct GuiExtrudePreview {
     pub distance: String,
     pub second_distance: Option<String>,
     pub direction: crate::GuiExtrudeDirection,
+    pub operation: Option<oblikovati_model::feature::sketch_prism::PrismBoolean>,
     pub reference_extent: Option<GuiExtrudeReferenceExtent>,
 }
 /// Bound a new extrusion using the document's selected semantic face keys.

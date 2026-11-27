@@ -48,7 +48,7 @@ type PolicyExtrudePrefix = (
 pub(crate) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     files: &mut FileWorkspace<O, W, F>,
     backend: Option<&dyn ExtrudeRegionAccess>,
-    mut replay: Option<&mut dyn crate::PartUpdateAccess<O, W, F>>,
+    replay: Option<&mut dyn crate::PartUpdateAccess<O, W, F>>,
     encoded: &[u8],
 ) -> Result<Vec<u8>, Error> {
     let request: wire::AddFeatureArgs = crate::decode(wire::METHOD_FEATURES_ADD, encoded)?;
@@ -57,11 +57,24 @@ pub(crate) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
     let backend = backend.ok_or_else(|| {
         Error("extrude: expected an injected certified profile and validation service".into())
     })?;
+    let prepared = prepare_owned_extrusion(files, document, backend, &input, replay)?;
+    create(files, document, backend, prepared)
+}
+
+/// Resolve an extrusion for preview or commit, including named targets and sketch datums.
+/// Example: `prepare_owned_extrusion(files, document, backend, &request, Some(owner))?`.
+pub fn prepare_owned_extrusion<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+    files: &mut FileWorkspace<O, W, F>,
+    document: u64,
+    backend: &dyn ExtrudeRegionAccess,
+    input: &Extrude,
+    mut replay: Option<&mut dyn crate::PartUpdateAccess<O, W, F>>,
+) -> Result<PreparedExtrusion, Error> {
     let profile_datums = match replay.as_mut() {
-        Some(owner) => current_profile_datums(files, document, &input, &mut **owner)?,
+        Some(owner) => current_profile_datums(files, document, input, &mut **owner)?,
         None => None,
     };
-    let target = boolean::operation(&input)
+    let target = boolean::operation(input)
         .map(|operation| {
             boolean::target(files, document, replay, operation).map(|key| (operation, key))
         })
@@ -72,9 +85,7 @@ pub(crate) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
         .map(|current| current.current(session))
         .transpose()
         .map_err(api_error)?;
-    let prepared =
-        prepare_extrusion_for_target(session.snapshot(), backend, &input, target, datums)?;
-    create(files, document, backend, prepared)
+    prepare_extrusion_for_target(session.snapshot(), backend, input, target, datums)
 }
 
 fn current_profile_datums<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(

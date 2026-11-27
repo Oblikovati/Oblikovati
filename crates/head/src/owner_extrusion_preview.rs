@@ -138,6 +138,24 @@ impl<
         self.clear_extrusion_preview();
         let document = preview.document;
         let request = self.extrusion_draft_request(preview)?;
+        if preview.operation.is_some() {
+            let backend = self.extrusion_access.as_ref().ok_or_else(|| {
+                "extrusion preview: expected a certified geometry service".to_string()
+            })?;
+            let prepared = oblikovati_automation::prepare_owned_extrusion(
+                &mut self.files,
+                document,
+                backend,
+                &request,
+                Some(&mut self.part_scenes),
+            )
+            .map_err(|cause| cause.to_string())?;
+            self.preview_added_replacement(document, PreviewKind::Replacement, |snapshot, ids| {
+                prepared.create(snapshot, ids)
+            })?;
+            self.extrusion_draft_preview = Some(preview.clone());
+            return Ok(true);
+        }
         let presentation = self.preview_extrusion_from_gui(document, &request)?;
         let scene = oblikovati_viewport::ViewportScene::from_prism(
             &presentation,
@@ -151,13 +169,12 @@ impl<
             .map_err(|cause| cause.to_string())?
             .generation();
         self.extrusion_preview = Some((document, generation, scene, PreviewKind::Additive));
-        self.extrusion_reference_preview =
-            preview.reference_extent.as_ref().map(|_| preview.clone());
+        self.extrusion_draft_preview = preview.reference_extent.as_ref().map(|_| preview.clone());
         self.part_scenes.invalidate_presentation();
         Ok(true)
     }
     pub(super) fn clear_extrusion_preview(&mut self) -> bool {
-        self.extrusion_reference_preview = None;
+        self.extrusion_draft_preview = None;
         let sweep_changed = self.sweep_preview.take().is_some();
         if self.extrusion_preview.take().is_none() {
             return sweep_changed;

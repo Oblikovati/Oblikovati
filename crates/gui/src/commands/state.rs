@@ -133,8 +133,8 @@ pub struct GuiCommandState {
     pub loft_edit_warning: Option<String>,
     pub loft_preview: Option<Result<(), String>>,
     pub sweep_preview: Option<crate::GuiSweepPreviewState>,
-    /// The exact reference draft accepted for preview at this document generation.
-    pub extrude_reference_preview: Option<crate::GuiExtrudePreview>,
+    /// The exact extrusion draft accepted for preview at this document generation.
+    pub extrude_draft_preview: Option<crate::GuiExtrudePreview>,
     /// The owner-validated distance for the current document generation.
     pub extrude_distance_validation: Option<crate::GuiExtrudeDistanceValidation>,
     /// The owner-validated offset for the current document generation.

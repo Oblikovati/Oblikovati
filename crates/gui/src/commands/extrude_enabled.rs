@@ -34,6 +34,14 @@ pub(super) fn reference(state: &GuiCommandState, request: &GuiExtrudePreview) ->
 }
 
 pub(super) fn preview(state: &GuiCommandState, request: &GuiExtrudePreview) -> bool {
+    if request.operation.is_some()
+        && (request.reference_extent.is_some()
+            || request.generation.is_none()
+            || request.generation != state.document_generation
+            || !crate::extrude_dialog::single_body(state))
+    {
+        return false;
+    }
     if request.reference_extent.is_some() {
         reference(state, request)
     } else {

@@ -13,6 +13,7 @@ fn closing_the_document_clears_its_preview_from_the_scene() {
         profile: 0,
         distance: "width".into(),
         second_distance: None,
+        operation: None,
         reference_extent: None,
         direction: Default::default(),
     };

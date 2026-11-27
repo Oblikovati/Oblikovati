@@ -59,6 +59,13 @@ Taper A in prism recipe version 2 and program version 40.
 See the [native taper receipt](receipts/2026-11-27-extrude-taper-3870/README.md)
 for scenarios 07–09, including history, package reopen and cancellation.
 
+Extrude Join resolves the current body and sketch datums through the same
+typed preparation for preview and acceptance. The shaded candidate shows
+the existing solid with its added boss before OK. Acceptance retains one
+solid and Undo restores the original solid and visible circle. See the
+[native Join receipt](receipts/2026-11-27-extrude-join-3870/README.md)
+for scenario 13 on Wayland and X11.
+
 ## Sweep, Loft, and Revolve
 
 The [release probes](../../crates/martensite/tests/release_probe/create.rs)

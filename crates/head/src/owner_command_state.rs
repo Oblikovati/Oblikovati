@@ -250,8 +250,8 @@ impl<
             loft_edit_warning: self.gui_loft_edit_warning(document, session.generation()),
             loft_preview: self.gui_loft_preview(document, session.generation()),
             sweep_preview: self.gui_sweep_preview(document, session.generation()),
-            extrude_reference_preview: self
-                .extrusion_reference_preview
+            extrude_draft_preview: self
+                .extrusion_draft_preview
                 .as_ref()
                 .filter(|draft| {
                     draft.document == document && draft.generation == Some(session.generation())

@@ -396,7 +396,7 @@ pub(super) fn dispatch_action(
     {
         window.reject_extrusion_edit(request, cause);
     }
-    if let (Err(cause), GuiShellAction::CommitReferenceExtrude(draft)) = (&result, action) {
+    if let (Err(cause), GuiShellAction::CommitExtrudeDraft(draft)) = (&result, action) {
         let mut submitted = draft.clone();
         submitted.generation = None;
         window.reject_extrusion(&submitted, cause);
@@ -420,6 +420,7 @@ pub(super) fn dispatch_action(
                 distance: distance.clone(),
                 direction: *direction,
                 second_distance: second_distance.clone(),
+                operation: None,
                 reference_extent: None,
             },
             cause,

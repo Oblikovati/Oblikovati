@@ -121,14 +121,18 @@ impl<
     ) -> Result<oblikovati_api::wire::featureargs::Extrude, String> {
         use oblikovati_gui::GuiExtrudeReferenceExtent::{FromTo, ToFace};
         let Some(extent) = &draft.reference_extent else {
-            return self.extrusion_request(
+            let mut request = self.extrusion_request(
                 draft.document,
                 draft.sketch,
                 draft.profile,
                 &draft.distance,
                 draft.direction,
                 draft.second_distance.as_deref(),
-            );
+            )?;
+            if let Some(operation) = draft.operation {
+                request.operation = operation.to_string().to_ascii_lowercase();
+            }
+            return Ok(request);
         };
         let (extent, from, to) = match extent {
             ToFace { to } => ("to-face", "", to),
@@ -143,7 +147,7 @@ impl<
             ..Default::default()
         })
     }
-    pub(super) fn commit_plane_extrusion(
+    pub(super) fn commit_extrusion_draft(
         &mut self,
         draft: &oblikovati_gui::GuiExtrudePreview,
     ) -> Result<bool, String> {
@@ -152,10 +156,10 @@ impl<
             .workspace()
             .session(draft.document)
             .map_err(|cause| cause.to_string())?;
-        if self.extrusion_reference_preview.as_ref() != Some(draft)
+        if self.extrusion_draft_preview.as_ref() != Some(draft)
             || draft.generation != Some(session.generation())
         {
-            return Err("extrusion reference draft: expected its current certified preview".into());
+            return Err("extrusion draft: expected its current certified preview".into());
         }
         let request = self.extrusion_draft_request(draft)?;
         self.clear_extrusion_preview();

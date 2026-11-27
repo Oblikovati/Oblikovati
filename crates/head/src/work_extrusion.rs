@@ -17,12 +17,12 @@ macro_rules! work_extrusion {
             ))
         }
 
-        /// Commit a plane-bounded draft after its certified preview.
-        /// Example: `work.commit_reference_extrusion(&draft)?`.
-        fn commit_reference_extrusion(
+        /// Commit an extrusion draft after its certified preview.
+        /// Example: `work.commit_extrusion_draft(&draft)?`.
+        fn commit_extrusion_draft(
             &mut self, draft: &oblikovati_gui::GuiExtrudePreview,
         ) -> Result<bool, String> {
-            Err(format!("extrusion {:?}: expected a certified reference extent owner", draft.reference_extent))
+            Err(format!("extrusion {:?}: expected a certified draft owner", draft.reference_extent))
         }
     };
 }

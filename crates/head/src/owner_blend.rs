@@ -121,6 +121,23 @@ impl<
         )
             -> Result<oblikovati_model::feature::FeatureId, oblikovati_api::Error>,
     ) -> Result<bool, String> {
+        self.preview_added_replacement(
+            document,
+            super::owner_extrusion_preview::PreviewKind::BlendInput,
+            create,
+        )
+    }
+
+    pub(super) fn preview_added_replacement(
+        &mut self,
+        document: u64,
+        kind: super::owner_extrusion_preview::PreviewKind,
+        create: impl FnOnce(
+            &mut oblikovati_model::history::DocumentSnapshot,
+            &mut oblikovati_model::history::RecipeReservations<'_>,
+        )
+            -> Result<oblikovati_model::feature::FeatureId, oblikovati_api::Error>,
+    ) -> Result<bool, String> {
         self.clear_extrusion_preview();
         let session = self
             .files
@@ -135,12 +152,7 @@ impl<
                     .map_err(oblikovati_api::Error)
             })
             .map_err(|cause| cause.to_string())?;
-        self.extrusion_preview = Some((
-            document,
-            generation,
-            scene,
-            super::owner_extrusion_preview::PreviewKind::BlendInput,
-        ));
+        self.extrusion_preview = Some((document, generation, scene, kind));
         self.part_scenes.invalidate_presentation();
         Ok(true)
     }

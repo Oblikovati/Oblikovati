@@ -367,6 +367,7 @@ fn extrusion_preview_is_transient_and_commit_reuses_the_same_feature_identity() 
         profile: 0,
         distance: "width".into(),
         second_distance: None,
+        operation: None,
         reference_extent: None,
         direction: Default::default(),
     };
@@ -426,6 +427,7 @@ fn invalid_or_stale_extrusion_preview_clears_the_old_scene() {
         profile: 0,
         distance: "width".into(),
         second_distance: None,
+        operation: None,
         reference_extent: None,
         direction: Default::default(),
     };

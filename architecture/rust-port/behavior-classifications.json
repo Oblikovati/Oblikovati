@@ -3763,8 +3763,19 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
       "state": "inventoried",
-      "baseline_source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
-      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
+      "baseline_source_sha256": "ccb973b10334aa2f8f31a189392ad8049212caaa2938db03b034bc9f49008821",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json",
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a model/compdef/assembly_sketch_test.go.",
+      "go_test_premise": "TestAssemblyExtrudeJoinsBoss verifies that Join adds profile material to the existing solid.",
+      "api_revision": "c8200b2da97c9a7dde43afb25debc977ff23b2fd",
+      "kernel_revision": "d463526642b7bf950ba33c7ab4a4c9bc97caffaf",
+      "kernel_capabilities": "Certified prism Join replaces an exact named target and propagates its body identity.",
+      "platforms": "Linux COSMIC Wayland and X11 under Xvfb with Openbox.",
+      "kernel_integration": "Resolve the active solid and sketch datums through the same typed preparation for detached preview and accepted Join.",
+      "rust_tests": "crates/head/tests/solid-model/extrusion/boolean.rs",
+      "oracle": "Measure the shaded circular cap and boss height, accept and check Extrusion2, then undo and verify the original visible circular sketch and base. See receipts/2026-11-27-extrude-join-3870/README.md.",
+      "expected_result": "The 3 mm diameter and 8 mm tall boss belongs to one eight-face solid. Undo restores the six-face base and shows the original circular sketch.",
+      "last_receipt": "architecture/rust-port/receipts/2026-11-27-extrude-join-3870/README.md"
     },
     {
       "id": "scenario:a6ce53fe7e8ba3377e819ec610ddefec4b45b3dfb98e718cd2dfb00d563818c8",
