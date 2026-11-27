@@ -24,6 +24,9 @@ mod apply_next;
 #[path = "apply_reuse_sketch.rs"]
 mod apply_reuse_sketch;
 
+#[path = "enter_preference.rs"]
+mod enter_preference;
+
 #[given("a sketch-plane start and numeric distance")]
 #[given("the numeric Distance A extrusion preview")]
 fn numeric_preview(world: &mut ApplicationWorld) {

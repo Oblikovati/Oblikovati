@@ -162,6 +162,11 @@ A viewport pick of the second closed region in the two-profile sketch
 previews it without altering the committed extrusion.
 [Sketch reuse receipt](receipts/2026-11-27-extrude-apply-reuse-3893/README.md).
 
+Extrude Advanced Settings controls whether Enter commits the feature
+or keeps the Properties panel open with the updated preview. Both
+published examples exercise the active Distance A editor.
+[Enter preference receipt](receipts/2026-11-27-extrude-enter-3893/README.md).
+
 Extrude refreshes the preview as soon as the final reference face is
 selected. A [native From/To control](receipts/2026-11-27-extrude-between-faces-3870/README.md)
 verifies caps on opposite faces of a block and an independent midplane

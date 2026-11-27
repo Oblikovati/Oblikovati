@@ -38,6 +38,7 @@ pub(crate) struct ExtrudeDialog {
     profile: i32,
     profile_pick_sketch: Option<DocumentSketchId>,
     release_sketch_on_apply: bool,
+    enter_applies_value_only: bool,
     distance: String,
     distance_editor: distance_editor::DistanceEditor,
     second_distance: String,

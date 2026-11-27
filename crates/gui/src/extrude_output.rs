@@ -82,6 +82,13 @@ impl ExtrudeDialog {
             }
             self.presets.draw_visibility_setting(ui);
             if ui
+                .menu_item_config("Single ENTER to finish command")
+                .selected(!self.enter_applies_value_only)
+                .build()
+            {
+                self.enter_applies_value_only = !self.enter_applies_value_only;
+            }
+            if ui
                 .menu_item_config("Predict Boolean Operation")
                 .selected(!self.manual_boolean)
                 .build()

@@ -77,8 +77,11 @@ impl ExtrudeDialog {
             .is_some_and(|request| self.creation_action(request, false).dispatchable(state));
         let request = preview.as_ref().filter(|_| enabled);
         ui.separator();
-        let commit = crate::theme::property_accept(ui, enabled)
-            || (shortcuts && ui.is_key_pressed_no_repeat(Key::Enter));
+        let enter = shortcuts
+            && !self.enter_applies_value_only
+            && (ui.is_key_pressed_no_repeat(Key::Enter)
+                || ui.is_key_pressed_no_repeat(Key::KeypadEnter));
+        let commit = crate::theme::property_accept(ui, enabled) || enter;
         if commit && self.commit_request(request, false, actions) {
             return;
         }
