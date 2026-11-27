@@ -109,12 +109,13 @@ fn applying_classic_menu_persists_through_native_restart() {
 fn sketch_is_active(world: &mut ApplicationWorld) {
     if world.state().authoring != oblikovati_gui::GuiAuthoringContext::Sketch {
         world.start_empty_sketch();
-        world.record_initial_sketch();
     }
     assert_eq!(
         world.state().authoring,
         oblikovati_gui::GuiAuthoringContext::Sketch
     );
+    world.previous_document = Some(world.active_id());
+    world.record_initial_sketch();
 }
 #[given("this is the same application session in which Marking Menu was previously selected")]
 fn same_session(world: &mut ApplicationWorld) {
