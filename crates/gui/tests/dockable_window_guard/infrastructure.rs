@@ -176,4 +176,7 @@ pub(super) const INFRASTRUCTURE: &[(&str, &str)] = &[
     ("sketch/move_tool.rs", "modal:REJECTION_POPUP"),
     // Cut rejection blocks acceptance while the owning Sweep tool remains dockable (#3917).
     ("sweep_output.rs", "modal:EDIT_WARNING"),
+    // The failed edit and intermediate section prompts keep their draft in the dockable Loft.
+    ("loft_edit_warning.rs", "modal:TITLE"),
+    ("loft_section_dimensions.rs", "modal:TITLE"),
 ];
