@@ -137,10 +137,22 @@ fn prism_oracle_rows(case: &str) -> Vec<PrismOracleRow> {
                 .map(|value| value.parse().unwrap())
                 .collect();
             assert_eq!(values.len(), 11);
+            let mut face: [f64; 7] = values[4..].try_into().unwrap();
+            // OCCT 8.0.0 default integration on the half-ellipse extrusion face (a=1, b=0.6, dz=2)
+            // drifts by 1.087e-8 from the exact analytic integral 4*E(0.64) documented in
+            // Oblikovati/Martensite#407. Use the stronger 70-digit analytic integral for those
+            // two rows while keeping the raw OCCT CSV untouched and the 1e-8 tolerance strict.
+            if case == "ellipse-boundary"
+                && face[6] == 8.
+                && (face[0] - 5.105_399_783_551_163).abs() < 1e-12
+            {
+                face[0] = 5.105_399_772_679_625;
+                face[1] = 3.414_590_200_008_447;
+            }
             PrismOracleRow {
                 region: values[..3].try_into().unwrap(),
                 volume: values[3],
-                face: values[4..].try_into().unwrap(),
+                face,
             }
         })
         .collect()
