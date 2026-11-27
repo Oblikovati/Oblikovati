@@ -21,6 +21,17 @@ fn options_button_color(world: &mut ApplicationWorld) -> [u8; 4] {
 #[given("the Tools ribbon is minimized to panel buttons")]
 #[given("the Tools ribbon displays compact panel buttons")]
 fn compact_tools(world: &mut ApplicationWorld) {
+    let state = world.state();
+    if let Some(document) = state.document
+        && state.document_storage[&document].path.is_none()
+        && state
+            .browser
+            .is_some_and(|browser| browser.bodies.is_empty())
+    {
+        // Older pinned scenarios describe the face pick without naming a solid fixture.
+        super::super::workspace_layout::browser_feature::open_visible_extruded_part(world);
+        world.previous_document = Some(world.active_id());
+    }
     full_tools(world);
     click_display_menu(world);
     world.click_text("Minimize to Panel Buttons");
