@@ -63,6 +63,8 @@ pub(super) const INFRASTRUCTURE: &[(&str, &str)] = &[
     ("window_frame.rs", "##application-window-controls"),
     ("detached_drawing.rs", "##detached-drawing"),
     ("document_tabs/strip_render.rs", "##open-document-tabs"),
+    // The extrusion handle follows its projected distance tip in the viewport.
+    ("extrude_handle.rs", "WINDOW"),
     ("ribbon_panel_additional.rs", "<dynamic>"),
     ("ribbon_panel_additional/bend_notice.rs", "modal:TITLE"),
     (
