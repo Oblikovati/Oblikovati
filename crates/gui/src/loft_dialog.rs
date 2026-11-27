@@ -7,8 +7,11 @@ use crate::{
     dockable_window::DockableWindow,
 };
 use imgui::{TabItemFlags, Ui};
+#[path = "loft_edit_warning.rs"]
+mod edit_warning;
 #[path = "loft_section_dimensions.rs"]
 mod section_dimensions;
+use edit_warning::LoftEditWarning;
 use oblikovati_model::{
     document_sketch::DocumentSketchId,
     feature::{
@@ -89,6 +92,8 @@ pub enum GuiLoftAction {
         section: SketchLoftPlacedSection,
     },
     CancelPlaced(u64),
+    AttemptClosedEdit(u64),
+    DismissEditWarning(u64),
     Commit(u64),
     Clear,
 }
@@ -121,6 +126,8 @@ impl GuiLoftAction {
             Self::ChooseCenterLine(document)
             | Self::EditPlaced(document)
             | Self::CancelPlaced(document)
+            | Self::AttemptClosedEdit(document)
+            | Self::DismissEditWarning(document)
             | Self::ApplyPlaced { document, .. } => available && state.document == Some(document),
             Self::Commit(document) => {
                 available
@@ -139,6 +146,7 @@ pub(crate) struct LoftDialog {
     show_help: bool,
     editing: bool,
     dimensions: SectionDimensions,
+    warning: LoftEditWarning,
     path_mode: GuiLoftPathMode,
     output: SketchLoftOutput,
     closed_loop: bool,
@@ -172,6 +180,7 @@ impl LoftDialog {
         self.document = Some((document, generation));
         self.show_help = false;
         self.dimensions = SectionDimensions::default();
+        self.warning = LoftEditWarning::default();
         self.editing = feature.is_some();
         let seed = state
             .browser
@@ -239,6 +248,12 @@ impl LoftDialog {
         if let Some((document, _)) = self.document {
             self.dimensions
                 .draw(ui, state.loft_placed, document, actions);
+            if self
+                .warning
+                .draw(ui, state.loft_edit_warning.as_deref(), document, actions)
+            {
+                self.close(actions);
+            }
         }
     }
 
@@ -261,20 +276,10 @@ impl LoftDialog {
             ui.text_wrapped(HELP);
         }
         ui.separator();
-        let commit = self
-            .document
-            .map(|(document, _)| GuiLoftAction::Commit(document))
-            .filter(|action| {
-                (self.path_mode == GuiLoftPathMode::Rails || state.loft_center_line.is_some())
-                    && state.loft_placed.is_none_or(|placed| !placed.editing)
-                    && !self.manual_mapping
-                    && !self.closed_loop
-                    && !self.merge_tangent_faces
-                    && action.enabled(state)
-            });
+        let commit = self.accept_request(state);
         let accepted = crate::theme::property_accept(ui, tip || commit.is_some());
         let saves_edit = self.path_mode == GuiLoftPathMode::PlacedSections
-            && state.loft_placed.is_some_and(|placed| placed.dirty);
+            && (self.closed_loop || state.loft_placed.is_some_and(|placed| placed.dirty));
         if accepted
             && (!self.editing || saves_edit)
             && let Some(commit) = commit
@@ -291,7 +296,8 @@ impl LoftDialog {
         }
         (accepted && (tip || (self.editing && !saves_edit)))
             || cancelled
-            || (state.loft_placed.is_none_or(|placed| !placed.editing)
+            || (state.loft_edit_warning.is_none()
+                && state.loft_placed.is_none_or(|placed| !placed.editing)
                 && ui.is_key_pressed_no_repeat(imgui::Key::Escape))
     }
     fn tabs(&mut self, ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {

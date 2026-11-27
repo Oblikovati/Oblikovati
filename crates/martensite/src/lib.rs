@@ -118,6 +118,7 @@ pub use prism::{
     retain_prism_on_plane, validate_full_named_snapshot,
 };
 mod loft;
+pub use loft::check_loft_guide_closure;
 mod revolve;
 pub mod sweep;
 pub use revolve::{

@@ -21,6 +21,14 @@ fn displaced_and_degenerate_lines_refuse_to_drive_the_loft() {
     }
 }
 
+#[test]
+fn closed_loop_rejects_the_native_wire_of_an_open_guide() {
+    let input = input_with_guide([[0., 0., 0.], [0., 0., 2.]]);
+    let failure = check_loft_guide_closure(&input).unwrap_err();
+    assert_eq!(failure.kind(), Kind::InvalidInput);
+    assert!(failure.to_string().contains("periodic Center Line"));
+}
+
 fn input_with_guide(endpoints: [[f64; 3]; 2]) -> ResolvedSketchLoft {
     let section = |sketch, z| ResolvedLoftCircle {
         source: SketchLoftSection {

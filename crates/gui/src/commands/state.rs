@@ -129,6 +129,7 @@ pub struct GuiCommandState {
     pub loft_sections: Vec<crate::GuiLoftSection>,
     pub loft_center_line: Option<String>,
     pub loft_placed: Option<crate::GuiLoftPlacedView>,
+    pub loft_edit_warning: Option<String>,
     pub loft_preview: Option<Result<(), String>>,
     pub sweep_preview: Option<crate::GuiSweepPreviewState>,
     /// The exact reference draft accepted for preview at this document generation.

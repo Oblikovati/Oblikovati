@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Loft: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/loft/loft.feature" package="testsuite/Feature: Loft: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/loft/loft.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-27T00:43:46.273358639Z" time="15.822042306"><testcase name="Scenario: loft-15 Cancel a failed Closed Loop edit on the fixture: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/loft/loft.feature:155:3" time="15.822042306"><system-out><![CDATA[  Scenario: loft-15 Cancel a failed Closed Loop edit on the fixture
+   ✔  Given a disposable copy of the native fixture "fixtures/cad/loft/circles-center-line-20.opd" is open
+   ✔  And the user creates Loft1 from the two circular profiles and the 20 mm center line
+   ✔  And the user edits Loft1, selects placed-sections mode, adds an intermediate section near the center-line midpoint and accepts it with alternate section size 1
+   ✔  And Loft1 is reopened for editing
+   ✔  When the user enables Closed Loop and accepts the edit
+   ✔  Then the MCAD Software reports that the loft feature edit failed
+   ✔  When the user cancels the failure dialog
+   ✔  Then the previously accepted solid is visible again
+]]></system-out></testcase></testsuite></testsuites>

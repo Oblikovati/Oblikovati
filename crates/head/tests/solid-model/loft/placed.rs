@@ -219,3 +219,75 @@ fn replace_section_dimension(world: &mut ApplicationWorld, previous: &str, repla
     world.key(oblikovati_viewport::ViewportPhysicalKey::A, true);
     world.type_text(replacement);
 }
+
+const EDIT_WARNING: &str = "Edit Loft Feature";
+
+#[given("Loft1 is reopened for editing")]
+fn reopen_with_the_saved_placed_section(world: &mut ApplicationWorld) {
+    edit::double_click_loft(world);
+    assert_eq!(
+        world.state().loft_placed.unwrap().section,
+        committed_section(world)
+    );
+}
+
+#[when("the user enables Closed Loop and accepts the edit")]
+fn try_closing_the_straight_guide(world: &mut ApplicationWorld) {
+    let key = loft_body_key(world);
+    let section = committed_section(world);
+    let generation = world.state().document_generation;
+    click_loft_control(world, "ClosedLoop");
+    assert!(world.checked_run(world.run_in_window("Loft", "ClosedLoop")));
+    accept_loft(world);
+    assert_eq!(world.state().document_generation, generation);
+    assert_eq!(loft_body_key(world), key);
+    assert_eq!(committed_section(world), section);
+}
+
+#[then("the MCAD Software reports that the loft feature edit failed")]
+fn report_the_invalid_closed_guide(world: &mut ApplicationWorld) {
+    assert!(diagnostics::window_geometry(EDIT_WARNING).is_some());
+    world.expect_text("The Loft feature edit failed.");
+    let details =
+        diagnostics::pointer_pixels(world.run_in_window(EDIT_WARNING, "Details").center());
+    world.click(details);
+    world.pump(Vec::new());
+    assert!(
+        world
+            .state()
+            .loft_edit_warning
+            .unwrap()
+            .contains("periodic Center Line")
+    );
+    world.expect_text("periodic Center Line");
+}
+
+#[when("the user cancels the failure dialog")]
+fn cancel_the_failed_closed_edit(world: &mut ApplicationWorld) {
+    let key = loft_body_key(world);
+    let generation = world.state().document_generation;
+    let position =
+        diagnostics::pointer_pixels(world.run_in_window(EDIT_WARNING, "Cancel").center());
+    world.click(position);
+    world.pump(Vec::new());
+    assert_eq!(world.state().document_generation, generation);
+    assert_eq!(loft_body_key(world), key);
+}
+
+#[then("the previously accepted solid is visible again")]
+fn previous_solid_is_back_after_the_decline(world: &mut ApplicationWorld) {
+    assert!(diagnostics::window_geometry(EDIT_WARNING).is_none());
+    assert!(diagnostics::window_geometry("Loft").is_none());
+    assert!(world.state().browser.unwrap().bodies[0].visible);
+    assert_eq!(committed_section(world).area_scale, 1.);
+    assert!(!world.app().window.scene_triangles.is_empty());
+    world.expect_no_text("Point1 Position");
+    assert!(
+        world
+            .app()
+            .window
+            .scene_triangles
+            .iter()
+            .all(|triangle| { triangle.color != crate::part_scene::NEW_SOLID_PREVIEW })
+    );
+}

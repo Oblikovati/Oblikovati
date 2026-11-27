@@ -55,6 +55,19 @@ impl<
     S: DispatchWakeup,
 > DesktopOwner<O, W, F, G, R, S>
 {
+    pub(super) fn commit_loft(&mut self, document: u64) -> Result<bool, String> {
+        if let Some(draft) = self.loft_selection.as_ref().filter(|draft| {
+            draft.document == document
+                && draft.path_mode == GuiLoftPathMode::PlacedSections
+                && !draft.placement.editing
+                && draft.preview.as_ref().is_some_and(Result::is_ok)
+        }) && let Some((feature, section)) = draft.feature.zip(draft.placement.section())
+        {
+            return self.commit_placed(document, draft.generation, feature, section);
+        }
+        self.commit_new_loft(document)
+    }
+
     pub(in crate::owner) fn gui_loft_placed(
         &self,
         document: u64,
@@ -277,6 +290,45 @@ impl<
         self.clear_loft_preview();
         self.loft_selection = None;
         Ok(true)
+    }
+
+    pub(in crate::owner) fn gui_loft_edit_warning(
+        &self,
+        document: u64,
+        generation: u64,
+    ) -> Option<String> {
+        self.loft_selection
+            .as_ref()
+            .filter(|draft| placement_is_active(draft, document, generation))
+            .and_then(|draft| draft.edit_warning.clone())
+    }
+
+    pub(super) fn attempt_closed_edit(&mut self, document: u64) -> Result<bool, String> {
+        let Some(draft) = self.placed_draft(document)? else {
+            return Ok(false);
+        };
+        if draft.placement.editing || !draft.preview.as_ref().is_some_and(Result::is_ok) {
+            return Ok(false);
+        }
+        let Some((feature, section)) = draft.feature.zip(draft.placement.section()) else {
+            return Ok(false);
+        };
+        let input = self.resolve_placed_input(document, feature, Some(section))?;
+        let cause = oblikovati_martensite::check_loft_guide_closure(&input).map_or_else(
+            |cause| cause.to_string(),
+            |()| "The current Loft builder requires open sections on a straight guide.".into(),
+        );
+        if let Some(draft) = &mut self.loft_selection {
+            draft.edit_warning = Some(cause);
+        }
+        Ok(true)
+    }
+
+    pub(super) fn dismiss_loft_edit_warning(&mut self, document: u64) -> Result<bool, String> {
+        Ok(self
+            .placed_draft(document)?
+            .and_then(|draft| draft.edit_warning.take())
+            .is_some())
     }
 
     fn placed_draft(&mut self, document: u64) -> Result<Option<&mut LoftSelection>, String> {

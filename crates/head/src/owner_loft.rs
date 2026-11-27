@@ -34,6 +34,7 @@ pub(super) struct LoftSelection {
     center_line: Option<CenterLinePick>,
     pick_center_line: bool,
     placement: LoftPlacement,
+    edit_warning: Option<String>,
     sections: Vec<GuiLoftSection>,
     preview: Option<Result<(), String>>,
 }
@@ -83,6 +84,8 @@ impl<
                 self.apply_placed(document, section)
             }
             GuiLoftAction::CancelPlaced(document) => self.cancel_placed(document),
+            GuiLoftAction::AttemptClosedEdit(document) => self.attempt_closed_edit(document),
+            GuiLoftAction::DismissEditWarning(document) => self.dismiss_loft_edit_warning(document),
             GuiLoftAction::Commit(document) => self.commit_loft(document),
             GuiLoftAction::Begin { document, feature } => self.begin_loft(document, feature),
         }
@@ -120,6 +123,7 @@ impl<
             center_line: sources.center_line,
             pick_center_line: false,
             placement,
+            edit_warning: None,
             sections: sources.sections,
             preview,
         });
@@ -222,19 +226,6 @@ impl<
         {
             self.clear_extrusion_preview();
         }
-    }
-
-    fn commit_loft(&mut self, document: u64) -> Result<bool, String> {
-        if let Some(draft) = self.loft_selection.as_ref().filter(|draft| {
-            draft.document == document
-                && draft.path_mode == GuiLoftPathMode::PlacedSections
-                && !draft.placement.editing
-                && draft.preview.as_ref().is_some_and(Result::is_ok)
-        }) && let Some((feature, section)) = draft.feature.zip(draft.placement.section())
-        {
-            return self.commit_placed(document, draft.generation, feature, section);
-        }
-        self.commit_new_loft(document)
     }
 
     fn commit_new_loft(&mut self, document: u64) -> Result<bool, String> {

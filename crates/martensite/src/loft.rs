@@ -120,6 +120,35 @@ pub(crate) fn build_loft(
     })
 }
 
+/// Verify periodicity on the native guide used by a Closed Loop draft. Example: `check_loft_guide_closure(&draft)?`.
+pub fn check_loft_guide_closure(input: &ResolvedSketchLoft) -> Result<(), EvaluationFailure> {
+    let path = input.center_line.as_ref().ok_or_else(|| {
+        Phase::Input.refused(
+            Kind::InvalidInput,
+            Entity::Body,
+            "Closed Loop requires a periodic Center Line.".into(),
+        )
+    })?;
+    let [[x1, y1, z1], [x2, y2, z2]] = path.endpoints;
+    let edge =
+        BRepBuilderAPIMakeEdge::from_points(Point3::new(x1, y1, z1), Point3::new(x2, y2, z2))
+            .and_then(|maker| maker.edge())
+            .map_err(|cause| native(Phase::Profile, "Center Line edge", cause))?;
+    let wire = BRepBuilderAPIMakeWire::from_edge(&edge)
+        .and_then(|maker| maker.wire())
+        .map_err(|cause| native(Phase::Profile, "Center Line wire", cause))?;
+    if BRepTool::is_closed(wire.as_ref())
+        .map_err(|cause| native(Phase::Validation, "Center Line closure", cause))?
+    {
+        return Ok(());
+    }
+    Err(Phase::Profile.refused(
+        Kind::InvalidInput,
+        Entity::SketchEntity(path.source.line.0),
+        format!("Closed Loop requires a periodic Center Line. Sketch line {:?} has distinct start and end points.", path.source.line),
+    ))
+}
+
 fn require_center_line(
     input: &ResolvedSketchLoft,
     tolerance: f64,
