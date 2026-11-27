@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use oblikovati_gui::*;
+#[allow(dead_code, unsafe_code)]
+#[path = "../../../test-utilities/rust/drawn_text.rs"]
+mod drawn_text;
 #[path = "support/view_tab.rs"]
 mod view_tab;
 use oblikovati_model::theme::ThemeLibrary;
@@ -19,13 +22,12 @@ fn theme_request(library: &ThemeLibrary) -> GuiFrameRequest {
         },
     }
 }
-fn click_theme_control(
+fn click_position(
     engine: &mut GuiFrameEngine,
     request: &mut GuiFrameRequest,
-    row_y: f32,
+    position: [f32; 2],
 ) -> Vec<GuiShellAction> {
-    // The View ribbon places the Appearance selectors after the visibility commands.
-    request.events = vec![GuiInputEvent::PointerMoved([300., row_y])];
+    request.events = vec![GuiInputEvent::PointerMoved(position)];
     engine.frame(request).unwrap();
     let mut actions = Vec::new();
     for pressed in [true, false] {
@@ -35,7 +37,22 @@ fn click_theme_control(
         }];
         actions.extend(engine.frame(request).unwrap().actions);
     }
+    request.events.clear();
+    actions.extend(engine.frame(request).unwrap().actions);
     actions
+}
+fn click_label(
+    engine: &mut GuiFrameEngine,
+    request: &mut GuiFrameRequest,
+    label: &str,
+) -> Vec<GuiShellAction> {
+    let run = drawn_text::rendered_frame()
+        .runs
+        .into_iter()
+        .rev()
+        .find(|run| run.text == label)
+        .unwrap_or_else(|| panic!("expected rendered label {label:?}"));
+    click_position(engine, request, run.center())
 }
 #[test]
 fn view_theme_picker_emits_owner_action_and_next_snapshot_restyles_draws() {
@@ -47,8 +64,8 @@ fn view_theme_picker_emits_owner_action_and_next_snapshot_restyles_draws() {
     view_tab::select_view_tab(&mut engine, &mut request);
     request.events.clear();
     let dark = engine.frame(&request).unwrap().draws;
-    assert!(click_theme_control(&mut engine, &mut request, 68.).is_empty());
-    let actions = click_theme_control(&mut engine, &mut request, 109.);
+    assert!(click_label(&mut engine, &mut request, "Dark").is_empty());
+    let actions = click_label(&mut engine, &mut request, "Light");
     assert_eq!(actions, [GuiShellAction::SetTheme("Light".into())]);
     assert_eq!(library.active().name(), "Dark");
     library.set_active("Light");
@@ -73,8 +90,8 @@ fn verify_colour_picker(engine: &mut GuiFrameEngine, request: &mut GuiFrameReque
     let mut registry = oblikovati_model::color_scheme::ColorSchemeRegistry::default();
     request.commands.color_scheme = Some(GuiColorSchemeState::from_registry(&registry).unwrap());
     engine.frame(request).unwrap();
-    assert!(click_theme_control(engine, request, 91.).is_empty());
-    let actions = click_theme_control(engine, request, 150.);
+    assert!(click_label(engine, request, "Default").is_empty());
+    let actions = click_label(engine, request, "HighContrast");
     let selection = oblikovati_api::wire::SetColorSchemeArgs {
         name: "High Contrast".into(),
     };
@@ -97,8 +114,8 @@ fn verify_palette_picker_without_a_theme_library(
 ) {
     request.commands.theme = None;
     engine.frame(request).unwrap();
-    assert!(click_theme_control(engine, request, 68.).is_empty());
-    let actions = click_theme_control(engine, request, 145.);
+    assert!(click_label(engine, request, "HighContrast").is_empty());
+    let actions = click_label(engine, request, "Sky");
     assert_eq!(
         actions,
         [GuiShellAction::SetColorScheme(
