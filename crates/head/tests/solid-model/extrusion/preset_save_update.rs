@@ -20,7 +20,7 @@ fn axis_setup_applies_to_revolve(world: &mut ApplicationWorld) {
 #[when("the user saves the draft using the preset row add button and gives it a unique name")]
 fn save_new_preset(world: &mut ApplicationWorld) {
     assert_distance(world, "10.00 mm");
-    add_named_preset(world, "Saved depth");
+    add_named_preset(world, EMPTY, "Saved depth");
     world.run_in_window("Extrude", ORIGINAL);
 }
 

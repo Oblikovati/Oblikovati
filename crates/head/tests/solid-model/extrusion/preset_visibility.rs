@@ -6,6 +6,9 @@ use cucumber::{given, then, when};
 #[path = "preset_save_update.rs"]
 mod preset_save_update;
 
+#[path = "preset_remove.rs"]
+mod preset_remove;
+
 const HIDE: &str = "HidePresets";
 const EMPTY: &str = "NoPreset";
 
@@ -194,9 +197,9 @@ fn open_preset_menu(world: &mut ApplicationWorld, selector: &str) {
     click_preset_control(world, |world| preset_gear(world, selector));
 }
 
-fn add_named_preset(world: &mut ApplicationWorld, name: &str) {
+fn add_named_preset(world: &mut ApplicationWorld, current: &str, name: &str) {
     click_preset_control(world, |world| {
-        diagnostics::pointer_pixels(preset_add(world, EMPTY))
+        diagnostics::pointer_pixels(preset_add(world, current))
     });
     world.run_in_window("Extrude", "Presetname");
     world.pump(Vec::new());
@@ -223,7 +226,7 @@ fn named_extrude_preset_restores_distance_into_a_new_draft() {
     let mut world = ApplicationWorld::new();
     preset_row_initially_hidden(&mut world);
     reveal_presets(&mut world);
-    add_named_preset(&mut world, "Saved depth");
+    add_named_preset(&mut world, EMPTY, "Saved depth");
     world.run_in_window("Extrude", "Saveddepth");
 
     reopen_extrude(&mut world);

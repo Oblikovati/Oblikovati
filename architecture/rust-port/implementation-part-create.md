@@ -182,6 +182,11 @@ the saved distance, and renaming the preset while preserving its
 stored settings. The outline's Revolve example remains open.
 [Preset update receipt](receipts/2026-11-27-extrude-preset-update-3893/README.md).
 
+Deleting an Extrude preset removes its name and leaves the other preset
+selectable with its own saved distance. The published example verifies
+the preview depth and absence of a document history entry.
+[Preset removal receipt](receipts/2026-11-27-extrude-preset-remove-3893/README.md).
+
 Extrude refreshes the preview as soon as the final reference face is
 selected. A [native From/To control](receipts/2026-11-27-extrude-between-faces-3870/README.md)
 verifies caps on opposite faces of a block and an independent midplane

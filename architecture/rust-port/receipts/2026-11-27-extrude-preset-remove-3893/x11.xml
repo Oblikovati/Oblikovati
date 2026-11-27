@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Properties panel for creating and editing a modeled feature: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/feature-properties/feature-properties.feature" package="testsuite/Feature: Properties panel for creating and editing a modeled feature: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/feature-properties/feature-properties.feature" tests="2" errors="0" failures="1" hostname="localhost" timestamp="2026-11-27T06:07:23.134304355Z" time="16.258735242"><testcase name="Rule: Dockable Properties commands reuse the Properties shell: Scenario: Remove a saved preset from its command list: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/feature-properties/feature-properties.feature:205:7" time="13.283555337"><system-out><![CDATA[  Scenario Outline: Remove a saved preset from its command list
+   ✔  Given a fresh copy of `fixtures/cad/revolve/revolve-profile.opd` is open in a disposable application profile
+   ✔  And Extrude is open with the rectangular profile selected, a valid draft and presets visible
+   ✔  And for Revolve the long Y=0 sketch edge is the selected axis
+   ✔  And the user saves two uniquely named presets and selects the first in the command's Properties panel
+   ✔  When the user chooses Delete Current and confirms removal if prompted
+   ✔  Then that name is absent from the preset list
+   ✔  And other presets remain available
+]]></system-out></testcase><testcase name="Rule: Dockable Properties commands reuse the Properties shell: Scenario: Remove a saved preset from its command list: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/feature-properties/feature-properties.feature:206:7" time="2.975179905"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario Outline: Remove a saved preset from its command list
+   ✔  Given a fresh copy of `fixtures/cad/revolve/revolve-profile.opd` is open in a disposable application profile
+   ✘  And Revolve is open with the rectangular profile selected, a valid draft and presets visible
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/feature-properties/feature-properties.feature:196:7
+      Step doesn't match any function
+]]></system-out></testcase></testsuite></testsuites>
