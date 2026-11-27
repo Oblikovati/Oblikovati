@@ -53,8 +53,11 @@ pub(super) fn edit_size_parameter(window: &mut ScriptedGuiWindow, owner: &mut Na
     let (position, size) = application_bdd::window_geometry("Parameters").unwrap();
     let end = [position[0] + size[0], position[1] + size[1]];
     let user_params = application_bdd::rendered_label_in_rect("UserParameters", position, end);
-    let equation =
-        application_bdd::rendered_label_in_rect("10mm", [position[0], user_params[1] as f32], end);
+    let origin_px = application_bdd::pointer_pixels(position);
+    let bottom_px = application_bdd::pointer_pixels(end);
+    let logical_y = position[1]
+        + (user_params[1] - origin_px[1]) as f32 * size[1] / (bottom_px[1] - origin_px[1]) as f32;
+    let equation = application_bdd::rendered_label_in_rect("10mm", [position[0], logical_y], end);
     click_shell_position(window, owner, equation);
     press_shell_key(window, owner, ViewportPhysicalKey::End);
     for _ in "10 mm".chars() {

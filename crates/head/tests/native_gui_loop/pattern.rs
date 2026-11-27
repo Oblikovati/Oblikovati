@@ -106,22 +106,9 @@ fn native_rectangular_pattern_dialog_previews_cancels_and_creates() {
         application_bdd::rendered_label_center("Rectangular"),
     );
     assert!(owner.sketch_preview().is_some());
-    let (position, _) = application_bdd::window_geometry("Rectangular Pattern").unwrap();
-    let field = application_bdd::pointer_pixels([position[0] + 80., position[1] + 65.]);
-    click_shell_position(&mut window, &mut owner, field);
-    press_shell_key(
-        &mut window,
-        &mut owner,
-        oblikovati_viewport::ViewportPhysicalKey::Backspace,
-    );
-    type_native_text(&mut window, &mut owner, "0");
+    set_first_count(&mut window, &mut owner, "0");
     assert!(owner.sketch_preview().is_none());
-    press_shell_key(
-        &mut window,
-        &mut owner,
-        oblikovati_viewport::ViewportPhysicalKey::Backspace,
-    );
-    type_native_text(&mut window, &mut owner, "3");
+    set_first_count(&mut window, &mut owner, "3");
     assert!(owner.sketch_preview().is_some());
     click_shell_position(
         &mut window,
@@ -242,9 +229,8 @@ fn open_saved_pattern_menu(window: &mut ScriptedGuiWindow, owner: &mut NativeDes
     assert!(application_bdd::window_geometry("Rectangular Pattern").is_some());
 }
 fn set_first_count(window: &mut ScriptedGuiWindow, owner: &mut NativeDesktopOwner, value: &str) {
-    let (position, _) = application_bdd::window_geometry("Rectangular Pattern").unwrap();
-    let field = application_bdd::pointer_pixels([position[0] + 80., position[1] + 65.]);
-    click_shell_position(window, owner, field);
+    let label = application_bdd::rendered_label_center("Direction 1 count");
+    click_shell_position(window, owner, [label[0], label[1] + 22]);
     press_shell_key(
         window,
         owner,
