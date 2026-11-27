@@ -331,14 +331,9 @@ impl ExtrudeDialog {
         document: u64,
         edited: bool,
     ) -> Option<crate::GuiExtrudePreview> {
-        if edited
-            || self.taper.as_ref().is_some_and(|taper| {
-                taper.is_empty() || (taper.change().is_some() && self.commit_error.is_some())
-            })
-        {
-            return None;
-        }
         if !self.reference.numeric() {
+            // A completed reference pick is ready in this frame. Numeric edits below
+            // wait for fresh validation, which schedules another frame.
             return Some(crate::GuiExtrudePreview {
                 generation: Some(state.document_generation?),
                 document,
@@ -350,6 +345,13 @@ impl ExtrudeDialog {
                 operation: self.reference_operation(),
                 reference_extent: Some(self.reference.request()?),
             });
+        }
+        if edited
+            || self.taper.as_ref().is_some_and(|taper| {
+                taper.is_empty() || (taper.change().is_some() && self.commit_error.is_some())
+            })
+        {
+            return None;
         }
         let validation = self.current_distance_validation(state, document)?;
         if validation.error.is_some() {

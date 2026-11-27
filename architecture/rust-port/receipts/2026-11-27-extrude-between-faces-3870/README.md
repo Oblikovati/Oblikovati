@@ -19,3 +19,16 @@ Martensite needs to certify the one bounded region with its analytic area
 at both placements. This reproduces the translated-circle defect tracked
 in [Martensite #619](https://github.com/Oblikovati/Martensite/issues/619).
 The published input is unchanged.
+
+## Application control
+
+The [control recipe](control/rebuild.lua) adds a 2.5 mm radius circle at
+the same location in the [published starting block](control/source.sha256).
+This run exposed an application refresh issue after the second face
+pick. Extrude now submits a complete reference draft in the frame that
+consumes the pick.
+
+All nine steps passed on [Wayland](control/wayland/junit.xml) and
+[X11](control/x11/junit.xml) for this control. The viewport mesh had caps
+at Z=0 and Z=20 mm, with neither cap at the sketch's Z=10 mm plane. The
+published scenario remains incomplete.

@@ -124,6 +124,12 @@ exercises selecting the visible sketch under Extrusion1 in the Model Browser.
 After the second extrusion, the browser shows two solids and one shared
 sketch. Both feature definitions reference that sketch.
 
+Extrude refreshes the preview as soon as the final reference face is
+selected. A [native From/To control](receipts/2026-11-27-extrude-between-faces-3870/README.md)
+verifies caps on opposite faces of a block and an independent midplane
+sketch. The published 3 mm radius fixture still needs Martensite's
+translated-circle certification fix.
+
 ## Sweep, Loft, and Revolve
 
 The [release probes](../../crates/martensite/tests/release_probe/create.rs)

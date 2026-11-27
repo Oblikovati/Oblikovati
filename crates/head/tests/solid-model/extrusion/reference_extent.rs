@@ -3,6 +3,9 @@ use super::acceptance::feature_count;
 use super::viewport_interaction::{click_text_native, replace_distance_native};
 use super::*;
 
+#[path = "between_faces.rs"]
+mod between_faces;
+
 #[given("a sketch-plane start and numeric distance")]
 #[given("the numeric Distance A extrusion preview")]
 fn numeric_preview(world: &mut ApplicationWorld) {
