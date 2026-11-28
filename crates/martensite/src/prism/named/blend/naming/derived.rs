@@ -57,6 +57,7 @@ impl BlendNamedTopology {
             primary_body: body,
             shape,
             thread_overlays: Vec::new(),
+            mark_overlays: Vec::new(),
         })
     }
 
@@ -128,6 +129,7 @@ impl BlendNamedTopology {
             primary_body: body,
             shape,
             thread_overlays: Vec::new(),
+            mark_overlays: Vec::new(),
         })
     }
 }

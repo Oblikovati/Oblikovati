@@ -134,6 +134,17 @@ pub trait PartFeatureEvaluator {
             "thread: expected an available cylindrical/conical face evaluator".into(),
         ))
     }
+    /// Imprint or project sketch mark geometry sets onto a solid body.
+    fn evaluate_mark(
+        &mut self,
+        _feature: FeatureId,
+        _body: &Self::Body,
+        _input: crate::feature::mark::ResolvedMark,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        Err(PartFeatureFailure::Unsupported(
+            "mark: expected an available named solid mark evaluator".into(),
+        ))
+    }
     /// Resolve the sweep from a sketch plane to the current target body's bounds.
     /// Example: `backend.prism_through_all_span(body, plane, direction)?`.
     fn prism_through_all_span(

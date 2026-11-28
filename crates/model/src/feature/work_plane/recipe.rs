@@ -23,6 +23,7 @@ pub enum WorkPlaneDefinitionRecipe {
     Combine(crate::feature::combine::CombineRecipe),
     Draft(crate::feature::draft::DraftRecipe),
     Thread(crate::feature::thread::ThreadRecipe),
+    Mark(crate::feature::mark::MarkRecipe),
     MoveBody(crate::feature::move_body::MoveBodyRecipe),
     Shell(crate::feature::shell::ShellRecipe),
     Mirror(crate::feature::mirror::MirrorRecipe),
@@ -80,6 +81,7 @@ impl WorkPlaneDefinition {
             Self::Combine(definition) => Source::Combine(definition.recipe()),
             Self::Draft(definition) => Source::Draft(definition.recipe()),
             Self::Thread(definition) => Source::Thread(definition.recipe()),
+            Self::Mark(definition) => Source::Mark(definition.recipe()),
             Self::MoveBody(definition) => Source::MoveBody(definition.recipe()),
             Self::Shell(definition) => Source::Shell(definition.recipe()),
             Self::Mirror(mirror) => Source::Mirror(mirror.recipe().clone()),
@@ -161,6 +163,9 @@ fn restore_definition(
             .map_err(WorkPlaneError::BodyReference),
         Thread(recipe) => crate::feature::thread::ThreadDefinition::from_recipe(recipe)
             .map(|definition| WorkPlaneDefinition::Thread(Box::new(definition)))
+            .map_err(WorkPlaneError::BodyReference),
+        Mark(recipe) => crate::feature::mark::MarkDefinition::from_recipe(recipe)
+            .map(|definition| WorkPlaneDefinition::Mark(Box::new(definition)))
             .map_err(WorkPlaneError::BodyReference),
         Chamfer(recipe) => crate::feature::chamfer::ChamferDefinition::from_recipe(&recipe)
             .map(|definition| WorkPlaneDefinition::Chamfer(Box::new(definition)))
@@ -296,6 +301,7 @@ impl WorkPlaneDefinitionRecipe {
             Self::Combine(_) => 49,
             Self::Draft(_) => 47,
             Self::Thread(_) => 48,
+            Self::Mark(_) => 54,
             Self::SketchSweep(recipe) => match recipe.version {
                 7 => 29,
                 6 => 28,
@@ -361,6 +367,7 @@ impl WorkPlaneDefinitionRecipe {
             Self::Combine(_) => 59,
             Self::Draft(_) => 57,
             Self::Thread(_) => 58,
+            Self::Mark(_) => 64,
             Self::SketchSweep(recipe) => match recipe.version {
                 7 => 34,
                 6 => 33,

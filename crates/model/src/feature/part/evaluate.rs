@@ -1,67 +1,17 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::{
-    PartFeatureDefinition, PartFeatureEvaluator, PartFeatureProgramError,
+    PartFeatureDefinition, PartFeatureEvaluator, PartFeatureFailure, PartFeatureProgramError,
     body_resolution::{resolve_body_face, resolve_body_slot},
+    failure::datum_health,
 };
 use crate::{
     feature::{
         FeatureHealthRecord, FeatureId, FeatureReplayController, FeatureReplayRange,
-        sketch_prism::SketchPrismError,
         work_geometry::{WorkGeometryError, WorkGeometryEvaluation},
     },
     history::DocumentSnapshot,
 };
 use std::{borrow::Cow, collections::BTreeMap};
-/// Decline a named-face query when a diagnostic evaluator cannot resolve it.
-/// Example: `unavailable_planar_face(&key)` reports the offending key.
-pub fn unavailable_planar_face(key: &[u8]) -> String {
-    format!("face key {key:?}: expected a named planar-face evaluator")
-}
-/// One blend operation selected before construction.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum PartBlendKind {
-    Fillet,
-    Chamfer,
-}
-impl PartBlendKind {
-    /// Decline an unavailable operation; example: `kind.unsupported()`.
-    pub fn unsupported<Failure>(self) -> PartFeatureFailure<Failure> {
-        let kind = match self {
-            Self::Fillet => "fillet",
-            Self::Chamfer => "chamfer",
-        };
-        PartFeatureFailure::Unsupported(format!(
-            "{kind}: expected an available named-edge evaluator"
-        ))
-    }
-}
-/// Current ordered diagnostics; these errors are not stored in authored recipes.
-#[derive(Clone, Debug, PartialEq)]
-pub enum PartFeatureFailure<Failure> {
-    Datum(Box<WorkGeometryError>),
-    Metadata(Box<WorkGeometryError>),
-    Inputs(SketchPrismError),
-    SweepInput(Box<crate::feature::sketch_sweep::SketchSweepError>),
-    RevolveInput(Box<crate::feature::sketch_revolve::SketchRevolveError>),
-    CoilInput(String),
-    EmbossInput(String),
-    RibInput(String),
-    DecalInput(String),
-    DerivedPartInput(String),
-    ImportedModelInput(String),
-    UnwrapInput(String),
-    LoftInput(String),
-    Kernel(Failure),
-    BodyReference(String),
-    FilletInput(String),
-    ChamferInput(String),
-    HoleInput(String),
-    DraftInput(String),
-    ThreadInput(String),
-    ShellInput(String),
-    MoveBodyInput(String),
-    Unsupported(String),
-}
 /// Derived results from a fresh replay. This does not implement the complete extrude operation or a prefix cache.
 #[derive(Clone)]
 pub struct PartFeatureEvaluation<Body, Failure> {
@@ -163,29 +113,6 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
     pub fn into_body(mut self, feature: FeatureId) -> Option<Body> {
         self.bodies.remove(&feature.into())
     }
-}
-fn datum_health<Failure>(
-    record: &FeatureHealthRecord<PartFeatureFailure<Failure>>,
-) -> Option<FeatureHealthRecord<WorkGeometryError>> {
-    use crate::feature::FeatureEvaluationStatus;
-    let status = match &record.status {
-        FeatureEvaluationStatus::Healthy => FeatureEvaluationStatus::Healthy,
-        FeatureEvaluationStatus::Suppressed => FeatureEvaluationStatus::Suppressed,
-        FeatureEvaluationStatus::ConditionFailed(error) => {
-            FeatureEvaluationStatus::ConditionFailed(error.clone())
-        }
-        FeatureEvaluationStatus::Blocked { drivers } => FeatureEvaluationStatus::Blocked {
-            drivers: drivers.clone(),
-        },
-        FeatureEvaluationStatus::Failed(
-            PartFeatureFailure::Datum(error) | PartFeatureFailure::Metadata(error),
-        ) => FeatureEvaluationStatus::Failed((**error).clone()),
-        FeatureEvaluationStatus::Failed(_) => return None,
-    };
-    Some(FeatureHealthRecord {
-        feature: record.feature,
-        status,
-    })
 }
 impl DocumentSnapshot {
     /// Replay every active datum and prism input with local failure quarantine.
@@ -426,6 +353,9 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
             }
             PartFeatureDefinition::Thread(definition) => {
                 self.evaluate_thread(snapshot, backend, id, definition)
+            }
+            PartFeatureDefinition::Mark(definition) => {
+                self.evaluate_mark(snapshot, backend, id, definition)
             }
             definition @ (PartFeatureDefinition::Mirror(_)
             | PartFeatureDefinition::CircularPattern(_)

@@ -16,6 +16,7 @@ mod checkpoints;
 mod combine_evaluation;
 
 mod hole_evaluation;
+mod mark_evaluation;
 mod move_body_evaluation;
 pub use checkpoints::{CheckpointedPart, PartReplayCheckpoints};
 mod delete;
@@ -23,12 +24,12 @@ mod error;
 pub use delete::DeleteBodyDefinition;
 mod evaluate;
 mod evaluator;
-pub use evaluate::{
-    PartBlendKind, PartFeatureEvaluation, PartFeatureFailure, RecomputedPart,
-    unavailable_planar_face,
-};
+mod failure;
+pub use evaluate::{PartFeatureEvaluation, RecomputedPart};
 pub use evaluator::PartFeatureEvaluator;
+pub use failure::{PartBlendKind, PartFeatureFailure, unavailable_planar_face};
 mod extrusion_pattern;
+mod prefix_backend;
 mod prefix_replay;
 mod prism_replacement;
 mod reads;
@@ -58,6 +59,7 @@ pub enum PartFeatureDefinition {
     Combine(Box<super::combine::CombineDefinition>),
     Draft(Box<super::draft::DraftDefinition>),
     Thread(Box<super::thread::ThreadDefinition>),
+    Mark(Box<super::mark::MarkDefinition>),
     MoveBody(Box<super::move_body::MoveBodyDefinition>),
     Shell(Box<super::shell::ShellDefinition>),
     Mirror(Box<super::mirror::MirrorDefinition>),
@@ -113,6 +115,7 @@ impl PartFeatureDefinition {
             Self::Combine(_) => "combine",
             Self::Draft(_) => "draft",
             Self::Thread(_) => "thread",
+            Self::Mark(_) => "mark",
             Self::MoveBody(_) => "move-body",
             Self::Shell(_) => "shell",
             Self::Mirror(_) => "mirror",
@@ -147,6 +150,7 @@ impl PartFeatureDefinition {
                 | Self::Combine(_)
                 | Self::Draft(_)
                 | Self::Thread(_)
+                | Self::Mark(_)
                 | Self::Shell(_)
                 | Self::MoveBody(_)
                 | Self::Mirror(_)

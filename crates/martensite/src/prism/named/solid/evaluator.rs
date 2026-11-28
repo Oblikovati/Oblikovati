@@ -1,9 +1,14 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Bind ordered Part replay to the certified solid adapter.
 use super::*;
+use crate::{EvaluationEntity, EvaluationFailureKind, EvaluationPhase};
 use oblikovati_model::{
-    feature::part::{
-        PartBlendKind, PartFeatureEvaluation, PartFeatureEvaluator, PartFeatureProgramError,
+    feature::{
+        mark::ResolvedMark,
+        part::{
+            PartBlendKind, PartFeatureEvaluation, PartFeatureEvaluator, PartFeatureProgramError,
+        },
+        sketch_prism::PrismBoolean,
     },
     history::DocumentSnapshot,
 };
@@ -72,9 +77,9 @@ impl PartFeatureEvaluator for CertifiedNamedSolidEvaluator<'_> {
             candidate,
         )
         .map_err(|cause| {
-            failure(crate::EvaluationPhase::Naming.refused(
-                crate::EvaluationFailureKind::InvalidReference,
-                crate::EvaluationEntity::Body,
+            failure(EvaluationPhase::Naming.refused(
+                EvaluationFailureKind::InvalidReference,
+                EvaluationEntity::Body,
                 format!("loft topology: {cause}"),
             ))
         })?;
@@ -115,9 +120,9 @@ impl PartFeatureEvaluator for CertifiedNamedSolidEvaluator<'_> {
             )
         }
         .map_err(|cause| {
-            failure(crate::EvaluationPhase::Naming.refused(
-                crate::EvaluationFailureKind::InvalidReference,
-                crate::EvaluationEntity::Body,
+            failure(EvaluationPhase::Naming.refused(
+                EvaluationFailureKind::InvalidReference,
+                EvaluationEntity::Body,
                 format!("revolve topology: {cause}"),
             ))
         })?;
@@ -128,48 +133,14 @@ impl PartFeatureEvaluator for CertifiedNamedSolidEvaluator<'_> {
         feature: FeatureId,
         body: &NamedSolid,
         input: oblikovati_model::feature::sketch_revolve::ResolvedSketchRevolve<'_>,
-        operation: oblikovati_model::feature::sketch_prism::PrismBoolean,
+        operation: PrismBoolean,
     ) -> Result<NamedSolid, PartFeatureFailure<EvaluationFailure>> {
-        use super::super::blend::extrusion_boolean::BooleanFailure;
         let NamedSolid::Derived(tool) = self.evaluate_revolve(feature, input)? else {
             return Err(PartFeatureFailure::Unsupported(
                 "revolve Boolean: expected a named Revolve tool".into(),
             ));
         };
-        let failure = |kind, message| {
-            PartFeatureFailure::Kernel(
-                crate::EvaluationPhase::Prism
-                    .refused(kind, crate::EvaluationEntity::Body, message)
-                    .for_feature(feature),
-            )
-        };
-        let tool = tool
-            .sweep_boolean_tool(self.history, self.document)
-            .map_err(|message| failure(crate::EvaluationFailureKind::InvalidResult, message))?;
-        let candidate = body
-            .boolean_tools(
-                self.history,
-                self.document,
-                vec![tool],
-                operation,
-                &format!("revolve {operation}"),
-            )
-            .map_err(|decline| match decline {
-                BooleanFailure::UnchangedCut { faces, .. } => failure(
-                    crate::EvaluationFailureKind::UnchangedCut,
-                    format!("The feature did not change the number of faces ({faces})."),
-                ),
-                BooleanFailure::Refused(message) => {
-                    failure(crate::EvaluationFailureKind::InvalidResult, message)
-                }
-            })?;
-        let named = candidate
-            .name_topology(self.history, self.document, feature)
-            .map_err(|message| failure(crate::EvaluationFailureKind::InvalidResult, message))?;
-        let result = NamedSolid::Derived(Box::new(named));
-        self.verify_result_lineage(body, &result)
-            .map_err(PartFeatureFailure::BodyReference)?;
-        Ok(result)
+        self.apply_derived_tool_boolean(feature, body, tool, operation, "revolve")
     }
     fn evaluate_coil(
         &mut self,
@@ -194,9 +165,9 @@ impl PartFeatureEvaluator for CertifiedNamedSolidEvaluator<'_> {
             candidate,
         )
         .map_err(|cause| {
-            failure(crate::EvaluationPhase::Naming.refused(
-                crate::EvaluationFailureKind::InvalidReference,
-                crate::EvaluationEntity::Body,
+            failure(EvaluationPhase::Naming.refused(
+                EvaluationFailureKind::InvalidReference,
+                EvaluationEntity::Body,
                 format!("coil topology: {cause}"),
             ))
         })?;
@@ -207,48 +178,14 @@ impl PartFeatureEvaluator for CertifiedNamedSolidEvaluator<'_> {
         feature: FeatureId,
         body: &NamedSolid,
         input: oblikovati_model::feature::sketch_coil::ResolvedSketchCoil<'_>,
-        operation: oblikovati_model::feature::sketch_prism::PrismBoolean,
+        operation: PrismBoolean,
     ) -> Result<NamedSolid, PartFeatureFailure<EvaluationFailure>> {
-        use super::super::blend::extrusion_boolean::BooleanFailure;
         let NamedSolid::Derived(tool) = self.evaluate_coil(feature, input)? else {
             return Err(PartFeatureFailure::Unsupported(
                 "coil Boolean: expected a named Coil tool".into(),
             ));
         };
-        let failure = |kind, message| {
-            PartFeatureFailure::Kernel(
-                crate::EvaluationPhase::Prism
-                    .refused(kind, crate::EvaluationEntity::Body, message)
-                    .for_feature(feature),
-            )
-        };
-        let tool = tool
-            .sweep_boolean_tool(self.history, self.document)
-            .map_err(|message| failure(crate::EvaluationFailureKind::InvalidResult, message))?;
-        let candidate = body
-            .boolean_tools(
-                self.history,
-                self.document,
-                vec![tool],
-                operation,
-                &format!("coil {operation}"),
-            )
-            .map_err(|decline| match decline {
-                BooleanFailure::UnchangedCut { faces, .. } => failure(
-                    crate::EvaluationFailureKind::UnchangedCut,
-                    format!("The feature did not change the number of faces ({faces})."),
-                ),
-                BooleanFailure::Refused(message) => {
-                    failure(crate::EvaluationFailureKind::InvalidResult, message)
-                }
-            })?;
-        let named = candidate
-            .name_topology(self.history, self.document, feature)
-            .map_err(|message| failure(crate::EvaluationFailureKind::InvalidResult, message))?;
-        let result = NamedSolid::Derived(Box::new(named));
-        self.verify_result_lineage(body, &result)
-            .map_err(PartFeatureFailure::BodyReference)?;
-        Ok(result)
+        self.apply_derived_tool_boolean(feature, body, tool, operation, "coil")
     }
     fn evaluate_derived_part(
         &mut self,
@@ -486,6 +423,14 @@ impl PartFeatureEvaluator for CertifiedNamedSolidEvaluator<'_> {
     ) -> Result<NamedSolid, PartFeatureFailure<EvaluationFailure>> {
         self.evaluate_named_thread(feature, body, input)
     }
+    fn evaluate_mark(
+        &mut self,
+        feature: FeatureId,
+        body: &NamedSolid,
+        input: ResolvedMark,
+    ) -> Result<NamedSolid, PartFeatureFailure<EvaluationFailure>> {
+        self.evaluate_named_mark(feature, body, input)
+    }
     fn evaluate_shell(
         &mut self,
         feature: FeatureId,
@@ -494,5 +439,52 @@ impl PartFeatureEvaluator for CertifiedNamedSolidEvaluator<'_> {
         input: oblikovati_model::feature::shell::ResolvedShell,
     ) -> Result<NamedSolid, PartFeatureFailure<EvaluationFailure>> {
         self.evaluate_named_shell(feature, body, openings, input)
+    }
+}
+
+impl CertifiedNamedSolidEvaluator<'_> {
+    fn apply_derived_tool_boolean(
+        &mut self,
+        feature: FeatureId,
+        body: &NamedSolid,
+        tool: Box<BlendNamedTopology>,
+        operation: PrismBoolean,
+        label: &str,
+    ) -> Result<NamedSolid, PartFeatureFailure<EvaluationFailure>> {
+        use super::super::blend::extrusion_boolean::BooleanFailure;
+        let failure = |kind, message| {
+            PartFeatureFailure::Kernel(
+                EvaluationPhase::Prism
+                    .refused(kind, EvaluationEntity::Body, message)
+                    .for_feature(feature),
+            )
+        };
+        let tool = tool
+            .sweep_boolean_tool(self.history, self.document)
+            .map_err(|message| failure(EvaluationFailureKind::InvalidResult, message))?;
+        let candidate = body
+            .boolean_tools(
+                self.history,
+                self.document,
+                vec![tool],
+                operation,
+                &format!("{label} {operation}"),
+            )
+            .map_err(|decline| match decline {
+                BooleanFailure::UnchangedCut { faces, .. } => failure(
+                    EvaluationFailureKind::UnchangedCut,
+                    format!("The feature did not change the number of faces ({faces})."),
+                ),
+                BooleanFailure::Refused(message) => {
+                    failure(EvaluationFailureKind::InvalidResult, message)
+                }
+            })?;
+        let named = candidate
+            .name_topology(self.history, self.document, feature)
+            .map_err(|message| failure(EvaluationFailureKind::InvalidResult, message))?;
+        let result = NamedSolid::Derived(Box::new(named));
+        self.verify_result_lineage(body, &result)
+            .map_err(PartFeatureFailure::BodyReference)?;
+        Ok(result)
     }
 }
