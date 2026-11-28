@@ -44,7 +44,7 @@ fn previous_martensite_release_is_refused_for_renderer_and_sketch_packages() {
         };
         let cause = verify_renderer_package(&package).unwrap_err();
         assert!(cause.contains(name));
-        assert!(cause.contains("137fc0e2394aa4c8d61f8c27cb9be373c1b46f30"));
+        assert!(cause.contains("8422c9aeb9cbf89d3d286b53fa94da7b4172feef"));
     }
 }
 
@@ -55,8 +55,8 @@ fn application_lock_consumes_the_pinned_kernel_modeling_release() {
     tree.put("Cargo.lock", include_str!("../../../Cargo.lock"));
     let pin = crate::release_config::load(tree.root()).unwrap().kernel;
     let names = locked_crates(&tree.root().join("Cargo.lock"), &pin).unwrap();
-    assert_eq!(pin.version, "0.16.0");
-    assert_eq!(pin.revision, "137fc0e2394aa4c8d61f8c27cb9be373c1b46f30");
+    assert_eq!(pin.version, "0.16.1");
+    assert_eq!(pin.revision, "8422c9aeb9cbf89d3d286b53fa94da7b4172feef");
     for name in [
         "martensite-tkprim",
         "martensite-tkbrep",

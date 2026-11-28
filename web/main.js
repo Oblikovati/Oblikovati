@@ -1,298 +1,369 @@
 // SPDX-License-Identifier: GPL-2.0-only
-// Main-thread browser controller: owns DOM events and transfers OffscreenCanvas to the worker.
+// Thin browser host: hands a full-viewport OffscreenCanvas and DOM events to the
+// Orchestrator Worker running the exact Oblikovati desktop UI (oblikovati-gui + oblikovati-head).
 
-const canvas = document.getElementById("oblikovati-canvas");
-const banner = document.getElementById("overlay-banner");
-const docList = document.getElementById("doc-list");
-const featureList = document.getElementById("feature-list");
-const paramList = document.getElementById("param-list");
-const statusText = document.getElementById("status-text");
-const statusGpu = document.getElementById("status-gpu");
-const statusWorkers = document.getElementById("status-workers");
-const statusMesh = document.getElementById("status-mesh");
+const canvas = document.getElementById("viewport");
+const bootOverlay = document.getElementById("boot-overlay");
+const bootMessage = document.getElementById("boot-message");
 
 let worker = null;
 let nextRequestId = 1;
 const pending = new Map();
-let currentState = null;
+let ready = false;
+const textEncoder = new TextEncoder();
+const textDecoder = new TextDecoder();
+let mcpState = {
+  addInId: "com.oblikovati.mcp-bridge",
+  tools: [],
+  registeredWebMCP: false,
+};
 
-function setBanner(text, isError = false) {
-  banner.textContent = text;
-  banner.classList.toggle("hidden", !text);
-  banner.classList.toggle("error", isError);
+function showBootMessage(text, isError = false) {
+  bootOverlay.classList.remove("hidden");
+  bootMessage.textContent = text;
+  bootMessage.classList.toggle("error", isError);
 }
 
-function sendRpc(message, transfer = []) {
+function hideBootOverlay() {
+  bootOverlay.classList.add("hidden");
+}
+
+function rpc(payload, transfer = []) {
   return new Promise((resolve, reject) => {
     const id = nextRequestId++;
     pending.set(id, { resolve, reject });
-    worker.postMessage({ ...message, id }, transfer);
+    worker.postMessage({ id, ...payload }, transfer);
   });
 }
 
-function renderState(state) {
-  currentState = state;
-  document.body.dataset.theme = state.theme;
-  statusText.textContent = state.statusMessage;
-  statusGpu.textContent = `GPU: ${state.deviceName}`;
-  statusWorkers.textContent = `Workers: ${state.activeWorkers}`;
-  statusMesh.textContent = `Bodies: ${state.visibleBodies} · Tris: ${state.triangleCount}`;
-
-  document.getElementById("btn-undo").disabled = !state.canUndo;
-  document.getElementById("btn-redo").disabled = !state.canRedo;
-  const projBtn = document.getElementById("btn-proj");
-  projBtn.textContent = state.perspective ? "Persp" : "Ortho";
-  projBtn.classList.toggle("active", state.perspective);
-  document.getElementById("btn-normals").classList.toggle("active", state.normalDebug);
-
-  docList.innerHTML = "";
-  for (const doc of state.documents) {
-    const li = document.createElement("li");
-    li.className = `tree-item${doc.active ? " active" : ""}`;
-    li.innerHTML = `<span>${doc.name}${doc.dirty ? " *" : ""}</span><span class="tree-meta">#${doc.id}</span>`;
-    li.addEventListener("click", () => dispatchCommand({ type: "activateDocument", id: doc.id }));
-    docList.appendChild(li);
+function formatInitError(raw) {
+  const message = String(raw);
+  if (message.includes("request_adapter failed") || message.includes("WebGPU Core adapter")) {
+    return (
+      `${message}\n\n` +
+      "WebGPU is required. On Linux Chromium, enable chrome://flags/#enable-unsafe-webgpu " +
+      "and chrome://flags/#enable-vulkan (or launch with --enable-unsafe-webgpu --enable-features=Vulkan)."
+    );
   }
-
-  featureList.innerHTML = "";
-  for (const feat of state.features) {
-    const li = document.createElement("li");
-    li.className = "tree-item";
-    li.innerHTML = `<span>${feat.name}</span><span class="tree-meta">${feat.status}</span>`;
-    featureList.appendChild(li);
-  }
-
-  paramList.innerHTML = "";
-  for (const param of state.parameters) {
-    const row = document.createElement("div");
-    row.className = "param-row";
-    const label = document.createElement("label");
-    label.textContent = param.name;
-    const input = document.createElement("input");
-    input.value = param.expression;
-    input.addEventListener("change", () => {
-      dispatchCommand({ type: "setParameter", name: param.name, expression: input.value });
-    });
-    row.append(label, input);
-    paramList.appendChild(row);
-  }
-}
-
-async function dispatchCommand(command) {
-  try {
-    const response = await sendRpc({ type: "command", command });
-    renderState(response.state);
-    return response.state;
-  } catch (error) {
-    statusText.textContent = String(error);
-    throw error;
-  }
-}
-
-function wireToolbar() {
-  document.getElementById("btn-new-part").addEventListener("click", () => {
-    dispatchCommand({ type: "newPart", name: null });
-  });
-  document.getElementById("btn-sample-part").addEventListener("click", () => {
-    dispatchCommand({ type: "loadSamplePart" });
-  });
-  document.getElementById("btn-undo").addEventListener("click", () => {
-    dispatchCommand({ type: "undo" });
-  });
-  document.getElementById("btn-redo").addEventListener("click", () => {
-    dispatchCommand({ type: "redo" });
-  });
-  document.getElementById("btn-fit").addEventListener("click", () => {
-    dispatchCommand({ type: "fit" });
-  });
-  for (const [id, view] of [
-    ["btn-iso", "iso"],
-    ["btn-front", "front"],
-    ["btn-top", "top"],
-    ["btn-right", "right"],
-  ]) {
-    document.getElementById(id).addEventListener("click", () => {
-      dispatchCommand({ type: "orient", view });
-    });
-  }
-  document.getElementById("btn-proj").addEventListener("click", () => {
-    dispatchCommand({ type: "setProjection", perspective: !currentState?.perspective });
-  });
-  document.getElementById("btn-normals").addEventListener("click", () => {
-    dispatchCommand({ type: "setNormalDebug", enabled: !currentState?.normalDebug });
-  });
-  document.getElementById("btn-theme").addEventListener("click", () => {
-    const next = currentState?.theme === "dark" ? "light" : "dark";
-    dispatchCommand({ type: "setTheme", theme: next });
-  });
-
-  const fileInput = document.getElementById("file-input");
-  document.getElementById("btn-open-file").addEventListener("click", () => fileInput.click());
-  fileInput.addEventListener("change", async () => {
-    const file = fileInput.files?.[0];
-    if (!file) return;
-    const buffer = await file.arrayBuffer();
-    const response = await sendRpc({ type: "loadDocument", name: file.name, bytes: buffer }, [buffer]);
-    renderState(response.state);
-    fileInput.value = "";
-  });
-
-  document.getElementById("btn-export-file").addEventListener("click", async () => {
-    const response = await sendRpc({ type: "exportDocument" });
-    const blob = new Blob([response.bytes], { type: "application/x-yaml" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "document.opd";
-    link.click();
-    URL.revokeObjectURL(url);
-  });
+  return message;
 }
 
 function wireCanvasInput() {
-  const sendPointer = (kind, e) => {
+  const sendPointer = (kind, event) => {
+    if (!worker || !ready) return;
     const rect = canvas.getBoundingClientRect();
     worker.postMessage({
       type: "pointer",
       kind,
-      cssX: e.clientX - rect.left,
-      cssY: e.clientY - rect.top,
-      button: e.button,
-      shift: e.shiftKey,
-      control: e.ctrlKey,
-      alt: e.altKey,
-      meta: e.metaKey,
+      cssX: event.clientX - rect.left,
+      cssY: event.clientY - rect.top,
+      button: event.button,
+      shift: event.shiftKey,
+      control: event.ctrlKey,
+      alt: event.altKey,
+      meta: event.metaKey,
     });
   };
-  canvas.addEventListener("contextmenu", (e) => e.preventDefault());
-  canvas.addEventListener("pointerdown", (e) => {
-    canvas.setPointerCapture(e.pointerId);
-    canvas.focus();
-    sendPointer(0, e);
+
+  canvas.addEventListener("pointerdown", (event) => {
+    canvas.focus({ preventScroll: true });
+    canvas.setPointerCapture(event.pointerId);
+    sendPointer(0, event);
+    event.preventDefault();
   });
-  canvas.addEventListener("pointerup", (e) => sendPointer(1, e));
-  canvas.addEventListener("pointermove", (e) => sendPointer(2, e));
+
+  canvas.addEventListener("pointerup", (event) => {
+    if (canvas.hasPointerCapture(event.pointerId)) {
+      canvas.releasePointerCapture(event.pointerId);
+    }
+    sendPointer(1, event);
+    event.preventDefault();
+  });
+
+  canvas.addEventListener("pointermove", (event) => {
+    sendPointer(2, event);
+  });
+
+  canvas.addEventListener("contextmenu", (event) => {
+    event.preventDefault();
+  });
+
   canvas.addEventListener(
     "wheel",
-    (e) => {
-      e.preventDefault();
+    (event) => {
+      if (!worker || !ready) return;
+      event.preventDefault();
       const rect = canvas.getBoundingClientRect();
       worker.postMessage({
         type: "wheel",
-        cssX: e.clientX - rect.left,
-        cssY: e.clientY - rect.top,
-        deltaY: e.deltaY,
-        deltaMode: e.deltaMode,
+        cssX: event.clientX - rect.left,
+        cssY: event.clientY - rect.top,
+        deltaY: event.deltaY,
+        deltaMode: event.deltaMode,
       });
     },
     { passive: false },
   );
-  canvas.addEventListener("keydown", (e) => {
+
+  const forwardKey = (pressed, event) => {
+    if (!worker || !ready) return;
+    if (
+      event.code === "Tab" ||
+      event.code.startsWith("F") && event.code.length <= 3 ||
+      ((event.ctrlKey || event.metaKey) &&
+        ["KeyS", "KeyZ", "KeyY", "KeyO", "KeyN"].includes(event.code))
+    ) {
+      event.preventDefault();
+    }
     worker.postMessage({
       type: "key",
-      code: e.code,
-      key: e.key,
-      pressed: true,
-      shift: e.shiftKey,
-      control: e.ctrlKey,
-      alt: e.altKey,
-      meta: e.metaKey,
+      code: event.code,
+      key: event.key,
+      pressed,
+      shift: event.shiftKey,
+      control: event.ctrlKey,
+      alt: event.altKey,
+      meta: event.metaKey,
+    });
+  };
+
+  window.addEventListener("keydown", (event) => forwardKey(true, event));
+  window.addEventListener("keyup", (event) => forwardKey(false, event));
+  window.addEventListener("focus", () => {
+    if (worker && ready) worker.postMessage({ type: "focus", focused: true });
+  });
+  window.addEventListener("blur", () => {
+    if (worker && ready) worker.postMessage({ type: "focus", focused: false });
+  });
+
+  const observer = new ResizeObserver(() => {
+    if (!worker || !ready) return;
+    const rect = canvas.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return;
+    worker.postMessage({
+      type: "resize",
+      cssWidth: rect.width,
+      cssHeight: rect.height,
+      dpr: window.devicePixelRatio || 1,
     });
   });
-  const observer = new ResizeObserver((entries) => {
-    for (const entry of entries) {
-      const { width, height } = entry.contentRect;
-      if (width > 0 && height > 0) {
-        worker.postMessage({
-          type: "resize",
-          cssWidth: width,
-          cssHeight: height,
-          dpr: window.devicePixelRatio || 1,
-        });
-      }
-    }
-  });
   observer.observe(canvas);
+
+  window.addEventListener("dragover", (event) => event.preventDefault());
+  window.addEventListener("drop", async (event) => {
+    event.preventDefault();
+    if (!worker || !ready) return;
+    const file = event.dataTransfer?.files?.[0];
+    if (!file) return;
+    const buffer = await file.arrayBuffer();
+    await rpc({ type: "openDocument", name: file.name, bytes: buffer }, [buffer]);
+  });
 }
 
 async function boot() {
   if (!window.crossOriginIsolated) {
-    setBanner(
-      "Cross-Origin Isolation (COOP/COEP) is required for multi-threaded WebAssembly.",
+    showBootMessage(
+      "Cross-Origin Isolation (COOP/COEP) is required for WebAssembly Threads.",
       true,
     );
-    window.__oblikovatiWebError = "crossOriginIsolated is false";
     return;
   }
-  if (!("gpu" in navigator)) {
-    setBanner("WebGPU is unavailable in this browser.", true);
-    window.__oblikovatiWebError = "navigator.gpu is unavailable";
+  if (typeof canvas.transferControlToOffscreen !== "function") {
+    showBootMessage("OffscreenCanvas is required for Oblikovati WebGPU.", true);
     return;
   }
 
-  let mainThreadTicks = 0;
-  const ticker = setInterval(() => {
-    mainThreadTicks += 1;
-  }, 16);
-
-  const rect = canvas.getBoundingClientRect();
   const dpr = window.devicePixelRatio || 1;
-  canvas.width = Math.max(1, Math.round((rect.width || 960) * dpr));
-  canvas.height = Math.max(1, Math.round((rect.height || 640) * dpr));
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = Math.max(1, Math.round((rect.width || window.innerWidth) * dpr));
+  canvas.height = Math.max(1, Math.round((rect.height || window.innerHeight) * dpr));
   const offscreen = canvas.transferControlToOffscreen();
 
   worker = new Worker("./orchestrator.js", { type: "module" });
   worker.onmessage = (event) => {
     const msg = event.data;
-    if (msg.type === "state") {
-      renderState(msg.state);
+    if (msg.id !== undefined && pending.has(msg.id)) {
+      const waiter = pending.get(msg.id);
+      pending.delete(msg.id);
+      if (msg.ok) waiter.resolve(msg);
+      else waiter.reject(new Error(msg.error || "Worker request failed"));
+      return;
+    }
+    if (msg.type === "addinChannel") {
+      handleAddInChannel(msg.addInId, msg.channel, msg.payload);
+      return;
+    }
+    if (msg.type === "addinLog") {
+      console.info(`[addin:${msg.addInId}] ${msg.message}`);
       return;
     }
     if (msg.type === "error") {
-      setBanner(msg.message, true);
-      return;
+      showBootMessage(formatInitError(msg.message), true);
     }
-    const waiter = pending.get(msg.id);
-    if (!waiter) return;
-    pending.delete(msg.id);
-    if (msg.ok) waiter.resolve(msg);
-    else waiter.reject(new Error(msg.error || "Worker request failed"));
   };
-  worker.onerror = (error) => {
-    setBanner(`Worker error: ${error.message}`, true);
-    window.__oblikovatiWebError = error.message;
+  worker.onerror = (event) => {
+    showBootMessage(formatInitError(event.message || "Orchestrator worker error"), true);
   };
 
-  const maxWorkers = Math.max(1, Math.min(navigator.hardwareConcurrency || 4, 8));
+  wireCanvasInput();
+  const maxWorkers = Math.min(8, Math.max(2, navigator.hardwareConcurrency || 4));
+  const validation = new URLSearchParams(window.location.search).get("validation") === "1";
+
   try {
-    const response = await sendRpc(
-      { type: "init", canvas: offscreen, dpr, maxWorkers, validation: true },
+    const res = await rpc(
+      {
+        type: "init",
+        canvas: offscreen,
+        dpr,
+        maxWorkers,
+        validation,
+      },
       [offscreen],
     );
-    clearInterval(ticker);
-    renderState(response.state);
-    setBanner("");
-    wireToolbar();
-    wireCanvasInput();
-    window.__oblikovatiWeb = {
-      crossOriginIsolated: window.crossOriginIsolated,
-      mainThreadBlocked: mainThreadTicks === 0,
-      dispatchCommand,
-      capture: () => sendRpc({ type: "capture" }),
-      state: () => sendRpc({ type: "state" }),
-      loadDocument: (name, bytes) => {
-        const buf = new Uint8Array(bytes).buffer;
-        return sendRpc({ type: "loadDocument", name, bytes: buf }, [buf]);
+    ready = true;
+    hideBootOverlay();
+    canvas.focus({ preventScroll: true });
+    const addinsApi = {
+      loadUrl: (url) => rpc({ type: "loadAddIn", url }),
+      loadBundleZip: (bundleUrl) => rpc({ type: "loadAddIn", bundleUrl }),
+      loadBytes: (wasmBytes) => rpc({ type: "loadAddIn", wasmBytes }, [wasmBytes]),
+      loadFromCatalogue: (catalogueBaseUrl, addInId) =>
+        loadAddInFromCatalogue(catalogueBaseUrl, addInId, res.apiVersion),
+      unload: (addInId) => rpc({ type: "unloadAddIn", addInId }),
+      list: async () => (await rpc({ type: "listAddIns" })).addins,
+      callAutomation: async (addInId, method, req) => {
+        const bytes =
+          req instanceof Uint8Array
+            ? req.slice().buffer
+            : textEncoder.encode(typeof req === "string" ? req : JSON.stringify(req ?? {})).buffer;
+        const reply = await rpc({ type: "addinAutomation", addInId, method, reqBytes: bytes }, [
+          bytes,
+        ]);
+        return new Uint8Array(reply.data);
       },
-      exportDocument: () => sendRpc({ type: "exportDocument" }),
-      close: () => sendRpc({ type: "close" }),
+      sendChannel: (addInId, channel, payload) =>
+        rpc({ type: "addinChannel", addInId, channel, payload }),
     };
-    window.__oblikovatiWebReady = true;
+
+    window.__OBLIKOVATI_WEB__ = {
+      status: () => rpc({ type: "status" }),
+      capture: () => rpc({ type: "capture" }),
+      openDocumentBytes: (name, buffer) =>
+        rpc({ type: "openDocument", name, bytes: buffer }, [buffer]),
+      apiVersion: res.apiVersion,
+      addins: addinsApi,
+      requestSpaceMouse: () => connectSpaceMouseWebHID(addinsApi),
+      initialStatus: res.status,
+    };
+
+    await autoLoadQueryAddIns(addinsApi);
   } catch (error) {
-    clearInterval(ticker);
-    setBanner(String(error), true);
-    window.__oblikovatiWebError = String(error);
+    showBootMessage(formatInitError(error), true);
   }
 }
 
-await boot();
+async function loadAddInFromCatalogue(catalogueBaseUrl, addInId, apiVersion) {
+  const base = String(catalogueBaseUrl || "https://addins.oblikovati.org").replace(/\/+$/, "");
+  const query = apiVersion ? `?api=${apiVersion.major}.${apiVersion.minor}` : "";
+  const resp = await fetch(`${base}/catalogue${query}`);
+  if (!resp.ok) {
+    throw new Error(`catalogue query failed: HTTP ${resp.status}`);
+  }
+  const data = await resp.json();
+  const entry = (data.addins || []).find((item) => item.name === addInId);
+  if (!entry || !entry.versions || entry.versions.length === 0) {
+    throw new Error(`add-in ${addInId} not found in catalogue`);
+  }
+  const bundle = entry.versions[0].bundles?.["js-wasm"];
+  if (!bundle || !bundle.url) {
+    throw new Error(`add-in ${addInId} has no js-wasm bundle for this API version`);
+  }
+  return rpc({ type: "loadAddIn", bundleUrl: bundle.url });
+}
+
+async function autoLoadQueryAddIns(addinsApi) {
+  const params = new URLSearchParams(window.location.search);
+  for (const url of params.getAll("addin")) {
+    if (url) {
+      await addinsApi.loadUrl(url);
+    }
+  }
+  for (const bundleUrl of params.getAll("addin_bundle")) {
+    if (bundleUrl) {
+      await addinsApi.loadBundleZip(bundleUrl);
+    }
+  }
+  const relayUrl = params.get("mcp_relay");
+  if (relayUrl && window.__OBLIKOVATI_MCP__) {
+    await window.__OBLIKOVATI_MCP__.connectRelay(relayUrl);
+  }
+}
+
+function handleAddInChannel(addInId, channel, payload) {
+  if (channel === "webmcp:register") {
+    registerWebMCPBridge(addInId, payload);
+  }
+}
+
+function registerWebMCPBridge(addInId, payload) {
+  const tools = Array.isArray(payload?.tools) ? payload.tools : [];
+  mcpState = { addInId, tools, registeredWebMCP: false };
+
+  const invoke = async (method, body) => {
+    const raw = await window.__OBLIKOVATI_WEB__.addins.callAutomation(addInId, method, body);
+    const text = textDecoder.decode(raw);
+    return text ? JSON.parse(text) : {};
+  };
+
+  window.__OBLIKOVATI_MCP__ = {
+    listTools: () => mcpState.tools.slice(),
+    callTool: (name, args = {}) => invoke("mcp.callTool", { name, arguments: args }),
+    request: (jsonrpc) => invoke("mcp.jsonrpc", jsonrpc),
+    connectRelay: (url) =>
+      window.__OBLIKOVATI_WEB__.addins.sendChannel(addInId, "mcp:relay:connect", { url }),
+    disconnectRelay: () =>
+      window.__OBLIKOVATI_WEB__.addins.sendChannel(addInId, "mcp:relay:disconnect", {}),
+  };
+
+  if (navigator.modelContext && typeof navigator.modelContext.registerTool === "function") {
+    for (const tool of tools) {
+      navigator.modelContext.registerTool({
+        name: tool.name,
+        description: tool.description || "",
+        inputSchema: tool.inputSchema || { type: "object", properties: {} },
+        execute: async (input) => window.__OBLIKOVATI_MCP__.callTool(tool.name, input || {}),
+      });
+    }
+    mcpState.registeredWebMCP = true;
+  }
+}
+
+async function connectSpaceMouseWebHID(addinsApi) {
+  if (!navigator.hid || typeof navigator.hid.requestDevice !== "function") {
+    throw new Error("WebHID is not supported in this browser");
+  }
+  const devices = await navigator.hid.requestDevice({
+    filters: [{ vendorId: 0x046d }, { vendorId: 0x256f }],
+  });
+  if (!devices || devices.length === 0) {
+    return { connected: false };
+  }
+  const device = devices[0];
+  if (!device.opened) {
+    await device.open();
+  }
+  device.addEventListener("inputreport", (event) => {
+    const view = event.data;
+    const report = new Uint8Array(view.byteLength + 1);
+    report[0] = event.reportId & 0xff;
+    report.set(new Uint8Array(view.buffer, view.byteOffset, view.byteLength), 1);
+    addinsApi
+      .sendChannel("com.oblikovati.3d-connexion", "webhid:report", {
+        report: Array.from(report),
+      })
+      .catch(() => {});
+  });
+  return { connected: true, productName: device.productName || "SpaceMouse" };
+}
+
+boot();

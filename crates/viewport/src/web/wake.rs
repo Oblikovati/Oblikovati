@@ -32,7 +32,8 @@ impl ViewportWake {
         Ok(())
     }
 
-    pub(crate) fn consume(&self) -> Result<bool, String> {
+    /// Consume and clear a pending wakeup signal without blocking; example: `wake.consume()?`.
+    pub fn consume(&self) -> Result<bool, String> {
         Ok(self.pending.swap(false, Ordering::AcqRel))
     }
 }

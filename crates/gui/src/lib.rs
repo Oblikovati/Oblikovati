@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Owned Dear ImGui frames for the application viewport draw boundary.
 mod accessibility;
+#[cfg(target_arch = "wasm32")]
+#[allow(unsafe_code)]
+mod wasm_c_abi;
 pub use accessibility::{
     GuiAccessibleFocus, GuiClosePrompt, GuiClosePromptButton, GuiClosePromptChoice,
 };

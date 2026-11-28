@@ -16,15 +16,15 @@ oblikovati-model = { path = "../model" }
 oblikovati-martensite = { path = "../martensite" }
 
 [target.'cfg(any(target_os = "linux", target_os = "windows"))'.dependencies]
-martensite-vulkan = { git = "https://github.com/Oblikovati/Martensite", rev = "137fc0e2394aa4c8d61f8c27cb9be373c1b46f30", version = "=0.9.0" }
+martensite-vulkan = { git = "https://github.com/Oblikovati/Martensite", rev = "8422c9aeb9cbf89d3d286b53fa94da7b4172feef", version = "=0.9.0" }
 
 [target.'cfg(any(target_os = "linux", target_os = "windows", target_arch = "wasm32"))'.dependencies]
-martensite-render-core = { git = "https://github.com/Oblikovati/Martensite", rev = "137fc0e2394aa4c8d61f8c27cb9be373c1b46f30", version = "=0.1.0" }
-martensite-webgpu = { git = "https://github.com/Oblikovati/Martensite", rev = "137fc0e2394aa4c8d61f8c27cb9be373c1b46f30", version = "=0.1.0" }
-martensite-tkernel = { git = "https://github.com/Oblikovati/Martensite", rev = "137fc0e2394aa4c8d61f8c27cb9be373c1b46f30", version = "=0.5.2" }
-martensite-tkmath = { git = "https://github.com/Oblikovati/Martensite", rev = "137fc0e2394aa4c8d61f8c27cb9be373c1b46f30", version = "=0.4.2" }
-martensite-tkservice = { git = "https://github.com/Oblikovati/Martensite", rev = "137fc0e2394aa4c8d61f8c27cb9be373c1b46f30", version = "=0.6.0" }
-martensite-tkv3d = { git = "https://github.com/Oblikovati/Martensite", rev = "137fc0e2394aa4c8d61f8c27cb9be373c1b46f30", version = "=0.8.1" }
+martensite-render-core = { git = "https://github.com/Oblikovati/Martensite", rev = "8422c9aeb9cbf89d3d286b53fa94da7b4172feef", version = "=0.1.0" }
+martensite-webgpu = { git = "https://github.com/Oblikovati/Martensite", rev = "8422c9aeb9cbf89d3d286b53fa94da7b4172feef", version = "=0.1.1" }
+martensite-tkernel = { git = "https://github.com/Oblikovati/Martensite", rev = "8422c9aeb9cbf89d3d286b53fa94da7b4172feef", version = "=0.5.2" }
+martensite-tkmath = { git = "https://github.com/Oblikovati/Martensite", rev = "8422c9aeb9cbf89d3d286b53fa94da7b4172feef", version = "=0.4.2" }
+martensite-tkservice = { git = "https://github.com/Oblikovati/Martensite", rev = "8422c9aeb9cbf89d3d286b53fa94da7b4172feef", version = "=0.6.0" }
+martensite-tkv3d = { git = "https://github.com/Oblikovati/Martensite", rev = "8422c9aeb9cbf89d3d286b53fa94da7b4172feef", version = "=0.8.1" }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 web-sys = { version = "=0.3.107", features = ["HtmlCanvasElement", "OffscreenCanvas"] }

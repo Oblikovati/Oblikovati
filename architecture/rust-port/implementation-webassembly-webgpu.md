@@ -18,11 +18,12 @@ Design record: [ADR-0043](../decisions/ADR-0043-webassembly-webgpu-target.md).
   `wasm32`, `ViewportRuntime::new_webgpu_async` / `open_offscreen_canvas` /
   `open_html_canvas`, and `Viewport::present_frame` / `present_async` /
   `capture_async`.
-- **Browser workbench (`crates/web`, `web/`):** Added the zero-`unsafe`
-  `oblikovati-web` crate (`WebSession`, `WebCommand`, `WebNavigationController`,
-  parametric sample Part builder, and `wasm-bindgen` `WebCadRuntime`) plus the
-  three-realm browser shell (`web/index.html`, `web/styles.css`, `web/main.js`,
-  `web/orchestrator.js`, `web/serve.py`, `web/e2e_chromium.py`).
+- **Full desktop UI on WebAssembly (`oblikovati-gui`, `oblikovati-head`, `crates/web`, `web/`):**
+  Cross-compiled `imgui-sys` and `oblikovati-gui` C++ widget ABI with WASI SDK 34.0
+  (`wasm32-wasip1-threads` + `-matomics`) plus a Rust-allocator / WASI-free C shim
+  (`wasm_c_abi.rs`, `wasm_c_shim.c`), enabled `NativeHeadWindow` + `DesktopOwner`
+  (`WebDesktopHost`) on `wasm32`, wired `WebCadRuntime` to `WebDesktopHost`, and
+  replaced the custom HTML chrome with a pure full-viewport `<canvas>` host (`web/`).
 - **Build tooling and CI (`tools/build/`, `.github/workflows/`):** Added
   `tools/build/wasm-toolchain.toml` (`nightly-2026-09-25`), `cargo xtask wasm-check`,
   `cargo xtask wasm-build`, `cargo xtask wasm-package`, `Makefile` targets, and a
@@ -36,19 +37,22 @@ Design record: [ADR-0043](../decisions/ADR-0043-webassembly-webgpu-target.md).
 
 ## Verification commands and results
 
-1. `cargo xtask wasm-check`: checked all 11 WASM-eligible workspace crates on
-   `wasm32-unknown-unknown` with `+atomics,+bulk-memory,+mutable-globals`.
-2. `cargo xtask wasm-build`: compiled `oblikovati-web` in release mode (with
-   debug info disabled and symbols stripped) and generated `web/pkg/` with
-   `wasm-bindgen 0.2.130` (`55,056,795` bytes raw, `16,091,472` bytes gzipped).
+1. `cargo xtask wasm-check`: checked all 14 WASM-eligible workspace crates
+   (including `oblikovati-gui`, `oblikovati-cli`, `oblikovati-head`, and
+   `oblikovati-web`) on `wasm32-unknown-unknown` with
+   `+atomics,+bulk-memory,+mutable-globals`.
+2. `cargo xtask wasm-build`: compiled `oblikovati-web` (bundling the full
+   `oblikovati-gui` + `oblikovati-head` desktop UI) in release mode and
+   generated `web/pkg/` with `wasm-bindgen 0.2.130` (`75,030,517` bytes raw,
+   `22,985,226` bytes gzipped).
 3. `python3 web/e2e_chromium.py` (Chromium `148.0.7778.96`, real WebGPU):
-   - `crossOriginIsolated: true`, `mainThreadBlocked: false`
+   - `crossOriginIsolated: true`, `overlayHidden: true`
    - `deviceName: "WebGPU Core Device"`, `activeWorkers: 8`
-   - `visibleBodies: 1`, `triangleCount: 12`, `litPixels: 207244`
-   - Parametric `depth` edit (`2.5 cm` -> `5 cm`) changed `102676` pixels with
-     `editedCanUndo: true`
-   - `.opd` round-trip exported `7402` bytes and reopened with `reopenedBodies: 1`
-   - `validationErrors: 0`
+   - `homeNonBlackPixels: 921589`, `homeDistinctColorBuckets: 256`
+   - Clicking `New Part` opened the live Part workspace (`partOpenDocuments: 1`,
+     3D Model ribbon, Model Browser, 3D WebGPU viewport + ViewCube, Material/
+     Appearance browsers)
+   - `validationErrors: 0`, `consoleLogs: []`
 4. Native WebGPU, coverage, duplication, and workspace checks:
    - `oblikovati-persistence`, `oblikovati-session`, `oblikovati-viewport`,
      `oblikovati-web`, and `oblikovati-build` (118 tests) all passed.

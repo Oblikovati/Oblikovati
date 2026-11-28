@@ -141,7 +141,7 @@ impl WebSession {
     /// Example: `let id = session.open_document_bytes("Bracket.opd", &bytes)?;`.
     pub fn open_document_bytes(&mut self, name: &str, bytes: &[u8]) -> Result<u64, String> {
         let sanitized = sanitize_virtual_name(name);
-        let path = PathBuf::from(format!("/web/{sanitized}"));
+        let path = virtual_web_path(&sanitized);
         self.files_handle
             .insert(&path, bytes.to_vec())
             .map_err(|err| err.to_string())?;
@@ -181,7 +181,7 @@ impl WebSession {
             .workspace
             .path(id)
             .map(Path::to_path_buf)
-            .unwrap_or_else(|_| PathBuf::from(format!("/web/export-{id}-{filename}")));
+            .unwrap_or_else(|_| virtual_web_path(&format!("export-{id}-{filename}")));
         let mut guids = SystemGuidSource;
         self.workspace
             .save_as(id, &path, WEB_APP_VERSION, &mut guids)
@@ -396,10 +396,34 @@ fn sanitize_virtual_name(name: &str) -> String {
     ensure_opd_extension(base)
 }
 
+fn virtual_web_path(file_name: &str) -> PathBuf {
+    #[cfg(windows)]
+    const ROOT: &str = r"C:\web";
+    #[cfg(not(windows))]
+    const ROOT: &str = "/web";
+    Path::new(ROOT).join(file_name)
+}
+
 fn ensure_opd_extension(name: &str) -> String {
     if name.ends_with(".opd") || name.ends_with(".obk") {
         name.to_owned()
     } else {
         format!("{name}.opd")
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::virtual_web_path;
+
+    #[test]
+    fn virtual_web_path_is_platform_absolute() {
+        let path = virtual_web_path("SamplePart1.opd");
+        #[cfg(not(target_arch = "wasm32"))]
+        assert!(path.is_absolute(), "expected absolute path, got {path:?}");
+        assert_eq!(
+            path.file_name().and_then(|name| name.to_str()),
+            Some("SamplePart1.opd")
+        );
     }
 }

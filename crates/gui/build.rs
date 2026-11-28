@@ -14,13 +14,46 @@ fn main() -> Result<(), Box<dyn Error>> {
         .include(headers)
         .define("IMGUI_USE_WCHAR32", None)
         .flag_if_supported("-std=c++11")
+        .flag_if_supported("-Wno-nontrivial-memcall")
         .file("src/widget_abi.cpp")
         .file("src/widget_control_abi.cpp")
         .file("src/widget_draw_abi.cpp")
         .try_compile("oblikovati_imgui_widgets")?;
+    if std::env::var("CARGO_CFG_TARGET_ARCH").as_deref() == Ok("wasm32") {
+        configure_wasm_c_runtime()?;
+    }
     println!("cargo:rerun-if-changed=src/widget_abi.cpp");
     println!("cargo:rerun-if-changed=src/widget_control_abi.cpp");
     println!("cargo:rerun-if-changed=src/widget_dock_widths.h");
     println!("cargo:rerun-if-changed=src/widget_draw_abi.cpp");
+    println!("cargo:rerun-if-changed=src/wasm_c_shim.c");
     Ok(())
+}
+
+fn configure_wasm_c_runtime() -> Result<(), Box<dyn Error>> {
+    println!("cargo:rerun-if-env-changed=WASI_SDK_PATH");
+    println!("cargo:rerun-if-env-changed=CXX_wasm32_unknown_unknown");
+    cc::Build::new()
+        .flag_if_supported("-matomics")
+        .flag_if_supported("-mbulk-memory")
+        .flag_if_supported("-mmutable-globals")
+        .flag_if_supported("-Wno-builtin-requires-header")
+        .file("src/wasm_c_shim.c")
+        .try_compile("oblikovati_wasm_c_shim")?;
+    if let Some(sysroot_lib) = wasm_sysroot_lib_dir() {
+        println!("cargo:rustc-link-search=native={}", sysroot_lib.display());
+        println!("cargo:rustc-link-lib=static:-bundle=c");
+    }
+    Ok(())
+}
+
+fn wasm_sysroot_lib_dir() -> Option<PathBuf> {
+    let sdk = std::env::var_os("WASI_SDK_PATH")
+        .map(PathBuf::from)
+        .or_else(|| {
+            let cxx = PathBuf::from(std::env::var_os("CXX_wasm32_unknown_unknown")?);
+            cxx.parent()?.parent().map(PathBuf::from)
+        })?;
+    let lib = sdk.join("share/wasi-sysroot/lib/wasm32-wasip1-threads");
+    lib.join("libc.a").is_file().then_some(lib)
 }

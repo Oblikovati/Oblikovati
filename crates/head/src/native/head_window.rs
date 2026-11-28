@@ -456,21 +456,29 @@ impl HeadWindow for NativeHeadWindow {
         self.present_native_frame()
     }
     fn wait(&mut self, timeout: Option<std::time::Duration>) -> Result<bool, String> {
-        let windows = self.drawing_windows.targets();
-        #[cfg(target_os = "linux")]
-        let ready = match self.clipboard.endpoint() {
-            Some(clipboard) => self
+        #[cfg(target_arch = "wasm32")]
+        {
+            let _ = timeout;
+            self.wake.consume()
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            let windows = self.drawing_windows.targets();
+            #[cfg(target_os = "linux")]
+            let ready = match self.clipboard.endpoint() {
+                Some(clipboard) => self.view.wait_events_for_windows_with_clipboard(
+                    &windows, &self.wake, clipboard, timeout,
+                ),
+                None => self
+                    .view
+                    .wait_events_for_windows(&windows, &self.wake, timeout),
+            }?;
+            #[cfg(target_os = "windows")]
+            let ready = self
                 .view
-                .wait_events_for_windows_with_clipboard(&windows, &self.wake, clipboard, timeout),
-            None => self
-                .view
-                .wait_events_for_windows(&windows, &self.wake, timeout),
-        }?;
-        #[cfg(target_os = "windows")]
-        let ready = self
-            .view
-            .wait_events_for_windows(&windows, &self.wake, timeout)?;
-        Ok(ready.worker_wake)
+                .wait_events_for_windows(&windows, &self.wake, timeout)?;
+            Ok(ready.worker_wake)
+        }
     }
     fn finish(&mut self) -> Result<(), String> {
         self.finish_native_window()

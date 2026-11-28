@@ -19,7 +19,7 @@ pub(crate) mod resource_browser;
 pub use gui::HeadGuiUpdate;
 mod window;
 pub use window::{HeadOrientationFitFrame, HeadWindow};
-struct FrameControl {
+pub(crate) struct FrameControl {
     options: HeadOptions,
     summary: HeadSummary,
     pending: bool,
@@ -29,7 +29,7 @@ struct FrameControl {
     bounded_attempts: u64,
 }
 impl FrameControl {
-    fn new(options: HeadOptions) -> Self {
+    pub(crate) fn new(options: HeadOptions) -> Self {
         Self {
             options,
             summary: HeadSummary::default(),
@@ -143,7 +143,7 @@ pub(crate) fn run_frames(
     }
     checked_summary(control.summary, options, control.closed)
 }
-fn run_owner_frame(
+pub(crate) fn run_owner_frame(
     window: &mut dyn HeadWindow,
     owner: &mut dyn HeadWork,
     control: &mut FrameControl,

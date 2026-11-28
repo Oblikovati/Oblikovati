@@ -262,6 +262,8 @@ impl DrawingWindow {
         let complete = self.view.present_without_capture()?;
         #[cfg(target_os = "windows")]
         let complete = matches!(self.view.present()?, ViewportPresentation::Completed(_));
+        #[cfg(target_arch = "wasm32")]
+        let complete = self.view.present_frame()?;
         self.last_draws = complete.then_some(frame.draws);
         Ok(complete)
     }

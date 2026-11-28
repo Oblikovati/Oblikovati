@@ -38,7 +38,7 @@ pub(super) fn native_gui_driver(
 pub(super) async fn webgpu_gui_driver_async(
     options: ViewportOptions,
 ) -> Result<Handle<Graphic3dRenderDriver>, String> {
-    WebGpuRenderDriver::with_policies_async(
+    let primary = WebGpuRenderDriver::with_policies_async(
         WebGpuOptions {
             validation: options.validation,
             ..WebGpuOptions::default()
@@ -48,8 +48,23 @@ pub(super) async fn webgpu_gui_driver_async(
         RenderLineWidthPolicy::default(),
         RenderBehaviorConfiguration::default(),
     )
-    .await
-    .map_err(|error| error.to_string())
+    .await;
+    match primary {
+        Ok(driver) => Ok(driver),
+        Err(first_error) => WebGpuRenderDriver::with_policies_async(
+            WebGpuOptions {
+                validation: options.validation,
+                force_fallback_adapter: true,
+                ..WebGpuOptions::default()
+            },
+            viewport_pipeline_policies(),
+            RenderCoordinateConvention::default(),
+            RenderLineWidthPolicy::default(),
+            RenderBehaviorConfiguration::default(),
+        )
+        .await
+        .map_err(|_| first_error.to_string()),
+    }
 }
 
 /// Select checked WebGPU GUI publication synchronously on native targets.

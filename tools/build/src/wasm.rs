@@ -18,19 +18,17 @@ pub(crate) const WASM_TARGET: &str = "wasm32-unknown-unknown";
 pub(crate) const WASM_TOOLCHAIN_PATH: &str = "tools/build/wasm-toolchain.toml";
 
 /// Workspace crates that remain native desktop/host-only and are excluded from `wasm32`.
-pub(crate) const NATIVE_ONLY_CRATES: &[&str] = &[
-    "oblikovati-build",
-    "oblikovati-cli",
-    "oblikovati-gui",
-    "oblikovati-head",
-];
+pub(crate) const NATIVE_ONLY_CRATES: &[&str] = &["oblikovati-build"];
+
+/// Pinned WASI SDK version providing `clang++` and the `wasm32-wasip1-threads` C/C++ sysroot.
+pub(crate) const WASI_SDK_VERSION: &str = "34.0";
 
 /// RUSTFLAGS for checking all WASM-eligible workspace crates with WebAssembly Threads.
 pub(crate) const WASM_CHECK_RUSTFLAGS: &str =
     "-C target-feature=+atomics,+bulk-memory,+mutable-globals --cfg getrandom_backend=\"wasm_js\"";
 
-/// RUSTFLAGS for linking `oblikovati-web` with shared `WebAssembly.Memory` for Web Workers.
-pub(crate) const WASM_BUILD_RUSTFLAGS: &str = "-C target-feature=+atomics,+bulk-memory,+mutable-globals --cfg getrandom_backend=\"wasm_js\" -C link-arg=--shared-memory -C link-arg=--max-memory=1073741824 -C link-arg=--import-memory -C link-arg=--export=__wasm_init_tls -C link-arg=--export=__tls_size -C link-arg=--export=__tls_align -C link-arg=--export=__tls_base";
+/// RUSTFLAGS for linking `oblikovati-web` with shared `WebAssembly.Memory` and an 8 MiB stack.
+pub(crate) const WASM_BUILD_RUSTFLAGS: &str = "-C target-feature=+atomics,+bulk-memory,+mutable-globals --cfg getrandom_backend=\"wasm_js\" -C link-arg=--shared-memory -C link-arg=--max-memory=1073741824 -C link-arg=--import-memory -C link-arg=-z -C link-arg=stack-size=8388608 -C link-arg=--export=__wasm_init_tls -C link-arg=--export=__tls_size -C link-arg=--export=__tls_align -C link-arg=--export=__tls_base";
 
 /// Read the pinned nightly toolchain channel from `tools/build/wasm-toolchain.toml`.
 /// Example: `let channel = wasm::pinned_channel(root)?;`.
@@ -56,6 +54,44 @@ fn parse_channel(toml: &str) -> Option<String> {
     None
 }
 
+fn wasm_c_toolchain_env() -> Vec<(String, String)> {
+    let sdk = std::env::var_os("WASI_SDK_PATH")
+        .map(std::path::PathBuf::from)
+        .filter(|path| path.join("bin/clang++").is_file())
+        .or_else(|| {
+            let home = std::env::var_os("HOME").map(std::path::PathBuf::from)?;
+            let candidate = home.join(format!(
+                ".cache/oblikovati/wasi-sdk-{WASI_SDK_VERSION}-x86_64-linux"
+            ));
+            candidate.join("bin/clang++").is_file().then_some(candidate)
+        });
+    let Some(sdk) = sdk else {
+        return Vec::new();
+    };
+    let sysroot = sdk.join("share/wasi-sysroot");
+    let cxxflags = format!(
+        "--target=wasm32-wasip1-threads --sysroot={} -matomics -mbulk-memory -mmutable-globals -fno-exceptions -fno-rtti",
+        sysroot.display()
+    );
+    vec![
+        ("WASI_SDK_PATH".into(), sdk.display().to_string()),
+        (
+            "CC_wasm32_unknown_unknown".into(),
+            sdk.join("bin/clang").display().to_string(),
+        ),
+        (
+            "CXX_wasm32_unknown_unknown".into(),
+            sdk.join("bin/clang++").display().to_string(),
+        ),
+        (
+            "AR_wasm32_unknown_unknown".into(),
+            sdk.join("bin/llvm-ar").display().to_string(),
+        ),
+        ("CXXSTDLIB_wasm32_unknown_unknown".into(), String::new()),
+        ("CXXFLAGS_wasm32_unknown_unknown".into(), cxxflags),
+    ]
+}
+
 /// Check every WASM-eligible workspace crate against `wasm32-unknown-unknown` (+atomics).
 pub(crate) fn check(root: &Path, runner: &dyn Runner) -> BuildResult<()> {
     let channel = pinned_channel(root)?;
@@ -69,12 +105,19 @@ pub(crate) fn check(root: &Path, runner: &dyn Runner) -> BuildResult<()> {
         "-Z",
         "build-std=panic_abort,std",
         "--workspace",
+        "--lib",
     ];
     for excluded in NATIVE_ONLY_CRATES {
         args.push("--exclude");
         args.push(excluded);
     }
-    runner.stream_env(root, "cargo", &args, &[("RUSTFLAGS", WASM_CHECK_RUSTFLAGS)])
+    let mut owned_env = wasm_c_toolchain_env();
+    owned_env.push(("RUSTFLAGS".into(), WASM_CHECK_RUSTFLAGS.into()));
+    let env_refs: Vec<(&str, &str)> = owned_env
+        .iter()
+        .map(|(k, v)| (k.as_str(), v.as_str()))
+        .collect();
+    runner.stream_env(root, "cargo", &args, &env_refs)
 }
 
 /// Build `oblikovati-web` in release mode and generate `web/pkg/` with `wasm-bindgen`.
@@ -93,16 +136,15 @@ pub(crate) fn build(root: &Path, runner: &dyn Runner) -> BuildResult<()> {
         "-p",
         "oblikovati-web",
     ];
-    runner.stream_env(
-        root,
-        "cargo",
-        &cargo_args,
-        &[
-            ("RUSTFLAGS", WASM_BUILD_RUSTFLAGS),
-            ("CARGO_PROFILE_RELEASE_DEBUG", "0"),
-            ("CARGO_PROFILE_RELEASE_STRIP", "symbols"),
-        ],
-    )?;
+    let mut owned_env = wasm_c_toolchain_env();
+    owned_env.push(("RUSTFLAGS".into(), WASM_BUILD_RUSTFLAGS.into()));
+    owned_env.push(("CARGO_PROFILE_RELEASE_DEBUG".into(), "0".into()));
+    owned_env.push(("CARGO_PROFILE_RELEASE_STRIP".into(), "symbols".into()));
+    let env_refs: Vec<(&str, &str)> = owned_env
+        .iter()
+        .map(|(k, v)| (k.as_str(), v.as_str()))
+        .collect();
+    runner.stream_env(root, "cargo", &cargo_args, &env_refs)?;
 
     let out_dir = root.join("web/pkg");
     fs::create_dir_all(&out_dir)
@@ -133,7 +175,15 @@ pub(crate) fn package(root: &Path, runner: &dyn Runner, version: &str) -> BuildR
         fs::remove_dir_all(&stage)
             .map_err(|error| format!("clear web stage {}: {error}", stage.display()))?;
     }
-    for asset in ["index.html", "styles.css", "main.js", "orchestrator.js"] {
+    for asset in [
+        "index.html",
+        "styles.css",
+        "main.js",
+        "orchestrator.js",
+        "addin-host.js",
+        "addin-worker.js",
+        "wasm_exec.js",
+    ] {
         copy_file(&root.join("web").join(asset), &stage.join(asset))?;
     }
     copy_tree(&root.join("web/pkg"), &stage.join("pkg"))?;
@@ -184,7 +234,7 @@ mod tests {
         let calls = runner.calls.borrow();
         assert_eq!(calls.len(), 3);
         assert!(calls[0].join(" ").contains("+nightly-2026-09-25"));
-        assert!(calls[0].join(" ").contains("--exclude oblikovati-head"));
+        assert!(calls[0].join(" ").contains("--exclude oblikovati-build"));
         assert!(calls[1].join(" ").contains("-p oblikovati-web"));
         assert!(calls[2].join(" ").contains("wasm-bindgen"));
     }
@@ -198,7 +248,15 @@ mod tests {
         );
         tree.put("release.toml", include_str!("../../../release.toml"));
         tree.put("LICENSE", "GPL-2.0-only\n");
-        for asset in ["index.html", "styles.css", "main.js", "orchestrator.js"] {
+        for asset in [
+            "index.html",
+            "styles.css",
+            "main.js",
+            "orchestrator.js",
+            "addin-host.js",
+            "addin-worker.js",
+            "wasm_exec.js",
+        ] {
             tree.put(&format!("web/{asset}"), "content\n");
         }
         tree.put(
