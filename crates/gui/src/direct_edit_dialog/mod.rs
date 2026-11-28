@@ -106,20 +106,18 @@ impl DirectEditDialog {
                 .browser
                 .as_ref()
                 .and_then(|browser| browser.direct_edit_edits.get(&feature_id))
+                && let Some(idx) = op_idx
+                && let Some(op) = seed.operations.get(idx)
             {
-                if let Some(idx) = op_idx
-                    && let Some(op) = seed.operations.get(idx)
-                {
-                    self.hydrate_operation(&seed.body, &op.kind);
-                    actions.push(GuiShellAction::DirectEdit(GuiDirectEditAction::OpenEdit {
-                        feature: feature_id,
-                        operation: op_idx,
-                    }));
-                    actions.push(GuiShellAction::DirectEdit(GuiDirectEditAction::SetFilter(
-                        self.filter,
-                    )));
-                    return;
-                }
+                self.hydrate_operation(&seed.body, &op.kind);
+                actions.push(GuiShellAction::DirectEdit(GuiDirectEditAction::OpenEdit {
+                    feature: feature_id,
+                    operation: op_idx,
+                }));
+                actions.push(GuiShellAction::DirectEdit(GuiDirectEditAction::SetFilter(
+                    self.filter,
+                )));
+                return;
             }
             self.body = None;
             self.faces.clear();
