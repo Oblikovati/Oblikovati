@@ -187,6 +187,7 @@ impl DatumCollection {
             | WorkGeometryDefinition::DeleteFace(_)
             | WorkGeometryDefinition::ReplaceFace(_)
             | WorkGeometryDefinition::ThickenOffset(_)
+            | WorkGeometryDefinition::Stitch(_)
             | WorkGeometryDefinition::Split(_)
             | WorkGeometryDefinition::Mark(_)
             | WorkGeometryDefinition::Finish(_)

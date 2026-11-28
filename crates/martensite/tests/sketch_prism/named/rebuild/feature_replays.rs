@@ -36,6 +36,8 @@ mod shell_v2;
 mod slot_replay;
 #[path = "split_replay.rs"]
 mod split_replay;
+#[path = "stitch_replay.rs"]
+mod stitch_replay;
 #[path = "thicken_offset_replay.rs"]
 mod thicken_offset_replay;
 #[path = "thread_replay.rs"]

@@ -57,6 +57,7 @@ mod shell;
 mod shell_v2;
 mod slot;
 mod split;
+mod stitch;
 mod sweep;
 mod thicken_offset;
 mod thread;
@@ -151,6 +152,10 @@ pub use slot::{
 pub use split::{
     PreparedSplit, SplitFeatureInputs, build_split_definition, prepare_split_definition,
     replace_split,
+};
+pub use stitch::{
+    PreparedStitch, StitchInputs, build_stitch_definition, prepare_stitch_definition,
+    replace_stitch,
 };
 pub use sweep::{
     PreparedSweep, automatic_sweep, prepare_surface_sweep, prepare_sweep, prepare_sweep_for_target,
