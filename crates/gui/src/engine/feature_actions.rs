@@ -38,10 +38,11 @@ pub(super) fn draw_feature_dialogs(
         &mut super::create_dialogs::CreateFeatureDialogs,
         Option<oblikovati_model::feature::work_axis::WorkAxisReference>,
     ),
-    (blend, hole, slot, shell, motion, offset): (
+    (blend, hole, slot, combine, shell, motion, offset): (
         &mut crate::blend_dialog::BlendDialog,
         &mut crate::hole_dialog::HoleDialog,
         &mut crate::slot_dialog::SlotDialog,
+        &mut crate::combine_dialog::CombineDialog,
         &mut crate::shell_feature_dialog::ShellFeatureDialog,
         &mut crate::move_body_dialog::MoveBodyDialog,
         &mut crate::offset_plane::OffsetPlaneDialog,
@@ -71,6 +72,7 @@ pub(super) fn draw_feature_dialogs(
     blend.panel(ui, commands, selected, area);
     hole.panel(ui, commands, area, icons, hole_plane.as_deref(), selected);
     slot.panel(ui, commands, area, icons, hole_plane.as_deref(), selected);
+    combine.panel(ui, commands, area, icons, selected);
     shell.panel(ui, commands, area, selected);
     motion.panel(ui, commands, area, selected);
     offset.panel(ui, commands, area, selected);
@@ -147,6 +149,7 @@ enum Draft {
     Shell,
     Hole,
     Slot,
+    Combine,
     MoveBody,
 }
 
@@ -194,6 +197,9 @@ fn requested_draft(action: &GuiShellAction) -> Option<Draft> {
         GuiShellAction::Slot(crate::GuiSlotAction::Open | crate::GuiSlotAction::OpenEdit(_)) => {
             Draft::Slot
         }
+        GuiShellAction::Combine(
+            crate::GuiCombineAction::Open | crate::GuiCombineAction::OpenEdit(_),
+        ) => Draft::Combine,
         GuiShellAction::OpenMoveBody => Draft::MoveBody,
         _ => return None,
     })
@@ -202,10 +208,11 @@ fn requested_draft(action: &GuiShellAction) -> Option<Draft> {
 pub(super) fn open_drafts(
     state: &GuiCommandState,
     actions: &mut Vec<GuiShellAction>,
-    (shell, hole, slot): (
+    (shell, hole, slot, combine): (
         &mut crate::shell_feature_dialog::ShellFeatureDialog,
         &mut crate::hole_dialog::HoleDialog,
         &mut crate::slot_dialog::SlotDialog,
+        &mut crate::combine_dialog::CombineDialog,
     ),
     (motion, blend): (
         &mut crate::move_body_dialog::MoveBodyDialog,
@@ -269,6 +276,9 @@ pub(super) fn open_drafts(
     }
     if draft != Draft::Slot {
         slot.close(actions);
+    }
+    if draft != Draft::Combine {
+        combine.close(actions);
     }
     if draft != Draft::MoveBody {
         motion.close(actions);
@@ -339,6 +349,10 @@ pub(super) fn open_drafts(
         GuiShellAction::Slot(crate::GuiSlotAction::Open) => slot.open(state, None),
         GuiShellAction::Slot(crate::GuiSlotAction::OpenEdit(feature)) => {
             slot.open(state, Some(feature))
+        }
+        GuiShellAction::Combine(crate::GuiCombineAction::Open) => combine.open(state, None),
+        GuiShellAction::Combine(crate::GuiCombineAction::OpenEdit(feature)) => {
+            combine.open(state, Some(feature))
         }
         GuiShellAction::OpenMoveBody => motion.open(state),
         _ => {}

@@ -100,6 +100,18 @@ pub trait PartFeatureEvaluator {
             "slot: expected an available named-face evaluator".into(),
         ))
     }
+    /// Combine a base solid with one or more tool solids; example: `backend.evaluate_combine(id, base, &tools, input)`.
+    fn evaluate_combine(
+        &mut self,
+        _feature: FeatureId,
+        _base: &Self::Body,
+        _tools: &[&Self::Body],
+        _input: crate::feature::combine::ResolvedCombine,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        Err(PartFeatureFailure::Unsupported(
+            "combine: expected an available solid Boolean evaluator".into(),
+        ))
+    }
     /// Resolve the sweep from a sketch plane to the current target body's bounds.
     /// Example: `backend.prism_through_all_span(body, plane, direction)?`.
     fn prism_through_all_span(

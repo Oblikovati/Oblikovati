@@ -24,6 +24,7 @@ pub use chamfer_v2::{
     ChamferV2Inputs, build_chamfer_v2_definition, prepare_chamfer_v2, replace_chamfer,
 };
 mod coil;
+mod combine;
 mod command_owner;
 mod decal;
 mod derive;
@@ -44,6 +45,10 @@ mod slot;
 mod sweep;
 mod unwrap;
 pub use coil::{CoilInputs, PreparedCoil, build_coil_definition, prepare_coil_definition};
+pub use combine::{
+    CombineInputs, PreparedCombine, build_combine_definition, prepare_combine_definition,
+    replace_combine,
+};
 pub use decal::{
     DecalInputs, PreparedDecal, build_decal_definition, prepare_decal_definition, replace_decal,
 };

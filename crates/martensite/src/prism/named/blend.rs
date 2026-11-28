@@ -8,6 +8,7 @@ use martensite_tkfillet::{
 use martensite_tktopalgo::brep_builder_api::{BRepBuilderAPICopy, BRepBuilderAPIMakeShape};
 use oblikovati_model::identity::ReferenceEnvelope;
 mod chamfer_v2;
+mod combine;
 pub(super) mod extrusion_boolean;
 mod fillet_topology;
 mod fillet_v2;

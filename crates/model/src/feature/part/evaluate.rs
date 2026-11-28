@@ -416,6 +416,9 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
             PartFeatureDefinition::Slot(definition) => {
                 self.evaluate_slot(snapshot, backend, id, definition)
             }
+            PartFeatureDefinition::Combine(definition) => {
+                self.evaluate_combine(backend, id, definition)
+            }
             definition @ (PartFeatureDefinition::Mirror(_)
             | PartFeatureDefinition::CircularPattern(_)
             | PartFeatureDefinition::RectangularPattern(_)) => {

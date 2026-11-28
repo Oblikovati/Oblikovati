@@ -160,6 +160,7 @@ pub use fillet_panel::{
     GuiFilletV2Action, GuiFilletV2EditSeed, GuiFilletV2Pick, GuiFilletV2Preview,
     GuiFilletV2PreviewState, GuiFilletV2Request, GuiFilletVariablePoint,
 };
+mod combine_dialog;
 mod dimensions;
 mod extrude_dialog;
 mod face_draft;
@@ -167,6 +168,10 @@ mod face_properties;
 mod hole_dialog;
 mod slot_dialog;
 pub use application::model_browser::feature_properties::{GuiFeatureCondition, GuiFeatureEdit};
+pub use combine_dialog::{
+    GuiCombineAction, GuiCombineEditSeed, GuiCombinePick, GuiCombinePickMode, GuiCombinePreview,
+    GuiCombinePreviewState, GuiCombineRequest,
+};
 pub use hole_dialog::{
     GuiHoleAction, GuiHoleEditSeed, GuiHolePick, GuiHolePreview, GuiHolePreviewState,
     GuiHoleRequest, GuiHoleSeatKind, GuiHoleTermination,

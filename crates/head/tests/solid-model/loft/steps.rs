@@ -4,6 +4,8 @@
 mod solid_chamfer;
 #[path = "../coil/steps.rs"]
 mod solid_coil;
+#[path = "../combine/steps.rs"]
+mod solid_combine;
 #[path = "../decal/steps.rs"]
 mod solid_decal;
 #[path = "../derive/steps.rs"]
