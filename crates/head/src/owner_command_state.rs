@@ -271,6 +271,8 @@ impl<
             combine_pick: self.gui_combine_pick(document, session.generation()),
             draft_preview: self.gui_draft_preview(document, session.generation()),
             draft_pick: self.gui_draft_pick(document, session.generation()),
+            delete_face_preview: self.gui_delete_face_preview(document, session.generation()),
+            delete_face_pick: self.gui_delete_face_pick(document, session.generation()),
             fillet_v2_preview: self.gui_fillet_v2_preview(document, session.generation()),
             fillet_v2_pick: self.gui_fillet_v2_pick(document, session.generation()),
             chamfer_v2_preview: self.gui_chamfer_v2_preview(document, session.generation()),

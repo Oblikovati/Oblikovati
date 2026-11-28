@@ -8,6 +8,8 @@ mod solid_coil;
 mod solid_combine;
 #[path = "../decal/steps.rs"]
 mod solid_decal;
+#[path = "../delete_face/steps.rs"]
+mod solid_delete_face;
 #[path = "../derive/steps.rs"]
 mod solid_derive;
 #[path = "../draft/steps.rs"]

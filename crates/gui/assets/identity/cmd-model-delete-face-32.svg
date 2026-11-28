@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-labelledby="t d">
+  <title id="t">Delete Face</title>
+  <desc id="d">Isometric solid with translucent hatched Rose-Red top face marked for removal.</desc>
+  <g id="layer-body">
+    <polygon points="5.5,12 16,17.2 16,27.2 5.5,22" class="f-icon-body-front s-icon-body-stroke" fill="#9EA6B8" stroke="#181B22" stroke-width="1.15" stroke-linejoin="round" />
+    <polygon points="26.5,12 16,17.2 16,27.2 26.5,22" class="f-icon-body-side s-icon-body-stroke" fill="#677084" stroke="#181B22" stroke-width="1.15" stroke-linejoin="round" />
+  </g>
+  <g id="layer-accent">
+    <polygon points="16,6.8 26.5,12 16,17.2 5.5,12" class="f-status-error s-status-error" fill="#F43F5E" fill-opacity="0.32" stroke="#F43F5E" stroke-width="1.4" stroke-dasharray="2.8 1.6" stroke-linejoin="round" />
+  </g>
+  <g id="layer-badge">
+    <circle cx="24.8" cy="24.8" r="5.5" class="f-icon-cutout" fill="#121317"/>
+    <circle cx="24.8" cy="24.8" r="4.4" class="f-status-error" fill="#F43F5E" stroke="#3B0A16" stroke-width="0.9"/>
+    <path d="M23,23 L26.6,26.6 M26.6,23 L23,26.6" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round"/>
+  </g>
+</svg>

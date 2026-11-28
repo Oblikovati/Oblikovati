@@ -209,6 +209,7 @@ fn additional_icon_entries(
             ("Slot", Glyph::Hole),
             ("Combine", Glyph::ExtrudeJoin),
             ("Draft", Glyph::Chamfer),
+            ("Delete Face", Glyph::DeleteFace),
         ],
         RibbonPanel::PartSimplification => &[
             ("Remove Details", Glyph::Simplify),
@@ -297,6 +298,7 @@ fn additional_action(label: &str) -> Option<GuiShellAction> {
         "Slot" => Some(GuiShellAction::Slot(crate::GuiSlotAction::Open)),
         "Combine" => Some(GuiShellAction::Combine(crate::GuiCombineAction::Open)),
         "Draft" => Some(GuiShellAction::Draft(crate::GuiDraftAction::Open)),
+        "Delete Face" => Some(GuiShellAction::DeleteFace(crate::GuiDeleteFaceAction::Open)),
         "Constraint Inference Scope" => Some(GuiShellAction::OpenInferenceScope),
         _ => None,
     }

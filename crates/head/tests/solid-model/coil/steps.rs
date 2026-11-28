@@ -229,6 +229,13 @@ fn field_shows_error_and_ok_disabled(world: &mut ApplicationWorld) {
 
 #[when("I cancel")]
 fn cancel_coil_panel(world: &mut ApplicationWorld) {
+    if super::super::diagnostics::window_geometry("Delete Face").is_some() {
+        let center = world.run_in_window("Delete Face", "Cancel").center();
+        world.click(super::super::diagnostics::pointer_pixels(center));
+        world.pump(Vec::new());
+        world.pump(Vec::new());
+        return;
+    }
     if super::super::diagnostics::window_geometry("Draft").is_some() {
         let center = world.run_in_window("Draft", "Cancel").center();
         world.click(super::super::diagnostics::pointer_pixels(center));

@@ -360,11 +360,20 @@ impl<
             });
         self.part_scenes.set_occurrence_selection(selected);
         let selected_faces = current.and_then(|(document, generation)| {
-            let faces: Vec<_> = self
-                .current_face_appearance_picks(document)
-                .iter()
-                .map(|pick| (pick.face.feature, pick.face.key.clone()))
-                .collect();
+            let faces: Vec<_> = if self.create_features.delete_face.active
+                && !self
+                    .create_features
+                    .delete_face
+                    .highlighted_faces
+                    .is_empty()
+            {
+                self.create_features.delete_face.highlighted_faces.clone()
+            } else {
+                self.current_face_appearance_picks(document)
+                    .iter()
+                    .map(|pick| (pick.face.feature, pick.face.key.clone()))
+                    .collect()
+            };
             if faces.is_empty() || self.active_sketch_edit().is_some() {
                 return None;
             }

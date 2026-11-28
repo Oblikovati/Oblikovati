@@ -57,6 +57,8 @@ pub struct GuiModelBrowser {
     pub combine_edits: std::collections::BTreeMap<FeatureId, crate::GuiCombineEditSeed>,
     /// Authored options for editable Draft features.
     pub draft_edits: std::collections::BTreeMap<FeatureId, crate::GuiDraftEditSeed>,
+    /// Authored options for editable Delete Face features.
+    pub delete_face_edits: std::collections::BTreeMap<FeatureId, crate::GuiDeleteFaceEditSeed>,
     /// Named imported mesh entries listed under the 3rd Party browser folder.
     pub third_party_entries: Vec<String>,
     /// Editable extrusion distance sources, indexed by their current feature identities.
