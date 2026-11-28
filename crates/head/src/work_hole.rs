@@ -18,6 +18,7 @@ macro_rules! hole_work_methods {
             Err(format!(
                 "combine {action:?}: expected a certified part owner"
             ))
+        }
         /// Dispatch a Draft Properties panel action; example: `work.draft_from_gui(action)?`.
         fn draft_from_gui(
             &mut self,
@@ -53,3 +54,44 @@ macro_rules! hole_work_methods {
     };
 }
 pub(crate) use hole_work_methods;
+macro_rules! forward_hole_work_methods {
+    ($owner:ident) => {
+        fn hole_from_gui(&mut self, action: oblikovati_gui::GuiHoleAction) -> Result<bool, String> {
+            self.$owner.hole_from_gui(action)
+        }
+        fn slot_from_gui(&mut self, action: oblikovati_gui::GuiSlotAction) -> Result<bool, String> {
+            self.$owner.slot_from_gui(action)
+        }
+        fn combine_from_gui(
+            &mut self,
+            action: oblikovati_gui::GuiCombineAction,
+        ) -> Result<bool, String> {
+            self.$owner.combine_from_gui(action)
+        }
+        fn draft_from_gui(
+            &mut self,
+            action: oblikovati_gui::GuiDraftAction,
+        ) -> Result<bool, String> {
+            self.$owner.draft_from_gui(action)
+        }
+        fn fillet_v2_from_gui(
+            &mut self,
+            action: oblikovati_gui::GuiFilletV2Action,
+        ) -> Result<bool, String> {
+            self.$owner.fillet_v2_from_gui(action)
+        }
+        fn chamfer_v2_from_gui(
+            &mut self,
+            action: oblikovati_gui::GuiChamferV2Action,
+        ) -> Result<bool, String> {
+            self.$owner.chamfer_v2_from_gui(action)
+        }
+        fn shell_v2_from_gui(
+            &mut self,
+            action: oblikovati_gui::GuiShellV2Action,
+        ) -> Result<bool, String> {
+            self.$owner.shell_v2_from_gui(action)
+        }
+    };
+}
+pub(crate) use forward_hole_work_methods;

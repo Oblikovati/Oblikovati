@@ -110,6 +110,8 @@ pub trait PartFeatureEvaluator {
     ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
         Err(PartFeatureFailure::Unsupported(
             "combine: expected an available solid Boolean evaluator".into(),
+        ))
+    }
     /// Construct a named face draft; example: `backend.evaluate_draft(id, body, input)`.
     fn evaluate_draft(
         &mut self,

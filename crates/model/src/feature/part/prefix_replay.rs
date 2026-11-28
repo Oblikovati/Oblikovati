@@ -119,6 +119,8 @@ where
         let inner: Vec<_> = tools.iter().map(|tool| tool.get()).collect();
         self.0
             .evaluate_combine(feature, base.get(), &inner, input)
+            .map(PrefixBody::Created)
+    }
     fn evaluate_draft(
         &mut self,
         feature: FeatureId,

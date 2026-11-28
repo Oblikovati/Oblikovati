@@ -469,6 +469,7 @@ impl PartFeatureEvaluator for CertifiedNamedSolidEvaluator<'_> {
         input: oblikovati_model::feature::combine::ResolvedCombine,
     ) -> Result<NamedSolid, PartFeatureFailure<EvaluationFailure>> {
         self.evaluate_named_combine(feature, base, tools, input)
+    }
     fn evaluate_draft(
         &mut self,
         feature: FeatureId,

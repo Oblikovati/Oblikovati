@@ -419,6 +419,7 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
             }
             PartFeatureDefinition::Combine(definition) => {
                 self.evaluate_combine(backend, id, definition)
+            }
             PartFeatureDefinition::Draft(definition) => {
                 self.evaluate_draft(backend, id, definition)
             }

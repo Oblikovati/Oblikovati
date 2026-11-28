@@ -153,6 +153,7 @@ fn restore_definition(
             .map_err(WorkPlaneError::BodyReference),
         Combine(recipe) => crate::feature::combine::CombineDefinition::from_recipe(recipe)
             .map(|definition| WorkPlaneDefinition::Combine(Box::new(definition)))
+            .map_err(WorkPlaneError::BodyReference),
         Draft(recipe) => crate::feature::draft::DraftDefinition::from_recipe(recipe)
             .map(|definition| WorkPlaneDefinition::Draft(Box::new(definition)))
             .map_err(WorkPlaneError::BodyReference),

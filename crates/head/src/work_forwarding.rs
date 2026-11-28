@@ -160,41 +160,7 @@ macro_rules! forward_owner_view_work {
         ) -> Result<bool, String> {
             self.$owner.commit_shell_from_gui(request)
         }
-        fn hole_from_gui(&mut self, action: oblikovati_gui::GuiHoleAction) -> Result<bool, String> {
-            self.$owner.hole_from_gui(action)
-        }
-        fn slot_from_gui(&mut self, action: oblikovati_gui::GuiSlotAction) -> Result<bool, String> {
-            self.$owner.slot_from_gui(action)
-        }
-        fn combine_from_gui(
-            &mut self,
-            action: oblikovati_gui::GuiCombineAction,
-        ) -> Result<bool, String> {
-            self.$owner.combine_from_gui(action)
-        fn draft_from_gui(
-            &mut self,
-            action: oblikovati_gui::GuiDraftAction,
-        ) -> Result<bool, String> {
-            self.$owner.draft_from_gui(action)
-        }
-        fn fillet_v2_from_gui(
-            &mut self,
-            action: oblikovati_gui::GuiFilletV2Action,
-        ) -> Result<bool, String> {
-            self.$owner.fillet_v2_from_gui(action)
-        }
-        fn chamfer_v2_from_gui(
-            &mut self,
-            action: oblikovati_gui::GuiChamferV2Action,
-        ) -> Result<bool, String> {
-            self.$owner.chamfer_v2_from_gui(action)
-        }
-        fn shell_v2_from_gui(
-            &mut self,
-            action: oblikovati_gui::GuiShellV2Action,
-        ) -> Result<bool, String> {
-            self.$owner.shell_v2_from_gui(action)
-        }
+        crate::work_hole::forward_hole_work_methods!($owner);
         fn preview_fillet_from_gui(
             &mut self,
             request: Option<&oblikovati_gui::GuiFilletRequest>,
