@@ -32,12 +32,23 @@ impl<
             .session(document)
             .map_err(|error| error.to_string())?;
         let evaluated = self.part_scenes.current(session)?.datum_evaluation();
-        planes_for_snapshot(
+        let mut update = planes_for_snapshot(
             session.snapshot(),
             &evaluated,
             session.selected_browser_feature(),
             theme,
-        )
+        )?;
+        if let Some((preview_doc, frame)) = self.create_features.work_plane.preview
+            && preview_doc == document
+            && let Ok(preview) = super::owner_blend::owner_work_plane::preview_datum_plane(
+                session.snapshot(),
+                frame,
+                theme,
+            )
+        {
+            update.planes.push(preview);
+        }
+        Ok(update)
     }
 
     fn active_datum_part(&self) -> Result<Option<u64>, String> {

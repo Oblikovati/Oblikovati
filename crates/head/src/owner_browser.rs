@@ -207,6 +207,13 @@ fn populate_browser<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
             kind: feature_kind_name(feature.definition()),
         })
         .collect();
+    browser.hidden_datums = snapshot
+        .work_geometry
+        .features()
+        .iter()
+        .filter(|feature| !feature.is_visible())
+        .map(|feature| feature.id())
+        .collect();
     browser.loft_edits = super::loft::loft_edits(snapshot);
     browser.sweep_edits = super::owner_blend::owner_sweep::edit_seeds(snapshot);
     browser.revolve_edits = super::owner_blend::owner_revolve::edit_seeds(snapshot);

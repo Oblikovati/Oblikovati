@@ -40,6 +40,8 @@ mod solid_thicken_offset;
 mod solid_thread;
 #[path = "../unwrap/steps.rs"]
 mod solid_unwrap;
+#[path = "../work-plane/steps.rs"]
+mod solid_work_plane;
 
 use super::*;
 use cucumber::{given, then, when};

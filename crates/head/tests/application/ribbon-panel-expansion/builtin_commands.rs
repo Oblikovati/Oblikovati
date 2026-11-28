@@ -117,12 +117,12 @@ fn x11_plane_group_can_ungroup_and_regroup() {
         .center();
     super::super::x11_input::click(diagnostics::pointer_pixels(arrow));
     world.pump(Vec::new());
-    assert!(!world.run_is_enabled("Midplane"));
+    assert!(world.run_is_enabled("Midplane between Two Planes"));
     super::super::x11_input::press_escape();
     world.pump(Vec::new());
     native_plane_context(&mut world);
     native_click(&mut world, "Ungroup Commands from Drop-Down Menu");
-    assert!(!world.run_is_enabled("Midplane"));
+    assert!(world.run_is_enabled("Midplane between Two Planes"));
     world.expect_text("Three Points");
     native_plane_context(&mut world);
     native_click(&mut world, "Group Commands into Drop-Down Menu");

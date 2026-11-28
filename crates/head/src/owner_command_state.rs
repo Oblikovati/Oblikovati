@@ -365,6 +365,17 @@ impl<
             curvature_settings: self.gui_curvature_settings(),
             repeat_command: self.sketch_memory.repeat_command,
             line_command: self.gui_line_command_menu(),
+            work_plane_pick: self
+                .create_features
+                .work_plane
+                .last_pick
+                .clone()
+                .filter(|pick| pick.document == document),
+            work_plane_preview_active: self
+                .create_features
+                .work_plane
+                .preview
+                .is_some_and(|(doc, _)| doc == document),
         })
     }
     fn gui_inference_scope(
