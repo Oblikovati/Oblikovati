@@ -442,6 +442,7 @@ mod evaluator;
 mod extrusion_boolean;
 mod extrusion_pattern;
 mod extrusion_span;
+mod finish_evaluation;
 mod hole_evaluation;
 mod hole_placement;
 mod mark_evaluation;

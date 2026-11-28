@@ -74,6 +74,13 @@ pub(crate) fn reference_label_suffix(
     browser: &GuiModelBrowser,
     feature: &GuiBrowserFeature,
 ) -> &'static str {
+    if browser
+        .finish_edits
+        .get(&feature.id)
+        .is_some_and(|seed| seed.has_warning)
+    {
+        return " [!]";
+    }
     let Some(seed) = browser.import_edits.get(&feature.id) else {
         return "";
     };

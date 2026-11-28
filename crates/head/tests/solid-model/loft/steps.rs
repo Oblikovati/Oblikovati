@@ -20,6 +20,8 @@ mod solid_draft;
 mod solid_emboss;
 #[path = "../fillet/steps.rs"]
 mod solid_fillet;
+#[path = "../finish/steps.rs"]
+mod solid_finish;
 #[path = "../hole/steps.rs"]
 mod solid_hole;
 #[path = "../import/steps.rs"]

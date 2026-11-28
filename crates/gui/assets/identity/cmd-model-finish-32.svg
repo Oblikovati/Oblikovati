@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-labelledby="t d">
+  <title id="t">Finish (Surface Coating)</title>
+  <desc id="d">Part solid layered with a lustrous Teal anodized finish coat and check badge.</desc>
+  <g id="layer-body">
+    <polygon class="f-icon-body-top s-icon-body-stroke" points="15.5,6.7 25,11.5 15.5,16.3 6,11.5" fill="#D2D7E2" stroke="#181B22" stroke-width="1.15" stroke-linejoin="round"/>
+    <polygon class="f-icon-body-front s-icon-body-stroke" points="6,11.5 15.5,16.3 15.5,26.3 6,21.5" fill="#9EA6B8" stroke="#181B22" stroke-width="1.15" stroke-linejoin="round"/>
+    <polygon class="f-icon-body-side s-icon-body-stroke" points="25,11.5 15.5,16.3 15.5,26.3 25,21.5" fill="#677084" stroke="#181B22" stroke-width="1.15" stroke-linejoin="round"/>
+  </g>
+  <g id="layer-accent">
+    <polygon class="f-icon-sel-top s-icon-sel-stroke" points="15.5,6.7 25,11.5 15.5,16.3 6,11.5" fill="#74EFE0" stroke="#0B2926" stroke-width="1.15" stroke-linejoin="round"/><line x1="11" y1="10.2" x2="18.5" y2="13.8" stroke="#FFF" stroke-width="1.2" opacity="0.7" stroke-linecap="round"/>
+  </g>
+  <g id="layer-badge">
+    <circle class="f-icon-cutout" cx="25" cy="25" r="5.6" fill="#121317"/>
+    <circle class="f-status-success" cx="25" cy="25" r="4.5" fill="#22C55E" stroke="#0B2E18" stroke-width="0.9"/><path d="M22.8,25 L24.5,26.8 L27.4,23.1" fill="none" stroke="#FFF" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

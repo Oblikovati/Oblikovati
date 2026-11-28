@@ -158,6 +158,12 @@ macro_rules! desktop_extrusion_work {
         fn mark_from_gui(&mut self, action: oblikovati_gui::GuiMarkAction) -> Result<bool, String> {
             self.mark_command(action)
         }
+        fn finish_from_gui(
+            &mut self,
+            action: oblikovati_gui::GuiFinishAction,
+        ) -> Result<bool, String> {
+            self.finish_command(action)
+        }
         fn fillet_v2_from_gui(
             &mut self,
             action: oblikovati_gui::GuiFilletV2Action,

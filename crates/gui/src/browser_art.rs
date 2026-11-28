@@ -68,6 +68,8 @@ pub(crate) fn feature_glyph(kind: &str) -> Option<IconGlyph> {
         "Chamfer" => IconGlyph::Chamfer,
         "Shell" => IconGlyph::Shell,
         "Split" => IconGlyph::Split,
+        "Finish" => IconGlyph::Finish,
+        "Delete Face" => IconGlyph::DeleteFace,
         "Move Body" => IconGlyph::MoveBodies,
         "Direct Edit" => IconGlyph::DirectEdit,
         "Work Plane" => IconGlyph::WorkPlane,
@@ -78,3 +80,13 @@ pub(crate) fn feature_glyph(kind: &str) -> Option<IconGlyph> {
         _ => return None,
     })
 }
+
+pub(crate) const ORIGIN_ROWS: [&str; 7] = [
+    "YZ Plane",
+    "XZ Plane",
+    "XY Plane",
+    "X Axis",
+    "Y Axis",
+    "Z Axis",
+    "Center Point",
+];

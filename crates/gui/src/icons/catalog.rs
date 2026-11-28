@@ -148,6 +148,7 @@ glyph_catalog! {
     CopyObject => "copy-object",
     DeleteFace => "delete-face",
     DirectEdit => "direct-edit",
+    Finish => "finish",
 }
 
 pub(crate) fn document_glyph(kind: crate::GuiTemplateKind) -> IconGlyph {

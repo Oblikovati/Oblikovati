@@ -15,6 +15,7 @@ mod body_resolution;
 mod checkpoints;
 mod combine_evaluation;
 mod delete_face_evaluation;
+mod finish_evaluation;
 
 mod direct_edit_evaluation;
 mod hole_evaluation;
@@ -69,6 +70,7 @@ pub enum PartFeatureDefinition {
     ThickenOffset(Box<super::thicken_offset::ThickenOffsetDefinition>),
     Split(Box<super::split::SplitDefinition>),
     Mark(Box<super::mark::MarkDefinition>),
+    Finish(Box<super::finish::FinishDefinition>),
     MoveBody(Box<super::move_body::MoveBodyDefinition>),
     Shell(Box<super::shell::ShellDefinition>),
     Mirror(Box<super::mirror::MirrorDefinition>),
@@ -129,6 +131,7 @@ impl PartFeatureDefinition {
             Self::ThickenOffset(_) => "thicken-offset",
             Self::Split(_) => "split",
             Self::Mark(_) => "mark",
+            Self::Finish(_) => "finish",
             Self::MoveBody(_) => "move-body",
             Self::Shell(_) => "shell",
             Self::Mirror(_) => "mirror",
@@ -168,6 +171,7 @@ impl PartFeatureDefinition {
                 | Self::ThickenOffset(_)
                 | Self::Split(_)
                 | Self::Mark(_)
+                | Self::Finish(_)
                 | Self::Shell(_)
                 | Self::MoveBody(_)
                 | Self::Mirror(_)

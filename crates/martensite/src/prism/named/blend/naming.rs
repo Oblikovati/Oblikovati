@@ -20,6 +20,7 @@ pub struct BlendNamedTopology {
     shape: Shape,
     thread_overlays: Vec<crate::DisplayTriangle>,
     mark_overlays: Vec<crate::DisplayTriangle>,
+    finish_face_colors: BTreeMap<Vec<u8>, [f32; 4]>,
 }
 
 mod capture;
@@ -58,6 +59,12 @@ impl BlendNamedTopology {
     pub(crate) fn set_mark_overlays(&mut self, overlays: Vec<crate::DisplayTriangle>) {
         self.mark_overlays = overlays;
     }
+    pub(crate) fn finish_face_colors(&self) -> &BTreeMap<Vec<u8>, [f32; 4]> {
+        &self.finish_face_colors
+    }
+    pub(crate) fn set_finish_face_colors(&mut self, colors: BTreeMap<Vec<u8>, [f32; 4]>) {
+        self.finish_face_colors = colors;
+    }
     pub(in crate::prism::named) fn capture_current(
         &self,
         history: &DocumentEditHistory,
@@ -75,6 +82,7 @@ impl BlendNamedTopology {
             shape: self.shape.clone(),
             thread_overlays: self.thread_overlays.clone(),
             mark_overlays: self.mark_overlays.clone(),
+            finish_face_colors: self.finish_face_colors.clone(),
         })
     }
     pub(in crate::prism::named) fn native_edge<'a>(
@@ -363,6 +371,7 @@ impl BlendCandidate {
             shape: self.shape.clone(),
             thread_overlays: Vec::new(),
             mark_overlays: Vec::new(),
+            finish_face_colors: BTreeMap::new(),
         })
     }
 

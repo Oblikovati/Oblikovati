@@ -44,6 +44,9 @@ fn sheet_branch(sheet: &DrawingSheetRecipe, reference: &str) -> DrawingBranch {
     (sheet.name.clone(), rows)
 }
 
+pub(crate) const SHEET_TITLE_BLOCK: &str = "Title Block";
+/// What a title block holds, one level under its row on the sheet.
+pub(crate) const TITLE_BLOCK_FIELD: &str = "Field Text";
 pub(crate) fn drawing_row_glyph(name: &str) -> crate::icons::IconGlyph {
     use crate::icons::IconGlyph;
     if name.contains("Border") || name.contains("Sheet") {

@@ -62,6 +62,7 @@ pub enum PartFeatureFailure<Failure> {
     DirectEditInput(String),
     SplitInput(String),
     MarkInput(String),
+    FinishInput(String),
     ShellInput(String),
     MoveBodyInput(String),
     Unsupported(String),
@@ -420,6 +421,9 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
             }
             PartFeatureDefinition::Mark(definition) => {
                 self.evaluate_mark(snapshot, backend, id, definition)
+            }
+            PartFeatureDefinition::Finish(definition) => {
+                self.evaluate_finish(backend, id, definition)
             }
             definition @ (PartFeatureDefinition::Mirror(_)
             | PartFeatureDefinition::CircularPattern(_)

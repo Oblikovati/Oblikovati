@@ -151,6 +151,17 @@ where
             .map(PrefixBody::Created)
     }
 
+    fn evaluate_finish(
+        &mut self,
+        feature: FeatureId,
+        body: &Self::Body,
+        input: crate::feature::finish::ResolvedFinish,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        self.0
+            .evaluate_finish(feature, body.get(), input)
+            .map(PrefixBody::Created)
+    }
+
     fn evaluate_shell(
         &mut self,
         feature: FeatureId,

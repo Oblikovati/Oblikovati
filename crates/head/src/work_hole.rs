@@ -73,6 +73,15 @@ macro_rules! hole_work_methods {
         fn mark_from_gui(&mut self, action: oblikovati_gui::GuiMarkAction) -> Result<bool, String> {
             Err(format!("mark {action:?}: expected a certified part owner"))
         }
+        /// Dispatch a Finish Properties panel action; example: `work.finish_from_gui(action)?`.
+        fn finish_from_gui(
+            &mut self,
+            action: oblikovati_gui::GuiFinishAction,
+        ) -> Result<bool, String> {
+            Err(format!(
+                "finish {action:?}: expected a certified part owner"
+            ))
+        }
         /// Dispatch a Fillet v2 Properties panel action; example: `work.fillet_v2_from_gui(action)?`.
         fn fillet_v2_from_gui(
             &mut self,
@@ -153,6 +162,12 @@ macro_rules! forward_hole_work_methods {
         }
         fn mark_from_gui(&mut self, action: oblikovati_gui::GuiMarkAction) -> Result<bool, String> {
             self.$owner.mark_from_gui(action)
+        }
+        fn finish_from_gui(
+            &mut self,
+            action: oblikovati_gui::GuiFinishAction,
+        ) -> Result<bool, String> {
+            self.$owner.finish_from_gui(action)
         }
         fn fillet_v2_from_gui(
             &mut self,

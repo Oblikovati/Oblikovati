@@ -131,10 +131,14 @@ pub(super) fn selected_face_scene(
             ));
         }
         let part = style(body).and_then(|color| match color {
-            Some(color) => build_body_scene(meshes, selection, feature, color).map(|mut s| {
-                append_thread_overlays(&mut s, body);
-                Some(s)
-            }),
+            Some(color) => {
+                build_body_scene(meshes, selection, feature, body.finish_face_colors(), color).map(
+                    |mut s| {
+                        append_thread_overlays(&mut s, body);
+                        Some(s)
+                    },
+                )
+            }
             None => Ok(None),
         });
         append_named_body(&mut result, feature, part);
@@ -181,6 +185,7 @@ fn build_body_scene(
     meshes: &NamedFaces,
     selection: &FaceSelection,
     feature: FeatureId,
+    finish_colors: Option<&std::collections::BTreeMap<Vec<u8>, [f32; 4]>>,
     body_color: [f32; 4],
 ) -> Result<ViewportScene, String> {
     let meshes = meshes.as_ref().map_err(Clone::clone)?;
@@ -193,6 +198,8 @@ fn build_body_scene(
             .any(|(id, key)| *id == feature && *key == face.key)
         {
             selected
+        } else if let Some(finish_color) = finish_colors.and_then(|map| map.get(&face.key)) {
+            *finish_color
         } else {
             body_color
         };
@@ -289,9 +296,9 @@ mod tests {
         let selection = (1, 2, vec![(feature, vec![2])], [0, 200, 160]);
         let body_color = [0.5, 0.5, 0.5, 1.];
         let primary =
-            build_body_scene(&cache.bodies[0].1, &selection, feature, body_color).unwrap();
+            build_body_scene(&cache.bodies[0].1, &selection, feature, None, body_color).unwrap();
         let sibling =
-            build_body_scene(&cache.bodies[1].1, &selection, feature, body_color).unwrap();
+            build_body_scene(&cache.bodies[1].1, &selection, feature, None, body_color).unwrap();
         assert_eq!(primary.triangles[0].color, body_color);
         assert_eq!(
             sibling.triangles[0].color,

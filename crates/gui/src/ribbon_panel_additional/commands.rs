@@ -215,6 +215,7 @@ fn additional_icon_entries(
             ("Direct Edit", Glyph::DirectEdit),
             ("Split", Glyph::Split),
             ("Mark", Glyph::Mark),
+            ("Finish", Glyph::Finish),
         ],
         RibbonPanel::PartSimplification => &[
             ("Remove Details", Glyph::Simplify),
@@ -311,6 +312,7 @@ fn additional_action(label: &str) -> Option<GuiShellAction> {
         "Direct Edit" => Some(GuiShellAction::DirectEdit(crate::GuiDirectEditAction::Open)),
         "Split" => Some(GuiShellAction::Split(crate::GuiSplitAction::Open)),
         "Mark" => Some(GuiShellAction::Mark(crate::GuiMarkAction::Open)),
+        "Finish" => Some(GuiShellAction::Finish(crate::GuiFinishAction::Open)),
         "Constraint Inference Scope" => Some(GuiShellAction::OpenInferenceScope),
         _ => None,
     }

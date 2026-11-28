@@ -169,6 +169,8 @@ pub struct GuiCommandState {
     pub mark_preview: Option<crate::GuiMarkPreviewState>,
     pub mark_face_pick: Option<crate::GuiMarkFacePick>,
     pub mark_sketch_pick: Option<crate::GuiMarkSketchPick>,
+    pub finish_preview: Option<crate::GuiFinishPreviewState>,
+    pub finish_pick: Option<crate::GuiFinishPick>,
     pub fillet_v2_preview: Option<crate::GuiFilletV2PreviewState>,
     pub fillet_v2_pick: Option<crate::GuiFilletV2Pick>,
     pub chamfer_v2_preview: Option<crate::GuiChamferV2PreviewState>,

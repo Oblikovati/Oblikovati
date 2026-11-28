@@ -40,39 +40,7 @@ impl<
             query = query.with_part_sketch_continuity(resolver);
         }
         populate_browser(&mut browser, snapshot, &Client::new(query))?;
-        for feature in snapshot.work_geometry.features() {
-            use oblikovati_model::feature::part::PartFeatureDefinition;
-            let (length, edge_count, chamfer) = match feature.definition() {
-                PartFeatureDefinition::Fillet(definition) => {
-                    (definition.radius(), definition.edges().len(), false)
-                }
-                PartFeatureDefinition::Chamfer(definition) => {
-                    (definition.distance(), definition.edges().len(), true)
-                }
-                _ => continue,
-            };
-            let radius = match length {
-                oblikovati_model::feature::work_geometry::DatumLength::Constant(value) => {
-                    format!("{value} cm")
-                }
-                oblikovati_model::feature::work_geometry::DatumLength::Parameter(id) => {
-                    let Some(parameter) = snapshot.parameters.get(id) else {
-                        continue;
-                    };
-                    parameter.name.clone()
-                }
-            };
-            let seed = oblikovati_gui::GuiFilletEditSeed {
-                generation: session.generation(),
-                radius,
-                edge_count,
-            };
-            if chamfer {
-                browser.chamfer_edits.insert(feature.id(), seed);
-            } else {
-                browser.fillet_edits.insert(feature.id(), seed);
-            }
-        }
+        populate_blend_edit_seeds(&mut browser, snapshot, session.generation());
         browser.fillet_v2_edits =
             super::owner_blend::owner_fillet_v2::edit_seeds(snapshot, session.generation());
         browser.chamfer_v2_edits =
@@ -80,9 +48,16 @@ impl<
         browser.shell_v2_edits =
             super::owner_blend::owner_shell_v2::edit_seeds(snapshot, session.generation());
         if let Ok(identity) = self.files.workspace().identity(document) {
+            let current_eval = self.part_scenes.current(session).ok();
             browser.thread_edits = super::owner_blend::owner_thread::edit_seeds(
                 snapshot,
-                self.part_scenes.current(session).ok(),
+                current_eval,
+                session.history(),
+                identity.internal_name,
+            );
+            browser.finish_edits = super::owner_blend::owner_finish::edit_seeds(
+                snapshot,
+                current_eval,
                 session.history(),
                 identity.internal_name,
             );
@@ -462,4 +437,35 @@ fn exclusive_sketch_consumer(
     let first = consumers.next()?;
     // Go app/browser.go keeps a sketch at top level when several features share it.
     consumers.next().is_none().then(|| first.id())
+}
+fn populate_blend_edit_seeds(
+    browser: &mut GuiModelBrowser,
+    snapshot: &oblikovati_model::history::DocumentSnapshot,
+    generation: u64,
+) {
+    use oblikovati_model::feature::{part::PartFeatureDefinition, work_geometry::DatumLength};
+    for feature in snapshot.work_geometry.features() {
+        let (length, edge_count, chamfer) = match feature.definition() {
+            PartFeatureDefinition::Fillet(d) => (d.radius(), d.edges().len(), false),
+            PartFeatureDefinition::Chamfer(d) => (d.distance(), d.edges().len(), true),
+            _ => continue,
+        };
+        let radius = match length {
+            DatumLength::Constant(value) => format!("{value} cm"),
+            DatumLength::Parameter(id) => match snapshot.parameters.get(id) {
+                Some(parameter) => parameter.name.clone(),
+                None => continue,
+            },
+        };
+        let seed = oblikovati_gui::GuiFilletEditSeed {
+            generation,
+            radius,
+            edge_count,
+        };
+        if chamfer {
+            browser.chamfer_edits.insert(feature.id(), seed);
+        } else {
+            browser.fillet_edits.insert(feature.id(), seed);
+        }
+    }
 }

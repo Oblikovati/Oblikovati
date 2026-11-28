@@ -19,6 +19,7 @@ mod evaluation;
 pub mod extrusion_pattern;
 pub mod fillet;
 pub mod fillet_options;
+pub mod finish;
 mod footprint;
 pub mod hole;
 pub mod imported_model;
