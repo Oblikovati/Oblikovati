@@ -145,6 +145,17 @@ pub trait PartFeatureEvaluator {
             "delete face: expected an available named-face evaluator".into(),
         ))
     }
+    /// Thicken selected faces into a solid or offset them into a surface shell.
+    fn evaluate_thicken_offset(
+        &mut self,
+        _feature: FeatureId,
+        _body: &Self::Body,
+        _input: crate::feature::thicken_offset::ResolvedThickenOffset,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        Err(PartFeatureFailure::Unsupported(
+            "thicken/offset: expected an available face thicken/offset evaluator".into(),
+        ))
+    }
     /// Resolve the sweep from a sketch plane to the current target body's bounds.
     /// Example: `backend.prism_through_all_span(body, plane, direction)?`.
     fn prism_through_all_span(

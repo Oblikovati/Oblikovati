@@ -56,6 +56,9 @@ pub(super) fn feature_edit_action(
     if browser.thread_edits.contains_key(&feature.id) {
         return GuiShellAction::Thread(crate::GuiThreadAction::OpenEdit(feature.id));
     }
+    if browser.thicken_offset_edits.contains_key(&feature.id) {
+        return GuiShellAction::ThickenOffset(crate::GuiThickenOffsetAction::OpenEdit(feature.id));
+    }
     if browser.chamfer_edits.contains_key(&feature.id) {
         return GuiShellAction::OpenChamferEdit(feature.id);
     }

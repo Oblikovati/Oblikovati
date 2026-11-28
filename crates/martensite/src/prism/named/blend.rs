@@ -19,6 +19,8 @@ mod rigid_motion;
 mod shell;
 mod slot;
 mod solid_boolean;
+mod thicken_offset;
+mod thicken_offset_chain;
 pub(super) mod thread;
 mod thread_overlay;
 mod tolerances;

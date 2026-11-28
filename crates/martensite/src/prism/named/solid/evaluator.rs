@@ -434,6 +434,14 @@ impl PartFeatureEvaluator for CertifiedNamedSolidEvaluator<'_> {
     ) -> Result<NamedSolid, PartFeatureFailure<EvaluationFailure>> {
         self.evaluate_named_delete_face(feature, body, input)
     }
+    fn evaluate_thicken_offset(
+        &mut self,
+        feature: FeatureId,
+        body: &NamedSolid,
+        input: oblikovati_model::feature::thicken_offset::ResolvedThickenOffset,
+    ) -> Result<NamedSolid, PartFeatureFailure<EvaluationFailure>> {
+        self.evaluate_named_thicken_offset(feature, body, input)
+    }
     fn evaluate_shell(
         &mut self,
         feature: FeatureId,

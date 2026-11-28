@@ -37,6 +37,7 @@ pub mod sketch_rib;
 pub mod sketch_sweep;
 pub mod slot;
 mod suppression;
+pub mod thicken_offset;
 pub mod thread;
 pub mod unwrap;
 mod validation;

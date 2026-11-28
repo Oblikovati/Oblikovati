@@ -212,6 +212,7 @@ fn populate_browser<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
     browser.combine_edits = super::owner_blend::owner_combine::edit_seeds(snapshot);
     browser.draft_edits = super::owner_blend::owner_draft::edit_seeds(snapshot);
     browser.delete_face_edits = super::owner_blend::owner_delete_face::edit_seeds(snapshot);
+    browser.thicken_offset_edits = super::owner_blend::owner_thicken_offset::edit_seeds(snapshot);
     browser.third_party_entries = super::owner_blend::owner_import::third_party_entries(snapshot);
     browser.extrusion_edits = snapshot
         .work_geometry
@@ -371,52 +372,9 @@ fn browser_block_instances(
     }
     Ok(rows)
 }
-/// What a search calls this kind of feature.
-fn feature_kind_name(
-    definition: &oblikovati_model::feature::part::PartFeatureDefinition,
-) -> &'static str {
-    use oblikovati_model::feature::part::PartFeatureDefinition::{
-        Chamfer, DeleteBody, DerivedPart, Fillet, ImportedModel, SketchCoil, SketchDecal,
-        SketchEmboss, SketchLoft, SketchPrism, SketchRevolve, SketchRib, SketchSweep, Unwrap,
-    };
-    match definition {
-        SketchPrism(_) => "Extrusion",
-        SketchRevolve(_) => "Revolution",
-        SketchCoil(_) => "Coil",
-        SketchEmboss(_) => "Emboss",
-        SketchRib(_) => "Rib",
-        SketchDecal(_) => "Decal",
-        DerivedPart(_) => "Derived Part",
-        ImportedModel(def) => match def.import_mode() {
-            oblikovati_model::feature::imported_model::ImportMode::ReferenceModel => {
-                "Imported Reference"
-            }
-            oblikovati_model::feature::imported_model::ImportMode::ConvertModel => "Imported Model",
-        },
-        Unwrap(_) => "Unwrap",
-        SketchSweep(_) => "Sweep",
-        SketchLoft(_) => "Loft",
-        Fillet(_) => "Fillet",
-        Chamfer(_) => "Chamfer",
-        oblikovati_model::feature::part::PartFeatureDefinition::Hole(_) => "Hole",
-        oblikovati_model::feature::part::PartFeatureDefinition::Slot(_) => "Slot",
-        oblikovati_model::feature::part::PartFeatureDefinition::Combine(_) => "Combine",
-        oblikovati_model::feature::part::PartFeatureDefinition::Draft(_) => "Draft",
-        oblikovati_model::feature::part::PartFeatureDefinition::DeleteFace(_) => "Delete Face",
-        oblikovati_model::feature::part::PartFeatureDefinition::Shell(_) => "Shell",
-        oblikovati_model::feature::part::PartFeatureDefinition::Thread(_) => "Thread",
-        DeleteBody(_) => "Delete Body",
-        oblikovati_model::feature::part::PartFeatureDefinition::Fixed(_)
-        | oblikovati_model::feature::part::PartFeatureDefinition::Offset { .. }
-        | oblikovati_model::feature::part::PartFeatureDefinition::ParallelThroughPoint(_)
-        | oblikovati_model::feature::part::PartFeatureDefinition::ThroughThreePoints(_)
-        | oblikovati_model::feature::part::PartFeatureDefinition::LineThroughPoint(_)
-        | oblikovati_model::feature::part::PartFeatureDefinition::NormalToAxis(_)
-        | oblikovati_model::feature::part::PartFeatureDefinition::AtAngleAboutAxis(_)
-        | oblikovati_model::feature::part::PartFeatureDefinition::ThroughTwoAxes(_) => "Work Plane",
-        _ => "Work Feature",
-    }
-}
+#[path = "owner_browser_kind.rs"]
+mod owner_browser_kind;
+use owner_browser_kind::feature_kind_name;
 /// What a long row adds to a feature's name: its operation and depth.
 fn extended_feature_name(
     snapshot: &oblikovati_model::history::DocumentSnapshot,

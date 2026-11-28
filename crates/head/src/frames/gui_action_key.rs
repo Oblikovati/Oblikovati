@@ -160,6 +160,7 @@ pub(super) fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
         | GuiShellAction::Draft(_)
         | GuiShellAction::Thread(_)
         | GuiShellAction::DeleteFace(_)
+        | GuiShellAction::ThickenOffset(_)
         | GuiShellAction::FilletV2(_)
         | GuiShellAction::ChamferV2(_)
         | GuiShellAction::ShellV2(_)

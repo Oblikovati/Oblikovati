@@ -238,4 +238,41 @@ impl DocumentSnapshot {
             })
             .map(|_| ())
     }
+
+    /// Append Thicken/Offset inputs; example: `snapshot.create_thicken_offset("Thicken1", definition, ids)?`.
+    pub fn create_thicken_offset(
+        &mut self,
+        name: &str,
+        definition: crate::feature::thicken_offset::ThickenOffsetDefinition,
+        ids: &mut RecipeReservations<'_>,
+    ) -> Result<FeatureId, HistoryError> {
+        let reads = definition.reads();
+        self.create_body_feature(
+            name,
+            PartFeatureDefinition::ThickenOffset(Box::new(definition)),
+            reads,
+            ids,
+        )
+    }
+
+    /// Replace an existing Thicken/Offset definition in place; example: `snapshot.edit_thicken_offset(id, definition)?`.
+    pub fn edit_thicken_offset(
+        &mut self,
+        feature: FeatureId,
+        definition: crate::feature::thicken_offset::ThickenOffsetDefinition,
+    ) -> Result<(), HistoryError> {
+        let reads = definition.reads();
+        self.work_geometry
+            .replace(
+                feature,
+                PartFeatureDefinition::ThickenOffset(Box::new(definition)),
+                reads,
+            )
+            .map_err(|cause| {
+                HistoryError::PartProgram(crate::feature::part::PartFeatureProgramError::Sequence(
+                    cause,
+                ))
+            })
+            .map(|_| ())
+    }
 }

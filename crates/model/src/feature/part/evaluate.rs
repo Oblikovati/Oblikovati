@@ -431,6 +431,9 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
             PartFeatureDefinition::DeleteFace(definition) => {
                 self.evaluate_delete_face(backend, id, definition)
             }
+            PartFeatureDefinition::ThickenOffset(definition) => {
+                self.evaluate_thicken_offset(backend, id, definition)
+            }
             definition @ (PartFeatureDefinition::Mirror(_)
             | PartFeatureDefinition::CircularPattern(_)
             | PartFeatureDefinition::RectangularPattern(_)) => {

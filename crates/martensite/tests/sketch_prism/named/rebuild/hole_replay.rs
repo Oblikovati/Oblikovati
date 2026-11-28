@@ -25,6 +25,8 @@ mod hole_v2;
 mod shell_v2;
 #[path = "slot_replay.rs"]
 mod slot_replay;
+#[path = "thicken_offset_replay.rs"]
+mod thicken_offset_replay;
 #[path = "thread_replay.rs"]
 mod thread_replay;
 

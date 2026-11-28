@@ -14,6 +14,53 @@ impl BlendNamedTopology {
         let body =
             SemanticReferenceName::new(document, feature.0, 4, "derived-part", "body", &[1])?
                 .encode()?;
+        Self::from_derived_with_bodies(
+            history,
+            document,
+            feature,
+            body.clone(),
+            body,
+            Vec::new(),
+            shape,
+            resolution,
+        )
+    }
+
+    pub(crate) fn from_derived_preserving_body(
+        history: &DocumentEditHistory,
+        document: DocumentGuid,
+        feature: FeatureId,
+        primary_body: Vec<u8>,
+        deleted: Vec<Vec<u8>>,
+        shape: Shape,
+        resolution: Option<PrismResolution>,
+    ) -> Result<Self, String> {
+        let active_body =
+            SemanticReferenceName::new(document, feature.0, 4, "thicken-offset", "body", &[1])?
+                .encode()?;
+        Self::from_derived_with_bodies(
+            history,
+            document,
+            feature,
+            primary_body,
+            active_body,
+            deleted,
+            shape,
+            resolution,
+        )
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn from_derived_with_bodies(
+        history: &DocumentEditHistory,
+        document: DocumentGuid,
+        feature: FeatureId,
+        primary_body: Vec<u8>,
+        active_body: Vec<u8>,
+        deleted: Vec<Vec<u8>>,
+        shape: Shape,
+        resolution: Option<PrismResolution>,
+    ) -> Result<Self, String> {
         let source_faces = shapes(&shape, ShapeEnum::Face)?;
         let mut faces = Vec::with_capacity(source_faces.len());
         for (index, face) in source_faces.into_iter().enumerate() {
@@ -31,7 +78,12 @@ impl BlendNamedTopology {
         require_unique(&faces)?;
         let edges = incident_names(document, feature, &shape, ShapeEnum::Edge, 2, &faces)?;
         let vertices = incident_names(document, feature, &shape, ShapeEnum::Vertex, 3, &edges)?;
-        let entries: Vec<_> = std::iter::once((body.clone(), shape.clone()))
+        let mut body_entries = vec![(active_body.clone(), shape.clone())];
+        if primary_body != active_body {
+            body_entries.push((primary_body.clone(), shape.clone()));
+        }
+        let entries: Vec<_> = body_entries
+            .into_iter()
             .chain(faces)
             .chain(edges)
             .chain(vertices)
@@ -50,11 +102,11 @@ impl BlendNamedTopology {
             resolution,
             achieved_tolerance: None,
             live,
-            deleted: Vec::new(),
+            deleted,
             splits: BTreeMap::new(),
             bindings,
-            active_body: body.clone(),
-            primary_body: body,
+            active_body,
+            primary_body,
             shape,
             thread_overlays: Vec::new(),
         })
@@ -67,8 +119,36 @@ impl BlendNamedTopology {
         shape: Shape,
         resolution: Option<PrismResolution>,
     ) -> Result<Self, String> {
+        Self::from_tagged_shell(history, document, feature, "unwrap", shape, resolution)
+    }
+
+    pub(crate) fn from_offset_shell(
+        history: &DocumentEditHistory,
+        document: DocumentGuid,
+        feature: FeatureId,
+        shape: Shape,
+        resolution: Option<PrismResolution>,
+    ) -> Result<Self, String> {
+        Self::from_tagged_shell(
+            history,
+            document,
+            feature,
+            "thicken-offset",
+            shape,
+            resolution,
+        )
+    }
+
+    fn from_tagged_shell(
+        history: &DocumentEditHistory,
+        document: DocumentGuid,
+        feature: FeatureId,
+        tag: &str,
+        shape: Shape,
+        resolution: Option<PrismResolution>,
+    ) -> Result<Self, String> {
         let body =
-            SemanticReferenceName::new(document, feature.0, 4, "unwrap", "body", &[1])?.encode()?;
+            SemanticReferenceName::new(document, feature.0, 4, tag, "body", &[1])?.encode()?;
         let faces = shapes(&shape, ShapeEnum::Face)?
             .into_iter()
             .enumerate()
@@ -77,7 +157,7 @@ impl BlendNamedTopology {
                     document,
                     feature.0,
                     1,
-                    "unwrap",
+                    tag,
                     "face",
                     &[(index + 1) as u64],
                 )?
@@ -93,7 +173,7 @@ impl BlendNamedTopology {
                     document,
                     feature.0,
                     2,
-                    "unwrap",
+                    tag,
                     "edge",
                     &[(index + 1) as u64],
                 )?
