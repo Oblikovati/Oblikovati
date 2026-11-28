@@ -62,6 +62,7 @@ pub enum PartFeatureFailure<Failure> {
     ReplaceFaceInput(String),
     DirectEditInput(String),
     SplitInput(String),
+    StitchInput(String),
     MarkInput(String),
     FinishInput(String),
     RuledSurfaceInput(String),
@@ -419,6 +420,9 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
             }
             PartFeatureDefinition::ThickenOffset(definition) => {
                 self.evaluate_thicken_offset(backend, id, definition)
+            }
+            PartFeatureDefinition::Stitch(definition) => {
+                self.evaluate_stitch(backend, id, definition)
             }
             PartFeatureDefinition::DirectEdit(def) => self.evaluate_direct_edit(backend, id, def),
             PartFeatureDefinition::Split(definition) => {

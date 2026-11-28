@@ -105,6 +105,10 @@ fn track_replacement(
                 return;
             }
         }
+        PartFeatureDefinition::Stitch(_) => {
+            owners.insert(id, id);
+            return;
+        }
         PartFeatureDefinition::Split(split) => split.body_source(),
         PartFeatureDefinition::Mark(mark) => mark.body_source(),
         PartFeatureDefinition::Finish(finish) => finish.body_source(),
