@@ -249,7 +249,6 @@ pub(crate) fn draw_panel_content(
             for (index, (label, icon)) in [
                 ("Axis", IconGlyph::WorkAxis),
                 ("Point", IconGlyph::WorkPoint),
-                ("UCS", IconGlyph::WorkCoordinateSystem),
             ]
             .into_iter()
             .enumerate()
@@ -262,6 +261,21 @@ pub(crate) fn draw_panel_content(
                 );
                 owners.icons.cursor(ui, origin, position);
                 muted::muted_command(ui, label, NOT_PORTED, owners.icons, Some(icon), false, size);
+            }
+            let (position, size) = crate::ribbon_panels::builtin::plane_neighbor_cell(
+                owners.icons,
+                state,
+                owners.customization,
+                2,
+            );
+            owners.icons.cursor(ui, origin, position);
+            let ucs_action = GuiShellAction::Ucs(crate::GuiUcsAction::Start);
+            let _muted = ui.begin_disabled(!ucs_action.enabled(state));
+            if owners
+                .icons
+                .button(ui, "UCS", IconGlyph::WorkCoordinateSystem, size)
+            {
+                actions.push(ucs_action);
             }
         }
         RibbonPanel::Sketch => start_sketch_command(ui, state, owners, actions),
