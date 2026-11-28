@@ -283,6 +283,17 @@ fn report_the_invalid_closed_guide(world: &mut ApplicationWorld) {
 
 #[when("the user cancels the failure dialog")]
 fn cancel_the_failed_closed_edit(world: &mut ApplicationWorld) {
+    if diagnostics::window_geometry("Edit Thread Feature Failed").is_some() {
+        let cancel = diagnostics::pointer_pixels(
+            world
+                .run_in_window("Edit Thread Feature Failed", "Cancel")
+                .center(),
+        );
+        world.click(cancel);
+        world.pump(Vec::new());
+        world.pump(Vec::new());
+        return;
+    }
     let key = loft_body_key(world);
     let generation = world.state().document_generation;
     let position =

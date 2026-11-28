@@ -18,6 +18,7 @@ pub struct BlendNamedTopology {
     active_body: Vec<u8>,
     primary_body: Vec<u8>,
     shape: Shape,
+    thread_overlays: Vec<crate::DisplayTriangle>,
 }
 
 mod capture;
@@ -43,6 +44,12 @@ impl BlendNamedTopology {
     pub(crate) fn resolution(&self) -> Option<PrismResolution> {
         self.resolution
     }
+    pub(crate) fn thread_overlay_triangles(&self) -> &[crate::DisplayTriangle] {
+        &self.thread_overlays
+    }
+    pub(crate) fn set_thread_overlays(&mut self, overlays: Vec<crate::DisplayTriangle>) {
+        self.thread_overlays = overlays;
+    }
     pub(in crate::prism::named) fn capture_current(
         &self,
         history: &DocumentEditHistory,
@@ -58,6 +65,7 @@ impl BlendNamedTopology {
             active_body: self.active_body.clone(),
             primary_body: self.primary_body.clone(),
             shape: self.shape.clone(),
+            thread_overlays: self.thread_overlays.clone(),
         })
     }
     pub(in crate::prism::named) fn native_edge<'a>(
@@ -306,6 +314,7 @@ impl BlendCandidate {
             active_body: body,
             primary_body: self.primary_body.clone(),
             shape: self.shape.clone(),
+            thread_overlays: Vec::new(),
         })
     }
 

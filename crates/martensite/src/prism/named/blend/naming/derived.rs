@@ -56,6 +56,7 @@ impl BlendNamedTopology {
             active_body: body.clone(),
             primary_body: body,
             shape,
+            thread_overlays: Vec::new(),
         })
     }
 
@@ -126,6 +127,7 @@ impl BlendNamedTopology {
             active_body: body.clone(),
             primary_body: body,
             shape,
+            thread_overlays: Vec::new(),
         })
     }
 }

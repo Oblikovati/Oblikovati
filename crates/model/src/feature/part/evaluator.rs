@@ -123,6 +123,17 @@ pub trait PartFeatureEvaluator {
             "draft: expected an available named-face evaluator".into(),
         ))
     }
+    /// Apply a cosmetic/specification thread to a cylindrical or conical face.
+    fn evaluate_thread(
+        &mut self,
+        _feature: FeatureId,
+        _body: &Self::Body,
+        _input: crate::feature::thread::ResolvedThread,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        Err(PartFeatureFailure::Unsupported(
+            "thread: expected an available cylindrical/conical face evaluator".into(),
+        ))
+    }
     /// Resolve the sweep from a sketch plane to the current target body's bounds.
     /// Example: `backend.prism_through_all_span(body, plane, direction)?`.
     fn prism_through_all_span(

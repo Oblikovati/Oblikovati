@@ -57,6 +57,7 @@ pub enum PartFeatureDefinition {
     Slot(Box<super::slot::SlotDefinition>),
     Combine(Box<super::combine::CombineDefinition>),
     Draft(Box<super::draft::DraftDefinition>),
+    Thread(Box<super::thread::ThreadDefinition>),
     MoveBody(Box<super::move_body::MoveBodyDefinition>),
     Shell(Box<super::shell::ShellDefinition>),
     Mirror(Box<super::mirror::MirrorDefinition>),
@@ -111,6 +112,7 @@ impl PartFeatureDefinition {
             Self::Slot(_) => "slot",
             Self::Combine(_) => "combine",
             Self::Draft(_) => "draft",
+            Self::Thread(_) => "thread",
             Self::MoveBody(_) => "move-body",
             Self::Shell(_) => "shell",
             Self::Mirror(_) => "mirror",
@@ -144,6 +146,7 @@ impl PartFeatureDefinition {
                 | Self::Slot(_)
                 | Self::Combine(_)
                 | Self::Draft(_)
+                | Self::Thread(_)
                 | Self::Shell(_)
                 | Self::MoveBody(_)
                 | Self::Mirror(_)

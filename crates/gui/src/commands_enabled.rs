@@ -353,6 +353,7 @@ impl GuiShellAction {
             | Self::Slot(_)
             | Self::Combine(_)
             | Self::Draft(_)
+            | Self::Thread(_)
             | Self::FilletV2(_)
             | Self::ChamferV2(_)
             | Self::ShellV2(_) => false,

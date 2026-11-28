@@ -62,6 +62,7 @@ glyph_catalog! {
     Decal => "decal",
     Unwrap => "unwrap",
     Hole => "hole",
+    Thread => "thread",
     Shell => "shell",
     Fillet => "fillet",
     Chamfer => "chamfer",

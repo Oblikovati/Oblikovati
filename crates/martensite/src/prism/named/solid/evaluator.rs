@@ -478,6 +478,14 @@ impl PartFeatureEvaluator for CertifiedNamedSolidEvaluator<'_> {
     ) -> Result<NamedSolid, PartFeatureFailure<EvaluationFailure>> {
         self.evaluate_named_draft(feature, body, input)
     }
+    fn evaluate_thread(
+        &mut self,
+        feature: FeatureId,
+        body: &NamedSolid,
+        input: oblikovati_model::feature::thread::ResolvedThread,
+    ) -> Result<NamedSolid, PartFeatureFailure<EvaluationFailure>> {
+        self.evaluate_named_thread(feature, body, input)
+    }
     fn evaluate_shell(
         &mut self,
         feature: FeatureId,

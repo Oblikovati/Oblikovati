@@ -14,6 +14,7 @@ pub(super) struct CreateFeatureDialogs {
     pub(super) decal: crate::decal_dialog::DecalDialog,
     pub(super) import: crate::import_dialog::ImportDialog,
     pub(super) unwrap: crate::unwrap_dialog::UnwrapDialog,
+    pub(super) thread: crate::thread_dialog::ThreadDialog,
 }
 
 impl CreateFeatureDialogs {
@@ -30,6 +31,7 @@ impl CreateFeatureDialogs {
         self.decal.register_dockable(registry)?;
         self.import.register_dockable(registry)?;
         self.unwrap.register_dockable(registry)?;
+        self.thread.register_dockable(registry)?;
         self.loft.register_dockable(registry)
     }
 
@@ -46,6 +48,7 @@ impl CreateFeatureDialogs {
         self.decal.synchronize(state, actions);
         self.import.synchronize(state, actions);
         self.unwrap.synchronize(state, actions);
+        self.thread.synchronize(state, actions);
         self.sweep.synchronize(state, actions);
         self.loft.synchronize(state, actions);
     }
@@ -88,5 +91,6 @@ impl CreateFeatureDialogs {
         self.decal.panel(ui, commands, (area, icons), selected);
         self.import.panel(ui, commands, (area, icons), selected);
         self.unwrap.panel(ui, commands, (area, icons), selected);
+        self.thread.panel(ui, commands, (area, icons), selected);
     }
 }

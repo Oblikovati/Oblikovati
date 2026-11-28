@@ -37,6 +37,8 @@ pub(super) mod owner_shell_v2;
 pub(super) mod owner_slot;
 #[path = "owner_sweep.rs"]
 pub(super) mod owner_sweep;
+#[path = "owner_thread.rs"]
+pub(super) mod owner_thread;
 #[path = "owner_unwrap.rs"]
 pub(super) mod owner_unwrap;
 use oblikovati_automation::{PreparedChamfer, PreparedFillet, prepare_chamfer, prepare_fillet};
@@ -53,6 +55,7 @@ pub(super) struct CreateFeatureState {
     pub(super) slot: owner_slot::SlotOwnerState,
     pub(super) combine: owner_combine::CombineOwnerState,
     pub(super) draft: owner_draft::DraftOwnerState,
+    pub(super) thread: owner_thread::ThreadOwnerState,
     pub(super) fillet_v2: owner_fillet_v2::FilletV2OwnerState,
     pub(super) chamfer_v2: owner_chamfer_v2::ChamferV2OwnerState,
     pub(super) shell_v2: owner_shell_v2::ShellV2OwnerState,

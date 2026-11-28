@@ -45,6 +45,7 @@ mod shell;
 mod shell_v2;
 mod slot;
 mod sweep;
+mod thread;
 mod unwrap;
 pub use coil::{CoilInputs, PreparedCoil, build_coil_definition, prepare_coil_definition};
 pub use combine::{
@@ -109,6 +110,10 @@ pub use slot::{
 pub use sweep::{
     PreparedSweep, automatic_sweep, prepare_surface_sweep, prepare_sweep, prepare_sweep_for_target,
     prepare_sweep_taper, prepare_sweep_twist, sweep_boolean_target,
+};
+pub use thread::{
+    PreparedThread, ThreadFeatureInputs, build_thread_definition, prepare_thread_definition,
+    replace_thread,
 };
 pub use unwrap::{
     PreparedUnwrap, UnwrapInputs, build_unwrap_definition, prepare_unwrap_definition,

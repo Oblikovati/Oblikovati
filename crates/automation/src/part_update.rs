@@ -413,6 +413,7 @@ fn feature_kind(definition: &PartFeatureDefinition) -> &'static str {
         Slot(_) => "slot",
         Combine(_) => "combine",
         Draft(_) => "draft",
+        Thread(_) => "thread",
         Shell(_) => "shell",
         Mirror(_) => "mirror",
         CircularPattern(_) => "circular-pattern",

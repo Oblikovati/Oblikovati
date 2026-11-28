@@ -4,7 +4,61 @@ use super::*;
 use oblikovati_model::{feature::FeatureId, history::DocumentEditHistory, identity::DocumentGuid};
 
 pub(super) type FaceSelection = (u64, u64, Vec<(FeatureId, Vec<u8>)>, [u8; 3]);
+pub(crate) const THREAD_OVERLAY_COLOR: [f32; 4] = [0.22, 0.25, 0.30, 1.0];
 type NamedFaces = Result<Vec<oblikovati_martensite::NamedFaceMesh>, String>;
+
+pub(super) fn append_thread_overlays(scene: &mut ViewportScene, body: &NamedSolid) {
+    for tri in body.thread_overlay_triangles() {
+        scene.triangles.push(oblikovati_viewport::ViewportTriangle {
+            positions: tri.positions.map(|p| p.map(|c| c as f32)),
+            normals: tri.normals.map(|ns| ns.map(|n| n.map(|c| c as f32))),
+            color: THREAD_OVERLAY_COLOR,
+            face_index: None,
+        });
+    }
+}
+
+pub(crate) fn render_part_scene(
+    evaluated: &oblikovati_model::feature::part::PartFeatureEvaluation<
+        NamedSolid,
+        oblikovati_martensite::EvaluationFailure,
+    >,
+    source: (u64, u64),
+    mut style: impl FnMut(&NamedSolid) -> Result<Option<[f32; 4]>, String>,
+) -> Result<HeadSceneUpdate, String> {
+    let mut overlay_tris = Vec::new();
+    let mut presentation = ViewportScene::from_part_evaluation_styled(
+        evaluated,
+        DISPLAY_MESH,
+        [0., 0., 1.],
+        |body| {
+            let color = style(body)?;
+            if color.is_some() {
+                for tri in body.thread_overlay_triangles() {
+                    overlay_tris.push(oblikovati_viewport::ViewportTriangle {
+                        positions: tri.positions.map(|p| p.map(|c| c as f32)),
+                        normals: tri.normals.map(|ns| ns.map(|n| n.map(|c| c as f32))),
+                        color: THREAD_OVERLAY_COLOR,
+                        face_index: None,
+                    });
+                }
+            }
+            Ok(color)
+        },
+    )?;
+    presentation.scene.triangles.extend(overlay_tris);
+    Ok(HeadSceneUpdate {
+        scene: presentation.scene,
+        status: HeadSceneStatus {
+            source: Some(source),
+            cached_assembly: false,
+            visible_bodies: presentation.visible_bodies,
+            health: evaluated.health().to_vec(),
+            presentation_declines: presentation.declines,
+            scene_errors: Vec::new(),
+        },
+    })
+}
 
 pub(super) struct FaceMeshCache {
     pub source: (u64, u64),
@@ -60,7 +114,10 @@ pub(super) fn selected_face_scene(
             ));
         }
         let part = style(body).and_then(|color| match color {
-            Some(color) => build_body_scene(meshes, selection, feature, color).map(Some),
+            Some(color) => build_body_scene(meshes, selection, feature, color).map(|mut s| {
+                append_thread_overlays(&mut s, body);
+                Some(s)
+            }),
             None => Ok(None),
         });
         append_named_body(&mut result, feature, part);

@@ -153,6 +153,7 @@ enum Draft {
     Slot,
     Combine,
     Taper,
+    Thread,
     MoveBody,
 }
 
@@ -206,6 +207,9 @@ fn requested_draft(action: &GuiShellAction) -> Option<Draft> {
         GuiShellAction::Draft(crate::GuiDraftAction::Open | crate::GuiDraftAction::OpenEdit(_)) => {
             Draft::Taper
         }
+        GuiShellAction::Thread(
+            crate::GuiThreadAction::Open | crate::GuiThreadAction::OpenEdit(_),
+        ) => Draft::Thread,
         GuiShellAction::OpenMoveBody => Draft::MoveBody,
         _ => return None,
     })
@@ -290,6 +294,9 @@ pub(super) fn open_drafts(
     if draft != Draft::Taper {
         face_draft.close(actions);
     }
+    if draft != Draft::Thread {
+        create.thread.close(actions);
+    }
     if draft != Draft::MoveBody {
         motion.close(actions);
     }
@@ -368,6 +375,12 @@ pub(super) fn open_drafts(
         GuiShellAction::Draft(crate::GuiDraftAction::Open) => face_draft.open(state, None),
         GuiShellAction::Draft(crate::GuiDraftAction::OpenEdit(feature)) => {
             face_draft.open(state, Some(feature))
+        }
+        GuiShellAction::Thread(crate::GuiThreadAction::Open) => {
+            create.thread.open(state, None, actions)
+        }
+        GuiShellAction::Thread(crate::GuiThreadAction::OpenEdit(feature)) => {
+            create.thread.open(state, Some(feature), actions)
         }
         GuiShellAction::OpenMoveBody => motion.open(state),
         _ => {}

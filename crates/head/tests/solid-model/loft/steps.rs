@@ -26,6 +26,8 @@ mod solid_rib;
 mod solid_shell;
 #[path = "../slot/steps.rs"]
 mod solid_slot;
+#[path = "../thread/steps.rs"]
+mod solid_thread;
 #[path = "../unwrap/steps.rs"]
 mod solid_unwrap;
 

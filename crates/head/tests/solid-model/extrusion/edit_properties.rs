@@ -103,6 +103,13 @@ fn cancel_edit(world: &mut ApplicationWorld) {
         world.pump(Vec::new());
         return;
     }
+    if diagnostics::window_geometry("Thread").is_some() {
+        let cancel = diagnostics::pointer_pixels(world.run_in_window("Thread", "Cancel").center());
+        world.click(cancel);
+        world.pump(Vec::new());
+        world.pump(Vec::new());
+        return;
+    }
     super::cancel_extrusion(world);
 }
 
