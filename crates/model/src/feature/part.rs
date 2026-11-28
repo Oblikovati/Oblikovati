@@ -14,7 +14,7 @@ mod body_lineage;
 mod body_resolution;
 mod checkpoints;
 mod combine_evaluation;
-
+mod direct_edit_evaluation;
 mod hole_evaluation;
 mod move_body_evaluation;
 pub use checkpoints::{CheckpointedPart, PartReplayCheckpoints};
@@ -29,6 +29,7 @@ pub use evaluate::{
 };
 pub use evaluator::PartFeatureEvaluator;
 mod extrusion_pattern;
+mod prefix_backend;
 mod prefix_replay;
 mod prism_replacement;
 mod reads;
@@ -56,6 +57,7 @@ pub enum PartFeatureDefinition {
     Hole(Box<super::hole::HoleDefinition>),
     Slot(Box<super::slot::SlotDefinition>),
     Combine(Box<super::combine::CombineDefinition>),
+    DirectEdit(Box<super::direct_edit::DirectEditDefinition>),
     Draft(Box<super::draft::DraftDefinition>),
     MoveBody(Box<super::move_body::MoveBodyDefinition>),
     Shell(Box<super::shell::ShellDefinition>),
@@ -110,6 +112,7 @@ impl PartFeatureDefinition {
             Self::Hole(_) => "hole",
             Self::Slot(_) => "slot",
             Self::Combine(_) => "combine",
+            Self::DirectEdit(_) => "direct-edit",
             Self::Draft(_) => "draft",
             Self::MoveBody(_) => "move-body",
             Self::Shell(_) => "shell",
@@ -143,6 +146,7 @@ impl PartFeatureDefinition {
                 | Self::Hole(_)
                 | Self::Slot(_)
                 | Self::Combine(_)
+                | Self::DirectEdit(_)
                 | Self::Draft(_)
                 | Self::Shell(_)
                 | Self::MoveBody(_)

@@ -412,6 +412,7 @@ fn feature_kind(definition: &PartFeatureDefinition) -> &'static str {
         Hole(_) => "hole",
         Slot(_) => "slot",
         Combine(_) => "combine",
+        DirectEdit(_) => "direct-edit",
         Draft(_) => "draft",
         Shell(_) => "shell",
         Mirror(_) => "mirror",

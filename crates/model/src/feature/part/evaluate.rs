@@ -57,6 +57,7 @@ pub enum PartFeatureFailure<Failure> {
     ChamferInput(String),
     HoleInput(String),
     DraftInput(String),
+    DirectEditInput(String),
     ShellInput(String),
     MoveBodyInput(String),
     Unsupported(String),
@@ -423,6 +424,7 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
             PartFeatureDefinition::Draft(definition) => {
                 self.evaluate_draft(backend, id, definition)
             }
+            PartFeatureDefinition::DirectEdit(def) => self.evaluate_direct_edit(backend, id, def),
             definition @ (PartFeatureDefinition::Mirror(_)
             | PartFeatureDefinition::CircularPattern(_)
             | PartFeatureDefinition::RectangularPattern(_)) => {

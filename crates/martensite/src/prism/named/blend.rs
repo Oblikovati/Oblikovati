@@ -9,6 +9,7 @@ use martensite_tktopalgo::brep_builder_api::{BRepBuilderAPICopy, BRepBuilderAPIM
 use oblikovati_model::identity::ReferenceEnvelope;
 mod chamfer_v2;
 mod combine;
+mod direct_edit;
 mod draft;
 pub(super) mod extrusion_boolean;
 mod fillet_topology;

@@ -11,6 +11,7 @@ pub mod chamfer_options;
 pub mod circular_pattern;
 pub mod combine;
 pub mod derived_part;
+pub mod direct_edit;
 pub mod draft;
 mod error;
 mod evaluation;

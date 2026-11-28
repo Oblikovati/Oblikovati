@@ -123,6 +123,17 @@ pub trait PartFeatureEvaluator {
             "draft: expected an available named-face evaluator".into(),
         ))
     }
+    /// Apply Direct Edit transformations; example: `backend.evaluate_direct_edit(id, body, input)`.
+    fn evaluate_direct_edit(
+        &mut self,
+        _feature: FeatureId,
+        _body: &Self::Body,
+        _input: crate::feature::direct_edit::ResolvedDirectEdit,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        Err(PartFeatureFailure::Unsupported(
+            "direct edit: expected an available direct-edit evaluator".into(),
+        ))
+    }
     /// Resolve the sweep from a sketch plane to the current target body's bounds.
     /// Example: `backend.prism_through_all_span(body, plane, direction)?`.
     fn prism_through_all_span(
