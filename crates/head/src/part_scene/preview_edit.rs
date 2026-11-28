@@ -159,7 +159,8 @@ impl DesktopPartScenes {
             .definition()
         {
             oblikovati_model::feature::part::PartFeatureDefinition::SketchSweep(_)
-            | oblikovati_model::feature::part::PartFeatureDefinition::SketchLoft(_) => {
+            | oblikovati_model::feature::part::PartFeatureDefinition::SketchLoft(_)
+            | oblikovati_model::feature::part::PartFeatureDefinition::ExtendSurface(_) => {
                 NEW_SOLID_PREVIEW
             }
             _ => [1., 0.65, 0.1, 1.],

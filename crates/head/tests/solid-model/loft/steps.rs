@@ -18,6 +18,8 @@ mod solid_direct_edit;
 mod solid_draft;
 #[path = "../emboss/steps.rs"]
 mod solid_emboss;
+#[path = "../extend-surface/steps.rs"]
+mod solid_extend_surface;
 #[path = "../fillet/steps.rs"]
 mod solid_fillet;
 #[path = "../finish/steps.rs"]
