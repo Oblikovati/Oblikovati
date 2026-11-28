@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use crate::{ViewportCamera, ViewportScene};
+use martensite_render_core::{Graphic3dRenderDriver, Graphic3dRenderView};
 use martensite_tkernel::standard::Handle;
 use martensite_tkmath::gp::{Direction3, Point3};
 use martensite_tkservice::{
@@ -10,7 +11,6 @@ use martensite_tkservice::{
     },
 };
 use martensite_tkv3d::v3d::{V3dViewSource, V3dViewer};
-use martensite_vulkan::{Graphic3dRenderDriver, Graphic3dRenderView};
 mod background;
 mod datum_plane;
 mod lighting;
@@ -164,6 +164,15 @@ impl RenderView {
             return false;
         }
         camera.set_tile(&tile);
+        true
+    }
+    pub(crate) fn clear_layout_projection(&self) -> bool {
+        let camera = self.view.camera();
+        let default = martensite_tkservice::graphic3d::Graphic3dCameraTile::default();
+        if camera.tile() == default {
+            return false;
+        }
+        camera.set_tile(&default);
         true
     }
     pub fn resized(&self, extent: [u32; 2]) {

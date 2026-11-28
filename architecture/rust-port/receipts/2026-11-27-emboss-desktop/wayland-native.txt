@@ -1,0 +1,49 @@
+
+running 1 test
+test native::gui_loop_tests::application_bdd::application_scenarios_use_the_native_window ... Feature: Emboss
+  Scenario: emboss-01 Diagnose an open profile
+   ✔  Given the available sketch contains an open line
+   ✔  When Emboss is started
+   ✔  Then Sketch Doctor identifies an open loop in the profile
+   ✔  And Cancel is selected to return to the model
+  Scenario: emboss-02 Create a raised emboss
+   ✔  Given a circular sketch on a planar face of a solid body
+   ✔  When Emboss is started and the first operation is accepted at depth 1 mm
+   ✔  Then a raised circular feature appears on the face
+   ✔  And Emboss1 appears in the model browser
+  Scenario: emboss-03 Edit an emboss into a recess
+   ✔  Given Emboss1 is a raised circular feature
+   ✔  When Emboss1 is double-clicked and the second operation is chosen at depth 1 mm
+   ✔  And the edit is accepted
+   ✔  Then the face displays a circular recess
+  Scenario: emboss-04 Inspect operation and direction controls
+   ✔  Given the circular profile is selected in Emboss
+   ✔  When I choose the third operation
+   ✔  Then the dialog shows a Taper field initially displaying 0,0
+   ✔  When I return to the first operation and reverse direction
+   ✔  Then the direction marker reverses on the selected profile
+  Scenario: emboss-05 An attempted third-operation edit fails
+   ✔  Given Emboss1 is a circular recess on a planar face
+   ✔  When I edit it to use the third operation at zero taper and accept
+   ✔  Then the MCAD Software reports "Edit Emboss Feature Failed"
+   ✔  And Edit returns to the Emboss settings
+  Scenario: emboss-06 Wrap a raised emboss to a planar face
+   ✔  Given Emboss1 is open for editing with a circular profile
+   ✔  When I select the raised operation and enable Wrap to Face
+   ✔  Then a Face selector appears and OK is unavailable until a face is selected
+   ✔  When I select the planar face and accept at 1 mm depth
+   ✔  Then a raised circular feature appears on the face
+  Scenario: emboss-07 Reject a zero-depth edit
+   ✔  Given Emboss1 is open with the raised, wrapped definition
+   ✔  When I replace its depth with zero and click OK
+   ✔  Then the MCAD Software reports that the expression is out of the expected range
+   ✔  When I dismiss the warning, replace zero with 1 and click Cancel
+   ✔  Then the Emboss edit dialog closes
+[Summary]
+1 feature
+7 scenarios (7 passed)
+31 steps (31 passed)
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1794 filtered out; finished in 109.62s
+

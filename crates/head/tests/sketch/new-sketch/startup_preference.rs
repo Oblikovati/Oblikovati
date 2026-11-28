@@ -44,7 +44,7 @@ fn set_startup_plane(
     world.click_text("Application Options");
     world.click_text(before);
     world.click_text(choice);
-    world.click_text("Apply Part");
+    world.click_text("Apply");
     assert_eq!(
         world.state().part_options.unwrap().startup_sketch_plane,
         plane

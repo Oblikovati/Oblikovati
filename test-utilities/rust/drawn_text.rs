@@ -124,8 +124,9 @@ impl RenderedRun {
         // Tight glyph quads vary with the letter, so limits come from the font size: a word gap
         // is well under it, and the padding between neighbouring buttons is over it.
         let gap = glyph.minimum[0] - self.maximum[0];
-        (glyph.minimum[1] - self.minimum[1]).abs() < font_size * 0.7
-            && (-1.0..font_size * 0.95).contains(&gap)
+        glyph.color == self.color
+            && (glyph.minimum[1] - self.minimum[1]).abs() < font_size * 0.7
+            && (-2.5..font_size * 0.95).contains(&gap)
     }
     fn push(&mut self, glyph: RenderedGlyph) {
         self.text.push(glyph.letter);
@@ -333,8 +334,10 @@ pub(crate) fn glyph_for_uv(
         let original = bounds.map(f32::from_bits);
         let contained =
             (0..2).all(|axis| uv[axis] >= original[axis] && uv[axis + 2] <= original[axis + 2]);
+        // Narrow and negative-bearing glyphs (e.g. Inter 'A' and 'i') can lose up to ~35% of
+        // their oversampled UV width when Dear ImGui clips menu items tightly at pos.x.
         let visible = (0..2)
-            .all(|axis| uv[axis + 2] - uv[axis] >= (original[axis + 2] - original[axis]) * 0.85);
+            .all(|axis| uv[axis + 2] - uv[axis] >= (original[axis + 2] - original[axis]) * 0.65);
         (contained && visible).then_some(*letter)
     })
 }
@@ -342,7 +345,7 @@ pub(crate) fn inside_clip(first: DrawVert, opposite: DrawVert, clip: [f32; 4]) -
     (0..2).all(|axis| {
         let length = opposite.pos[axis] - first.pos[axis];
         let visible = opposite.pos[axis].min(clip[axis + 2]) - first.pos[axis].max(clip[axis]);
-        length > 0. && visible >= length * 0.85
+        length > 0. && visible >= length * 0.65
     })
 }
 /// Check a named popup in its owning window; for example, ribbon overflow at a narrow width.

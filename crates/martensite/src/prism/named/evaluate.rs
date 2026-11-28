@@ -104,7 +104,7 @@ impl<'a> CertifiedNamedPrismEvaluator<'a> {
     }
 }
 impl CertifiedNamedPrismEvaluator<'_> {
-    pub(super) fn resolution_policy(&self) -> PrismResolutionPolicy {
+    pub(crate) fn resolution_policy(&self) -> PrismResolutionPolicy {
         self.resolution
     }
     pub(super) fn evaluate_prism(

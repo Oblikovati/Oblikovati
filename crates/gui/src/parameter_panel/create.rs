@@ -93,7 +93,7 @@ impl ParameterCreationForm {
         ui.same_line();
         self.draw_value(ui);
         ui.same_line();
-        if ui.button("Add") {
+        if crate::widget_abi::button(ui, "Add", [0.; 2]) {
             self.enqueue(actions);
         }
         if let Some(issue) = &self.request.issue {
@@ -107,11 +107,7 @@ impl ParameterCreationForm {
             return;
         };
         for (kind, name) in names.into_iter().enumerate() {
-            if ui
-                .selectable_config(name)
-                .selected(self.kind == kind)
-                .build()
-            {
+            if crate::widget_abi::selectable(ui, name, self.kind == kind, false) {
                 self.kind = kind;
             }
         }

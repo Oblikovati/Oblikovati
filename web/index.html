@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Oblikovati Web — Parametric MCAD</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body data-theme="dark">
+  <header class="toolbar" role="toolbar" aria-label="Oblikovati Commands">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">◆</span>
+      <span class="brand-name">Oblikovati</span>
+      <span class="brand-badge">WebGPU</span>
+    </div>
+    <div class="toolbar-group">
+      <button id="btn-new-part" type="button" title="Create a new Part">New Part</button>
+      <button id="btn-sample-part" type="button" title="Load parametric sample Part">Sample Part</button>
+      <button id="btn-open-file" type="button" title="Open local .opd file">Open .opd</button>
+      <input id="file-input" type="file" accept=".opd,.obk,.yaml,.yml" hidden />
+      <button id="btn-export-file" type="button" title="Download active .opd">Export .opd</button>
+    </div>
+    <div class="toolbar-group">
+      <button id="btn-undo" type="button" disabled title="Undo (Ctrl+Z)">Undo</button>
+      <button id="btn-redo" type="button" disabled title="Redo (Ctrl+Y)">Redo</button>
+    </div>
+    <div class="toolbar-group">
+      <button id="btn-fit" type="button" title="Fit geometry to viewport">Fit</button>
+      <button id="btn-iso" type="button" title="Isometric view">Iso</button>
+      <button id="btn-front" type="button" title="Front view">Front</button>
+      <button id="btn-top" type="button" title="Top view">Top</button>
+      <button id="btn-right" type="button" title="Right view">Right</button>
+      <button id="btn-proj" type="button" title="Toggle Orthographic / Perspective">Ortho</button>
+      <button id="btn-normals" type="button" title="Toggle face-winding debug">Normals</button>
+      <button id="btn-theme" type="button" title="Toggle Dark / Light theme">Theme</button>
+    </div>
+  </header>
+
+  <main class="workbench">
+    <aside class="browser" aria-label="Model Browser">
+      <section class="panel">
+        <h2>Documents</h2>
+        <ul id="doc-list" class="tree-list"></ul>
+      </section>
+      <section class="panel">
+        <h2>Features</h2>
+        <ul id="feature-list" class="tree-list"></ul>
+      </section>
+      <section class="panel">
+        <h2>Parameters</h2>
+        <div id="param-list" class="param-list"></div>
+      </section>
+    </aside>
+
+    <section class="viewport-stage">
+      <canvas id="oblikovati-canvas" width="960" height="640" tabindex="0"></canvas>
+      <div id="overlay-banner" class="overlay-banner">Initializing Martensite WASM + WebGPU…</div>
+    </section>
+  </main>
+
+  <footer class="statusbar">
+    <span id="status-text">Starting…</span>
+    <span id="status-gpu">GPU: —</span>
+    <span id="status-workers">Workers: 0</span>
+    <span id="status-mesh">Bodies: 0 · Tris: 0</span>
+  </footer>
+
+  <script type="module" src="./main.js"></script>
+</body>
+</html>

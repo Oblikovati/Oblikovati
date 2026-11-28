@@ -11,16 +11,24 @@ fn circular_preview(world: &mut ApplicationWorld) {
     start_circle_extrude(world);
 }
 
+fn open_settings(world: &mut ApplicationWorld) {
+    let ([left, top], [width, _]) = diagnostics::window_geometry("Extrude").unwrap();
+    let point = diagnostics::pointer_pixels([left + width - 22., top + 45.]);
+    world.hover(point);
+    world.click(point);
+    world.pump(Vec::new());
+}
+
 #[given("Advanced Settings offers Predict Boolean Operation")]
 fn prediction_is_available(world: &mut ApplicationWorld) {
-    click_panel(world, "AdvancedSettings");
+    open_settings(world);
     assert!(world.checked_run(popup_option(world, PREDICTION)));
 }
 
 #[when("the user disables Predict Boolean Operation")]
 fn disable_prediction(world: &mut ApplicationWorld) {
     choose_popup_option(world, PREDICTION);
-    click_panel(world, "AdvancedSettings");
+    open_settings(world);
     assert!(!world.checked_run(popup_option(world, PREDICTION)));
     world.escape();
 }

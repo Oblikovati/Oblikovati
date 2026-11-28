@@ -73,7 +73,7 @@ jobs:
           persist-credentials: false
       - uses: ./.github/actions/setup
       - name: Install the Windows Vulkan test runtime
-        if: runner.os == 'Windows'
+        if: runner.os == 'Windows' && matrix.target != 'aarch64-pc-windows-msvc'
         id: windows-vulkan
         uses: msys2/setup-msys2@3c51bf698df1e37b2261f53cb67797b97761185c # v2.34.0
         with:
@@ -82,7 +82,7 @@ jobs:
           update: true
           pacboy: mesa:p vulkan-loader:p vulkan-validation-layers:p
       - name: Register Windows Lavapipe and validation
-        if: runner.os == 'Windows'
+        if: runner.os == 'Windows' && matrix.target != 'aarch64-pc-windows-msvc'
         shell: pwsh
         env:
           MSYS2_LOCATION: ${{ steps.windows-vulkan.outputs.msys2-location }}
@@ -97,8 +97,13 @@ jobs:
           Add-Content -LiteralPath $env:GITHUB_PATH -Value $binary -Encoding utf8
       - name: Build and test every discovered Cargo workspace
         id: native-workspaces
+        env:
+          TARGET_TRIPLE: ${{ matrix.target }}
         run: |
-          if [ "$RUNNER_OS" = Linux ]; then
+          if [ "$TARGET_TRIPLE" = aarch64-pc-windows-msvc ] || [ "$TARGET_TRIPLE" = x86_64-apple-darwin ]; then
+            cargo xtask lint
+            cargo xtask build
+          elif [ "$RUNNER_OS" = Linux ]; then
             if [ "$RUNNER_ARCH" = ARM64 ]; then
               export VK_LAYER_PATH=/usr/share/vulkan/explicit_layer.d
               export VK_DRIVER_FILES=/usr/share/vulkan/icd.d/lvp_icd.json
@@ -125,3 +130,19 @@ jobs:
         timeout-minutes: 6
         shell: pwsh
         run: ./tools/bootstrap/windows_gui_debug.ps1 -Architecture x64 -NativeLog (Join-Path $env:RUNNER_TEMP 'oblikovati-native.log')
+  wasm:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ inputs.revision || github.sha }}
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@e2a55d2ffb04f378e9626c28d38b36d230d1e12f
+        with:
+          toolchain: 1.99.0
+      - name: Install pinned wasm32 nightly toolchain
+        run: |
+          channel=$(sed -n 's/^channel = "\(.*\)"/\1/p' tools/build/wasm-toolchain.toml)
+          rustup toolchain install "$channel" --profile minimal --component rust-src --target wasm32-unknown-unknown
+      - name: Check wasm32 +atomics workspace crates
+        run: cargo xtask wasm-check

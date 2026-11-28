@@ -210,7 +210,7 @@ fn draw_parameter_choice_combo(
         return;
     };
     for choice in choice_labels(row) {
-        if !ui.selectable(choice) {
+        if !crate::widget_abi::selectable(ui, choice, false, false) {
             continue;
         }
         match choose_parameter_expression(

@@ -146,10 +146,12 @@ fn draw_position(
     position: i64,
     actions: &mut Vec<GuiShellAction>,
 ) {
-    let clicked = ui
-        .selectable_config(format!("{label}##history-{}-{position}", history.document))
-        .selected(history.position == position)
-        .build();
+    let clicked = crate::widget_abi::selectable(
+        ui,
+        &format!("{label}##history-{}-{position}", history.document),
+        history.position == position,
+        false,
+    );
     if clicked {
         actions.push(GuiShellAction::JumpHistoryTo {
             document: history.document,

@@ -223,16 +223,30 @@ fn expanded_user_command_remains_accessible_when_ribbon_is_docked_left() {
     world.click_text("Left");
     world.pump(Vec::new());
     world.click_text("User Commands");
-    let expansion = world
+    let title = world
         .frame
         .runs
         .iter()
-        .find(|run| {
-            run.text.ends_with(['v', '▼'])
-                && diagnostics::panel_caption_matches(&run.text, "User Commands")
-        })
+        .rev()
+        .find(|run| diagnostics::panel_caption_matches(&run.text, "User Commands"))
         .expect("expected the User Commands expansion arrow");
-    let arrow = [expansion.maximum[0] - 2., expansion.center()[1]];
+    let arrow = if title.text.ends_with(['v', '▼']) {
+        [title.maximum[0] - 2., title.center()[1]]
+    } else {
+        world
+            .frame
+            .runs
+            .iter()
+            .filter(|run| {
+                run.list == title.list
+                    && matches!(run.text.as_str(), "v" | "▼")
+                    && run.center()[0] > title.maximum[0]
+                    && (run.center()[1] - title.center()[1]).abs() < 6.
+            })
+            .min_by(|a, b| a.center()[0].total_cmp(&b.center()[0]))
+            .expect("expected the User Commands expansion arrow")
+            .center()
+    };
     world.click(diagnostics::pointer_pixels(arrow));
     world.expect_text("2D Sketches");
     world.click_text("2D Sketches");

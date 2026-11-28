@@ -52,24 +52,40 @@ impl GuiDocumentUnits {
             .draft
             .get_or_insert_with(|| crate::document_units_draft::UnitDraft::new(units));
         draft.sync(units);
-        Self::center_dockable(ui, "Document Settings", [580., 360.]);
+        Self::center_dockable(ui, "Document Settings", [640., 310.]);
         let mut open = true;
         let mut done = false;
-        Self::dockable_window(ui, "Document Settings", &mut open).build(|| {
-            settings_tabs(ui, state, draft, &mut self.select_standard);
-            if draft.stale(units) {
-                ui.text_colored(
-                    [1., 0.3, 0.3, 1.],
-                    "Settings changed elsewhere. Cancel and reopen.",
+        Self::dockable_window(ui, "Document Settings", &mut open)
+            .scroll_bar(false)
+            .scrollable(false)
+            .build(|| {
+                let body = crate::widget_abi::child_region(
+                    ui,
+                    "##document-settings-body",
+                    [0., -48.],
+                    0.,
+                    imgui::WindowFlags::empty(),
                 );
-            }
-            if let Some(error) = &draft.error {
-                ui.text_colored([1., 0.3, 0.3, 1.], error);
-            }
-            ui.separator();
-            done = unit_actions(ui, document, units, draft, actions, state.transaction_open);
-            done |= ui.is_window_focused() && ui.is_key_pressed_no_repeat(Key::Escape);
-        });
+                if body.visible {
+                    settings_tabs(ui, state, draft, &mut self.select_standard);
+                    if draft.stale(units) {
+                        ui.text_colored(
+                            crate::theme::error_accent(ui),
+                            "Settings changed elsewhere. Cancel and reopen.",
+                        );
+                    }
+                    if let Some(error) = &draft.error {
+                        ui.text_colored(crate::theme::error_accent(ui), error);
+                    }
+                }
+                drop(body);
+                ui.separator();
+                ui.dummy([0., 2.]);
+                done = unit_actions(ui, document, units, draft, actions, state.transaction_open);
+                done |= ui.is_window_focused_with_flags(
+                    imgui::WindowFocusedFlags::ROOT_AND_CHILD_WINDOWS,
+                ) && ui.is_key_pressed_no_repeat(Key::Escape);
+            });
         if !open || done {
             self.set_document(None);
         }
@@ -148,7 +164,8 @@ fn edit_unit(ui: &Ui, label: &str, value: &mut String, options: &[&str]) {
     }
 }
 fn select_unit<'a>(ui: &Ui, label: &str, current: &str, options: &'a [&str]) -> Option<&'a str> {
-    let _combo = ui.begin_combo(label, current)?;
+    crate::theme::property_label(ui, label);
+    let _combo = ui.begin_combo(format!("##unit-{label}"), current)?;
     options.iter().copied().find(|name| {
         ui.selectable_config(name)
             .selected(*name == current)
@@ -165,7 +182,9 @@ fn precision_controls(ui: &Ui, units: &mut DocumentUnitsInfo) {
             ui.text_disabled(format!("{label}: {current}"));
             continue;
         };
-        if ui.input_int(label, &mut value).build() {
+        crate::theme::property_label(ui, label);
+        let _numeric = crate::ui_scale::numeric_font(ui);
+        if ui.input_int(&format!("##prec-{label}"), &mut value).build() {
             *current = i64::from(value);
         }
     }
@@ -178,20 +197,22 @@ fn unit_actions(
     actions: &mut Vec<GuiShellAction>,
     transaction_open: bool,
 ) -> bool {
-    let close_disabled = ui.begin_disabled(draft.dirty() || draft.pending());
-    let close = crate::widget_abi::button(ui, "Close", [0.; 2]);
-    drop(close_disabled);
-    ui.same_line();
-    let cancel_disabled = ui.begin_disabled(!draft.dirty() || draft.pending());
-    let cancel = crate::widget_abi::button(ui, "Cancel", [0.; 2]);
-    drop(cancel_disabled);
-    ui.same_line();
-    let apply_disabled = ui.begin_disabled(transaction_open || !draft.ready(units));
-    let apply = crate::widget_abi::button(ui, "Apply", [0.; 2]);
-    drop(apply_disabled);
+    let apply_ready = !transaction_open && draft.ready(units);
+    let apply = {
+        let _disabled = ui.begin_disabled(!apply_ready);
+        crate::theme::primary_button(ui, "Apply", [72., 28.])
+    };
     if apply && let Some(request) = draft.submit(units) {
         actions.push(GuiShellAction::SetDocumentUnits { document, request });
     }
+    ui.same_line_with_spacing(0., 6.);
+    let close_disabled = ui.begin_disabled(draft.dirty() || draft.pending());
+    let close = crate::theme::secondary_button(ui, "Close", [68., 28.]);
+    drop(close_disabled);
+    ui.same_line_with_spacing(0., 6.);
+    let cancel_disabled = ui.begin_disabled(!draft.dirty() || draft.pending());
+    let cancel = crate::theme::property_cancel(ui);
+    drop(cancel_disabled);
     close || cancel
 }
 

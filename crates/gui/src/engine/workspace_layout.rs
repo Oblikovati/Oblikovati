@@ -133,6 +133,33 @@ pub(super) fn workspace_pointer(context: &imgui::Context, request: &GuiFrameRequ
         .unwrap_or(context.io().mouse_pos)
 }
 
+/// Home is left by actions that put a document in front of it.
+pub(super) fn home_follows_actions(
+    home: &mut crate::application::home_recent_documents::HomeWorkspace,
+    selected: &[crate::GuiShellAction],
+) {
+    for action in selected {
+        match action {
+            crate::GuiShellAction::ShowHome => home.active = true,
+            crate::GuiShellAction::CloseDocumentWindow(_) if home.reached_from_home => {
+                home.active = true;
+            }
+            crate::GuiShellAction::ActivateDocument(_)
+            | crate::GuiShellAction::ActivateWindow(_)
+            | crate::GuiShellAction::OpenDocument(_)
+            | crate::GuiShellAction::OpenDeferredDrawing(_)
+            | crate::GuiShellAction::CreateDocument(_)
+            | crate::GuiShellAction::CreateProjectTemplate(_)
+            | crate::GuiShellAction::DrawingLayout(
+                crate::GuiDrawingLayoutAction::Confirm { .. }
+                | crate::GuiDrawingLayoutAction::Acknowledge { .. },
+            )
+            | crate::GuiShellAction::NewPart => home.active = false,
+            _ => {}
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -93,7 +93,9 @@ impl GuiFrameEngine {
             home_was_active,
             (
                 self.command_alias.text(),
-                self.extrude_dialog.distance_prompt(),
+                self.extrude_dialog
+                    .distance_prompt()
+                    .or_else(|| self.create_dialogs.status_prompt()),
             ),
         );
         self.workspace
@@ -191,28 +193,12 @@ impl GuiFrameEngine {
         selected.retain(|action| !matches!(action, GuiShellAction::OpenModelStateTable));
         self.model_state_table
             .panel(ui, &request.commands, &mut selected);
-        let open_offset = selected.contains(&GuiShellAction::OpenOffsetPlane);
-        selected.retain(|action| !matches!(action, GuiShellAction::OpenOffsetPlane));
-        if open_offset || self.offset_plane.active() {
-            let base = self
-                .workspace
-                .take_selected_origin_plane()
-                .map(crate::GuiOffsetPlaneBase::Origin)
-                .or_else(|| {
-                    selected_work_plane(&request.commands).map(crate::GuiOffsetPlaneBase::WorkPlane)
-                })
-                .or_else(|| {
-                    request
-                        .commands
-                        .model_face_chosen
-                        .then_some(crate::GuiOffsetPlaneBase::SelectedFace)
-                });
-            if open_offset && let Some(document) = request.commands.document {
-                self.offset_plane.open(document, base);
-            } else if let Some(base) = base {
-                self.offset_plane.choose(base);
-            }
-        }
+        feature_actions::sync_offset_plane(
+            &request.commands,
+            &mut self.workspace,
+            &mut self.offset_plane,
+            &mut selected,
+        );
         for action in &selected {
             if let GuiShellAction::OpenSketchPattern { sketch, pattern } = action {
                 self.sketch_pattern
@@ -270,11 +256,7 @@ impl GuiFrameEngine {
             if repeat_wheel == Some(true) {
                 self.orientation.repeat_wheel();
             }
-            for action in &mut menu_actions {
-                if *action == GuiShellAction::OpenExtrude {
-                    *action = crate::extrude_dialog::start_action(&request.commands);
-                }
-            }
+            feature_actions::resolve_menu_extrude(&request.commands, &mut menu_actions);
             if !menu_actions.is_empty() {
                 apply_quick_access(
                     &mut self.quick_access,
@@ -301,9 +283,13 @@ impl GuiFrameEngine {
             &mut selected,
             (&mut self.shell_feature_dialog, &mut self.hole_dialog),
             (&mut self.move_body_dialog, &mut self.blend_dialog),
-            (&mut self.sweep_dialog, &mut self.loft_dialog),
+            &mut self.create_dialogs,
             &mut self.extrude_dialog,
         );
+        let revolve_needs_plane = self.create_dialogs.take_sketch_plane_request();
+        if revolve_needs_plane {
+            self.plane_selection.active = true;
+        }
         self.home.panel(
             ui,
             &request.commands,
@@ -320,36 +306,31 @@ impl GuiFrameEngine {
             .panel(ui, commands, &mut selected, icons);
         self.preferences
             .panel(ui, commands, &mut selected, self.home.active, icons);
-        Self::draw_asset_docks(
-            (&mut self.material_browser, &mut self.appearance_browser),
-            ui,
-            commands,
-            self.home.active,
-            &mut selected,
-        );
-        self.extrude_dialog.panel(
-            ui,
-            commands,
+        let assets = (&mut self.material_browser, &mut self.appearance_browser);
+        Self::draw_asset_docks(assets, ui, commands, self.home.active, &mut selected);
+        let browser_plane = self.workspace.take_picked_plane_reference();
+        let browser_axis = self.workspace.take_picked_axis_reference();
+        let extrude_ctx = (
+            &mut self.extrude_dialog,
             self.plane_selection.active,
-            &mut selected,
-            crate::extrude_dialog::ExtrudePanelControls {
-                icons,
-                parameters: &mut self.parameter_editor,
-                popup_was_open: self.popup_was_open,
-                browser_plane: self.workspace.take_picked_plane_reference(),
-                area,
-            },
+            self.popup_was_open,
+            browser_plane,
         );
-        self.sweep_dialog
-            .panel(ui, commands, (area, icons), &mut selected);
-        self.loft_dialog.panel(ui, commands, area, &mut selected);
-        self.blend_dialog.panel(ui, commands, &mut selected, area);
-        self.hole_dialog.panel(ui, commands, area, &mut selected);
-        self.shell_feature_dialog
-            .panel(ui, commands, area, &mut selected);
-        self.move_body_dialog
-            .panel(ui, commands, area, &mut selected);
-        self.offset_plane.panel(ui, commands, area, &mut selected);
+        let create_dialogs = (&mut self.create_dialogs, browser_axis);
+        let modify_dialogs = (
+            &mut self.blend_dialog,
+            &mut self.hole_dialog,
+            &mut self.shell_feature_dialog,
+            &mut self.move_body_dialog,
+            &mut self.offset_plane,
+        );
+        feature_actions::draw_feature_dialogs(
+            (ui, commands, area, icons, &mut self.parameter_editor),
+            extrude_ctx,
+            create_dialogs,
+            modify_dialogs,
+            &mut selected,
+        );
         let interface = (&self.quick_access, &self.workspace);
         let keep_empty = self.shell_feature_dialog.active();
         self.ribbon
@@ -359,8 +340,8 @@ impl GuiFrameEngine {
         self.sketch_pattern
             .panel(ui, &request.commands, &mut selected);
         let editors = (&mut self.sketch_text, &mut self.curvature_settings);
-        Self::draw_sketch_editors(editors, ui, &request.commands, &mut selected);
-        crate::sketch::line::command_menu(ui, &request.commands, &mut selected);
+        Self::draw_sketch_editors(editors, ui, commands, &mut selected);
+        crate::sketch::line::command_menu(ui, commands, &mut selected);
         self.precise_input
             .panel(ui, &request.commands, &mut selected);
         crate::sketch::inspect::canvas_menu(
@@ -466,21 +447,22 @@ impl GuiFrameEngine {
         if arrow_press && self.workspace.feature_keyboard_focus() {
             capture.keyboard = true;
         }
-        capture.text |= self.ribbon.tips.consumed
-            || (self.ribbon.tips.active()
-                && request
-                    .events
-                    .iter()
-                    .any(|event| matches!(event, GuiInputEvent::Text(_))));
-        capture.popup = popup_open
-            || self.dock_editor_consumed_escape()
-            || self.ribbon.tips.consumed
-            || self.ribbon.customization.escape_consumed
-            || self.ribbon.display.temporary_escape_consumed;
-        capture.pointer |=
-            self.dimension_value_editor.over_label || over_fields || over_extrude_measurement;
-        activity.pending_layout |=
-            dock_lifecycle_changed || cancelled_pick || self.workspace_needs_frame(home_was_active);
+        feature_actions::finish_frame_capture(
+            &mut capture,
+            &self.ribbon,
+            &request.events,
+            (popup_open, self.dock_editor_consumed_escape()),
+            (
+                self.dimension_value_editor.over_label,
+                over_fields,
+                over_extrude_measurement,
+            ),
+        );
+        activity.pending_layout |= dock_lifecycle_changed
+            || cancelled_pick
+            || revolve_needs_plane
+            || self.create_dialogs.is_opening()
+            || self.workspace_needs_frame(home_was_active);
         Ok(GuiFrameOutput {
             window_action,
             window_controls,

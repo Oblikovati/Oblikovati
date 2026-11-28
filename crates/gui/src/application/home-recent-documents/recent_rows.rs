@@ -99,6 +99,17 @@ impl HomeWorkspace {
         }
     }
     fn list_header(&mut self, ui: &Ui, rows: &[&GuiRecentDocument], layout: RecentListLayout) {
+        let [x0, y0] = ui.cursor_screen_pos();
+        let avail_w = ui.content_region_avail()[0];
+        let header_h = ui.frame_height() + 4.;
+        ui.get_window_draw_list()
+            .add_rect(
+                [x0, y0 - 2.],
+                [x0 + avail_w, y0 + header_h - 2.],
+                crate::theme::surface_subtle(ui),
+            )
+            .filled(true)
+            .build();
         let state = self.checks.header(rows);
         let mut all = state == HeaderCheck::All;
         let disabled = ui.begin_disabled(rows.is_empty());
@@ -128,6 +139,17 @@ impl HomeWorkspace {
         };
         let width = layout.width(column) - layout.spacing - layout.frame_padding;
         let shown = fit_recent_cell(&label, width, |text| ui.calc_text_size(text)[0]);
+        let _bg = ui.push_style_color(imgui::StyleColor::Button, [0.; 4]);
+        let _bw = ui.push_style_var(imgui::StyleVar::FrameBorderSize(0.));
+        let _ink = ui.push_style_color(
+            imgui::StyleColor::Text,
+            if marked {
+                ui.style_color(imgui::StyleColor::Text)
+            } else {
+                crate::theme::text_secondary(ui)
+            },
+        );
+        let _weight = crate::ui_scale::ui_medium_font(ui);
         if ui.button(format!("{shown}###header-{}", column.label())) {
             self.sort.choose(column);
         }
@@ -165,6 +187,8 @@ impl HomeWorkspace {
             ui.same_line_with_pos(x);
             let full = cell_text(row, *column);
             let timestamp = matches!(column, SortField::Modified | SortField::Opened);
+            let is_size = *column == SortField::Size;
+            let _num = is_size.then(|| crate::ui_scale::numeric_font(ui));
             if timestamp && !date_only {
                 metadata_cell(ui, full, full);
             } else {
@@ -172,8 +196,14 @@ impl HomeWorkspace {
                 let shown = fit_recent_cell(value, layout.metadata_width(*column), |text| {
                     ui.calc_text_size(text)[0]
                 });
+                if is_size {
+                    let right_offset =
+                        (layout.metadata_width(*column) - ui.calc_text_size(&shown)[0]).max(0.);
+                    ui.same_line_with_pos(x + right_offset);
+                }
                 metadata_cell(ui, full, &shown);
             }
+            drop(_num);
             x += width;
         }
         ui.same_line_with_pos(x + ACTION_GAP);
@@ -189,6 +219,9 @@ impl HomeWorkspace {
         let width = layout.width(SortField::Name) - layout.spacing - layout.frame_padding;
         let shown = fit_recent_cell(&row.name, width, |text| ui.calc_text_size(text)[0]);
         self.mark_matching_text(ui, visible_source_text(&shown, &row.name));
+        let _bg = ui.push_style_color(imgui::StyleColor::Button, [0.; 4]);
+        let _bw = ui.push_style_var(imgui::StyleVar::FrameBorderSize(0.));
+        let _weight = crate::ui_scale::ui_medium_font(ui);
         if ui.button(format!("{shown}###open-{}", row.path)) {
             actions.push(open_action(&row.path));
         }

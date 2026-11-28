@@ -185,6 +185,15 @@ fn populate_browser<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
         .collect();
     browser.loft_edits = super::loft::loft_edits(snapshot);
     browser.sweep_edits = super::owner_blend::owner_sweep::edit_seeds(snapshot);
+    browser.revolve_edits = super::owner_blend::owner_revolve::edit_seeds(snapshot);
+    browser.coil_edits = super::owner_blend::owner_coil::edit_seeds(snapshot);
+    browser.emboss_edits = super::owner_blend::owner_emboss::edit_seeds(snapshot);
+    browser.derive_edits = super::owner_blend::owner_derive::edit_seeds(snapshot);
+    browser.rib_edits = super::owner_blend::owner_rib::edit_seeds(snapshot);
+    browser.decal_edits = super::owner_blend::owner_decal::edit_seeds(snapshot);
+    browser.import_edits = super::owner_blend::owner_import::edit_seeds(snapshot);
+    browser.unwrap_edits = super::owner_blend::owner_unwrap::edit_seeds(snapshot);
+    browser.third_party_entries = super::owner_blend::owner_import::third_party_entries(snapshot);
     browser.extrusion_edits = snapshot
         .work_geometry
         .features()
@@ -348,10 +357,24 @@ fn feature_kind_name(
     definition: &oblikovati_model::feature::part::PartFeatureDefinition,
 ) -> &'static str {
     use oblikovati_model::feature::part::PartFeatureDefinition::{
-        Chamfer, DeleteBody, Fillet, SketchLoft, SketchPrism, SketchSweep,
+        Chamfer, DeleteBody, DerivedPart, Fillet, ImportedModel, SketchCoil, SketchDecal,
+        SketchEmboss, SketchLoft, SketchPrism, SketchRevolve, SketchRib, SketchSweep, Unwrap,
     };
     match definition {
         SketchPrism(_) => "Extrusion",
+        SketchRevolve(_) => "Revolution",
+        SketchCoil(_) => "Coil",
+        SketchEmboss(_) => "Emboss",
+        SketchRib(_) => "Rib",
+        SketchDecal(_) => "Decal",
+        DerivedPart(_) => "Derived Part",
+        ImportedModel(def) => match def.import_mode() {
+            oblikovati_model::feature::imported_model::ImportMode::ReferenceModel => {
+                "Imported Reference"
+            }
+            oblikovati_model::feature::imported_model::ImportMode::ConvertModel => "Imported Model",
+        },
+        Unwrap(_) => "Unwrap",
         SketchSweep(_) => "Sweep",
         SketchLoft(_) => "Loft",
         Fillet(_) => "Fillet",

@@ -141,14 +141,13 @@ impl ParameterValueListEditor {
             parameter_controls_identity(ui, Some(target.document), Some(target.parameter));
         let _disabled = ui.begin_disabled(self.request.pending.is_some());
         ui.text("One value per line (or comma-separated):");
-        ui.input_text_multiline("##value-list", &mut self.text, [-1., 100.])
-            .build();
+        crate::widget_abi::input_text_multiline(ui, "##value-list", &mut self.text, [-1., 100.]);
         ui.checkbox("Allow custom values", &mut self.allow_custom);
-        if ui.button("OK") {
+        if crate::widget_abi::button(ui, "OK", [0.; 2]) {
             self.enqueue(actions);
         }
         ui.same_line();
-        if ui.button("Cancel") {
+        if crate::widget_abi::button(ui, "Cancel", [0.; 2]) {
             self.close();
         }
         if let Some(issue) = &self.request.issue {

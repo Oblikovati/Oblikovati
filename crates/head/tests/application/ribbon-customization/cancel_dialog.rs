@@ -22,6 +22,9 @@ pub(super) fn cancel_customization(world: &mut ApplicationWorld) {
         "Save Search",
         "Open Search",
         "Extrude",
+        "Derived Part",
+        "Import",
+        "Unwrap",
     ] {
         if let Some((position, size)) = diagnostics::window_geometry(title) {
             let center = world

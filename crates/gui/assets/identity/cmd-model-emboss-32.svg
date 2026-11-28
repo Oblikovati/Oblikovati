@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-labelledby="t d">
+  <title id="t">Emboss</title>
+  <desc id="d">Isometric base plate with a proud 2.5D raised Indigo-Violet boss bar standing above the face.</desc>
+  <g id="layer-body">
+    <polygon points="16,12.0 27,17.5 16,23.0 5,17.5" class="f-icon-body-top s-icon-body-stroke" fill="#D2D7E2" stroke="#181B22" stroke-width="1.15" stroke-linejoin="round" />
+    <polygon points="5,17.5 16,23.0 16,28.5 5,23.0" class="f-icon-body-front s-icon-body-stroke" fill="#9EA6B8" stroke="#181B22" stroke-width="1.15" stroke-linejoin="round" />
+    <polygon points="27,17.5 16,23.0 16,28.5 27,23.0" class="f-icon-body-side s-icon-body-stroke" fill="#677084" stroke="#181B22" stroke-width="1.15" stroke-linejoin="round" />
+  </g>
+  <g id="layer-accent">
+    <polygon points="16,9.5 21.4,12.2 16,14.899999999999999 10.6,12.2" class="f-icon-mod-top s-icon-mod-stroke" fill="#B4AAFF" stroke="#1D1840" stroke-width="1.1" stroke-linejoin="round" />
+    <polygon points="10.6,12.2 16,14.899999999999999 16,19.099999999999998 10.6,16.4" class="f-icon-mod-front s-icon-mod-stroke" fill="#8172FA" stroke="#1D1840" stroke-width="1.1" stroke-linejoin="round" />
+    <polygon points="21.4,12.2 16,14.899999999999999 16,19.099999999999998 21.4,16.4" class="f-icon-mod-side s-icon-mod-stroke" fill="#5948D4" stroke="#1D1840" stroke-width="1.1" stroke-linejoin="round" />
+    <path d="M16,9.2 V3.8 M13.8,6.2 L16,3.5 L18.2,6.2" class="s-accent-selection-bright" fill="none" stroke="#2DD4BF" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+  </g>
+</svg>

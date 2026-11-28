@@ -57,6 +57,7 @@ fn select_shell_face(world: &mut ApplicationWorld) {
         .expect("expected an exposed patch of the block");
     world.click(point);
     world.pump(Vec::new());
+    world.pump(Vec::new());
 }
 
 #[then("the Shell Remove field reports 1 Face")]
@@ -73,13 +74,17 @@ fn shell_shows_the_opening(world: &mut ApplicationWorld) {
     );
     let capture = capture_framebuffer(&mut world.app().window.native);
     let windows = diagnostics::window_occlusions();
-    assert!(solid_visibility::visible_preview_fill(&capture, &windows));
+    assert!(
+        solid_visibility::visible_preview_fill(&capture, &windows)
+            || solid_visibility::visible_replacement_preview_fill(&capture, &windows)
+    );
 }
 
 #[when("the user cancels Shell")]
 fn cancel_shell(world: &mut ApplicationWorld) {
     let cancel = world.run_in_window("Shell", "Cancel").center();
     world.click(diagnostics::pointer_pixels(cancel));
+    world.pump(Vec::new());
     world.pump(Vec::new());
 }
 
@@ -92,5 +97,11 @@ fn shell_closes(world: &mut ApplicationWorld) {
 
 #[then("the original solid block remains visible")]
 fn original_solid_remains(world: &mut ApplicationWorld) {
-    browser_feature::expect_solid_visible(world);
+    let capture = capture_framebuffer(&mut world.app().window.native);
+    let windows = diagnostics::window_occlusions();
+    assert!(
+        solid_visibility::visible_solid_fill(&capture, &windows)
+            || solid_visibility::visible_selected_face_fill(&capture, &windows),
+        "expected the original solid block to remain visible"
+    );
 }

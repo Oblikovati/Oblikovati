@@ -3,7 +3,7 @@
 use super::{RibbonCustomization, Ui};
 use imgui::StyleVar;
 
-const DEFAULT_SIZE: [f32; 2] = [760., 540.];
+const DEFAULT_SIZE: [f32; 2] = [760., 590.];
 pub(super) const TARGET_OPTIONS_X: [f32; 2] = [132., 180.];
 
 pub(super) fn source_sort_header(ui: &Ui, width: f32) -> bool {

@@ -13,6 +13,16 @@ const IMPORT: &str = "Import Customization Settings";
 
 #[when("the user clicks Import")]
 fn open_import_chooser(world: &mut ApplicationWorld) {
+    if diagnostics::window_geometry("Customize").is_none() {
+        if !world.shows("Import") {
+            world.click_text("Manage");
+            world.pump(Vec::new());
+        }
+        world.click_text("Import");
+        world.pump(Vec::new());
+        world.pump(Vec::new());
+        return;
+    }
     import_customization(world);
 }
 

@@ -43,7 +43,8 @@ impl<O: TransactionObserver> DocumentSession<O> {
         policy: Option<PrismResolutionPolicy>,
     ) -> Result<SketchRecompute, String> {
         let mut evaluator =
-            CertifiedNamedSolidEvaluator::with_optional_policy(self.history(), document, policy);
+            CertifiedNamedSolidEvaluator::with_optional_policy(self.history(), document, policy)
+                .with_derived_sources(&self.derived_sources);
         self.prepare_part_evaluation()
             .recompute_sketches(&mut evaluator, self.sketch_solve_options())
             .map_err(|error| error.to_string())
@@ -56,7 +57,8 @@ impl<O: TransactionObserver> DocumentSession<O> {
         attempts: &mut u64,
     ) -> Result<(), String> {
         let mut evaluator =
-            CertifiedNamedSolidEvaluator::with_optional_policy(self.history(), document, policy);
+            CertifiedNamedSolidEvaluator::with_optional_policy(self.history(), document, policy)
+                .with_derived_sources(&self.derived_sources);
         *attempts = attempts.saturating_add(1);
         let completed = self
             .prepare_part_evaluation()

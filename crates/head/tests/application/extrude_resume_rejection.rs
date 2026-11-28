@@ -44,12 +44,21 @@ fn set_extrusion_profile(world: &mut ApplicationWorld, summary: &str, old: &str,
     world.key(oblikovati_viewport::ViewportPhysicalKey::A, true);
     world.type_text(value);
     world.pump(Vec::new());
+    let popup = world.run("Profile index").list;
     assert!(
         world
             .frame
             .runs
             .iter()
-            .any(|run| run.list == popup && run.text == value)
+            .any(|run| run.list == popup && run.text == value),
+        "expected {value:?} in popup list {popup}, runs: {:?}",
+        world
+            .frame
+            .runs
+            .iter()
+            .filter(|run| run.list == popup)
+            .map(|run| &run.text)
+            .collect::<Vec<_>>()
     );
     let profile_label = world.run_in_window("Extrude", "Profiles").center();
     world.click(super::super::diagnostics::pointer_pixels(profile_label));

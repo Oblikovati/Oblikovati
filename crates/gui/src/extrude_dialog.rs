@@ -270,11 +270,9 @@ impl ExtrudeDialog {
         actions: &mut Vec<GuiShellAction>,
     ) -> bool {
         let expanded = imgui::TreeNodeFlags::DEFAULT_OPEN;
-        self.draw_advanced_settings(ui, controls.icons);
-        if self.breadcrumb(ui, state, actions) {
+        if self.draw_compact_header(ui, state, controls.icons, actions) {
             return true;
         }
-        self.preview_control(ui, controls.icons, state.extrude_preview_active, actions);
         let mut edited = self.draw_presets(ui, state, controls.icons);
         edited |=
             ui.collapsing_header("Input Geometry", expanded) && self.geometry_controls(ui, state);

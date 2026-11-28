@@ -123,6 +123,7 @@ impl Keymap {
         ];
         let actions = [
             ("Create.Extrude", "Extrude", "E", &[][..]),
+            ("Create.Revolve", "Revolve", "R", &[][..]),
             ("edit.undo", "Undo", "Ctrl+Z", &[][..]),
             ("edit.redo", "Redo", "Ctrl+Y", &["Ctrl+Shift+Z"][..]),
             ("file.save", "Save", "Ctrl+S", &[][..]),

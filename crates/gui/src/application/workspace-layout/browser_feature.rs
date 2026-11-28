@@ -15,7 +15,7 @@ mod states;
 
 #[path = "browser_feature_edit.rs"]
 mod edit;
-use edit::{feature_edit_action, loft_edit_action};
+use edit::feature_edit_action;
 
 const FEATURE_MENU: &str = "##feature-menu";
 const BODIES_MENU: &str = "##bodies-menu";
@@ -26,17 +26,9 @@ const EDGE_HOVER_REACH: f32 = 8.;
 const EDGE_THICKNESS: f32 = 2.;
 const SELECTION_TOOLBAR: &str = "##selection-toolbar";
 const TOOLBAR_RISE: f32 = 40.;
-
-/// Show Extended Names adds what the row's feature does; a suppressed feature says so.
+#[cfg(test)]
 fn feature_label(feature: &GuiBrowserFeature, extended_names: bool) -> String {
-    let mut label = feature.name.clone();
-    if feature.suppressed {
-        label.push_str(" (suppressed)");
-    }
-    if let (true, Some(extended)) = (extended_names, &feature.extended) {
-        label.push_str(&format!(" ({extended})"));
-    }
-    label
+    crate::browser::browser_import::plain_feature_label(feature, extended_names)
 }
 /// Draw one feature row; a press on it, with either button, chooses the feature.
 /// The token holds the branch open for its children; example: the sketch it consumed.
@@ -62,7 +54,11 @@ pub(crate) fn feature_row<'ui>(
         .tree_node_config("feature-row")
         .label::<String, String>(format!(
             "{icon_inset}{}",
-            feature_label(feature, view.show_extended_names)
+            crate::browser::browser_import::feature_label(
+                browser,
+                feature,
+                view.show_extended_names
+            )
         ))
         .flags(flags)
         .default_open(true);
@@ -84,6 +80,7 @@ pub(crate) fn feature_row<'ui>(
     if let Some(glyph) = glyph {
         crate::browser::browser_art::prefix(ui, view, glyph, label);
     }
+    crate::browser::browser_import::draw_link_indicator(ui, browser, feature, label);
     if feature.suppressed {
         crate::browser::browser_art::strike_feature_name(
             ui,
@@ -97,7 +94,7 @@ pub(crate) fn feature_row<'ui>(
     choose_on_press(
         ui,
         state,
-        feature,
+        (browser, feature),
         view,
         actions,
         row_hovered && !indicator_hovered,
@@ -110,7 +107,7 @@ pub(crate) fn feature_row<'ui>(
 fn choose_on_press(
     ui: &Ui,
     state: &GuiCommandState,
-    feature: &GuiBrowserFeature,
+    (browser, feature): (&GuiModelBrowser, &GuiBrowserFeature),
     view: &mut BrowserView,
     actions: &mut Vec<GuiShellAction>,
     hovered: bool,
@@ -141,9 +138,9 @@ fn choose_on_press(
         view.picked_plane_reference = Some(format!("datum/v1/{}", feature.id.0));
     }
     if clicked && ui.is_mouse_double_clicked(MouseButton::Left) {
-        let edit = loft_edit_action(feature).unwrap_or(GuiShellAction::OpenExtrudeEdit(feature.id));
-        if edit.enabled(state) {
-            actions.push(edit);
+        let double_click = edit::feature_double_click_action(browser, feature);
+        if double_click.enabled(state) {
+            actions.push(double_click);
         }
     }
 }
@@ -158,10 +155,13 @@ fn feature_menu(
     let Some(_menu) = ui.begin_popup(FEATURE_MENU) else {
         return;
     };
+    if crate::browser::browser_import::reference_menu(ui, state, browser, feature, actions) {
+        return;
+    }
     edit_sketch_row(ui, state, browser, feature, actions);
     let edit = feature_edit_action(browser, feature);
     if ui
-        .menu_item_config("Edit Feature")
+        .menu_item_config(edit::feature_edit_label(browser, feature))
         .enabled(edit.enabled(state))
         .build()
     {

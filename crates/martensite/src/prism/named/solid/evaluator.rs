@@ -80,6 +80,222 @@ impl PartFeatureEvaluator for CertifiedNamedSolidEvaluator<'_> {
         })?;
         Ok(NamedSolid::Derived(Box::new(topology)))
     }
+    fn evaluate_revolve(
+        &mut self,
+        feature: FeatureId,
+        input: oblikovati_model::feature::sketch_revolve::ResolvedSketchRevolve<'_>,
+    ) -> Result<NamedSolid, PartFeatureFailure<EvaluationFailure>> {
+        let Some(prism) = &self.prism else {
+            return Err(PartFeatureFailure::Unsupported(
+                "revolve: expected an explicit model resolution policy".into(),
+            ));
+        };
+        let sketch_id = input.sketch.sketch.id().0;
+        let policy = prism.resolution_policy();
+        let failure =
+            |error: EvaluationFailure| PartFeatureFailure::Kernel(error.for_feature(feature));
+        let topology = if input.surface {
+            let candidate =
+                crate::revolve::build_surface_revolve(input, policy).map_err(failure)?;
+            BlendNamedTopology::from_surface_revolve(
+                self.history,
+                self.document,
+                feature,
+                sketch_id,
+                candidate,
+            )
+        } else {
+            let candidate = crate::revolve::build_revolve(input, policy).map_err(failure)?;
+            BlendNamedTopology::from_revolve(
+                self.history,
+                self.document,
+                feature,
+                sketch_id,
+                candidate,
+            )
+        }
+        .map_err(|cause| {
+            failure(crate::EvaluationPhase::Naming.refused(
+                crate::EvaluationFailureKind::InvalidReference,
+                crate::EvaluationEntity::Body,
+                format!("revolve topology: {cause}"),
+            ))
+        })?;
+        Ok(NamedSolid::Derived(Box::new(topology)))
+    }
+    fn evaluate_revolve_boolean(
+        &mut self,
+        feature: FeatureId,
+        body: &NamedSolid,
+        input: oblikovati_model::feature::sketch_revolve::ResolvedSketchRevolve<'_>,
+        operation: oblikovati_model::feature::sketch_prism::PrismBoolean,
+    ) -> Result<NamedSolid, PartFeatureFailure<EvaluationFailure>> {
+        use super::super::blend::extrusion_boolean::BooleanFailure;
+        let NamedSolid::Derived(tool) = self.evaluate_revolve(feature, input)? else {
+            return Err(PartFeatureFailure::Unsupported(
+                "revolve Boolean: expected a named Revolve tool".into(),
+            ));
+        };
+        let failure = |kind, message| {
+            PartFeatureFailure::Kernel(
+                crate::EvaluationPhase::Prism
+                    .refused(kind, crate::EvaluationEntity::Body, message)
+                    .for_feature(feature),
+            )
+        };
+        let tool = tool
+            .sweep_boolean_tool(self.history, self.document)
+            .map_err(|message| failure(crate::EvaluationFailureKind::InvalidResult, message))?;
+        let candidate = body
+            .boolean_tools(
+                self.history,
+                self.document,
+                vec![tool],
+                operation,
+                &format!("revolve {operation}"),
+            )
+            .map_err(|decline| match decline {
+                BooleanFailure::UnchangedCut { faces, .. } => failure(
+                    crate::EvaluationFailureKind::UnchangedCut,
+                    format!("The feature did not change the number of faces ({faces})."),
+                ),
+                BooleanFailure::Refused(message) => {
+                    failure(crate::EvaluationFailureKind::InvalidResult, message)
+                }
+            })?;
+        let named = candidate
+            .name_topology(self.history, self.document, feature)
+            .map_err(|message| failure(crate::EvaluationFailureKind::InvalidResult, message))?;
+        let result = NamedSolid::Derived(Box::new(named));
+        self.verify_result_lineage(body, &result)
+            .map_err(PartFeatureFailure::BodyReference)?;
+        Ok(result)
+    }
+    fn evaluate_coil(
+        &mut self,
+        feature: FeatureId,
+        input: oblikovati_model::feature::sketch_coil::ResolvedSketchCoil<'_>,
+    ) -> Result<NamedSolid, PartFeatureFailure<EvaluationFailure>> {
+        let Some(prism) = &self.prism else {
+            return Err(PartFeatureFailure::Unsupported(
+                "coil: expected an explicit model resolution policy".into(),
+            ));
+        };
+        let sketch_id = input.sketch.sketch.id().0;
+        let policy = prism.resolution_policy();
+        let failure =
+            |error: EvaluationFailure| PartFeatureFailure::Kernel(error.for_feature(feature));
+        let candidate = crate::coil::build_coil(input, policy).map_err(failure)?;
+        let topology = BlendNamedTopology::from_coil(
+            self.history,
+            self.document,
+            feature,
+            sketch_id,
+            candidate,
+        )
+        .map_err(|cause| {
+            failure(crate::EvaluationPhase::Naming.refused(
+                crate::EvaluationFailureKind::InvalidReference,
+                crate::EvaluationEntity::Body,
+                format!("coil topology: {cause}"),
+            ))
+        })?;
+        Ok(NamedSolid::Derived(Box::new(topology)))
+    }
+    fn evaluate_coil_boolean(
+        &mut self,
+        feature: FeatureId,
+        body: &NamedSolid,
+        input: oblikovati_model::feature::sketch_coil::ResolvedSketchCoil<'_>,
+        operation: oblikovati_model::feature::sketch_prism::PrismBoolean,
+    ) -> Result<NamedSolid, PartFeatureFailure<EvaluationFailure>> {
+        use super::super::blend::extrusion_boolean::BooleanFailure;
+        let NamedSolid::Derived(tool) = self.evaluate_coil(feature, input)? else {
+            return Err(PartFeatureFailure::Unsupported(
+                "coil Boolean: expected a named Coil tool".into(),
+            ));
+        };
+        let failure = |kind, message| {
+            PartFeatureFailure::Kernel(
+                crate::EvaluationPhase::Prism
+                    .refused(kind, crate::EvaluationEntity::Body, message)
+                    .for_feature(feature),
+            )
+        };
+        let tool = tool
+            .sweep_boolean_tool(self.history, self.document)
+            .map_err(|message| failure(crate::EvaluationFailureKind::InvalidResult, message))?;
+        let candidate = body
+            .boolean_tools(
+                self.history,
+                self.document,
+                vec![tool],
+                operation,
+                &format!("coil {operation}"),
+            )
+            .map_err(|decline| match decline {
+                BooleanFailure::UnchangedCut { faces, .. } => failure(
+                    crate::EvaluationFailureKind::UnchangedCut,
+                    format!("The feature did not change the number of faces ({faces})."),
+                ),
+                BooleanFailure::Refused(message) => {
+                    failure(crate::EvaluationFailureKind::InvalidResult, message)
+                }
+            })?;
+        let named = candidate
+            .name_topology(self.history, self.document, feature)
+            .map_err(|message| failure(crate::EvaluationFailureKind::InvalidResult, message))?;
+        let result = NamedSolid::Derived(Box::new(named));
+        self.verify_result_lineage(body, &result)
+            .map_err(PartFeatureFailure::BodyReference)?;
+        Ok(result)
+    }
+    fn evaluate_derived_part(
+        &mut self,
+        feature: FeatureId,
+        input: oblikovati_model::feature::derived_part::ResolvedDerivedPart,
+    ) -> Result<NamedSolid, PartFeatureFailure<EvaluationFailure>> {
+        self.evaluate_named_derived_part(feature, input)
+    }
+    fn evaluate_imported_model(
+        &mut self,
+        feature: FeatureId,
+        input: oblikovati_model::feature::imported_model::ResolvedImportedModel,
+    ) -> Result<NamedSolid, PartFeatureFailure<EvaluationFailure>> {
+        self.evaluate_named_imported_model(feature, input)
+    }
+    fn evaluate_unwrap(
+        &mut self,
+        feature: FeatureId,
+        body: &NamedSolid,
+        input: oblikovati_model::feature::unwrap::ResolvedUnwrap<'_>,
+    ) -> Result<NamedSolid, PartFeatureFailure<EvaluationFailure>> {
+        self.evaluate_named_unwrap(feature, body, input)
+    }
+    fn evaluate_emboss(
+        &mut self,
+        feature: FeatureId,
+        body: &NamedSolid,
+        input: oblikovati_model::feature::sketch_emboss::ResolvedSketchEmboss<'_>,
+    ) -> Result<NamedSolid, PartFeatureFailure<EvaluationFailure>> {
+        self.evaluate_named_emboss(feature, body, input)
+    }
+    fn evaluate_rib(
+        &mut self,
+        feature: FeatureId,
+        body: &NamedSolid,
+        input: oblikovati_model::feature::sketch_rib::ResolvedSketchRib<'_>,
+    ) -> Result<NamedSolid, PartFeatureFailure<EvaluationFailure>> {
+        self.evaluate_named_rib(feature, body, input)
+    }
+    fn evaluate_decal(
+        &mut self,
+        feature: FeatureId,
+        body: &NamedSolid,
+        input: oblikovati_model::feature::sketch_decal::ResolvedSketchDecal<'_>,
+    ) -> Result<NamedSolid, PartFeatureFailure<EvaluationFailure>> {
+        self.evaluate_named_decal(feature, body, input)
+    }
     fn evaluate_sweep(
         &mut self,
         feature: FeatureId,

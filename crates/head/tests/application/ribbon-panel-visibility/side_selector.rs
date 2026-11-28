@@ -397,11 +397,24 @@ pub(in super::super) fn open_side_additional(world: &mut ApplicationWorld) {
         .runs
         .iter()
         .rev()
-        .find(|run| {
-            run.text.ends_with(['v', '▼'])
-                && super::super::diagnostics::panel_caption_matches(&run.text, "Modify")
-        })
+        .find(|run| super::super::diagnostics::panel_caption_matches(&run.text, "Modify"))
         .expect("expected the Modify expansion arrow");
-    let arrow = [title.maximum[0] - 2., title.center()[1]];
+    let arrow = if title.text.ends_with(['v', '▼']) {
+        [title.maximum[0] - 2., title.center()[1]]
+    } else {
+        world
+            .frame
+            .runs
+            .iter()
+            .filter(|run| {
+                run.list == title.list
+                    && matches!(run.text.as_str(), "v" | "▼")
+                    && run.center()[0] > title.maximum[0]
+                    && (run.center()[1] - title.center()[1]).abs() < 6.
+            })
+            .min_by(|a, b| a.center()[0].total_cmp(&b.center()[0]))
+            .expect("expected the Modify expansion arrow")
+            .center()
+    };
     world.click(pointer_pixels(arrow));
 }

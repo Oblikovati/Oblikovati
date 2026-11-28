@@ -159,6 +159,46 @@ pub use loft_dialog::{
     GuiLoftAction, GuiLoftEditSeed, GuiLoftElement, GuiLoftPathMode, GuiLoftPlacedView,
     GuiLoftSection,
 };
+mod feature_properties;
+pub use feature_properties::FeatureOutputMode;
+mod coil_dialog;
+pub use coil_dialog::{
+    GuiCoilAction, GuiCoilEditSeed, GuiCoilPreview, GuiCoilPreviewState, GuiCoilRequest,
+};
+mod emboss_dialog;
+pub use emboss_dialog::{
+    GuiEmbossAction, GuiEmbossEditSeed, GuiEmbossPreview, GuiEmbossPreviewState, GuiEmbossRequest,
+};
+mod derive_dialog;
+pub use derive_dialog::{
+    GuiDeriveAction, GuiDeriveEditSeed, GuiDerivePreview, GuiDerivePreviewState, GuiDeriveRequest,
+    GuiDeriveSourceSummary,
+};
+mod rib_dialog;
+pub use rib_dialog::{
+    GuiRibAction, GuiRibEditSeed, GuiRibPreview, GuiRibPreviewState, GuiRibRequest,
+    GuiRibSketchCandidate,
+};
+mod decal_dialog;
+pub use decal_dialog::{
+    GuiDecalAction, GuiDecalEditSeed, GuiDecalImageCandidate, GuiDecalPreview,
+    GuiDecalPreviewState, GuiDecalRequest,
+};
+mod import_dialog;
+pub use import_dialog::{
+    GuiImportAction, GuiImportEditSeed, GuiImportPreview, GuiImportPreviewState, GuiImportRequest,
+    GuiImportSourceSummary,
+};
+mod unwrap_dialog;
+pub use unwrap_dialog::{
+    GuiUnwrapAction, GuiUnwrapEdgeMode, GuiUnwrapEditSeed, GuiUnwrapFacePick, GuiUnwrapPreview,
+    GuiUnwrapPreviewState, GuiUnwrapRequest,
+};
+mod revolve_dialog;
+pub use revolve_dialog::{
+    GuiRevolveAction, GuiRevolveEditSeed, GuiRevolveExtent, GuiRevolvePreview,
+    GuiRevolvePreviewState, GuiRevolveRequest,
+};
 mod sweep_dialog;
 pub use sweep_dialog::{
     GuiSweepAction, GuiSweepEditSeed, GuiSweepOrientation, GuiSweepOutput, GuiSweepPresetStore,

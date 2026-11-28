@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-labelledby="t d">
+  <title id="t">Measure Sketch Picking</title>
+  <desc id="d">Highlighted teal 2D sketch segment with cyan endpoints measured alongside a warm amber calibrated ruler bar.</desc>
+  <g id="layer-body">
+    <path d="M5.2,24.8 A14,14 0 0 1 24.2,10.0" class="s-icon-line-general" fill="none" stroke="#D2D7E2" stroke-opacity="0.55" stroke-width="1.2" stroke-dasharray="2.4 1.6" stroke-linecap="round"/>
+  </g>
+  <g id="layer-accent">
+    <line x1="5.4" y1="20.2" x2="21.2" y2="5.6" class="s-accent-selection-bright" fill="none" stroke="#2DD4BF" stroke-width="2.0" stroke-linecap="round"/>
+    <circle cx="5.4" cy="20.2" r="2.2" class="f-icon-sel-top s-icon-sel-stroke" fill="#74EFE0" stroke="#0B2926" stroke-width="0.95"/>
+    <circle cx="21.2" cy="5.6" r="2.2" class="f-icon-sel-top s-icon-sel-stroke" fill="#74EFE0" stroke="#0B2926" stroke-width="0.95"/>
+    <polygon points="10.2,25.8 26.4,10.8 29.6,14.2 13.4,29.2" class="f-icon-surf-front s-icon-surf-stroke" fill="#F59E0B" stroke="#2E1D05" stroke-width="1.1" stroke-linejoin="round"/>
+    <line x1="14.0" y1="22.4" x2="15.8" y2="24.3" class="s-icon-surf-stroke" fill="none" stroke="#2E1D05" stroke-width="1.1" stroke-linecap="round"/>
+    <line x1="17.8" y1="18.8" x2="20.0" y2="21.2" class="s-icon-surf-stroke" fill="none" stroke="#2E1D05" stroke-width="1.1" stroke-linecap="round"/>
+    <line x1="21.8" y1="15.1" x2="23.6" y2="17.0" class="s-icon-surf-stroke" fill="none" stroke="#2E1D05" stroke-width="1.1" stroke-linecap="round"/>
+  </g>
+</svg>

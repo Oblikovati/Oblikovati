@@ -26,7 +26,7 @@ fn first_midpoint(world: &mut ApplicationWorld) -> [i32; 2] {
         std::array::from_fn(|axis| (ends[0][axis] + ends[1][axis]) * 0.5),
     )
 }
-#[when("I right-click the first segment interior")]
+#[when("the user right-click the first segment interior")]
 fn open_line_menu(world: &mut ApplicationWorld) {
     let point = first_midpoint(world);
     world.right_click(point);
@@ -36,7 +36,7 @@ fn open_line_menu(world: &mut ApplicationWorld) {
 fn delete_is_offered(world: &mut ApplicationWorld) {
     world.expect_text("Delete Coincident Constraint");
 }
-#[when("I choose that command")]
+#[when("the user choose that command")]
 fn delete_relation(world: &mut ApplicationWorld) {
     world.click_text("Delete Coincident Constraint");
 }
@@ -49,7 +49,7 @@ fn deleted_without_movement(world: &mut ApplicationWorld) {
     assert_eq!(geometry.lines(), joined(world).lines());
     assert!(world.app().owner.sketch_constraint_marks().is_empty());
 }
-#[when("I move only the first segment using its start as base point")]
+#[when("the user move only the first segment using its start as base point")]
 fn move_segment(world: &mut ApplicationWorld) {
     let middle = first_midpoint(world);
     let start = endpoints(joined(world), 0)[0];
@@ -77,8 +77,8 @@ fn no_conflict(_: &mut ApplicationWorld) {
     assert!(diagnostics::window_geometry("Constraint Relaxation").is_none());
     assert!(diagnostics::window_geometry("Create Constraint").is_none());
 }
-#[when("I undo the movement")]
-#[when("I undo the deletion")]
+#[when("the user undo the movement")]
+#[when("the user undo the deletion")]
 fn undo(world: &mut ApplicationWorld) {
     world.undo();
 }
@@ -99,8 +99,8 @@ fn marker_returns(world: &mut ApplicationWorld) {
             .any(|mark| mark.text == "C")
     );
 }
-#[when("I redo the deletion")]
-#[when("I redo the movement")]
+#[when("the user redo the deletion")]
+#[when("the user redo the movement")]
 fn redo(world: &mut ApplicationWorld) {
     world.redo();
 }

@@ -46,7 +46,7 @@ fn first_extrusion_committed(world: &mut ApplicationWorld) {
     "Properties stays open for another feature with the carried configuration and fresh input requirements"
 )]
 fn configuration_carried(world: &mut ApplicationWorld) {
-    world.run_in_window("Extrude", "Properties");
+    world.run_in_window("Extrude", "Extrude");
     world.run_in_window("Extrude", "Chooseasketch");
     world.run_in_window("Extrude", "SelectProfile");
     world.run_in_window("Extrude", "8");

@@ -52,6 +52,7 @@ impl AssemblyPresentationSource for FakeAssemblySource {
         let triangle = ViewportTriangle {
             face_index: None,
             positions: [[component as f32, 0., 0.]; 3],
+            normals: None,
             color: [0.2, 0.3, 0.4, 1.],
         };
         Ok(FakeScene {

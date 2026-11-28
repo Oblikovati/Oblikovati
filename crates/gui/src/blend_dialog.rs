@@ -210,9 +210,8 @@ impl BlendDialog {
             self.submitted = Some(request.clone());
             actions.push(self.create_action(request));
         }
-        ui.same_line();
-        let _outline = ui.push_style_var(imgui::StyleVar::FrameBorderSize(1.));
-        if crate::widget_abi::button(ui, "Cancel", [68., 28.])
+        ui.same_line_with_spacing(0., 6.);
+        if crate::theme::property_cancel(ui)
             || (ui.is_window_focused() && ui.is_key_pressed_no_repeat(imgui::Key::Escape))
         {
             self.close(actions);
@@ -264,9 +263,8 @@ impl BlendDialog {
             self.submitted_edit = Some(request.clone());
             actions.push(self.commit_edit_action(request));
         }
-        ui.same_line();
-        let _outline = ui.push_style_var(imgui::StyleVar::FrameBorderSize(1.));
-        if crate::widget_abi::button(ui, "Cancel", [68., 28.])
+        ui.same_line_with_spacing(0., 6.);
+        if crate::theme::property_cancel(ui)
             || (ui.is_window_focused() && ui.is_key_pressed_no_repeat(imgui::Key::Escape))
         {
             self.close(actions);

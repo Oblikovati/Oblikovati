@@ -24,7 +24,7 @@ fn preference_controls_new_document_without_changing_existing_tree_state() {
 }
 
 fn set_auto_expand(world: &mut ApplicationWorld, enabled: bool) {
-    super::dockspace_restart::native_click_label(world, "Menu");
+    super::dock_search::click_model_menu(world);
     super::dockspace_restart::native_click_label(world, "Display Preferences");
     assert!(world.run_is_enabled(AUTO_EXPAND));
     if world.checked(AUTO_EXPAND) != enabled {

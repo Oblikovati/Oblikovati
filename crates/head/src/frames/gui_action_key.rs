@@ -137,6 +137,14 @@ pub(super) fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
         | GuiShellAction::StartSketchAt { .. }
         | GuiShellAction::FinishSketch
         | GuiShellAction::OpenExtrude
+        | GuiShellAction::Revolve(_)
+        | GuiShellAction::Coil(_)
+        | GuiShellAction::Emboss(_)
+        | GuiShellAction::Derive(_)
+        | GuiShellAction::Rib(_)
+        | GuiShellAction::Decal(_)
+        | GuiShellAction::Import(_)
+        | GuiShellAction::Unwrap(_)
         | GuiShellAction::Sweep(_)
         | GuiShellAction::Loft(_)
         | GuiShellAction::OpenMoveBody

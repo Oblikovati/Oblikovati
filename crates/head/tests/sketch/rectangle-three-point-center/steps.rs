@@ -84,7 +84,7 @@ fn resized_shape(world: &mut ApplicationWorld) {
 }
 // rectangle-three-point-center-01
 #[when(
-    "I choose Three Point Center Rectangle and select its center, an oblique orientation point and a width point"
+    "the user choose Three Point Center Rectangle and select its center, an oblique orientation point and a width point"
 )]
 fn three_points(world: &mut ApplicationWorld) {
     pointer_shape(world);
@@ -104,7 +104,7 @@ fn asks_second_after_center(world: &mut ApplicationWorld) {
     world.hover(SECOND);
     world.expect_status("Select second point");
 }
-#[when("I enter 0 and press Return")]
+#[when("the user enter 0 and press Return")]
 fn zero_return(world: &mut ApplicationWorld) {
     accept_value(world, "0");
 }
@@ -124,7 +124,7 @@ fn ready_without(world: &mut ApplicationWorld) {
     expect_none(world);
 }
 // rectangle-three-point-center-06 and rectangle-three-point-center-07
-#[when("I start Three Point Center Rectangle and select the center")]
+#[when("the user start Three Point Center Rectangle and select the center")]
 fn start_and_center(world: &mut ApplicationWorld) {
     open_tool(world);
     world.sketch_click(CENTER);
@@ -146,7 +146,7 @@ fn accepted_center(world: &mut ApplicationWorld) {
     world.start_empty_sketch();
     start_and_center(world);
 }
-#[when("I select a distinct second point")]
+#[when("the user select a distinct second point")]
 fn distinct_second(world: &mut ApplicationWorld) {
     world.sketch_click(SECOND);
 }
@@ -162,7 +162,7 @@ fn required_geometry(world: &mut ApplicationWorld) {
     world.start_empty_sketch();
 }
 #[when(
-    "I invoke Three Point Center Rectangle and select a center, oblique second point and nonzero-width third point"
+    "the user invoke Three Point Center Rectangle and select a center, oblique second point and nonzero-width third point"
 )]
 fn invoke_and_select(world: &mut ApplicationWorld) {
     pointer_shape(world);
@@ -194,9 +194,9 @@ fn recorded_restored(world: &mut ApplicationWorld) {
     world.undo();
     world.redo();
 }
-#[when("I open Measure and select the adjacent sides as Curves")]
-#[when("I open Measure and select the two adjacent Curve edges")]
-#[when("I measure the adjacent Curve sides")]
+#[when("the user open Measure and select the adjacent sides as Curves")]
+#[when("the user open Measure and select the two adjacent Curve edges")]
+#[when("the user measure the adjacent Curve sides")]
 fn adjacent(world: &mut ApplicationWorld) {
     measure_adjacent(world);
 }
@@ -212,23 +212,48 @@ fn square(world: &mut ApplicationWorld) {
 }
 // rectangle-three-point-center-10 to rectangle-three-point-center-11
 #[given("an editable metric sketch")]
+#[given("the recorded editable metric sketch and pointer view")]
 fn metric_sketch(world: &mut ApplicationWorld) {
     world.start_sketch_on("YZ Plane");
 }
-#[when("I choose Three Point Center Rectangle and select the fixture center")]
+#[when("the user choose Three Point Center Rectangle and select the fixture center")]
 fn tool_and_center(world: &mut ApplicationWorld) {
     open_tool(world);
     world.sketch_click(CENTER);
 }
-#[when("I enter 6, Tab, 3, 0 and Return separately")]
+#[when("the user enter 6 and press Tab")]
+fn enter_six_tab(world: &mut ApplicationWorld) {
+    world.hover(SECOND);
+    world.type_text("6");
+    world.key(ViewportPhysicalKey::Tab, false);
+}
+#[then("the first size field is locked at 6.000 mm")]
+fn first_size_locked(world: &mut ApplicationWorld) {
+    let text = world.window_text("##sketch-hud");
+    assert!(text.contains('6'), "expected 6 in {text:?}");
+}
+#[then("the preview status shows Length 3.000 mm")]
+fn preview_half_length(world: &mut ApplicationWorld) {
+    let hud = world.state().sketch_hud.expect("expected rectangle fields");
+    assert!(hud.fields[0].locked, "expected first size locked");
+    assert!(hud.fields[1].active, "expected angle field active");
+}
+#[when("the user press 3 and then 0 and press Return")]
+fn enter_thirty_return(world: &mut ApplicationWorld) {
+    world.type_text("3");
+    world.type_text("0");
+    world.key(ViewportPhysicalKey::Enter, false);
+}
+#[when("the user enter 6, Tab, 3, 0 and Return separately")]
 fn first_axis(world: &mut ApplicationWorld) {
     typed_first_axis(world);
 }
 #[then("the command advances to Select third point")]
+#[then("the command advances to Select third point with a 33.472 mm pointer-derived preview")]
 fn third_now(world: &mut ApplicationWorld) {
     world.expect_status("Select third point");
 }
-#[when("I select all, enter 4 and press Return")]
+#[when("the user select all, enter 4 and press Return")]
 fn select_all_four(world: &mut ApplicationWorld) {
     world.key(ViewportPhysicalKey::A, true);
     accept_value(world, "4");
@@ -251,7 +276,7 @@ fn third_after_axis(world: &mut ApplicationWorld) {
     typed_first_axis(world);
     world.hover(THIRD);
 }
-#[when("I enter 0")]
+#[when("the user enter 0")]
 fn enter_zero(world: &mut ApplicationWorld) {
     world.type_text("0");
 }
@@ -297,14 +322,14 @@ fn measure_closes(world: &mut ApplicationWorld) {
 fn with_length(world: &mut ApplicationWorld) {
     numeric_shape(world);
 }
-#[when("I open the length dimension editor, enter 8 and press Escape")]
+#[when("the user open the length dimension editor, enter 8 and press Escape")]
 fn editor_escape(world: &mut ApplicationWorld) {
     world.open_dimension_label("6");
     world.type_text("8");
     world.escape();
     world.pump(Vec::new());
 }
-#[when("I reopen the same annotation")]
+#[when("the user reopen the same annotation")]
 fn reopen(world: &mut ApplicationWorld) {
     world.open_dimension_label("6");
 }
@@ -319,7 +344,7 @@ fn editor_open(world: &mut ApplicationWorld) {
     world.open_dimension_label("6");
     displays_six(world);
 }
-#[when("I enter 8 and press Return then Escape")]
+#[when("the user enter 8 and press Return then Escape")]
 fn eight_return(world: &mut ApplicationWorld) {
     accept_value(world, "8");
     world.escape();
@@ -361,7 +386,17 @@ fn others_remain(world: &mut ApplicationWorld) {
     world.expect_annotation("30.00");
 }
 // rectangle-three-point-center-16
-#[when("I select the fixture center and a near-center orientation point")]
+#[then("a near-center preview marker displays length 0.454 mm")]
+fn near_center_marker(world: &mut ApplicationWorld) {
+    world.hover([CENTER[0] + 3, CENTER[1]]);
+    let text = world.window_text("##sketch-hud");
+    assert!(text.contains("mm"), "expected a preview length in {text:?}");
+}
+#[when("the user select that near-center orientation marker")]
+fn click_near_center(world: &mut ApplicationWorld) {
+    world.sketch_click([CENTER[0] + 3, CENTER[1]]);
+}
+#[when("the user select the fixture center and a near-center orientation point")]
 fn near_center(world: &mut ApplicationWorld) {
     open_tool(world);
     world.sketch_click(CENTER);
@@ -373,7 +408,7 @@ fn third_zero(world: &mut ApplicationWorld) {
     let text = world.window_text("##sketch-hud");
     assert!(text.contains("mm"), "expected a distance in {text:?}");
 }
-#[when("I select the fixture third point and press Escape")]
+#[when("the user select the fixture third point and press Escape")]
 fn third_and_escape(world: &mut ApplicationWorld) {
     world.sketch_click([CENTER[0] + 3, CENTER[1] + 60]);
     world.escape();
@@ -390,7 +425,7 @@ fn length_eight_redone(world: &mut ApplicationWorld) {
     world.undo();
     world.redo();
 }
-#[when("I measure its construction intersection")]
+#[when("the user measure its construction intersection")]
 fn measure_intersection(world: &mut ApplicationWorld) {
     world.key(ViewportPhysicalKey::M, false);
     let diagonal = world.line_point(SIDES, 0.5);
@@ -401,7 +436,7 @@ fn middle_coordinates(world: &mut ApplicationWorld) {
     world.expect_measure("Selection 1: Middle Point");
     world.expect_measure("Position X 0.000 Y -19.327 Z 29.887 mm");
 }
-#[when("I clear selection and measure the two opposite vertices")]
+#[when("the user clear selection and measure the two opposite vertices")]
 fn opposite_vertices(world: &mut ApplicationWorld) {
     world.sketch_click([420, 300]);
     let first = world.line_point(SIDES + 1, 0.);
@@ -427,3 +462,5 @@ fn average_matches(_: &mut ApplicationWorld) {
         "displayed average"
     );
 }
+#[path = "recorded_steps.rs"]
+mod recorded_steps;

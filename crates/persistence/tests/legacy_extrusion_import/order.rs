@@ -3,7 +3,7 @@ use super::*;
 
 #[test]
 fn unstamped_standalone_legacy_sketch_is_retained_without_inventing_order() {
-    let source = std::str::from_utf8(GO_CUBE).unwrap();
+    let source = normalized_text(GO_CUBE);
     let sketches_only = source.split("    features:\n").next().unwrap();
     for stamp in ["", "          seq: 0\n"] {
         let source = sketches_only.replace("          seq: 1\n", stamp);
@@ -21,7 +21,7 @@ fn unstamped_standalone_legacy_sketch_is_retained_without_inventing_order() {
 
 #[test]
 fn extrusion_requires_unique_stamps_and_a_prior_source_sketch() {
-    let source = std::str::from_utf8(GO_CUBE).unwrap();
+    let source = normalized_text(GO_CUBE);
     for (name, modified) in [
         (
             "duplicate",
@@ -72,11 +72,8 @@ fn duplicate_sketch_stamps_are_rejected_even_without_features() {
 
 #[test]
 fn missing_sketch_reference_declines_before_profile_resolution() {
-    let source = std::str::from_utf8(GO_CUBE).unwrap().replacen(
-        "            sketch: 0\n",
-        "            sketch: 8\n",
-        1,
-    );
+    let source =
+        normalized_text(GO_CUBE).replacen("            sketch: 0\n", "            sketch: 8\n", 1);
     let package = DocumentPackage::decode(source.as_bytes()).unwrap();
     let before = package.clone();
     let error = package
@@ -89,7 +86,7 @@ fn missing_sketch_reference_declines_before_profile_resolution() {
 
 #[test]
 fn duplicate_extrusion_stamps_are_rejected_before_resolving_profiles() {
-    let source = std::str::from_utf8(GO_CUBE).unwrap();
+    let source = normalized_text(GO_CUBE);
     let feature = source.split_once("    features:\n").unwrap().1;
     let modified = format!(
         "{source}{}",

@@ -42,6 +42,18 @@ impl NamedSolid {
         }
     }
 
+    /// Resolve the supporting plane of a named planar face; example: `body.face_plane(&history, document, key)?`.
+    pub fn face_plane(
+        &self,
+        history: &DocumentEditHistory,
+        document: DocumentGuid,
+        key: &[u8],
+    ) -> Result<oblikovati_model::sketch::SketchPlane, String> {
+        match self {
+            Self::Prism(body) => body.face_plane(history, document, key),
+            Self::Derived(body) => body.face_plane(history, document, key),
+        }
+    }
     /// List the primary body and exact face keys; example: `body.reference_keys(&history, document)?`.
     pub fn reference_keys(
         &self,
@@ -93,7 +105,7 @@ impl NamedSolid {
             Self::Derived(body) => body.native_face(history, document, key),
         }
     }
-    pub(super) fn native_shape<'a>(
+    pub(crate) fn native_shape<'a>(
         &'a self,
         history: &'a DocumentEditHistory,
         document: DocumentGuid,
@@ -357,14 +369,28 @@ impl crate::BodyPresentationSource for NamedSolid {
             Self::Derived(body) => body.display_face_triangles(options),
         }
     }
+    fn body_face_display_triangles(
+        &self,
+        options: PrismMeshOptions,
+    ) -> Result<Vec<Vec<crate::DisplayTriangle>>, String> {
+        match self {
+            Self::Prism(body) => super::super::BodyPresentationSource::body_face_display_triangles(
+                body.as_ref(),
+                options,
+            ),
+            Self::Derived(body) => body.display_face_shaded(options),
+        }
+    }
 }
 
 /// Evaluate certified prisms and named fillets in one ordered Part program.
 pub struct CertifiedNamedSolidEvaluator<'a> {
     prism: Option<CertifiedNamedPrismEvaluator<'a>>,
     diagnostic: NamedPrismEvaluator<'a>,
-    history: &'a DocumentEditHistory,
-    document: DocumentGuid,
+    pub(crate) history: &'a DocumentEditHistory,
+    pub(crate) document: DocumentGuid,
+    pub(crate) derived_sources:
+        Option<&'a std::collections::BTreeMap<String, oblikovati_model::history::DocumentSnapshot>>,
 }
 impl<'a> CertifiedNamedSolidEvaluator<'a> {
     /// Bind a document and resolution; example: `CertifiedNamedSolidEvaluator::new(&history, document, resolution)`.
@@ -380,6 +406,7 @@ impl<'a> CertifiedNamedSolidEvaluator<'a> {
             diagnostic: NamedPrismEvaluator::new(history, document),
             history,
             document,
+            derived_sources: None,
         }
     }
     /// Bind the host's per-sketch resolution policy; example: `CertifiedNamedSolidEvaluator::with_policy(&history, document, policy)`.
@@ -395,6 +422,7 @@ impl<'a> CertifiedNamedSolidEvaluator<'a> {
             diagnostic: NamedPrismEvaluator::new(history, document),
             history,
             document,
+            derived_sources: None,
         }
     }
     /// Select the host's optional resolution policy; example: `CertifiedNamedSolidEvaluator::with_optional_policy(&history, document, None)`.
@@ -410,8 +438,23 @@ impl<'a> CertifiedNamedSolidEvaluator<'a> {
                 diagnostic: NamedPrismEvaluator::new(history, document),
                 history,
                 document,
+                derived_sources: None,
             },
         }
+    }
+    /// Attach loaded source Part snapshots for Derived Part evaluation.
+    pub fn with_derived_sources(
+        mut self,
+        sources: &'a std::collections::BTreeMap<
+            String,
+            oblikovati_model::history::DocumentSnapshot,
+        >,
+    ) -> Self {
+        self.derived_sources = Some(sources);
+        self
+    }
+    pub(crate) fn resolution_policy(&self) -> Option<PrismResolutionPolicy> {
+        self.prism.as_ref().map(|prism| prism.resolution_policy())
     }
 }
 

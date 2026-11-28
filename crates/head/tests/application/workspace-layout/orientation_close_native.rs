@@ -53,7 +53,7 @@ pub(super) fn drag_title(world: &mut ApplicationWorld, title: &str, target: [i32
 
 #[test]
 fn orientation_content_close_selects_next_tab_and_reopens() {
-    let mut world = ApplicationWorld::new();
+    let mut world = ApplicationWorld::with_asset_tools_closed();
     super::browser_feature::open_visible_extruded_part(&mut world);
     let node = dock_orientation(&mut world);
     for close in ["Cancel", "OK", "Escape"] {
@@ -91,7 +91,7 @@ fn close_and_reopen(world: &mut ApplicationWorld, node: u32, close: &str) {
 
 #[test]
 fn orientation_suspends_while_home_is_active_and_restores_the_shared_dock() {
-    let mut world = ApplicationWorld::new();
+    let mut world = ApplicationWorld::with_asset_tools_closed();
     super::browser_feature::open_visible_extruded_part(&mut world);
     let document = world.active_id();
     let name = world.document_name(document);
@@ -99,16 +99,20 @@ fn orientation_suspends_while_home_is_active_and_restores_the_shared_dock() {
     select_dock_tab(&mut world, "Orientation Options");
     let home = world.expect_tab("Home").center();
     super::super::x11_input::click(super::super::diagnostics::pointer_pixels(home));
-    super::external_close_native::assert_closed_with_visible_tab(
-        &mut world,
-        "Orientation Options",
-        "Material Browser",
-    );
+    world.pump(Vec::new());
+    world.pump(Vec::new());
+    assert!(window_geometry("Orientation Options").is_none());
+    assert!(window_geometry("Material Browser").is_none());
     assert!(window_geometry("##home-workspace").is_some());
     let part = world.expect_tab(&name).center();
     super::super::x11_input::click(super::super::diagnostics::pointer_pixels(part));
     world.pump(Vec::new());
     world.pump(Vec::new());
+    assert_eq!(
+        super::super::diagnostics::window_dock_id("Material Browser"),
+        Some(node),
+        "the suspended asset browser must return to its original dock"
+    );
     assert_eq!(
         super::super::diagnostics::window_dock_id("Orientation Options"),
         Some(node),

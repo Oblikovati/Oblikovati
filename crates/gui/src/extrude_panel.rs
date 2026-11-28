@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Floating layout and controls for the Extrude properties window.
 use super::{ExtrudeDialog, GuiCommandState, GuiShellAction};
-use crate::icons::{GuiRibbonIcons, IconGlyph, IconSize};
 use imgui::{Key, StyleColor, Ui};
 
-const WIDTH: f32 = 280.;
+const WIDTH: f32 = 304.;
 const CLEAR_WIDTH: f32 = 44.;
 pub(super) const FOOTER_HEIGHT: f32 = 44.;
 const DEFAULT_HEIGHT: f32 = 340.;
@@ -88,10 +87,23 @@ impl ExtrudeDialog {
             ui.set_next_item_width((ui.content_region_avail()[0] - CLEAR_WIDTH - spacing).max(1.));
         }
         let _profile_disabled = ui.begin_disabled(self.sketch.is_none());
+        let selected = self.sketch.is_some();
         let rounding = ui.push_style_var(imgui::StyleVar::FrameRounding(11.));
-        let tint = ui.push_style_color(StyleColor::FrameBg, [0.05, 0.58, 0.53, 0.22]);
+        let _bw = ui.push_style_var(imgui::StyleVar::FrameBorderSize(1.));
+        let tint = ui.push_style_color(
+            StyleColor::FrameBg,
+            if selected {
+                crate::theme::selection_subtle(ui)
+            } else {
+                crate::theme::surface_subtle(ui)
+            },
+        );
+        let _edge = selected
+            .then(|| ui.push_style_color(StyleColor::Border, crate::theme::selection_accent(ui)));
         let choices = ui.begin_combo("##profile", label);
+        drop(_edge);
         drop(tint);
+        drop(_bw);
         drop(rounding);
         choices.is_some_and(|_choices| {
             let _numeric = crate::ui_scale::numeric_font(ui);
@@ -141,59 +153,14 @@ impl ExtrudeDialog {
                     .creation_action(request, keep_sketch)
                     .dispatchable(state)
         });
-        let disabled = ui.begin_disabled(apply_request.is_none());
-        let _base = ui.push_style_color(StyleColor::Button, [0.13, 0.77, 0.37, 1.]);
-        let _hovered = ui.push_style_color(StyleColor::ButtonHovered, [0.29, 0.87, 0.50, 1.]);
-        let _ink = ui.push_style_color(StyleColor::Text, [0.05, 0.15, 0.08, 1.]);
-        let apply_more = crate::widget_abi::button(ui, "+##apply-create-new", [28., 28.]);
-        drop(disabled);
-        if ui.is_item_hovered_with_flags(imgui::ItemHoveredFlags::ALLOW_WHEN_DISABLED) {
-            ui.tooltip_text("Apply & Create New");
-        }
+        let apply_more = crate::theme::property_apply_new(ui, apply_request.is_some());
         if apply_more && self.commit_request(apply_request, keep_sketch, actions) {
             self.requested = true;
             self.start_without_sketch = true;
         }
     }
 
-    pub(super) fn preview_control(
-        &mut self,
-        ui: &Ui,
-        icons: &GuiRibbonIcons,
-        preview_active: bool,
-        actions: &mut Vec<GuiShellAction>,
-    ) {
-        let label = if self.preview_hidden {
-            "Show Preview"
-        } else {
-            "Hide Preview"
-        };
-        let icon = icons.logical[IconSize::Small.index()];
-        let width = ui.calc_text_size(label)[0] + icon[0] + 12.;
-        let right = ui.window_content_region_max()[0];
-        if ui.item_rect_max()[0] - ui.window_pos()[0] + width + ui.clone_style().item_spacing[0]
-            <= right
-        {
-            ui.same_line_with_pos(right - width);
-        }
-        let _disabled = ui.begin_disabled(!preview_active && !self.preview_hidden);
-        let pressed = crate::widget_abi::icon_button(
-            ui,
-            &format!("{label}##extrude-preview-visibility"),
-            crate::widget_abi::IconButtonPresentation {
-                texture: icons.key(IconGlyph::SketchVisibility, IconSize::Small),
-                size: [width, ui.frame_height()],
-                icon,
-                large: false,
-                show_caption: true,
-            },
-        );
-        if pressed {
-            self.toggle_preview(actions);
-        }
-    }
-
-    fn toggle_preview(&mut self, actions: &mut Vec<GuiShellAction>) {
+    pub(super) fn toggle_preview(&mut self, actions: &mut Vec<GuiShellAction>) {
         self.preview_hidden = !self.preview_hidden;
         if self.preview_hidden {
             self.previewed = false;
@@ -231,8 +198,7 @@ impl ExtrudeDialog {
         true
     }
     fn cancel_control(&mut self, ui: &Ui, shortcuts: bool, actions: &mut Vec<GuiShellAction>) {
-        let _outline = ui.push_style_var(imgui::StyleVar::FrameBorderSize(1.));
-        if crate::widget_abi::button(ui, "Cancel", [62., 28.])
+        if crate::theme::property_cancel(ui)
             || (shortcuts && ui.is_key_pressed_no_repeat(Key::Escape))
         {
             self.close(actions);

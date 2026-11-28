@@ -37,7 +37,8 @@ impl<O: TransactionObserver> DocumentSession<O> {
         attempts: &mut u64,
     ) -> Result<bool, String> {
         let mut evaluator =
-            CertifiedNamedSolidEvaluator::with_policy(self.history(), document, policy);
+            CertifiedNamedSolidEvaluator::with_policy(self.history(), document, policy)
+                .with_derived_sources(&self.derived_sources);
         *attempts = attempts.saturating_add(1);
         let completed = self
             .prepare_part_evaluation()
@@ -54,7 +55,8 @@ impl<O: TransactionObserver> DocumentSession<O> {
         attempts: &mut u64,
     ) -> Result<(), String> {
         let mut evaluator =
-            CertifiedNamedSolidEvaluator::with_policy(self.history(), document, policy);
+            CertifiedNamedSolidEvaluator::with_policy(self.history(), document, policy)
+                .with_derived_sources(&self.derived_sources);
         *attempts = attempts.saturating_add(1);
         let completed = self
             .prepare_part_evaluation()

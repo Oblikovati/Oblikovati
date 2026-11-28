@@ -157,3 +157,37 @@ Refs #123
 Run the hook tests with `python3 -B -m unittest discover -s tools/git`.
 The hook is local to each clone and Git permits explicit hook bypasses. It does
 not enforce server-side policy or validate that the issue exists.
+
+## WebAssembly and WebGPU target
+
+Oblikovati compiles its model, solver, persistence, session, automation, Martensite
+geometry kernel, viewport, and `oblikovati-web` crates to `wasm32-unknown-unknown`
+with WebAssembly Threads (`+atomics`, `+bulk-memory`, `+mutable-globals`) and
+renders through WebGPU (`martensite-webgpu`). Native desktop builds stay on the
+stable toolchain in `rust-toolchain.toml`; the nightly toolchain required for
+`-Z build-std=panic_abort,std` is pinned separately in
+`tools/build/wasm-toolchain.toml`.
+
+Install the pinned WASM toolchain and `wasm-bindgen-cli` once:
+
+```sh
+rustup toolchain install nightly-2026-09-25 --profile minimal --component rust-src --target wasm32-unknown-unknown
+cargo install wasm-bindgen-cli --locked --version 0.2.130
+```
+
+Check all WASM-eligible crates, build the release browser bundle into `web/pkg/`,
+and serve it locally with the required COOP/COEP headers:
+
+```sh
+cargo xtask wasm-check
+cargo xtask wasm-build
+python3 web/serve.py 8080
+```
+
+Open `http://127.0.0.1:8080/` in a WebGPU-capable browser (Chromium, Firefox, or
+Safari with WebGPU enabled). Run headless Chromium E2E verification with
+`python3 web/e2e_chromium.py`.
+
+Production deployment to `https://app.oblikovati.org` runs independently in
+`.github/workflows/web-deploy.yml` on merges to `rust` using the container and
+Kubernetes manifests under `deploy/web/`.

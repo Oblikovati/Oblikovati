@@ -104,6 +104,7 @@ impl NativeHeadWindow {
     pub fn clear_gui_frame(&mut self) -> Result<(), String> {
         self.view.clear_gui_frame()?;
         if let Some(gui) = &mut self.gui {
+            gui.clear_document_area();
             gui.require_publication();
         }
         Ok(())

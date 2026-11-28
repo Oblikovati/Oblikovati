@@ -146,13 +146,19 @@ fn sketch_parameters_panel_opens_the_live_editor_without_finishing_the_sketch() 
         oblikovati_gui::GuiAuthoringContext::Sketch
     );
     assert!(world.edited_geometry().same_recipe(&before));
-    for (label, value) in [("Name", "size"), ("Equation", "10 mm")] {
-        let label = world.run_in_window("Parameters", label);
-        world.click([(label.minimum[0] - 20.) as i32, label.center()[1] as i32]);
+    let (position, size) = diagnostics::window_geometry("Parameters").unwrap();
+    let end = [position[0] + size[0], position[1] + size[1]];
+    let numeric = super::super::rendered_label_in_rect("Numeric", position, end);
+    let add = super::super::rendered_label_in_rect("Add", [position[0] + 150., position[1]], end);
+    let span = add[0] - numeric[0];
+    for (x, value) in [
+        (numeric[0] + span / 3, "size"),
+        (numeric[0] + span * 2 / 3, "10 mm"),
+    ] {
+        world.click([x, add[1]]);
         world.type_text(value);
     }
-    let add = world.run_in_window("Parameters", "Add").center();
-    world.click(diagnostics::pointer_pixels(add));
+    world.click(add);
     assert!(
         world
             .state()
@@ -160,8 +166,8 @@ fn sketch_parameters_panel_opens_the_live_editor_without_finishing_the_sketch() 
             .iter()
             .any(|parameter| parameter.name == "size" && parameter.expression == "10 mm")
     );
-    let cancel = world.run_in_window("Parameters", "Cancel").center();
-    world.click(diagnostics::pointer_pixels(cancel));
+    let done = world.run_in_window("Parameters", "Done").center();
+    world.click(diagnostics::pointer_pixels(done));
     assert!(diagnostics::window_geometry("Parameters").is_none());
     world.undo();
     assert!(

@@ -101,6 +101,8 @@ pub(super) fn runtime_with_gui_policy(
                 driver,
                 #[cfg(target_os = "linux")]
                 linux: None,
+                #[cfg(target_os = "windows")]
+                native_windows: false,
                 next_view: Cell::new(1),
             }),
         },

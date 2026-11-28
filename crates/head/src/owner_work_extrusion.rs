@@ -44,6 +44,48 @@ macro_rules! desktop_extrusion_work {
         fn loft_from_gui(&mut self, action: oblikovati_gui::GuiLoftAction) -> Result<bool, String> {
             self.loft_command(action)
         }
+        fn revolve_from_gui(
+            &mut self,
+            action: oblikovati_gui::GuiRevolveAction,
+        ) -> Result<bool, String> {
+            self.revolve_command(action)
+        }
+        fn coil_from_gui(&mut self, action: oblikovati_gui::GuiCoilAction) -> Result<bool, String> {
+            self.coil_command(action)
+        }
+        fn emboss_from_gui(
+            &mut self,
+            action: oblikovati_gui::GuiEmbossAction,
+        ) -> Result<bool, String> {
+            self.emboss_command(action)
+        }
+        fn derive_from_gui(
+            &mut self,
+            action: oblikovati_gui::GuiDeriveAction,
+        ) -> Result<bool, String> {
+            self.derive_command(action)
+        }
+        fn rib_from_gui(&mut self, action: oblikovati_gui::GuiRibAction) -> Result<bool, String> {
+            self.rib_command(action)
+        }
+        fn decal_from_gui(
+            &mut self,
+            action: oblikovati_gui::GuiDecalAction,
+        ) -> Result<bool, String> {
+            self.decal_command(action)
+        }
+        fn import_from_gui(
+            &mut self,
+            action: oblikovati_gui::GuiImportAction,
+        ) -> Result<bool, String> {
+            self.import_command(action)
+        }
+        fn unwrap_from_gui(
+            &mut self,
+            action: oblikovati_gui::GuiUnwrapAction,
+        ) -> Result<bool, String> {
+            self.unwrap_command(action)
+        }
         fn sweep_from_gui(
             &mut self,
             action: oblikovati_gui::GuiSweepAction,

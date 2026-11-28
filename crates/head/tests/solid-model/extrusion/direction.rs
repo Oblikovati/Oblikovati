@@ -112,8 +112,12 @@ fn native_asymmetric_flip_changes_both_distances_and_one_history_step() {
     assert!(!world.run_is_enabled("OK"));
     replace_second_distance(&mut world, "6");
     assert_eq!(preview_depth(&mut world), [-0.6, 1.]);
-    let row = second_distance_row(&world);
-    let flip = [row.maximum[0] - 14., row.center()[1]];
+    let flip = if world.frame.runs.iter().any(|run| run.text == "FlipA/B") {
+        world.run_in_window("Extrude", "FlipA/B").center()
+    } else {
+        let row = second_distance_row(&world);
+        [row.maximum[0] - 14., row.center()[1]]
+    };
     super::super::x11_input::click(super::super::diagnostics::pointer_pixels(flip));
     world.pump(Vec::new());
     assert_eq!(preview_depth(&mut world), [-1., 0.6]);

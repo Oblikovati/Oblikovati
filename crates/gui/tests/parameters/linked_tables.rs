@@ -99,7 +99,7 @@ impl LinkedTableWidgetFixture {
         let mut actions = Vec::new();
         crate::widget_abi::window_geometry(ui, [8., 8.], [800., 200.], Condition::Always);
         ui.window("Linked-table button probe").build(|| {
-            let Some(_table) = ui.begin_table("##linked-table-probe", 4) else {
+            let Some(_table) = crate::widget_abi::begin_table(ui, "##linked-table-probe", 4) else {
                 return;
             };
             for label in ["Source", "Linked", "Health", ""] {

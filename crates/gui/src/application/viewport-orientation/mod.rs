@@ -271,6 +271,7 @@ impl OrientationControl {
         let side = placement.side;
         if visibility.cube {
             let _minimum = ui.push_style_var(imgui::StyleVar::WindowMinSize([1., 1.]));
+            let _padding = ui.push_style_var(imgui::StyleVar::WindowPadding([0., 0.]));
             crate::widget_abi::window_geometry(
                 ui,
                 position,

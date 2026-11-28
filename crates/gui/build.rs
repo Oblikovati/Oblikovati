@@ -15,9 +15,11 @@ fn main() -> Result<(), Box<dyn Error>> {
         .define("IMGUI_USE_WCHAR32", None)
         .flag_if_supported("-std=c++11")
         .file("src/widget_abi.cpp")
+        .file("src/widget_control_abi.cpp")
         .file("src/widget_draw_abi.cpp")
         .try_compile("oblikovati_imgui_widgets")?;
     println!("cargo:rerun-if-changed=src/widget_abi.cpp");
+    println!("cargo:rerun-if-changed=src/widget_control_abi.cpp");
     println!("cargo:rerun-if-changed=src/widget_dock_widths.h");
     println!("cargo:rerun-if-changed=src/widget_draw_abi.cpp");
     Ok(())

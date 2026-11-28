@@ -9,7 +9,8 @@ impl ModelStateTable {
         };
         let rows = view.rows.clone().unwrap_or_default();
         let columns = view.columns.clone().unwrap_or_default();
-        let Some(_table) = ui.begin_table_with_sizing(
+        let Some(_table) = crate::widget_abi::begin_table_with_sizing(
+            ui,
             "model-state-grid",
             columns.len() + 2,
             TableFlags::BORDERS | TableFlags::ROW_BG | TableFlags::RESIZABLE,
@@ -39,15 +40,20 @@ impl ModelStateTable {
             }
             ui.table_next_column();
             let _id = ui.push_id(row_key(&row.ref_));
-            ui.small_button(format!("{}##row", index + 1));
+            crate::widget_abi::button(ui, &format!("{}##row", index + 1), [0.; 2]);
             if let Some(action) = menus::row(ui, view, index, None) {
                 row_action = Some(action);
             }
             ui.table_next_column();
             let mut name = row.name.clone();
             let invalid_name = names::invalid(&rows, index);
-            let highlight = invalid_name
-                .then(|| ui.push_style_color(imgui::StyleColor::FrameBg, [0.75, 0.58, 0.12, 1.0]));
+            let highlight = invalid_name.then(|| {
+                crate::widget_abi::push_style_color(
+                    ui,
+                    imgui::StyleColor::FrameBg,
+                    [0.75, 0.58, 0.12, 1.0],
+                )
+            });
             let disabled = ui.begin_disabled(index == 0);
             ui.set_next_item_width(140.);
             if ui.input_text("##member-name", &mut name).build()

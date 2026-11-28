@@ -6,10 +6,25 @@ use oblikovati_api::wire::{ParameterDetail, ParameterInfo};
 #[path = "../../../../test-utilities/rust/drawn_text.rs"]
 mod drawn_text;
 
-// This test uses a fixed 1024×768, unit-scale frame on both widget platforms.
-const NAME_FIELD: [f32; 2] = [295., 200.];
-const EQUATION_FIELD: [f32; 2] = [440., 200.];
-const ADD_BUTTON: [f32; 2] = [535., 200.];
+fn creation_controls() -> ([f32; 2], [f32; 2], [f32; 2]) {
+    let frame = drawn_text::rendered_frame();
+    let add_button = frame
+        .runs
+        .iter()
+        .filter(|run| run.text.trim() == "Add")
+        .max_by(|a, b| a.center()[0].total_cmp(&b.center()[0]))
+        .expect("expected the Add submit button in the parameter creation row");
+    let row_y = add_button.center()[1];
+    let kind_run = frame
+        .runs
+        .iter()
+        .filter(|run| run.text.trim() == "Numeric" && (run.center()[1] - row_y).abs() < 12.)
+        .min_by(|a, b| a.center()[0].total_cmp(&b.center()[0]))
+        .expect("expected the Numeric kind selector on the parameter creation row");
+    let name_x = kind_run.minimum[0] + 120. + 40.;
+    let equation_x = name_x + 148.;
+    ([name_x, row_y], [equation_x, row_y], add_button.center())
+}
 
 fn parameter_request() -> GuiFrameRequest {
     GuiFrameRequest {
@@ -194,9 +209,10 @@ pub(crate) fn exercise_parameter_journey(mut engine: GuiFrameEngine, mac_osx: bo
         .set_parameter_snapshot(Some(parameter_snapshot(1, Vec::new())))
         .unwrap();
     deliver(&mut engine, &mut request, Vec::new());
-    type_at(&mut engine, &mut request, NAME_FIELD, "size");
-    type_at(&mut engine, &mut request, EQUATION_FIELD, "10 mm");
-    let created = click_parameter(&mut engine, &mut request, ADD_BUTTON);
+    let (name_field, equation_field, add_button) = creation_controls();
+    type_at(&mut engine, &mut request, name_field, "size");
+    type_at(&mut engine, &mut request, equation_field, "10 mm");
+    let created = click_parameter(&mut engine, &mut request, add_button);
     let [GuiParameterAction::Add(creation)] = created.as_slice() else {
         panic!("expected one creation, got {created:?}")
     };
@@ -223,7 +239,7 @@ pub(crate) fn exercise_parameter_journey(mut engine: GuiFrameEngine, mac_osx: bo
     request.commands.document = Some(2);
     deliver(&mut engine, &mut request, Vec::new());
     open_parameters(&mut engine, &mut request);
-    assert!(click(&mut engine, &mut request, ADD_BUTTON).is_empty());
+    assert!(click(&mut engine, &mut request, add_button).is_empty());
 }
 
 fn open_parameters(engine: &mut GuiFrameEngine, request: &mut GuiFrameRequest) {

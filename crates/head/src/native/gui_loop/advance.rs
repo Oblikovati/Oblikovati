@@ -3,8 +3,15 @@
 use super::*;
 
 impl NativeGui {
+    pub(in crate::native) fn clear_document_area(&mut self) {
+        self.document_area = None;
+    }
     pub(in crate::native) fn home_in_front(&self) -> bool {
         self.engine.home_in_front()
+    }
+    pub(in crate::native) fn request_revolve(&mut self) {
+        self.engine.request_revolve();
+        self.deadline = Some(Duration::ZERO);
     }
 }
 
@@ -22,6 +29,34 @@ impl NativeGui {
 }
 
 impl NativeHeadWindow {
+    pub(in crate::native) fn finish_native_window(&mut self) -> Result<(), String> {
+        let profile_error = match (&mut self.gui, &self.ribbon_settings_directory) {
+            (Some(gui), Some(directory)) => gui.save_profile(directory).err(),
+            _ => None,
+        };
+        self.drawing_windows.close();
+        self.gui.take();
+        #[cfg(target_os = "windows")]
+        self.accessibility.take();
+        self.capture_requests.clear();
+        #[cfg(target_os = "linux")]
+        let clipboard = self.clipboard.handoff_on_shutdown();
+        self.view.close();
+        let mut errors = if self.validate_vulkan {
+            self.runtime.validation_errors()?
+        } else {
+            Vec::new()
+        };
+        #[cfg(target_os = "linux")]
+        errors.extend(clipboard.err());
+        errors.extend(profile_error);
+        if errors.is_empty() {
+            return Ok(());
+        }
+        Err(format!(
+            "head shutdown {errors:?}: expected saved workspace settings, completed clipboard retirement, and no renderer errors"
+        ))
+    }
     pub(in crate::native) fn advance_native_gui(
         &mut self,
         event: Option<&ViewportEvent>,

@@ -193,7 +193,10 @@ fn model_state_rows_follow_document_and_double_click_activates_member() {
     world.pump(Vec::new());
     world.expect_text("Variant##1 (Active)");
     assert!(
-        (world.run("<Variant##1>").center()[1] - world.run("Model State").center()[1]).abs() < 3.
+        (world.run_in_window("Model", "<Variant##1>").center()[1]
+            - world.run_in_window("Model", "ModelState").center()[1])
+            .abs()
+            < 3.
     );
     let state = world.app().owner.gui_command_state().unwrap();
     let states = state.browser.unwrap().model_states.unwrap();
@@ -278,8 +281,8 @@ fn created_model_state_name_can_be_edited_or_cancelled() {
             .iter()
             .filter(|run| run.text.contains("Part1") && run.text.contains("Large"))
             .count(),
-        2,
-        "expected the browser root and document tab to show the member"
+        3,
+        "expected the browser root, document tab, and title bar to show the member"
     );
     assert_eq!(
         world.app().window.native.document_title.as_deref(),

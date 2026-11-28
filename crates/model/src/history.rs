@@ -6,7 +6,13 @@ use crate::{
     property::DocumentProperties,
 };
 mod checkpoints;
+mod coil_create;
+mod decal_create;
+mod derived_part_create;
+mod emboss_create;
 mod evaluation;
+mod import_create;
+mod rib_create;
 pub use evaluation::{
     EvaluationScope, EvaluationTransition, HistoryEvaluationSnapshot, PartCandidateGuard,
 };
@@ -21,6 +27,7 @@ mod loft_create;
 mod move_body_create;
 mod occurrence_ids;
 mod prism_create;
+mod revolve_create;
 mod scalar_ownership;
 mod shell_create;
 mod sketch_block_create;
@@ -463,27 +470,21 @@ impl DocumentEditHistory {
     }
 }
 
-#[cfg(test)]
-mod tests;
-
 mod metadata_recipe;
 mod model_state_ids;
 mod model_state_parameter_validation;
 mod model_state_suppression;
-
-mod sketch_split;
-
 mod sketch_endpoint;
-
 mod sketch_polyline;
+mod sketch_split;
 mod sketch_text;
+#[cfg(test)]
+mod tests;
 pub use sketch_polyline::{SketchPolylineCreation, SketchPolylineCreationReport};
-
 mod sketch_polygon;
 pub use sketch_polygon::{
     SketchPolygonCreation, SketchPolygonCreationError, SketchPolygonCreationReport,
 };
-
 mod sketch_slot;
 pub use sketch_slot::{SketchSlotCreation, SketchSlotCreationReport};
 mod sketch_placement_recipe;
@@ -491,7 +492,6 @@ pub use sketch_placement_recipe::{
     SketchPlacementContext, SketchPlacementCreationError, SketchPlacementCreationReport,
     SketchPlacementFieldLock,
 };
-
 mod conditional_projection;
 pub use conditional_projection::{
     ConditionalFrameSource, ConditionalOriginProjection, ConditionalPointDisplacement,

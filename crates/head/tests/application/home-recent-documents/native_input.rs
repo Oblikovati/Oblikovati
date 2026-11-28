@@ -96,7 +96,7 @@ fn home_recent_visible_size_heading_reverses_order_with_x11_input() {
     assert!(super::super::diagnostics::window_dock_id("Material Browser").is_none());
     assert!(super::super::diagnostics::window_dock_id("Appearance Browser").is_none());
     click_recent_control(&mut world, "Size");
-    wait_for_home_label(&mut world, "Size v", true);
+    wait_for_home_label(&mut world, "Size ▾", true);
     let descending: Vec<u64> = rows_by_size(&mut world)
         .into_iter()
         .map(|(_, size)| size)
@@ -107,8 +107,8 @@ fn home_recent_visible_size_heading_reverses_order_with_x11_input() {
         descending.first() > descending.last(),
         "expected different sizes"
     );
-    click_recent_control(&mut world, "Size v");
-    wait_for_home_label(&mut world, "Size ^", true);
+    click_recent_control(&mut world, "Size ▾");
+    wait_for_home_label(&mut world, "Size ▴", true);
     let ascending = rows_by_size(&mut world).into_iter().map(|(_, size)| size);
     assert!(ascending.eq(descending.into_iter().rev()));
     world.save_capture("x11-home-size-ascending");

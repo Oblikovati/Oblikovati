@@ -78,12 +78,12 @@ impl LinkPicker {
         }
         ui.separator();
         let _disabled = ui.begin_disabled(self.request.pending.is_some() || self.source.is_none());
-        if ui.button("Link") {
+        if crate::widget_abi::button(ui, "Link", [0.; 2]) {
             self.enqueue(snapshot, actions);
         }
         drop(_disabled);
         ui.same_line();
-        if ui.button("Cancel") {
+        if crate::widget_abi::button(ui, "Cancel", [0.; 2]) {
             self.close();
         }
         if let Some(issue) = &self.request.issue {
@@ -105,11 +105,12 @@ impl LinkPicker {
             return;
         };
         for source in &snapshot.link_sources {
-            if ui
-                .selectable_config(&source.display_name)
-                .selected(self.source == Some(source.document))
-                .build()
-                && self.source != Some(source.document)
+            if crate::widget_abi::selectable(
+                ui,
+                &source.display_name,
+                self.source == Some(source.document),
+                false,
+            ) && self.source != Some(source.document)
             {
                 self.source = Some(source.document);
                 self.checked.clear();
@@ -172,7 +173,8 @@ pub(super) fn draw_linked_tables(
     } else {
         let height =
             ui.frame_height_with_spacing() * (snapshot.linked_tables.len().min(8) + 1) as f32;
-        if let Some(_table) = ui.begin_table_with_sizing(
+        if let Some(_table) = crate::widget_abi::begin_table_with_sizing(
+            ui,
             "##linked-tables",
             4,
             TableFlags::BORDERS | TableFlags::ROW_BG | TableFlags::SCROLL_Y,
@@ -189,7 +191,7 @@ pub(super) fn draw_linked_tables(
             }
         }
     }
-    if ui.button("Link...") {
+    if crate::widget_abi::button(ui, "Link...", [0.; 2]) {
         picker.open();
     }
 }
@@ -208,7 +210,7 @@ fn draw_linked_table_row(
     ui.table_next_column();
     ui.text(linked_health_label(&table.health));
     ui.table_next_column();
-    if ui.button("Delete") {
+    if crate::widget_abi::button(ui, "Delete", [0.; 2]) {
         actions.push(GuiParameterAction::DeleteLinkedTable {
             document,
             table: table.id,

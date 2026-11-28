@@ -29,6 +29,24 @@ pub(super) fn check(
     }
     Ok(after)
 }
+pub(super) fn check_budget(
+    source: &Shape,
+    result: &Shape,
+    resolution: Option<PrismResolution>,
+    operation: &str,
+) -> Result<PrismAchievedTolerance, String> {
+    let resolution = resolution
+        .ok_or_else(|| format!("{operation} input: expected a certified source resolution"))?
+        .validate()?;
+    require_budget(
+        measure(source, operation)?,
+        resolution.maximum_tolerance,
+        operation,
+    )?;
+    let achieved = measure(result, operation)?;
+    require_budget(achieved, resolution.maximum_tolerance, operation)?;
+    Ok(achieved)
+}
 pub(super) fn check_boolean<'a>(
     target: &Shape,
     tools: impl Iterator<Item = (&'a Shape, PrismResolution)>,

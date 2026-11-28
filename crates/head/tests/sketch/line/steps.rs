@@ -73,6 +73,8 @@ fn line_two_points(world: &mut ApplicationWorld) {
     for point in SEGMENT {
         world.sketch_click(point);
     }
+    world.hover([SEGMENT[1][0], SEGMENT[1][1] - 80]);
+    world.pump(Vec::new());
 }
 #[then("one segment joins the points and the command offers a connected next segment")]
 fn one_segment_and_next(world: &mut ApplicationWorld) {

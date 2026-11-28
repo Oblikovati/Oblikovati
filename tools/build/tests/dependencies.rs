@@ -33,7 +33,7 @@ fn renderer_pin_rejects_local_and_changed_sources() {
 
 #[test]
 fn previous_martensite_release_is_refused_for_renderer_and_sketch_packages() {
-    let previous = "d463526642b7bf950ba33c7ab4a4c9bc97caffaf";
+    let previous = "db01546bb032659682715c6120e628b95fe5773d";
     for name in ["martensite-vulkan", "martensite-tkg2d"] {
         let package = LockedPackage {
             name: name.into(),
@@ -44,7 +44,7 @@ fn previous_martensite_release_is_refused_for_renderer_and_sketch_packages() {
         };
         let cause = verify_renderer_package(&package).unwrap_err();
         assert!(cause.contains(name));
-        assert!(cause.contains("db01546bb032659682715c6120e628b95fe5773d"));
+        assert!(cause.contains("137fc0e2394aa4c8d61f8c27cb9be373c1b46f30"));
     }
 }
 
@@ -55,8 +55,8 @@ fn application_lock_consumes_the_pinned_kernel_modeling_release() {
     tree.put("Cargo.lock", include_str!("../../../Cargo.lock"));
     let pin = crate::release_config::load(tree.root()).unwrap().kernel;
     let names = locked_crates(&tree.root().join("Cargo.lock"), &pin).unwrap();
-    assert_eq!(pin.version, "0.15.0");
-    assert_eq!(pin.revision, "db01546bb032659682715c6120e628b95fe5773d");
+    assert_eq!(pin.version, "0.16.0");
+    assert_eq!(pin.revision, "137fc0e2394aa4c8d61f8c27cb9be373c1b46f30");
     for name in [
         "martensite-tkprim",
         "martensite-tkbrep",

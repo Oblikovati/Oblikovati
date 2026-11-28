@@ -42,7 +42,7 @@ fn cards_descending(world: &mut ApplicationWorld) {
 #[when("the user activates the sort direction control")]
 #[when("I activate the sort direction control")]
 fn sort_direction(world: &mut ApplicationWorld) {
-    click_home(world, "v");
+    click_home(world, "▾");
 }
 #[then("the visible cards are ordered by name in ascending order")]
 #[then("the visible rows are ordered by name in ascending order")]

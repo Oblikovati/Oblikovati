@@ -5,7 +5,8 @@ use crate::GuiFrameRequest;
 use std::collections::HashMap;
 
 const CELL: f32 = 64.;
-const GAP: f32 = 4.;
+const GAP: f32 = 6.;
+const WITNESS_CLEARANCE: f32 = 7.;
 const MAX_CANDIDATES: usize = 256;
 const MAX_INDEX_CELLS: i64 = 64;
 
@@ -164,11 +165,17 @@ fn layout_label(
     let preferred = label.line.map_or(local_anchor, |[from, to]| {
         let dx = (to[0] as f64 - from[0] as f64) as f32 / scale[0];
         let dy = (to[1] as f64 - from[1] as f64) as f32 / scale[1];
-        // Prefer the right of a vertical measure and above a horizontal measure.
+        // Prefer >= 6px clearance right of a vertical measure and above a horizontal measure.
         if dy.abs() > dx.abs() {
-            [local_anchor[0] + size[0] / 2. + 4., local_anchor[1]]
+            [
+                local_anchor[0] + size[0] / 2. + WITNESS_CLEARANCE,
+                local_anchor[1],
+            ]
         } else {
-            [local_anchor[0], local_anchor[1] - size[1] / 2. - 4.]
+            [
+                local_anchor[0],
+                local_anchor[1] - size[1] / 2. - WITNESS_CLEARANCE,
+            ]
         }
     });
     let local_center = choose_center(preferred, collision_size, area, occupancy);

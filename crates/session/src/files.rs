@@ -12,6 +12,7 @@ pub use batch::BatchSaveError;
 mod copy;
 mod create;
 mod derived_edit;
+mod derived_part_sources;
 mod discovery;
 mod document_references;
 mod error;
@@ -364,10 +365,22 @@ fn checked_path(
         requested: requested.into(),
         cause,
     })?;
-    if !canonical.is_absolute() {
+    if !is_canonical_absolute(&canonical) {
         return Err(FileWorkspaceError::RelativeCanonical(canonical));
     }
     Ok(canonical)
+}
+
+fn is_canonical_absolute(path: &Path) -> bool {
+    // Rust's std::sys::path::unsupported on wasm32-unknown-unknown always reports false for Path::is_absolute.
+    #[cfg(target_arch = "wasm32")]
+    {
+        path.to_str().is_some_and(|text| text.starts_with('/'))
+    }
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        path.is_absolute()
+    }
 }
 
 fn bound_target<'a, F: DocumentFiles>(

@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use oblikovati_gui::*;
+#[allow(dead_code, unsafe_code)]
+#[path = "../../../test-utilities/rust/drawn_text.rs"]
+mod drawn_text;
 #[path = "support/view_tab.rs"]
 mod view_tab;
 use oblikovati_model::theme::ThemeLibrary;
@@ -75,7 +78,34 @@ fn modal_dim_alpha(output: &GuiFrameOutput) -> u8 {
         .max()
         .unwrap_or(0)
 }
-fn control_click(engine: &mut GuiFrameEngine, request: &mut GuiFrameRequest, y: f32) {
+fn find_label(label: &str) -> drawn_text::RenderedRun {
+    let frame = drawn_text::rendered_frame();
+    frame
+        .runs
+        .into_iter()
+        .find(|run| run.text == label)
+        .unwrap_or_else(|| panic!("expected rendered label {label:?}"))
+}
+fn click_label(
+    engine: &mut GuiFrameEngine,
+    request: &mut GuiFrameRequest,
+    label: &str,
+) -> Vec<GuiShellAction> {
+    let center = find_label(label).center();
+    click(engine, request, center)
+}
+fn control_click_red_channel(
+    engine: &mut GuiFrameEngine,
+    request: &mut GuiFrameRequest,
+    row_label: &str,
+) {
+    let row = find_label(row_label);
+    let y = row.center()[1];
+    let red = drawn_text::rendered_frame()
+        .runs
+        .into_iter()
+        .find(|run| run.text.starts_with("R:") && (run.center()[1] - y).abs() < 8.)
+        .unwrap_or_else(|| panic!("expected R: input beside {row_label:?}"));
     deliver(
         engine,
         request,
@@ -84,7 +114,7 @@ fn control_click(engine: &mut GuiFrameEngine, request: &mut GuiFrameRequest, y: 
             ..Default::default()
         })],
     );
-    assert!(click(engine, request, [480., y]).is_empty());
+    assert!(click(engine, request, red.center()).is_empty());
     deliver(
         engine,
         request,
@@ -101,7 +131,7 @@ fn editor_previews_custom_colours_emits_save_and_keeps_builtin_controls_read_onl
     engine.frame(&request).unwrap();
     engine.frame(&request).unwrap();
     view_tab::select_view_tab(&mut engine, &mut request);
-    assert!(click(&mut engine, &mut request, [440., 91.]).is_empty());
+    assert!(click_label(&mut engine, &mut request, "EditTheme").is_empty());
     let opened = settle(&mut engine, &mut request);
     assert_eq!(
         modal_dim_alpha(&opened),
@@ -112,12 +142,12 @@ fn editor_previews_custom_colours_emits_save_and_keeps_builtin_controls_read_onl
     set_document_presence(&mut request, false);
     deliver(&mut engine, &mut request, Vec::new());
     assert_eq!(
-        click(&mut engine, &mut request, [490., 196.]),
+        click_label(&mut engine, &mut request, "Savetheme"),
         [GuiShellAction::SaveTheme {
             name: "Workshop".into()
         }]
     );
-    assert!(click(&mut engine, &mut request, [590., 196.]).is_empty());
+    assert!(click_label(&mut engine, &mut request, "Close").is_empty());
     assert_eq!(modal_dim_alpha(&settle(&mut engine, &mut request)), 0);
     set_document_presence(&mut request, true);
     settle(&mut engine, &mut request);
@@ -131,7 +161,7 @@ fn verify_custom_edit(
     request: &mut GuiFrameRequest,
     library: &mut ThemeLibrary,
 ) {
-    control_click(engine, request, 282.);
+    control_click_red_channel(engine, request, "Windowbackground");
     let output = deliver(engine, request, vec![GuiInputEvent::Text("80".into())]);
     let [GuiShellAction::EditThemeColor { name, token, value }] = output.actions.as_slice() else {
         panic!("expected one custom colour edit, got {:?}", output.actions);
@@ -169,16 +199,16 @@ fn verify_builtin_read_only(
     request.commands.theme =
         Some(GuiThemeState::from_library(library).with_custom_save_available(true));
     deliver(engine, request, Vec::new());
-    assert!(click(engine, request, [440., 91.]).is_empty());
+    assert!(click_label(engine, request, "EditTheme").is_empty());
     settle(engine, request);
-    control_click(engine, request, 299.);
+    control_click_red_channel(engine, request, "Windowbackground");
     assert!(
         deliver(engine, request, vec![GuiInputEvent::Text("80".into())])
             .actions
             .is_empty()
     );
-    assert!(click(engine, request, [490., 196.]).is_empty());
-    assert!(click(engine, request, [590., 196.]).is_empty());
+    assert!(click_label(engine, request, "Savetheme").is_empty());
+    assert!(click_label(engine, request, "Close").is_empty());
     settle(engine, request);
 }
 
@@ -196,7 +226,7 @@ fn verify_editor_retires_with_its_theme_owner(
     engine: &mut GuiFrameEngine,
     request: &mut GuiFrameRequest,
 ) {
-    assert!(click(engine, request, [440., 91.]).is_empty());
+    assert!(click_label(engine, request, "EditTheme").is_empty());
     request.commands.theme = None;
     // Without a theme the panels shift, and a button can move under the launcher's old position:
     // a hovered button is rightly not idle, so the pointer leaves first.
@@ -213,20 +243,28 @@ fn verify_lifecycle_controls(
     request: &mut GuiFrameRequest,
     library: &mut ThemeLibrary,
 ) {
-    assert!(click(engine, request, [440., 91.]).is_empty());
+    assert!(click_label(engine, request, "EditTheme").is_empty());
     settle(engine, request);
     assert!(
-        click(engine, request, [670., 196.]).is_empty(),
+        click_label(engine, request, "Delete").is_empty(),
         "built-in Delete must be disabled"
     );
-    assert!(click(engine, request, [550., 222.]).is_empty());
+    let new_name = find_label("Newname");
+    assert!(
+        click(
+            engine,
+            request,
+            [new_name.maximum[0] + 40., new_name.center()[1]]
+        )
+        .is_empty()
+    );
     deliver(
         engine,
         request,
         vec![GuiInputEvent::Text("My Theme".into())],
     );
     assert_eq!(
-        click(engine, request, [790., 222.]),
+        click_label(engine, request, "Duplicate"),
         [GuiShellAction::DuplicateTheme {
             base: "Dark".into(),
             name: "My Theme".into()
@@ -236,7 +274,7 @@ fn verify_lifecycle_controls(
     request.commands.theme = Some(GuiThemeState::from_library(library));
     deliver(engine, request, Vec::new());
     assert_eq!(
-        click(engine, request, [670., 196.]),
+        click_label(engine, request, "Delete"),
         [GuiShellAction::DeleteTheme {
             name: "My Theme".into()
         }]
@@ -244,6 +282,6 @@ fn verify_lifecycle_controls(
     library.remove("My Theme").unwrap();
     request.commands.theme = Some(GuiThemeState::from_library(library));
     deliver(engine, request, Vec::new());
-    assert!(click(engine, request, [590., 196.]).is_empty());
+    assert!(click_label(engine, request, "Close").is_empty());
     settle(engine, request);
 }

@@ -86,7 +86,6 @@ fn measure_position(world: &mut ApplicationWorld, at: [f64; 2]) -> String {
     rows
 }
 // rectangle-center-01
-#[when("I select Two Point Center Rectangle, choose a center, then a corner outside the input HUD")]
 #[when(
     "the user select Two Point Center Rectangle, choose a center, then a corner outside the input HUD"
 )]
@@ -215,8 +214,8 @@ fn ready_with_rectangle(world: &mut ApplicationWorld) {
 }
 #[when("I start Two Point Center Rectangle and select center at a chosen location")]
 #[when("the user start Two Point Center Rectangle and select center at a chosen location")]
-#[when("I choose Two Point Center Rectangle and select the fixture center")]
-#[when("I start a fresh Two Point Center Rectangle and select the fixture center")]
+#[when("the user choose Two Point Center Rectangle and select the fixture center")]
+#[when("the user start a fresh Two Point Center Rectangle and select the fixture center")]
 #[when("I start Two Point Center Rectangle and select the fixture center")]
 #[when("the user start Two Point Center Rectangle and select the fixture center")]
 fn start_and_center(world: &mut ApplicationWorld) {
@@ -333,7 +332,7 @@ fn ready_returns(world: &mut ApplicationWorld) {
 fn recorded_six_four(world: &mut ApplicationWorld) {
     recorded_rectangle(world, "6", "4");
 }
-#[when("I measure the center and both opposite corners")]
+#[when("the user measure the center and both opposite corners")]
 fn measure_three(world: &mut ApplicationWorld) {
     let in_cm = |value: [f64; 2]| value.map(|part| part / 10.);
     let center = in_cm(RECORDED_CENTER);
@@ -419,7 +418,7 @@ fn earlier_center(world: &mut ApplicationWorld) {
     let shown = format!("{:.3} {:.3}", center[0] * 10., center[1] * 10.);
     assert_eq!(shown, "-17.513 4.675", "center");
 }
-#[when("I enter 8, press Return and exit General Dimension")]
+#[when("the user enter 8, press Return and exit General Dimension")]
 fn accept_eight(world: &mut ApplicationWorld) {
     world.type_text("8");
     world.key(ViewportPhysicalKey::Enter, false);
@@ -434,7 +433,7 @@ fn moved_up(world: &mut ApplicationWorld) {
     let now = world.sketch_pixel_of(center);
     assert!(now[1] < before[1], "center pixel {now:?} from {before:?}");
 }
-#[when("I open Measure and select the center point")]
+#[when("the user open Measure and select the center point")]
 fn measure_center(world: &mut ApplicationWorld) {
     world.key(ViewportPhysicalKey::M, false);
     let center = center_position(world);
@@ -446,7 +445,7 @@ fn moved_center(world: &mut ApplicationWorld) {
     world.expect_measure("Selection 1: Point");
     world.expect_measure("Position X 0.000 Y -16.513 Z 4.675 mm");
 }
-#[when("I clear the selection and select the vertical edge")]
+#[when("the user clear the selection and select the vertical edge")]
 fn select_vertical(world: &mut ApplicationWorld) {
     world.sketch_click([420, 300]);
     let at = world.line_point(0, 0.3);
@@ -485,3 +484,5 @@ fn marker_moves(world: &mut ApplicationWorld) {
     assert_eq!(shown, "-16.513", "center along the height");
     world.expect_annotation("4");
 }
+#[path = "recorded_steps.rs"]
+mod recorded_steps;

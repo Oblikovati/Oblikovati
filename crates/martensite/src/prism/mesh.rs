@@ -4,16 +4,24 @@ use martensite_tkbrep::{brep::BRepTool, topods::Shape};
 use martensite_tkg3d::top_abs::Orientation;
 use martensite_tkmath::poly::{Triangulation, mesh_purpose};
 use martensite_tkmesh::brep_mesh::{BRepMeshDiscretRoot, BRepMeshIncrementalMesh};
+use martensite_tktopalgo::brep_lib::BRepLibToolTriangulatedShape;
 /// Absolute display approximation limits in working units and radians; these are not modeling tolerances.
 #[derive(Clone, Copy, Debug)]
 pub struct PrismMeshOptions {
     pub chord_error: f64,
     pub angular_error: f64,
 }
+/// One oriented display triangle with optional analytical per-vertex unit normals.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct DisplayTriangle {
+    pub positions: [[f64; 3]; 3],
+    pub normals: Option<[[f64; 3]; 3]>,
+}
 #[derive(Clone, Debug, PartialEq)]
 pub struct PrismFaceMesh {
     pub role: PrismFaceRole,
     pub triangles: Vec<[[f64; 3]; 3]>,
+    pub normals: Vec<[[f64; 3]; 3]>,
 }
 impl PrismFaceMesh {
     /// The face's outline, for display: facet sides only one of this face's facets uses.
@@ -94,23 +102,40 @@ fn validate_options(options: PrismMeshOptions) -> Result<(), String> {
     Ok(())
 }
 fn face_mesh(role: PrismFaceRole, shape: &Shape) -> Result<PrismFaceMesh, String> {
-    let triangles = face_triangles(shape, &format!("prism {role:?}"))?;
-    Ok(PrismFaceMesh { role, triangles })
+    let shaded = face_display_triangles(shape, &format!("prism {role:?}"))?;
+    let triangles = shaded.iter().map(|tri| tri.positions).collect();
+    let normals = shaded
+        .iter()
+        .map(|tri| {
+            tri.normals
+                .unwrap_or_else(|| [flat_unit_normal(tri.positions); 3])
+        })
+        .collect();
+    Ok(PrismFaceMesh {
+        role,
+        triangles,
+        normals,
+    })
 }
-fn face_triangles(shape: &Shape, context: &str) -> Result<Vec<[[f64; 3]; 3]>, String> {
+fn face_display_triangles(shape: &Shape, context: &str) -> Result<Vec<DisplayTriangle>, String> {
     let face = martensite_tkbrep::topods::face(shape)
         .map_err(|error| format!("{context}: expected a face: {error}"))?;
-    let (mesh, location) =
+    let (mesh_handle, location) =
         BRepTool::triangulation(&face, mesh_purpose::NONE).map_err(|error| error.to_string())?;
-    let mesh = mesh
+    if mesh_handle.get().is_none() {
+        return Err(format!("{context}: expected a kernel face triangulation"));
+    }
+    BRepLibToolTriangulatedShape::compute_normals(&face, &mesh_handle)
+        .map_err(|error| format!("{context}: expected face triangulation normals: {error}"))?;
+    let mesh = mesh_handle
         .get()
         .ok_or_else(|| format!("{context}: expected a kernel face triangulation"))?;
     require_face_mesh(mesh, context)?;
-    let mut triangles = Vec::new();
+    let transform = location.transformation();
+    let orientation = shape.orientation();
+    let mut triangles = Vec::with_capacity(mesh.nb_triangles() as usize);
     for index in 1..=mesh.nb_triangles() {
-        let positions =
-            triangle_positions(mesh, index, shape.orientation(), location.transformation())?;
-        triangles.push(positions);
+        triangles.push(triangle_with_normals(mesh, index, orientation, transform)?);
     }
     Ok(triangles)
 }
@@ -128,6 +153,16 @@ pub(super) fn body_face_triangles(
     source: &Shape,
     options: PrismMeshOptions,
 ) -> Result<Vec<Vec<[[f64; 3]; 3]>>, String> {
+    Ok(body_face_display_triangles(source, options)?
+        .into_iter()
+        .map(|face| face.into_iter().map(|tri| tri.positions).collect())
+        .collect())
+}
+
+pub(super) fn body_face_display_triangles(
+    source: &Shape,
+    options: PrismMeshOptions,
+) -> Result<Vec<Vec<DisplayTriangle>>, String> {
     use martensite_tkbrep::{topexp, toptools::IndexedMapOfShape};
     use martensite_tkg3d::top_abs::ShapeEnum;
     validate_options(options)?;
@@ -141,7 +176,7 @@ pub(super) fn body_face_triangles(
     let mut triangles = Vec::new();
     for index in 1..=faces.extent() {
         let face = faces.find_key(index).map_err(|cause| cause.to_string())?;
-        triangles.push(face_triangles(face, "display body face")?);
+        triangles.push(face_display_triangles(face, "display body face")?);
     }
     if triangles.is_empty() {
         return Err("display body triangles 0: expected a nonempty solid mesh".into());
@@ -154,18 +189,21 @@ pub(super) fn named_face_boundaries(
     faces: &[Shape],
     options: PrismMeshOptions,
 ) -> Result<Vec<[[f64; 3]; 2]>, String> {
-    Ok(named_face_triangles(body, faces, options, false)?
+    Ok(named_face_display_triangles(body, faces, options, false)?
         .iter()
-        .flat_map(|triangles| boundary_segments(triangles))
+        .flat_map(|triangles| {
+            let positions: Vec<[[f64; 3]; 3]> = triangles.iter().map(|t| t.positions).collect();
+            boundary_segments(&positions)
+        })
         .collect())
 }
 
-pub(super) fn named_face_triangles(
+pub(super) fn named_face_display_triangles(
     body: &Shape,
     faces: &[Shape],
     options: PrismMeshOptions,
     complete: bool,
-) -> Result<Vec<Vec<[[f64; 3]; 3]>>, String> {
+) -> Result<Vec<Vec<DisplayTriangle>>, String> {
     validate_options(options)?;
     let mut copier = crate::checked_shape::copy_shape(body, "named face display")
         .map_err(|cause| cause.to_string())?;
@@ -200,26 +238,71 @@ pub(super) fn named_face_triangles(
                 "named display face {index}: expected a unique face identity"
             ));
         }
-        result.push(face_triangles(&face, "named display face")?);
+        result.push(face_display_triangles(&face, "named display face")?);
     }
     Ok(result)
 }
-fn triangle_positions(
+fn triangle_with_normals(
     mesh: &Triangulation,
     index: i32,
     orientation: Orientation,
     transform: martensite_tkmath::gp::Transform3,
-) -> Result<[[f64; 3]; 3], String> {
+) -> Result<DisplayTriangle, String> {
     let (a, b, c) = mesh
         .triangle(index)
         .map_err(|error| error.to_string())?
         .get();
     let indices = oriented_indices([a, b, c], orientation)?;
-    let mut vertices = [[0.; 3]; 3];
-    for (vertex, index) in vertices.iter_mut().zip(indices) {
-        *vertex = transformed_node(mesh, index, transform)?;
+    let mut positions = [[0.; 3]; 3];
+    for (vertex, node) in positions.iter_mut().zip(indices) {
+        *vertex = transformed_node(mesh, node, transform)?;
     }
-    Ok(vertices)
+    let reversed = orientation == Orientation::Reversed;
+    let normals = triangle_normals(mesh, indices, reversed, transform, positions);
+    Ok(DisplayTriangle {
+        positions,
+        normals: Some(normals),
+    })
+}
+fn triangle_normals(
+    mesh: &Triangulation,
+    indices: [i32; 3],
+    reversed: bool,
+    transform: martensite_tkmath::gp::Transform3,
+    positions: [[f64; 3]; 3],
+) -> [[f64; 3]; 3] {
+    let fallback = flat_unit_normal(positions);
+    indices.map(|node| transformed_normal(mesh, node, reversed, transform).unwrap_or(fallback))
+}
+fn transformed_normal(
+    mesh: &Triangulation,
+    index: i32,
+    reversed: bool,
+    transform: martensite_tkmath::gp::Transform3,
+) -> Option<[f64; 3]> {
+    let mut direction = mesh.normal(index).ok()?;
+    if reversed {
+        direction.reverse();
+    }
+    let direction = direction.transformed(transform);
+    let normal = [direction.x(), direction.y(), direction.z()];
+    let length = (normal[0] * normal[0] + normal[1] * normal[1] + normal[2] * normal[2]).sqrt();
+    (length.is_finite() && length > 1e-12).then(|| normal.map(|v| v / length))
+}
+fn flat_unit_normal([a, b, c]: [[f64; 3]; 3]) -> [f64; 3] {
+    let u = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
+    let v = [c[0] - a[0], c[1] - a[1], c[2] - a[2]];
+    let n = [
+        u[1] * v[2] - u[2] * v[1],
+        u[2] * v[0] - u[0] * v[2],
+        u[0] * v[1] - u[1] * v[0],
+    ];
+    let length = (n[0] * n[0] + n[1] * n[1] + n[2] * n[2]).sqrt();
+    if length.is_finite() && length > 1e-12 {
+        n.map(|value| value / length)
+    } else {
+        [0., 0., 1.]
+    }
 }
 
 pub(super) fn oriented_indices(
@@ -264,6 +347,7 @@ mod boundary_tests {
         let face = PrismFaceMesh {
             role: PrismFaceRole::Start,
             triangles: vec![[a, b, c], [a, c, d]],
+            normals: Vec::new(),
         };
         let outline = face.boundary_segments();
         assert_eq!(outline.len(), 4, "{outline:?}");

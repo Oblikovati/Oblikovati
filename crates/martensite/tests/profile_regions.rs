@@ -255,15 +255,30 @@ fn exact_seed_state(
     .state())
 }
 fn region_surface_properties(shape: &Shape) -> Result<GProps, Failure> {
-    let mut props = GProps::default();
+    use martensite_tktopalgo::brep_gprop::{
+        SurfaceErrorEvidence, SurfaceIntegration, SurfacePropertyOptions,
+    };
     // tol:oracle relative integration, stricter than the retained 1e-8 metric comparisons.
     let requested = 1e-12;
-    let achieved = BRepGProp::surface_properties_eps(shape, &mut props, requested, false)?;
-    assert!(
-        achieved.is_finite() && achieved <= requested,
-        "surface integration error {achieved}: expected <= {requested}"
-    );
-    Ok(props)
+    let result = BRepGProp::surface_properties_with_options(
+        shape,
+        SurfacePropertyOptions {
+            integration: SurfaceIntegration::AdaptiveEstimate {
+                requested_relative_target: requested,
+            },
+            ..Default::default()
+        },
+    )?;
+    match result.error_evidence() {
+        SurfaceErrorEvidence::EstimatedRelative {
+            max_face_relative_error,
+        } => assert!(
+            max_face_relative_error.is_finite() && max_face_relative_error <= requested,
+            "surface integration error {max_face_relative_error}: expected <= {requested}"
+        ),
+        other => panic!("expected adaptive surface error evidence, got {other:?}"),
+    }
+    Ok(*result.properties())
 }
 fn classify_region_seed(
     builder: &BuilderFace,

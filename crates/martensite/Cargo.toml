@@ -9,26 +9,29 @@ publish.workspace = true
 autotests = false
 
 [dependencies]
-martensite-tkg2d = { git = "https://github.com/Oblikovati/Martensite", rev = "db01546bb032659682715c6120e628b95fe5773d", version = "=0.4.1" }
-martensite-tkgeomalgo = { git = "https://github.com/Oblikovati/Martensite", rev = "db01546bb032659682715c6120e628b95fe5773d", version = "=0.4.1" }
-martensite-tkgeombase = { git = "https://github.com/Oblikovati/Martensite", rev = "db01546bb032659682715c6120e628b95fe5773d", version = "=0.4.1" }
-martensite-tkernel = { git = "https://github.com/Oblikovati/Martensite", rev = "db01546bb032659682715c6120e628b95fe5773d", version = "=0.5.1" }
-martensite-tkmath = { git = "https://github.com/Oblikovati/Martensite", rev = "db01546bb032659682715c6120e628b95fe5773d", version = "=0.4.1" }
+martensite-tkg2d = { git = "https://github.com/Oblikovati/Martensite", rev = "137fc0e2394aa4c8d61f8c27cb9be373c1b46f30", version = "=0.4.1" }
+martensite-tkgeomalgo = { git = "https://github.com/Oblikovati/Martensite", rev = "137fc0e2394aa4c8d61f8c27cb9be373c1b46f30", version = "=0.4.1" }
+martensite-tkgeombase = { git = "https://github.com/Oblikovati/Martensite", rev = "137fc0e2394aa4c8d61f8c27cb9be373c1b46f30", version = "=0.4.1" }
+martensite-tkernel = { git = "https://github.com/Oblikovati/Martensite", rev = "137fc0e2394aa4c8d61f8c27cb9be373c1b46f30", version = "=0.5.2" }
+martensite-tkmath = { git = "https://github.com/Oblikovati/Martensite", rev = "137fc0e2394aa4c8d61f8c27cb9be373c1b46f30", version = "=0.4.2" }
 oblikovati-api = { git = "https://github.com/Oblikovati/Oblikovati.API.git", rev = "c8200b2da97c9a7dde43afb25debc977ff23b2fd", version = "=0.166.0" }
 oblikovati-solve = { path = "../solve" }
 oblikovati-model = { path = "../model" }
-martensite-tkhlr = { git = "https://github.com/Oblikovati/Martensite", rev = "db01546bb032659682715c6120e628b95fe5773d", version = "=0.4.1" }
-martensite-tkmesh = { git = "https://github.com/Oblikovati/Martensite", rev = "db01546bb032659682715c6120e628b95fe5773d", version = "=0.4.1" }
-martensite-tkg3d = { git = "https://github.com/Oblikovati/Martensite", rev = "db01546bb032659682715c6120e628b95fe5773d", version = "=0.4.1" }
-martensite-tkprim = { git = "https://github.com/Oblikovati/Martensite", rev = "db01546bb032659682715c6120e628b95fe5773d", version = "=0.4.1" }
-martensite-tkbrep = { git = "https://github.com/Oblikovati/Martensite", rev = "db01546bb032659682715c6120e628b95fe5773d", version = "=0.4.1" }
-martensite-tktopalgo = { git = "https://github.com/Oblikovati/Martensite", rev = "db01546bb032659682715c6120e628b95fe5773d", version = "=0.5.1" }
-martensite-tkservice = { git = "https://github.com/Oblikovati/Martensite", rev = "db01546bb032659682715c6120e628b95fe5773d", version = "=0.5.2" }
-martensite-tkv3d = { git = "https://github.com/Oblikovati/Martensite", rev = "db01546bb032659682715c6120e628b95fe5773d", version = "=0.8.1" }
+martensite-tkhlr = { git = "https://github.com/Oblikovati/Martensite", rev = "137fc0e2394aa4c8d61f8c27cb9be373c1b46f30", version = "=0.4.1" }
+martensite-tkmesh = { git = "https://github.com/Oblikovati/Martensite", rev = "137fc0e2394aa4c8d61f8c27cb9be373c1b46f30", version = "=0.4.1" }
+martensite-tkg3d = { git = "https://github.com/Oblikovati/Martensite", rev = "137fc0e2394aa4c8d61f8c27cb9be373c1b46f30", version = "=0.4.1" }
+martensite-tkprim = { git = "https://github.com/Oblikovati/Martensite", rev = "137fc0e2394aa4c8d61f8c27cb9be373c1b46f30", version = "=0.4.1" }
+martensite-tkbrep = { git = "https://github.com/Oblikovati/Martensite", rev = "137fc0e2394aa4c8d61f8c27cb9be373c1b46f30", version = "=0.4.1" }
+martensite-tktopalgo = { git = "https://github.com/Oblikovati/Martensite", rev = "137fc0e2394aa4c8d61f8c27cb9be373c1b46f30", version = "=0.5.2" }
+martensite-tkservice = { git = "https://github.com/Oblikovati/Martensite", rev = "137fc0e2394aa4c8d61f8c27cb9be373c1b46f30", version = "=0.6.0" }
+martensite-tkv3d = { git = "https://github.com/Oblikovati/Martensite", rev = "137fc0e2394aa4c8d61f8c27cb9be373c1b46f30", version = "=0.8.1" }
 
-martensite-tkbo = { git = "https://github.com/Oblikovati/Martensite", rev = "db01546bb032659682715c6120e628b95fe5773d", version = "=0.9.1" }
-martensite-tkfillet = { git = "https://github.com/Oblikovati/Martensite", rev = "db01546bb032659682715c6120e628b95fe5773d", version = "=0.9.1" }
-martensite-tkoffset = { git = "https://github.com/Oblikovati/Martensite", rev = "db01546bb032659682715c6120e628b95fe5773d", version = "=0.11.1" }
+martensite-tkbo = { git = "https://github.com/Oblikovati/Martensite", rev = "137fc0e2394aa4c8d61f8c27cb9be373c1b46f30", version = "=0.9.2" }
+martensite-tkfillet = { git = "https://github.com/Oblikovati/Martensite", rev = "137fc0e2394aa4c8d61f8c27cb9be373c1b46f30", version = "=0.9.1" }
+martensite-tkoffset = { git = "https://github.com/Oblikovati/Martensite", rev = "137fc0e2394aa4c8d61f8c27cb9be373c1b46f30", version = "=0.11.1" }
+martensite-tkdestep = { git = "https://github.com/Oblikovati/Martensite", rev = "137fc0e2394aa4c8d61f8c27cb9be373c1b46f30", version = "=0.13.2" }
+martensite-tkdestl = { git = "https://github.com/Oblikovati/Martensite", rev = "137fc0e2394aa4c8d61f8c27cb9be373c1b46f30", version = "=0.12.1" }
+martensite-tkxsbase = { git = "https://github.com/Oblikovati/Martensite", rev = "137fc0e2394aa4c8d61f8c27cb9be373c1b46f30", version = "=0.10.0" }
 
 [lints]
 workspace = true
@@ -101,3 +104,31 @@ path = "tests/fillet_history_probe.rs"
 [[test]]
 name = "hole_history_probe"
 path = "tests/hole_history_probe.rs"
+
+[[test]]
+name = "coil"
+path = "tests/coil.rs"
+
+[[test]]
+name = "emboss"
+path = "tests/emboss.rs"
+
+[[test]]
+name = "derive"
+path = "tests/derive.rs"
+
+[[test]]
+name = "rib"
+path = "tests/rib.rs"
+
+[[test]]
+name = "decal"
+path = "tests/decal.rs"
+
+[[test]]
+name = "import"
+path = "tests/import.rs"
+
+[[test]]
+name = "unwrap"
+path = "tests/unwrap.rs"

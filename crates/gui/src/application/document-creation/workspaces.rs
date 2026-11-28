@@ -418,7 +418,7 @@ impl InsertDialog {
         if std::mem::take(&mut self.opening) {
             ui.open_popup(INSERT);
         }
-        crate::application::document_saving::folder_browser::center_dialog(ui, [640., 400.]);
+        crate::application::document_saving::folder_browser::center_dialog(ui, [640., 480.]);
         let Some(_dialog) = ui.begin_modal_popup(INSERT) else {
             return;
         };

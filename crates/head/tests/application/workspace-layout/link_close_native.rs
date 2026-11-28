@@ -42,7 +42,7 @@ fn dock_picker(world: &mut ApplicationWorld) -> u32 {
 
 #[test]
 fn link_cancel_selects_next_tab_and_reopens() {
-    let mut world = ApplicationWorld::new();
+    let mut world = ApplicationWorld::with_asset_tools_closed();
     super::browser_feature::open_visible_extruded_part(&mut world);
     let node = dock_picker(&mut world);
     select_dock_tab(&mut world, "Link Parameters");
@@ -87,7 +87,7 @@ fn add_link_source(world: &mut ApplicationWorld) {
 
 #[test]
 fn link_acknowledgement_selects_next_tab_and_reopens() {
-    let mut world = ApplicationWorld::new();
+    let mut world = ApplicationWorld::with_asset_tools_closed();
     add_link_source(&mut world);
     super::browser_feature::open_visible_extruded_part(&mut world);
     let node = dock_picker(&mut world);
@@ -131,7 +131,7 @@ fn link_acknowledgement_selects_next_tab_and_reopens() {
 
 #[test]
 fn link_snapshot_loss_selects_next_tab_and_reopens() {
-    let mut world = ApplicationWorld::new();
+    let mut world = ApplicationWorld::with_asset_tools_closed();
     add_link_source(&mut world);
     super::browser_feature::open_visible_extruded_part(&mut world);
     let target = world.active_id();

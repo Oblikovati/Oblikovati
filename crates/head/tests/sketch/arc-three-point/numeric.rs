@@ -6,7 +6,7 @@ use super::*;
 fn fixture_sketch(world: &mut ApplicationWorld) {
     ellipse_and_circle(world);
 }
-#[when("I select Three Point Arc and supply the specified start, end and arc point")]
+#[when("the user select Three Point Arc and supply the specified start, end and arc point")]
 fn specified_points(_: &mut ApplicationWorld) {
     require_recorded_fixture("recorded minor arc pointer inputs");
 }
@@ -15,7 +15,7 @@ fn arc_commits(world: &mut ApplicationWorld) {
     assert_eq!(arcs(world), 1, "arcs");
     world.expect_status("Select start of arc");
 }
-#[when("I exit and select the arc curve in Measure")]
+#[when("the user exit and select the arc curve in Measure")]
 fn exit_measure(world: &mut ApplicationWorld) {
     exit_tool(world);
     measure_arc(world);
@@ -43,7 +43,7 @@ fn dimension_shows(world: &mut ApplicationWorld) {
         "expected the value in {text:?}"
     );
 }
-#[when("I enter 6 and cancel with Escape")]
+#[when("the user enter 6 and cancel with Escape")]
 fn six_escape(world: &mut ApplicationWorld) {
     world.type_text("6");
     world.escape();
@@ -53,7 +53,7 @@ fn six_escape(world: &mut ApplicationWorld) {
 fn dimension_remains(world: &mut ApplicationWorld) {
     world.expect_annotation("4.294");
 }
-#[when("I reopen d3")]
+#[when("the user reopen d3")]
 fn reopen(world: &mut ApplicationWorld) {
     world.open_dimension_label("4.294");
 }
@@ -72,14 +72,14 @@ fn stored(world: &mut ApplicationWorld) {
 fn dimension_retained(world: &mut ApplicationWorld) {
     dimensioned_minor_arc(world);
 }
-#[when("I enter 6 and accept with Return")]
+#[when("the user enter 6 and accept with Return")]
 fn six_return(world: &mut ApplicationWorld) {
     world.open_dimension_label("4.294");
     world.type_text("6");
     world.key(ViewportPhysicalKey::Enter, false);
     world.pump(Vec::new());
 }
-#[when("I exit General Dimension and measure the arc")]
+#[when("the user exit General Dimension and measure the arc")]
 fn exit_dimension_measure(world: &mut ApplicationWorld) {
     exit_tool(world);
     measure_arc(world);
@@ -96,7 +96,7 @@ fn six_length(world: &mut ApplicationWorld) {
 fn center_stays(world: &mut ApplicationWorld) {
     minor_center(world);
 }
-#[when("I close Measure and Undo")]
+#[when("the user close Measure and Undo")]
 fn close_and_undo(world: &mut ApplicationWorld) {
     close_measure(world);
     world.undo();
@@ -105,7 +105,7 @@ fn close_and_undo(world: &mut ApplicationWorld) {
 fn smaller(world: &mut ApplicationWorld) {
     world.expect_annotation("4.294");
 }
-#[when("I Redo")]
+#[when("the user Redo")]
 fn redo(world: &mut ApplicationWorld) {
     world.redo();
 }
@@ -119,7 +119,9 @@ fn enlarged(world: &mut ApplicationWorld) {
 fn ready_9(world: &mut ApplicationWorld) {
     seeded_ready(world, 9);
 }
-#[when("I start an arc and enter endpoint distance 6 and angle 0 through the numeric input fields")]
+#[when(
+    "the user start an arc and enter endpoint distance 6 and angle 0 through the numeric input fields"
+)]
 fn keyboard_end(world: &mut ApplicationWorld) {
     select_tool(world);
     world.sketch_click(ROW_START);
@@ -131,7 +133,7 @@ fn keyboard_end(world: &mut ApplicationWorld) {
     world.pump(Vec::new());
     world.expect_status("Select point on arc");
 }
-#[when("I enter 4 at point-on-arc selection and press Return")]
+#[when("the user enter 4 at point-on-arc selection and press Return")]
 fn four_return(world: &mut ApplicationWorld) {
     world.type_text("4");
     world.key(ViewportPhysicalKey::Enter, false);
@@ -152,7 +154,7 @@ fn ready_nine(world: &mut ApplicationWorld) {
 fn locked_endpoints(_: &mut ApplicationWorld) {
     require_recorded_fixture("recorded locked-radius endpoint inputs");
 }
-#[when("I enter 6 in the radius field and press Tab")]
+#[when("the user enter 6 in the radius field and press Tab")]
 fn radius_tab(world: &mut ApplicationWorld) {
     world.type_text("6");
     world.key(ViewportPhysicalKey::Tab, false);
@@ -176,7 +178,7 @@ fn field_locked(world: &mut ApplicationWorld) {
         "expected a padlock in the field's end, columns {columns:?}"
     );
 }
-#[when("I click a suitable canvas location and exit repetition")]
+#[when("the user click a suitable canvas location and exit repetition")]
 fn click_and_exit(_: &mut ApplicationWorld) {
     require_recorded_fixture("recorded locked-radius canvas input");
 }
@@ -184,7 +186,7 @@ fn click_and_exit(_: &mut ApplicationWorld) {
 fn upper_bowed(_: &mut ApplicationWorld) {
     require_recorded_fixture("recorded locked-radius chord");
 }
-#[when("I measure its curve")]
+#[when("the user measure its curve")]
 fn measure_its_curve(world: &mut ApplicationWorld) {
     measure_arc(world);
 }

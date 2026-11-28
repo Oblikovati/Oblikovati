@@ -7,7 +7,29 @@ use oblikovati_model::ui_scale::UiScaleOptions;
 // ImGui's default font is 13 pixels. Refuse unbounded atlas allocations at the input boundary.
 const DEFAULT_FONT_PIXELS: f32 = 13.;
 const MAX_FONT_PIXELS: f32 = 256.;
-const NUMERIC_FACE: &[u8] = include_bytes!("../assets/fonts/JetBrainsMono-Regular.ttf");
+const INTER_REGULAR: &[u8] = include_bytes!("../assets/fonts/Inter-Regular.ttf");
+const INTER_MEDIUM: &[u8] = include_bytes!("../assets/fonts/Inter-Medium.ttf");
+const INTER_SEMIBOLD: &[u8] = include_bytes!("../assets/fonts/Inter-SemiBold.ttf");
+const NUMERIC_FACE: &[u8] = include_bytes!("../assets/fonts/JetBrainsMono-Medium.ttf");
+const CHROME_GLYPH_RANGES: &[u32] = &[
+    0x0020, 0x007E, // Basic Latin
+    0x00B0, 0x00B1, // degree °, plus-minus ±
+    0x00D7, 0x00D8, // multiply ×, diameter Ø
+    0x2013, 0x2014, // en-dash, em-dash
+    0x2022, 0x2022, // bullet •
+    0x2026, 0x2026, // ellipsis …
+    0x2039, 0x203A, // single angle quotes ‹ ›
+    0x2190, 0x2193, // arrows ← ↑ → ↓
+    0x2212, 0x2212, // minus −
+    0x22EE, 0x22EE, // vertical ellipsis ⋮
+    0x2300, 0x2300, // diameter ⌀
+    0x25B4, 0x25B4, // small up triangle ▴
+    0x25B8, 0x25B8, // small right triangle ▸
+    0x25BC, 0x25BC, // down triangle ▼
+    0x25BE, 0x25BE, // small down triangle ▾
+    0x2713, 0x2713, // check mark ✓
+    0,
+];
 pub(crate) fn font_raster_scale(request: &GuiFrameRequest) -> Result<f32, String> {
     let scale = request.layout_scale().into_iter().fold(0., f32::max);
     let pixels = DEFAULT_FONT_PIXELS * scale;
@@ -28,31 +50,59 @@ pub(crate) fn rebuild_font_atlas(context: &mut Context, scale: f32) -> GuiAtlas 
     context.fonts().tex_id = TextureId::new(crate::snapshot::FONT_TEXTURE_ID);
     atlas
 }
+fn chrome_font_config(size_pixels: f32, glyph_ranges: FontGlyphRanges) -> FontConfig {
+    FontConfig {
+        size_pixels,
+        oversample_h: if size_pixels <= 26. { 2 } else { 1 },
+        oversample_v: 1,
+        pixel_snap_h: true,
+        glyph_ranges,
+        ..FontConfig::default()
+    }
+}
+const UI_SYMBOL_FALLBACK_RANGES: &[u32] = &[
+    0x22EE, 0x22EE, // vertical ellipsis ⋮
+    0x25B4, 0x25B4, // small up triangle ▴
+    0x25B8, 0x25B8, // small right triangle ▸
+    0x25BE, 0x25BE, // small down triangle ▾
+    0,
+];
+fn ui_symbol_fallback(size_pixels: f32) -> FontSource<'static> {
+    FontSource::TtfData {
+        data: NUMERIC_FACE,
+        size_pixels,
+        config: Some(chrome_font_config(
+            size_pixels,
+            FontGlyphRanges::from_slice(UI_SYMBOL_FALLBACK_RANGES),
+        )),
+    }
+}
 fn install_editor_fonts(context: &mut Context, scale: f32) {
-    let config = FontConfig {
-        size_pixels: DEFAULT_FONT_PIXELS * scale,
+    let base_pixels = DEFAULT_FONT_PIXELS * scale;
+    let content_config = FontConfig {
+        size_pixels: base_pixels,
         oversample_h: 1,
         oversample_v: 1,
         pixel_snap_h: true,
         ..Default::default()
     };
+    let chrome_ranges = FontGlyphRanges::from_slice(CHROME_GLYPH_RANGES);
+    let base_chrome = chrome_font_config(base_pixels, chrome_ranges.clone());
     let symbols = FontConfig {
         glyph_ranges: FontGlyphRanges::from_slice(&[0x2022, 0x2022, 0x2300, 0x2300, 0]),
-        ..config.clone()
+        ..content_config.clone()
     };
+    // Slot 0: Primary UI (Inter Regular 400)
     context.fonts().add_font(&[
         FontSource::TtfData {
-            data: include_bytes!("../assets/fonts/Inter-Regular.ttf"),
-            size_pixels: config.size_pixels,
-            config: Some(FontConfig {
-                glyph_ranges: FontGlyphRanges::from_slice(&[
-                    0x20, 0xff, 0x2014, 0x2014, 0x203a, 0x203a, 0x25bc, 0x25bc, 0,
-                ]),
-                ..config.clone()
-            }),
+            data: INTER_REGULAR,
+            size_pixels: base_pixels,
+            config: Some(base_chrome.clone()),
         },
+        ui_symbol_fallback(base_pixels),
         sketch_symbols(symbols.clone()),
     ]);
+    // Slots 1..=4: Sketch content faces (Liberation Sans Regular/Bold/Italic/BoldItalic)
     for face in [
         include_bytes!("../assets/fonts/LiberationSans-Regular.ttf").as_slice(),
         include_bytes!("../assets/fonts/LiberationSans-Bold.ttf").as_slice(),
@@ -62,33 +112,69 @@ fn install_editor_fonts(context: &mut Context, scale: f32) {
         context.fonts().add_font(&[
             FontSource::TtfData {
                 data: face,
-                size_pixels: config.size_pixels,
-                config: Some(config.clone()),
+                size_pixels: base_pixels,
+                config: Some(content_config.clone()),
             },
             sketch_symbols(symbols.clone()),
         ]);
     }
+    // Slot 5: Numeric / parameter value face (JetBrains Mono Medium 500)
     context.fonts().add_font(&[
         FontSource::TtfData {
             data: NUMERIC_FACE,
-            size_pixels: config.size_pixels,
-            config: Some(config),
+            size_pixels: base_pixels,
+            config: Some(base_chrome.clone()),
         },
         sketch_symbols(symbols),
     ]);
-    context.fonts().add_font(&[FontSource::TtfData {
-        data: include_bytes!("../assets/fonts/Inter-Regular.ttf"),
-        size_pixels: 10. * scale,
-        config: Some(FontConfig {
+    // Slot 6: Ribbon group caption (Inter Medium 500, 10px)
+    context.fonts().add_font(&[
+        FontSource::TtfData {
+            data: INTER_MEDIUM,
             size_pixels: 10. * scale,
-            ..FontConfig::default()
-        }),
-    }]);
+            config: Some(chrome_font_config(10. * scale, chrome_ranges.clone())),
+        },
+        ui_symbol_fallback(10. * scale),
+    ]);
+    // Slot 7: Status & key-tip micro monospace (JetBrains Mono Medium 500, 11px min)
     context.fonts().add_font(&[FontSource::TtfData {
         data: NUMERIC_FACE,
-        size_pixels: 10. * scale,
+        size_pixels: 11. * scale,
+        config: Some(chrome_font_config(11. * scale, chrome_ranges.clone())),
+    }]);
+    // Slot 8: Inter Medium 500 (active tabs, buttons, filenames)
+    context.fonts().add_font(&[
+        FontSource::TtfData {
+            data: INTER_MEDIUM,
+            size_pixels: base_pixels,
+            config: Some(base_chrome.clone()),
+        },
+        ui_symbol_fallback(base_pixels),
+    ]);
+    // Slot 9: Inter SemiBold 600 (section headings, breadcrumbs)
+    context.fonts().add_font(&[
+        FontSource::TtfData {
+            data: INTER_SEMIBOLD,
+            size_pixels: base_pixels,
+            config: Some(base_chrome),
+        },
+        ui_symbol_fallback(base_pixels),
+    ]);
+    // Slot 10: Inter SemiBold 600 14px (dialog titles)
+    context.fonts().add_font(&[
+        FontSource::TtfData {
+            data: INTER_SEMIBOLD,
+            size_pixels: 14. * scale,
+            config: Some(chrome_font_config(14. * scale, chrome_ranges)),
+        },
+        ui_symbol_fallback(14. * scale),
+    ]);
+    // Slot 11: Inter SemiBold 600 20px (Home display heading)
+    context.fonts().add_font(&[FontSource::TtfData {
+        data: INTER_SEMIBOLD,
+        size_pixels: 20. * scale,
         config: Some(FontConfig {
-            size_pixels: 10. * scale,
+            size_pixels: 20. * scale,
             oversample_h: 1,
             oversample_v: 1,
             pixel_snap_h: true,
@@ -122,6 +208,22 @@ pub(crate) fn group_caption_font(ui: &Ui) -> Option<imgui::FontStackToken<'_>> {
 
 pub(crate) fn mono_micro_font(ui: &Ui) -> Option<imgui::FontStackToken<'_>> {
     ui.fonts().fonts().get(7).map(|font| ui.push_font(*font))
+}
+
+pub(crate) fn ui_medium_font(ui: &Ui) -> Option<imgui::FontStackToken<'_>> {
+    ui.fonts().fonts().get(8).map(|font| ui.push_font(*font))
+}
+
+pub(crate) fn ui_semibold_font(ui: &Ui) -> Option<imgui::FontStackToken<'_>> {
+    ui.fonts().fonts().get(9).map(|font| ui.push_font(*font))
+}
+
+pub(crate) fn dialog_title_font(ui: &Ui) -> Option<imgui::FontStackToken<'_>> {
+    ui.fonts().fonts().get(10).map(|font| ui.push_font(*font))
+}
+
+pub(crate) fn display_font(ui: &Ui) -> Option<imgui::FontStackToken<'_>> {
+    ui.fonts().fonts().get(11).map(|font| ui.push_font(*font))
 }
 
 #[derive(Default)]
@@ -189,20 +291,65 @@ impl GuiScalePreferences {
         let mut open = self.open.is_open();
         let mut close_requested = false;
         let escape = Self::dockable_window(ui, "Application Options", &mut open)
+            .scroll_bar(false)
+            .scrollable(false)
             .build(|| {
-                ui.text("UI");
-                ui.separator();
-                ui.text("Text size");
-                scale_choices(
+                let body = crate::widget_abi::child_region(
                     ui,
-                    options,
-                    actions,
-                    #[cfg(test)]
-                    &mut self.scale_200_bounds,
+                    "##application-options-body",
+                    [0., -48.],
+                    0.,
+                    imgui::WindowFlags::empty(),
                 );
-                self.part_draft.draw(ui, state.part_options, actions);
-                close_requested = self.sketch_draft.draw(ui, state, actions);
-                ui.is_window_focused() && ui.is_key_pressed_no_repeat(imgui::Key::Escape)
+                if body.visible {
+                    {
+                        let _semi = ui_semibold_font(ui);
+                        ui.text("UI");
+                    }
+                    ui.separator();
+                    ui.text_colored(crate::theme::text_secondary(ui), "Text size");
+                    scale_choices(
+                        ui,
+                        options,
+                        actions,
+                        #[cfg(test)]
+                        &mut self.scale_200_bounds,
+                    );
+                    self.part_draft.draw(ui, state.part_options);
+                    self.sketch_draft.draw(ui, state);
+                }
+                drop(body);
+                ui.separator();
+                ui.dummy([0., 2.]);
+                let dirty = self.part_draft.has_changes(state.part_options)
+                    || self.sketch_draft.has_changes(state.sketch_options.as_ref());
+                let conflict = self.part_draft.has_conflict(state.part_options)
+                    || self
+                        .sketch_draft
+                        .has_conflict(state.sketch_options.as_ref());
+                if crate::theme::property_accept(ui, !conflict) {
+                    self.part_draft.apply(state.part_options, actions);
+                    self.sketch_draft
+                        .apply(state.sketch_options.as_ref(), actions);
+                    close_requested = true;
+                }
+                ui.same_line_with_spacing(0., 6.);
+                {
+                    let _disabled = ui.begin_disabled(!dirty || conflict);
+                    if crate::theme::secondary_button(ui, "Apply", [68., 28.]) {
+                        self.part_draft.apply(state.part_options, actions);
+                        self.sketch_draft
+                            .apply(state.sketch_options.as_ref(), actions);
+                    }
+                }
+                ui.same_line_with_spacing(0., 6.);
+                if crate::theme::property_cancel(ui) {
+                    self.part_draft.clear();
+                    self.sketch_draft.clear();
+                    close_requested = true;
+                }
+                ui.is_window_focused_with_flags(imgui::WindowFocusedFlags::ROOT_AND_CHILD_WINDOWS)
+                    && ui.is_key_pressed_no_repeat(imgui::Key::Escape)
             })
             .unwrap_or(false);
         self.sketch_draft.draw_hud(ui);
@@ -223,7 +370,7 @@ fn preference_geometry(ui: &Ui) {
     let [width, height] = ui.io().display_size;
     let size = [
         (width - 32.).clamp(1., 420.),
-        (height - 32.).clamp(1., 500.),
+        (height - 32.).clamp(1., 660.),
     ];
     GuiScalePreferences::fit_dockable(
         ui,

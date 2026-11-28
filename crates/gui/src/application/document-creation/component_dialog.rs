@@ -104,7 +104,7 @@ impl ComponentDialog {
     }
     /// A nested chooser: Open replaces the document name, and Cancel leaves it as it was.
     fn file_chooser(&mut self, ui: &Ui) {
-        center_dialog(ui, [860., 400.]);
+        center_dialog(ui, [860., 480.]);
         let Some(_chooser) = ui.begin_modal_popup(FILE_CHOOSER) else {
             return;
         };

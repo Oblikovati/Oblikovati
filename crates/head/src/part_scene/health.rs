@@ -81,7 +81,17 @@ fn status_reason(
         FeatureEvaluationStatus::Failed(PartFeatureFailure::Datum(cause))
         | FeatureEvaluationStatus::Failed(PartFeatureFailure::Metadata(cause)) => cause.to_string(),
         FeatureEvaluationStatus::Failed(PartFeatureFailure::Inputs(cause)) => cause.to_string(),
-        FeatureEvaluationStatus::Failed(PartFeatureFailure::LoftInput(cause)) => cause.clone(),
+        FeatureEvaluationStatus::Failed(PartFeatureFailure::LoftInput(cause))
+        | FeatureEvaluationStatus::Failed(PartFeatureFailure::CoilInput(cause))
+        | FeatureEvaluationStatus::Failed(PartFeatureFailure::EmbossInput(cause))
+        | FeatureEvaluationStatus::Failed(PartFeatureFailure::RibInput(cause))
+        | FeatureEvaluationStatus::Failed(PartFeatureFailure::DecalInput(cause))
+        | FeatureEvaluationStatus::Failed(PartFeatureFailure::DerivedPartInput(cause))
+        | FeatureEvaluationStatus::Failed(PartFeatureFailure::ImportedModelInput(cause))
+        | FeatureEvaluationStatus::Failed(PartFeatureFailure::UnwrapInput(cause)) => cause.clone(),
+        FeatureEvaluationStatus::Failed(PartFeatureFailure::RevolveInput(cause)) => {
+            cause.to_string()
+        }
         FeatureEvaluationStatus::Failed(PartFeatureFailure::SweepInput(cause)) => cause.to_string(),
         FeatureEvaluationStatus::Failed(PartFeatureFailure::Kernel(cause)) => cause.to_string(),
         FeatureEvaluationStatus::Failed(PartFeatureFailure::BodyReference(cause))

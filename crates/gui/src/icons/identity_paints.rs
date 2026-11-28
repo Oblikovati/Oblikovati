@@ -11,7 +11,8 @@ pub(super) const PAINTS: &[(&str, [&str; 3])] = &[
             "rgba(165, 153, 255, 0.24)",
         ],
     ),
-    ("accent-selection-bright", ["#2DD4BF", "#14B8A6", "#5EEAD4"]),
+    ("accent-selection", ["#14B8A6", "#0D9488", "#2DD4BF"]),
+    ("accent-selection-bright", ["#2DD4BF", "#0D9488", "#5EEAD4"]),
     (
         "accent-selection-subtle",
         [
@@ -23,6 +24,10 @@ pub(super) const PAINTS: &[(&str, [&str; 3])] = &[
     ("accent-work", ["#F59E0B", "#D97706", "#FBBF24"]),
     ("bg-surface-base", ["#121317", "#F6F7F9", "#000000"]),
     ("bg-surface-elevated", ["#181A20", "#FFFFFF", "#0A0A0D"]),
+    ("bg-surface-subtle", ["#1E2028", "#ECEEF2", "#141418"]),
+    ("border-default", ["#2E3240", "#D1D6E0", "#FFFFFF"]),
+    ("text-primary", ["#F1F3F7", "#111318", "#FFFFFF"]),
+    ("text-secondary", ["#9BA3B4", "#4B5263", "#E2E6F0"]),
     ("icon-surf-side", ["#C47805", "#B45309", "#D97706"]),
     ("icon-weld-fill", ["#FB7185", "#F43F5E", "#FB7185"]),
     ("status-error", ["#F43F5E", "#E11D48", "#FB7185"]),

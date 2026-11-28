@@ -147,15 +147,7 @@ macro_rules! forward_owner_view_work {
         ) -> Result<bool, String> {
             self.$owner.commit_move_body_from_gui(request)
         }
-        fn loft_from_gui(&mut self, action: oblikovati_gui::GuiLoftAction) -> Result<bool, String> {
-            self.$owner.loft_from_gui(action)
-        }
-        fn sweep_from_gui(
-            &mut self,
-            action: oblikovati_gui::GuiSweepAction,
-        ) -> Result<bool, String> {
-            self.$owner.sweep_from_gui(action)
-        }
+        crate::work_sweep::forward_sweep_work_methods!($owner);
         fn preview_shell_from_gui(
             &mut self,
             request: Option<&oblikovati_gui::GuiShellFeatureRequest>,

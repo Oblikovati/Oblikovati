@@ -146,4 +146,5 @@ fn native_ribbon_click(world: &mut ApplicationWorld, caption: &str) {
     let point = super::super::diagnostics::pointer_pixels(world.run(caption).center());
     super::super::x11_input::click(point);
     world.pump(Vec::new());
+    world.pump(Vec::new());
 }

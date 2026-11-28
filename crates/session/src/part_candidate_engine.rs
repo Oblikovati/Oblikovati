@@ -30,6 +30,7 @@ pub struct OwnedCheckpointReplay {
     guid: DocumentGuid,
     policy: Option<PrismResolutionPolicy>,
     prefix: NamedPrefix,
+    derived_sources: std::sync::Arc<std::collections::BTreeMap<String, DocumentSnapshot>>,
 }
 impl OwnedCheckpointReplay {
     pub(crate) fn new(
@@ -37,12 +38,14 @@ impl OwnedCheckpointReplay {
         guid: DocumentGuid,
         policy: Option<PrismResolutionPolicy>,
         prefix: NamedPrefix,
+        derived_sources: std::sync::Arc<std::collections::BTreeMap<String, DocumentSnapshot>>,
     ) -> Self {
         Self {
             document,
             guid,
             policy,
             prefix,
+            derived_sources,
         }
     }
     /// Read the document that issued this capability; example: `replay.document()`.
@@ -122,7 +125,8 @@ impl OwnedCheckpointReplay {
             return Ok(None);
         }
         let mut evaluator =
-            CertifiedNamedSolidEvaluator::with_optional_policy(history, self.guid, self.policy);
+            CertifiedNamedSolidEvaluator::with_optional_policy(history, self.guid, self.policy)
+                .with_derived_sources(&self.derived_sources);
         let Some(candidate) = self
             .prefix
             .prepare_checkpoints(history, candidate, &mut evaluator)

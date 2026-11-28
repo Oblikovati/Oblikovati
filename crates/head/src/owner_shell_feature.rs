@@ -92,6 +92,8 @@ impl<
             .features()
             .add_feature(&input.request)
             .map_err(|cause| cause.to_string())?;
+        self.model_face = None;
+        self.face_appearance_picks.clear();
         self.clear_extrusion_preview();
         Ok(true)
     }

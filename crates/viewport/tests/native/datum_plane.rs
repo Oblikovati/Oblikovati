@@ -58,6 +58,7 @@ fn solid_in_front_of_datum_occludes_its_fill() {
         triangles: vec![ViewportTriangle {
             face_index: None,
             positions: [[-8., -8., 1.], [8., -8., 1.], [0., 8., 1.]],
+            normals: None,
             color: [1., 0., 0., 1.],
         }],
     };
@@ -78,6 +79,7 @@ fn datum_in_front_blends_with_the_solid_behind_it() {
         triangles: vec![ViewportTriangle {
             face_index: None,
             positions: [[-8., -8., 0.], [8., -8., 0.], [0., 8., 0.]],
+            normals: None,
             color: [1., 0., 0., 1.],
         }],
     };

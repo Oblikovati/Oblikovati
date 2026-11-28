@@ -93,10 +93,13 @@ impl ShellFeatureDialog {
         let mut open = true;
         Self::dockable_window(ui, "Shell", &mut open).build(|| {
             crate::theme::floating_property_shadow(ui);
-            ui.text(format!(
-                "{} opening faces selected",
-                state.selected_face_appearances.len()
-            ));
+            let faces = state.selected_face_appearances.len();
+            crate::theme::property_label(ui, "Remove Faces");
+            crate::feature_properties::draw_pick_pill(
+                ui,
+                &format!("{faces} opening faces selected"),
+                faces > 0,
+            );
             self.thickness_field(ui);
             self.refresh_preview(state, actions);
             ui.separator();
@@ -133,8 +136,8 @@ impl ShellFeatureDialog {
             self.submitted = Some(request.clone());
             actions.push(GuiShellAction::CreateShellFeature(request));
         }
-        ui.same_line();
-        if crate::widget_abi::button(ui, "Cancel", [72., 28.])
+        ui.same_line_with_spacing(0., 6.);
+        if crate::theme::property_cancel(ui)
             || (ui.is_window_focused() && ui.is_key_pressed_no_repeat(imgui::Key::Escape))
         {
             self.close(actions);

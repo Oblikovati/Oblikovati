@@ -2,7 +2,7 @@
 use super::*;
 
 impl CertifiedNamedSolidEvaluator<'_> {
-    pub(super) fn evaluate_named_prism_boolean(
+    pub(crate) fn evaluate_named_prism_boolean(
         &mut self,
         feature: FeatureId,
         body: &NamedSolid,

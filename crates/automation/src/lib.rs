@@ -19,16 +19,35 @@ mod attachments;
 mod attributes;
 mod chamfer;
 pub use chamfer::{PreparedChamfer, prepare_chamfer};
+mod coil;
 mod command_owner;
+mod decal;
+mod derive;
 mod edit;
+mod emboss;
 mod extrusion;
 mod feature_suppression;
 mod file_host;
 mod fillet;
 mod hole;
+mod import;
 mod loft;
+mod revolve;
+mod rib;
 mod shell;
 mod sweep;
+mod unwrap;
+pub use coil::{CoilInputs, PreparedCoil, build_coil_definition, prepare_coil_definition};
+pub use decal::{
+    DecalInputs, PreparedDecal, build_decal_definition, prepare_decal_definition, replace_decal,
+};
+pub use derive::{
+    DeriveInputs, PreparedDerivedPart, build_derived_part_definition,
+    prepare_derived_part_definition, replace_derived_part,
+};
+pub use emboss::{
+    EmbossInputs, PreparedEmboss, build_emboss_definition, prepare_emboss_definition,
+};
 pub use extrusion::{
     CapturedExtrudeCandidate, ExtrudePrefixReplay, ExtrudeRegionAccess, ExtrudeReplayPrefix,
     PreparedExtrusion, commit_prepared_extrusion, evaluated_extrude_distance, prepare_extrusion,
@@ -39,13 +58,30 @@ pub use fillet::{
     PreparedFillet, prepare_fillet,
 };
 pub use hole::{PreparedHole, prepare_hole};
+pub use import::{
+    ImportInputs, PreparedImport, build_import_definition, prepare_import_definition,
+    replace_imported_model,
+};
 pub use loft::{
     PreparedLoft, loft_definition, prepare_loft, replace_loft_section, replace_loft_takeoff,
+};
+pub use revolve::{
+    PreparedRevolve, REVOLVE_ANGLE_ROLE, REVOLVE_SECOND_ANGLE_ROLE, RevolveInputs,
+    automatic_revolve_profile, canonical_angle_expression, parse_positive_turn_angle,
+    prepare_revolve_definition,
+};
+pub use rib::{
+    PreparedRib, RibInputs, build_rib_definition, open_profile_lines, prepare_rib_definition,
+    replace_rib,
 };
 pub use shell::{PreparedShell, prepare_shell};
 pub use sweep::{
     PreparedSweep, automatic_sweep, prepare_surface_sweep, prepare_sweep, prepare_sweep_for_target,
     prepare_sweep_taper, prepare_sweep_twist, sweep_boolean_target,
+};
+pub use unwrap::{
+    PreparedUnwrap, UnwrapInputs, build_unwrap_definition, prepare_unwrap_definition,
+    replace_unwrap,
 };
 mod interests;
 pub use file_host::{

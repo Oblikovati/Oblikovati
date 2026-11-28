@@ -95,13 +95,13 @@ fn extrusion_preview_button_and_escape_send_transient_actions() {
     engine.frame(&request).unwrap();
     validate_size(&mut engine, &mut request);
     request.commands.extrude_preview_active = true;
-    let hide = ribbon_caption(&mut engine, &mut request, "Hide Preview", false);
+    let hide = preview_eye_center(&mut engine, &mut request);
     assert_eq!(
         click_ribbon(&mut engine, &mut request, hide),
         [GuiShellAction::PreviewExtrude(None)]
     );
     request.commands.extrude_preview_active = false;
-    let show = ribbon_caption(&mut engine, &mut request, "Show Preview", false);
+    let show = preview_eye_center(&mut engine, &mut request);
     let actions = click_ribbon(&mut engine, &mut request, show);
     assert_eq!(
         actions,
@@ -155,6 +155,38 @@ fn reopening_extrusion_clears_the_previous_preview() {
     assert!(actions.iter().any(|action| matches!(action,
         GuiShellAction::ValidateExtrudeDistance { distance, .. } if distance == DEFAULT_DISTANCE
     )));
+}
+
+fn preview_eye_center(engine: &mut GuiFrameEngine, request: &mut GuiFrameRequest) -> [f32; 2] {
+    let header_y = ribbon_caption(engine, request, "New Extrusion › Sketch", false)[1];
+    request.events.clear();
+    let output = engine.frame(request).unwrap();
+    let scale = request.framebuffer_scale;
+    let mut header_icons: Vec<[f32; 2]> = output
+        .draws
+        .batches
+        .iter()
+        .filter(|batch| batch.texture != oblikovati_gui::GuiTextureKey::FONT)
+        .filter_map(|batch| {
+            let count = batch.vertices.len() as f32;
+            if count == 0. {
+                return None;
+            }
+            let center: [f32; 2] = std::array::from_fn(|axis| {
+                batch
+                    .vertices
+                    .iter()
+                    .map(|vertex| vertex.position[axis])
+                    .sum::<f32>()
+                    / count
+            });
+            ((center[1] - header_y).abs() < 16. * scale[1]).then_some(center)
+        })
+        .collect();
+    header_icons.sort_by(|a, b| a[0].total_cmp(&b[0]));
+    *header_icons
+        .first()
+        .expect("expected the preview visibility icon button on the Extrude header row")
 }
 
 fn click_distance_field(engine: &mut GuiFrameEngine, request: &mut GuiFrameRequest) {

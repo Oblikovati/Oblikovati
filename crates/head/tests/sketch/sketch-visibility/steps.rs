@@ -119,7 +119,8 @@ fn menu_closed(world: &mut ApplicationWorld) {
     assert_solid(world, true);
 }
 fn open_menu(world: &mut ApplicationWorld) {
-    world.right_click([1180, 740]);
+    let [left, _, _, bottom] = world.viewport_bounds();
+    world.right_click([left as i32 + 60, bottom as i32 - 60]);
     world.pump(Vec::new());
 }
 fn assert_solid(world: &mut ApplicationWorld, expected: bool) {

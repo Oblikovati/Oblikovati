@@ -244,6 +244,8 @@ mod sketch;
 mod solid_extrusion;
 #[path = "../solid-model/loft/steps.rs"]
 mod solid_loft;
+#[path = "../solid-model/revolve/steps.rs"]
+mod solid_revolve;
 #[path = "../solid-model/sweep/steps.rs"]
 mod solid_sweep;
 #[path = "viewport-entity-selection/steps.rs"]
@@ -425,7 +427,9 @@ fn parser_diagnostic_includes_the_underlying_read_error() {
     assert!(message.contains("fixture absent"));
 }
 fn scenario_selected(name: &str) -> bool {
-    std::env::var("OBK_BDD_SCENARIO").map_or(true, |wanted| scenario_matches(name, &wanted))
+    std::env::var("OBK_BDD_SCENARIO").map_or(true, |wanted| {
+        wanted.split('|').any(|part| scenario_matches(name, part))
+    })
 }
 fn scenario_matches(name: &str, wanted: &str) -> bool {
     let mut remainder = name;
@@ -456,7 +460,6 @@ fn verify_scenario_source(root: &std::path::Path) -> Result<(), String> {
     scenario_source::validate_gate_filters(strict, &scenario_source::configured_filters())?;
     scenario_source::verify_required(root, std::env::var_os("OBK_BDD_ROOT").is_some(), strict)
 }
-
 fn feature_root(area: &str) -> PathBuf {
     let root = scenario_root();
     verify_scenario_source(&root).unwrap_or_else(|error| panic!("{error}"));
@@ -474,10 +477,7 @@ fn feature_root(area: &str) -> PathBuf {
     };
     let feature = feature.to_str().expect("BDD feature: expected UTF-8");
     assert!(
-        !feature.is_empty()
-            && feature
-                .bytes()
-                .all(|byte| byte.is_ascii_lowercase() || byte == b'-'),
+        !feature.is_empty() && feature.bytes().all(|b| b.is_ascii_lowercase() || b == b'-'),
         "BDD feature {feature:?}: expected a folder name"
     );
     let selected = features.join(feature);

@@ -67,14 +67,18 @@ impl AssetBrowserView {
                 || entry.name.to_lowercase().contains(&query)
                 || entry.id.to_lowercase().contains(&query)
         };
-        let height = (ui.content_region_avail()[1] * 0.3).clamp(42., 130.);
-        self.document_region(
-            ui,
-            choices.iter().filter(|row| row.document).filter(matches),
-            &mut selection,
-            height,
-            &query,
-        );
+        let doc_rows: Vec<_> = choices
+            .iter()
+            .filter(|row| row.document)
+            .filter(matches)
+            .filter(|row| self.document.includes(row))
+            .collect();
+        let height = if doc_rows.is_empty() {
+            34.
+        } else {
+            (ui.content_region_avail()[1] * 0.28).clamp(56., 130.)
+        };
+        self.document_region(ui, doc_rows, &mut selection, height, &query);
         let library: Vec<_> = choices
             .iter()
             .filter(|row| row.library.is_some())
@@ -86,7 +90,20 @@ impl AssetBrowserView {
     }
 
     fn search(&mut self, ui: &Ui) {
-        ui.set_next_item_width((ui.content_region_avail()[0] - 55.).max(40.));
+        use imgui::{StyleColor, StyleVar};
+        let width = ui.content_region_avail()[0].max(60.);
+        let height = ui.frame_height();
+        let clear_width = if self.query.is_empty() { 0. } else { 22. };
+        let [left, top] = ui.cursor_screen_pos();
+        let end = [left + width, top + height];
+        ui.get_window_draw_list()
+            .add_rect([left, top], end, ui.style_color(StyleColor::FrameBg))
+            .rounding(4.)
+            .filled(true)
+            .build();
+        let _bw = ui.push_style_var(StyleVar::FrameBorderSize(0.));
+        let field_bg = ui.push_style_color(StyleColor::FrameBg, [0.; 4]);
+        ui.set_next_item_width((width - clear_width).max(32.));
         if ui
             .input_text("##asset-search", &mut self.query)
             .hint("Search assets")
@@ -94,34 +111,60 @@ impl AssetBrowserView {
         {
             self.category = None;
         }
-        ui.same_line();
-        if ui.button("Clear##asset-search") {
-            self.query.clear();
-            self.category = None;
+        drop(field_bg);
+        let focused = ui.is_item_active();
+        if !self.query.is_empty() {
+            let _bg = ui.push_style_color(StyleColor::Button, [0.; 4]);
+            let _ink = ui.push_style_color(StyleColor::Text, crate::theme::text_muted(ui));
+            ui.same_line_with_spacing(0., 0.);
+            if ui.button_with_size("×##asset-search", [clear_width, height]) {
+                self.query.clear();
+                self.category = None;
+            }
+            if ui.is_item_hovered() {
+                ui.tooltip_text("Clear search");
+            }
         }
+        let outline = if focused {
+            StyleColor::NavHighlight
+        } else {
+            StyleColor::Border
+        };
+        ui.get_window_draw_list()
+            .add_rect([left, top], end, ui.style_color(outline))
+            .rounding(4.)
+            .build();
     }
 
-    fn document_region<'a>(
+    fn document_region(
         &mut self,
         ui: &Ui,
-        rows: impl Iterator<Item = &'a GuiAssetChoice>,
+        rows: Vec<&GuiAssetChoice>,
         selection: &mut AssetRows<'_>,
         height: f32,
         query: &str,
     ) {
-        ui.text("Document assets");
-        ui.same_line_with_spacing(0., 14.);
-        self.document.menu(ui, "Document view", true);
-        let rows: Vec<_> = rows.filter(|row| self.document.includes(row)).collect();
+        {
+            let _semi = crate::ui_scale::ui_semibold_font(ui);
+            ui.text("Document assets");
+        }
+        let view_w = ui.calc_text_size("View")[0] + 14.;
+        let right = ui.window_content_region_max()[0];
+        ui.same_line_with_pos((right - view_w).max(ui.cursor_pos()[0] + 6.));
+        self.document
+            .menu(ui, "View##doc-view", "Document view", true);
         ui.child_window("##document-assets")
             .size([0., height])
             .build(|| {
                 if rows.is_empty() {
-                    ui.text(if query.is_empty() {
-                        "No document assets"
-                    } else {
-                        "No matching document assets"
-                    });
+                    ui.text_colored(
+                        crate::theme::text_muted(ui),
+                        if query.is_empty() {
+                            "No document assets"
+                        } else {
+                            "No matching document assets"
+                        },
+                    );
                 } else {
                     self.document.rows(ui, rows, selection, false);
                 }
@@ -135,9 +178,13 @@ impl AssetBrowserView {
         selection: &mut AssetRows<'_>,
         searching: bool,
     ) {
-        self.library_selector(ui);
-        ui.same_line_with_spacing(0., 14.);
-        self.library.menu(ui, "Library view", false);
+        let avail = ui.content_region_avail()[0];
+        let view_w = ui.calc_text_size("View")[0] + 14.;
+        let selector_w = (avail - view_w - 6.).clamp(80., 170.);
+        self.library_selector(ui, selector_w);
+        ui.same_line_with_spacing(0., 6.);
+        self.library
+            .menu(ui, "View##lib-view", "Library view", false);
         let rows: Vec<_> = rows
             .iter()
             .copied()
@@ -147,7 +194,7 @@ impl AssetBrowserView {
         let height =
             (ui.content_region_avail()[1] - ui.frame_height_with_spacing() * footer_rows).max(64.);
         let width = ui.content_region_avail()[0];
-        let stack_results = searching && width < 310.;
+        let stack_results = width < 260. || (searching && width < 310.);
         let (tree_width, tree_height) = if stack_results {
             (
                 0.,
@@ -186,8 +233,8 @@ impl AssetBrowserView {
             });
     }
 
-    fn library_selector(&mut self, ui: &Ui) {
-        ui.set_next_item_width(126.);
+    fn library_selector(&mut self, ui: &Ui, width: f32) {
+        ui.set_next_item_width(width);
         let preview = self.source.map_or("All libraries", library_name);
         if let Some(_combo) = ui.begin_combo("##asset-library", preview) {
             if ui.selectable("All libraries") {
@@ -251,10 +298,13 @@ fn library_name(source: GuiAssetLibrary) -> &'static str {
 }
 
 impl DisplayOptions {
-    fn menu(&mut self, ui: &Ui, label: &str, document: bool) {
+    fn menu(&mut self, ui: &Ui, label: &str, tooltip: &str, document: bool) {
         let _id = ui.push_id(label);
         if ui.small_button(label) {
             ui.open_popup("##display");
+        }
+        if ui.is_item_hovered() {
+            ui.tooltip_text(tooltip);
         }
         let Some(_popup) = ui.begin_popup("##display") else {
             return;
@@ -335,7 +385,7 @@ impl DisplayOptions {
         show_library: bool,
     ) {
         let columns = 2 + usize::from(show_library) + usize::from(self.appearance);
-        let Some(_table) = ui.begin_table("##asset-list", columns) else {
+        let Some(_table) = crate::widget_abi::begin_table(ui, "##asset-list", columns) else {
             return;
         };
         let mut name = imgui::TableColumnSetup::new("Name");

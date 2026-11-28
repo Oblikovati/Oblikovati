@@ -254,7 +254,13 @@ fn maximize_button(ui: &Ui, draft: &mut OpenDraft) {
     } else {
         "Maximize"
     };
-    if !crate::widget_abi::button(ui, label, [0.; 2]) {
+    let width = ui.calc_text_size(label)[0] + 14.;
+    let right = ui.window_content_region_max()[0];
+    ui.set_cursor_pos([(right - width).max(0.), ui.cursor_pos()[1]]);
+    let _bg = ui.push_style_color(imgui::StyleColor::Button, [0.; 4]);
+    let _bw = ui.push_style_var(imgui::StyleVar::FrameBorderSize(0.));
+    let _ink = ui.push_style_color(imgui::StyleColor::Text, crate::theme::text_secondary(ui));
+    if !crate::widget_abi::button(ui, label, [width, 22.]) {
         return;
     }
     draft.geometry = Some(match draft.restored.take() {

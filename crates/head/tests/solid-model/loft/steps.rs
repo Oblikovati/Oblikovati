@@ -1,5 +1,20 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Exercise the Loft command through native ribbon and viewport input.
+#[path = "../coil/steps.rs"]
+mod solid_coil;
+#[path = "../decal/steps.rs"]
+mod solid_decal;
+#[path = "../derive/steps.rs"]
+mod solid_derive;
+#[path = "../emboss/steps.rs"]
+mod solid_emboss;
+#[path = "../import/steps.rs"]
+mod solid_import;
+#[path = "../rib/steps.rs"]
+mod solid_rib;
+#[path = "../unwrap/steps.rs"]
+mod solid_unwrap;
+
 use super::*;
 use cucumber::{given, then, when};
 use oblikovati_gui::GuiLoftElement;

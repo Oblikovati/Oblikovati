@@ -9,8 +9,12 @@ use super::{
 };
 use crate::{
     feature::{
-        AuthoredFeature, FeatureId, sketch_loft::SketchLoftDefinition,
-        sketch_prism::SketchPrismDefinition, sketch_sweep::SketchSweepDefinition,
+        AuthoredFeature, FeatureId, derived_part::DerivedPartDefinition,
+        imported_model::ImportedModelDefinition, sketch_coil::SketchCoilDefinition,
+        sketch_decal::SketchDecalDefinition, sketch_emboss::SketchEmbossDefinition,
+        sketch_loft::SketchLoftDefinition, sketch_prism::SketchPrismDefinition,
+        sketch_revolve::SketchRevolveDefinition, sketch_rib::SketchRibDefinition,
+        sketch_sweep::SketchSweepDefinition, unwrap::UnwrapDefinition,
     },
     history::DocumentSnapshot,
 };
@@ -30,6 +34,19 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
         };
         let sketches = match feature.definition() {
             PartFeatureDefinition::SketchPrism(definition) => {
+                [Some(definition.sketch()), None, None]
+            }
+            PartFeatureDefinition::SketchRevolve(definition) => {
+                [Some(definition.sketch()), None, None]
+            }
+            PartFeatureDefinition::SketchCoil(definition) => {
+                [Some(definition.sketch()), None, None]
+            }
+            PartFeatureDefinition::SketchEmboss(definition) => {
+                [Some(definition.sketch()), None, None]
+            }
+            PartFeatureDefinition::SketchRib(definition) => [Some(definition.sketch()), None, None],
+            PartFeatureDefinition::SketchDecal(definition) => {
                 [Some(definition.sketch()), None, None]
             }
             PartFeatureDefinition::SketchLoft(definition) => {
@@ -133,6 +150,170 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
             .map_err(PartFeatureFailure::BodyReference)?;
         self.bodies.insert(feature.into(), body);
         Ok(())
+    }
+
+    pub(super) fn evaluate_revolve<B: PartFeatureEvaluator<Body = Body, Failure = Failure>>(
+        &mut self,
+        snapshot: &DocumentSnapshot,
+        backend: &mut B,
+        feature: FeatureId,
+        definition: &SketchRevolveDefinition,
+    ) -> Result<(), PartFeatureFailure<Failure>> {
+        let input = definition
+            .resolve_for_replay(snapshot, &self.datums)
+            .map_err(|cause| PartFeatureFailure::RevolveInput(Box::new(cause)))?;
+        if let Some((operation, key, source)) = definition.boolean_target() {
+            let slot = resolve_body_slot(&self.bodies, &self.body_lineage, backend, source, key)
+                .map_err(PartFeatureFailure::BodyReference)?;
+            let result =
+                backend.evaluate_revolve_boolean(feature, &self.bodies[&slot], input, operation)?;
+            return self.accept_body_replacement(backend, feature, slot, key, result);
+        }
+        let body = backend.evaluate_revolve(feature, input)?;
+        self.body_lineage
+            .register(feature)
+            .map_err(PartFeatureFailure::BodyReference)?;
+        self.bodies.insert(feature.into(), body);
+        Ok(())
+    }
+
+    pub(super) fn evaluate_coil<B: PartFeatureEvaluator<Body = Body, Failure = Failure>>(
+        &mut self,
+        snapshot: &DocumentSnapshot,
+        backend: &mut B,
+        feature: FeatureId,
+        definition: &SketchCoilDefinition,
+    ) -> Result<(), PartFeatureFailure<Failure>> {
+        let input = definition
+            .resolve_for_replay(snapshot, &self.datums)
+            .map_err(PartFeatureFailure::CoilInput)?;
+        if let Some((operation, key, source)) = definition.boolean_target() {
+            let slot = resolve_body_slot(&self.bodies, &self.body_lineage, backend, source, key)
+                .map_err(PartFeatureFailure::BodyReference)?;
+            let result =
+                backend.evaluate_coil_boolean(feature, &self.bodies[&slot], input, operation)?;
+            return self.accept_body_replacement(backend, feature, slot, key, result);
+        }
+        let body = backend.evaluate_coil(feature, input)?;
+        self.body_lineage
+            .register(feature)
+            .map_err(PartFeatureFailure::BodyReference)?;
+        self.bodies.insert(feature.into(), body);
+        Ok(())
+    }
+
+    pub(super) fn evaluate_derived_part<B: PartFeatureEvaluator<Body = Body, Failure = Failure>>(
+        &mut self,
+        backend: &mut B,
+        feature: FeatureId,
+        definition: &DerivedPartDefinition,
+    ) -> Result<(), PartFeatureFailure<Failure>> {
+        let input = definition.resolve();
+        if !input.include_bodies {
+            return Ok(());
+        }
+        let body = backend.evaluate_derived_part(feature, input)?;
+        self.body_lineage
+            .register(feature)
+            .map_err(PartFeatureFailure::BodyReference)?;
+        self.bodies.insert(feature.into(), body);
+        Ok(())
+    }
+
+    pub(super) fn evaluate_imported_model<
+        B: PartFeatureEvaluator<Body = Body, Failure = Failure>,
+    >(
+        &mut self,
+        backend: &mut B,
+        feature: FeatureId,
+        definition: &ImportedModelDefinition,
+    ) -> Result<(), PartFeatureFailure<Failure>> {
+        let input = definition.resolve();
+        let body = backend.evaluate_imported_model(feature, input)?;
+        self.body_lineage
+            .register(feature)
+            .map_err(PartFeatureFailure::BodyReference)?;
+        self.bodies.insert(feature.into(), body);
+        Ok(())
+    }
+
+    pub(super) fn evaluate_unwrap<B: PartFeatureEvaluator<Body = Body, Failure = Failure>>(
+        &mut self,
+        backend: &mut B,
+        feature: FeatureId,
+        definition: &UnwrapDefinition,
+    ) -> Result<(), PartFeatureFailure<Failure>> {
+        let (target_key, target_feature) = definition.target_body();
+        let slot = resolve_body_slot(
+            &self.bodies,
+            &self.body_lineage,
+            backend,
+            target_feature,
+            target_key,
+        )
+        .map_err(PartFeatureFailure::BodyReference)?;
+        let target = self.bodies.get(&slot).ok_or_else(|| {
+            PartFeatureFailure::BodyReference(format!(
+                "unwrap target {target_feature:?}: expected an active body"
+            ))
+        })?;
+        let surface = backend.evaluate_unwrap(feature, target, definition.resolve())?;
+        self.body_lineage
+            .register(feature)
+            .map_err(PartFeatureFailure::BodyReference)?;
+        self.bodies.insert(feature.into(), surface);
+        Ok(())
+    }
+
+    pub(super) fn evaluate_emboss<B: PartFeatureEvaluator<Body = Body, Failure = Failure>>(
+        &mut self,
+        snapshot: &DocumentSnapshot,
+        backend: &mut B,
+        feature: FeatureId,
+        definition: &SketchEmbossDefinition,
+    ) -> Result<(), PartFeatureFailure<Failure>> {
+        let input = definition
+            .resolve_for_replay(snapshot, &self.datums)
+            .map_err(PartFeatureFailure::EmbossInput)?;
+        let (key, source) = definition.target_body();
+        let slot = resolve_body_slot(&self.bodies, &self.body_lineage, backend, source, key)
+            .map_err(PartFeatureFailure::BodyReference)?;
+        let result = backend.evaluate_emboss(feature, &self.bodies[&slot], input)?;
+        self.accept_body_replacement(backend, feature, slot, key, result)
+    }
+
+    pub(super) fn evaluate_rib<B: PartFeatureEvaluator<Body = Body, Failure = Failure>>(
+        &mut self,
+        snapshot: &DocumentSnapshot,
+        backend: &mut B,
+        feature: FeatureId,
+        definition: &SketchRibDefinition,
+    ) -> Result<(), PartFeatureFailure<Failure>> {
+        let input = definition
+            .resolve_for_replay(snapshot, &self.datums)
+            .map_err(PartFeatureFailure::RibInput)?;
+        let (key, source) = definition.target_body();
+        let slot = resolve_body_slot(&self.bodies, &self.body_lineage, backend, source, key)
+            .map_err(PartFeatureFailure::BodyReference)?;
+        let result = backend.evaluate_rib(feature, &self.bodies[&slot], input)?;
+        self.accept_body_replacement(backend, feature, slot, key, result)
+    }
+
+    pub(super) fn evaluate_decal<B: PartFeatureEvaluator<Body = Body, Failure = Failure>>(
+        &mut self,
+        snapshot: &DocumentSnapshot,
+        backend: &mut B,
+        feature: FeatureId,
+        definition: &SketchDecalDefinition,
+    ) -> Result<(), PartFeatureFailure<Failure>> {
+        let input = definition
+            .resolve_for_replay(snapshot, &self.datums)
+            .map_err(PartFeatureFailure::DecalInput)?;
+        let (key, source) = definition.target_body();
+        let slot = resolve_body_slot(&self.bodies, &self.body_lineage, backend, source, key)
+            .map_err(PartFeatureFailure::BodyReference)?;
+        let result = backend.evaluate_decal(feature, &self.bodies[&slot], input)?;
+        self.accept_body_replacement(backend, feature, slot, key, result)
     }
 
     pub(super) fn evaluate_sweep<B: PartFeatureEvaluator<Body = Body, Failure = Failure>>(

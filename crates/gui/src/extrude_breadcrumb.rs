@@ -58,6 +58,8 @@ impl ExtrudeDialog {
         let (Some(feature), Some(sketch), Some(document)) = (feature, sketch, self.document) else {
             if let Some(sketch) = sketch {
                 ui.text(format!("New Extrusion › {}", sketch.name));
+            } else {
+                ui.text("Extrude");
             }
             return false;
         };

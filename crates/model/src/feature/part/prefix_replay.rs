@@ -126,6 +126,104 @@ where
             .evaluate_loft(feature, input)
             .map(PrefixBody::Created)
     }
+    fn evaluate_revolve(
+        &mut self,
+        feature: FeatureId,
+        input: crate::feature::sketch_revolve::ResolvedSketchRevolve<'_>,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        self.0
+            .evaluate_revolve(feature, input)
+            .map(PrefixBody::Created)
+    }
+    fn evaluate_revolve_boolean(
+        &mut self,
+        feature: FeatureId,
+        body: &Self::Body,
+        input: crate::feature::sketch_revolve::ResolvedSketchRevolve<'_>,
+        operation: PrismBoolean,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        self.0
+            .evaluate_revolve_boolean(feature, body.get(), input, operation)
+            .map(PrefixBody::Created)
+    }
+    fn evaluate_coil(
+        &mut self,
+        feature: FeatureId,
+        input: crate::feature::sketch_coil::ResolvedSketchCoil<'_>,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        self.0
+            .evaluate_coil(feature, input)
+            .map(PrefixBody::Created)
+    }
+    fn evaluate_coil_boolean(
+        &mut self,
+        feature: FeatureId,
+        body: &Self::Body,
+        input: crate::feature::sketch_coil::ResolvedSketchCoil<'_>,
+        operation: PrismBoolean,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        self.0
+            .evaluate_coil_boolean(feature, body.get(), input, operation)
+            .map(PrefixBody::Created)
+    }
+    fn evaluate_derived_part(
+        &mut self,
+        feature: FeatureId,
+        input: crate::feature::derived_part::ResolvedDerivedPart,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        self.0
+            .evaluate_derived_part(feature, input)
+            .map(PrefixBody::Created)
+    }
+    fn evaluate_imported_model(
+        &mut self,
+        feature: FeatureId,
+        input: crate::feature::imported_model::ResolvedImportedModel,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        self.0
+            .evaluate_imported_model(feature, input)
+            .map(PrefixBody::Created)
+    }
+    fn evaluate_unwrap(
+        &mut self,
+        feature: FeatureId,
+        body: &Self::Body,
+        input: crate::feature::unwrap::ResolvedUnwrap<'_>,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        self.0
+            .evaluate_unwrap(feature, body.get(), input)
+            .map(PrefixBody::Created)
+    }
+    fn evaluate_emboss(
+        &mut self,
+        feature: FeatureId,
+        body: &Self::Body,
+        input: crate::feature::sketch_emboss::ResolvedSketchEmboss<'_>,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        self.0
+            .evaluate_emboss(feature, body.get(), input)
+            .map(PrefixBody::Created)
+    }
+    fn evaluate_rib(
+        &mut self,
+        feature: FeatureId,
+        body: &Self::Body,
+        input: crate::feature::sketch_rib::ResolvedSketchRib<'_>,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        self.0
+            .evaluate_rib(feature, body.get(), input)
+            .map(PrefixBody::Created)
+    }
+    fn evaluate_decal(
+        &mut self,
+        feature: FeatureId,
+        body: &Self::Body,
+        input: crate::feature::sketch_decal::ResolvedSketchDecal<'_>,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        self.0
+            .evaluate_decal(feature, body.get(), input)
+            .map(PrefixBody::Created)
+    }
     fn evaluate_sweep(
         &mut self,
         feature: FeatureId,

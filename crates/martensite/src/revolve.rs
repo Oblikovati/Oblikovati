@@ -1,5 +1,36 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Exact planar-profile revolutions backed by Martensite construction history.
+mod solid;
+
+fn matches_selection(
+    region: &martensite_tkbo::profile_extrusion::PlanarRegion,
+    selection: &oblikovati_model::feature::sketch_prism::SketchPrismSelection,
+) -> bool {
+    let boundary = crate::sketch_prism::regions::region_boundary(region);
+    same_loop(&boundary.outer, &selection.outer)
+        && boundary.holes.len() == selection.holes.len()
+        && selection
+            .holes
+            .iter()
+            .all(|exp| boundary.holes.iter().any(|cur| same_loop(cur, exp)))
+}
+
+fn same_loop(
+    current: &[crate::sketch_prism::SketchRegionCurveUse],
+    saved: &[crate::sketch_prism::SketchDirectedCurve],
+) -> bool {
+    let Some(first) = current.first() else {
+        return false;
+    };
+    let Some(start) = saved.iter().position(|item| item.curve == first.curve) else {
+        return false;
+    };
+    current.len() == saved.len()
+        && current
+            .iter()
+            .zip(saved.iter().cycle().skip(start))
+            .all(|(l, r)| l.curve == r.curve && l.reversed == r.reversed)
+}
 use crate::{
     EvaluationEntity as Entity, EvaluationFailure, EvaluationFailureKind as Kind,
     EvaluationPhase as Phase, FaceProbe, PlanarProfileLoop, ReleaseProbeProperties,
@@ -11,6 +42,7 @@ use martensite_tkmath::gp::{Axis1, Direction3, Point3};
 use martensite_tkprim::brep_prim_api::{BRepPrimAPIMakeRevol, BRepPrimAPIMakeSweep};
 use martensite_tktopalgo::brep_builder_api::BRepBuilderAPIMakeShape;
 use oblikovati_model::sketch::SketchPlane;
+pub use solid::{RevolveCandidate, SurfaceRevolveCandidate, build_revolve, build_surface_revolve};
 use std::f64::consts::TAU;
 
 /// One planar profile revolution in working units with an axis on its sketch plane.

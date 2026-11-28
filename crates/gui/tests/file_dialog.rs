@@ -223,3 +223,55 @@ fn native_text_widget_submits_the_typed_path_and_escape_discards_the_next_draft(
     assert!(key_frames(&mut engine, &mut request, GuiKey::Escape).is_empty());
     assert!(key_frames(&mut engine, &mut request, GuiKey::Enter).is_empty());
 }
+#[test]
+fn file_menu_keyboard_open_keeps_both_columns_visible_and_settles() {
+    let _guard = GUI_CONTEXT
+        .lock()
+        .unwrap_or_else(|error| error.into_inner());
+    let mut engine = GuiFrameEngine::new().unwrap();
+    let mut request = file_request();
+    engine.frame(&request).unwrap();
+    engine.frame(&request).unwrap();
+    for key in [GuiKey::LeftAlt, GuiKey::F] {
+        assert!(key_frames(&mut engine, &mut request, key).is_empty());
+    }
+    request.events.clear();
+    let mut settled = false;
+    let mut saw_first_open = false;
+    for _ in 0..32 {
+        let output = engine.frame(&request).unwrap();
+        let frame = drawn_text::rendered_frame();
+        let has_left = frame
+            .runs
+            .iter()
+            .any(|run| frame.is_popup_row(run) && run.text == "New");
+        let has_right = frame
+            .runs
+            .iter()
+            .any(|run| frame.is_popup_row(run) && run.text == "Recentdocuments");
+        if has_left && !saw_first_open {
+            assert!(
+                has_right,
+                "expected Recent documents column visible on first File menu frame: {:?}",
+                frame.runs
+            );
+            saw_first_open = true;
+        }
+        let activity = output.activity;
+        if saw_first_open
+            && !activity.queued_input
+            && !activity.pending_layout
+            && !activity.pending_navigation
+        {
+            assert!(
+                has_left && has_right,
+                "expected both File menu columns to stay visible after settling: {:?}",
+                frame.runs
+            );
+            settled = true;
+            break;
+        }
+    }
+    assert!(saw_first_open, "expected Alt+F to open the File menu");
+    assert!(settled, "expected open File menu layout to settle");
+}

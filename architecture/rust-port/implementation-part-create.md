@@ -9,11 +9,11 @@ helical-spring sweep use the owning command and are additional scenario files.
 | Command | Declarations |
 | --- | ---: |
 | Extrude | 56 |
-| Revolve | 25 |
+| [Revolve](implementation-revolve.md) | 25 |
 | Sweep | 21 |
 | Loft | 22 |
-| Coil | 7 |
-| Emboss | 7 |
+| [Coil](implementation-coil.md) | 7 |
+| [Emboss](implementation-emboss.md) | 7 |
 | Derive | 6 |
 | Rib | 5 |
 | Decal | 4 |

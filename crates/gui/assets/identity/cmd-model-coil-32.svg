@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-labelledby="t d">
+  <title id="t">Coil</title>
+  <desc id="d">True 3D helical spring coil with alternating front/back depth turns around centerline.</desc>
+  <g id="layer-body">
+    <line x1="16" y1="3" x2="16" y2="29" class="s-icon-line-center" fill="none" stroke="#38BDF8" stroke-width="1.2" stroke-dasharray="3 1.5 1 1.5" />
+    <path d="M8,10.5 C8,7.5 24,7.5 24,10.5 M8,17.5 C8,14.5 24,14.5 24,17.5 M8,24.5 C8,21.5 24,21.5 24,24.5" class="s-icon-mod-side" fill="none" stroke="#5948D4" stroke-width="3.2" stroke-linecap="round" />
+  </g>
+  <g id="layer-accent">
+    <path d="M8,10.5 C8,13.5 24,14.5 24,17.5 M8,17.5 C8,20.5 24,21.5 24,24.5 M8,6.5 C12,5 24,6.5 24,10.5" class="s-icon-mod-stroke" fill="none" stroke="#1D1840" stroke-width="4.6" stroke-linecap="round" />
+    <path d="M8,10.5 C8,13.5 24,14.5 24,17.5 M8,17.5 C8,20.5 24,21.5 24,24.5 M8,6.5 C12,5 24,6.5 24,10.5" class="s-icon-mod-front" fill="none" stroke="#8172FA" stroke-width="2.9" stroke-linecap="round" />
+    <path d="M10.5,12.2 C14,13.5 19,14.2 21.8,15.8 M10.5,19.2 C14,20.5 19,21.2 21.8,22.8" class="s-icon-mod-top" fill="none" stroke="#B4AAFF" stroke-width="1.1" stroke-linecap="round" />
+  </g>
+</svg>

@@ -189,6 +189,8 @@ pub trait HeadWindow {
     fn resolve_extrusion_model_pick(&mut self, _hit: &mut dyn FnMut() -> Option<(u64, String)>) {}
     /// Open an extrusion draft; example: `window.request_extrusion()`.
     fn request_extrusion(&mut self) {}
+    /// Open a revolution draft; example: `window.request_revolve()`.
+    fn request_revolve(&mut self) {}
     /// Return a rejected draft and its reason; example: `window.reject_dimension_edit(&value, "invalid")`.
     fn reject_dimension_edit(&mut self, _value: &oblikovati_gui::GuiDimensionValue, _cause: &str) {}
     /// Restore a rejected offset-plane draft; example: `window.reject_offset_plane(document, base, offset, cause)`.

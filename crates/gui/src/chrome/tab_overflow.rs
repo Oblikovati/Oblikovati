@@ -115,7 +115,9 @@ fn ribbon_tabs(
         } else {
             TabItemFlags::empty()
         };
+        let _weight = (ribbon.active == *tab).then(|| crate::ui_scale::ui_medium_font(ui));
         let item = ui.tab_item_with_flags(tab.label(), None, flags);
+        drop(_weight);
         bounds.push((*tab, ui.item_rect_min(), ui.item_rect_max()));
         if ribbon.display.selector_pointer_press(ui) || ribbon.display.context_tab_press(ui) {
             selector_tab = Some(*tab);

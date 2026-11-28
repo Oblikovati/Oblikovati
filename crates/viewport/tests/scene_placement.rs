@@ -7,6 +7,7 @@ fn scene() -> ViewportScene {
         triangles: vec![ViewportTriangle {
             face_index: None,
             positions: [[1., 0., 0.], [0., 1., 0.], [0., 0., 1.]],
+            normals: Some([[1., 0., 0.], [0., 1., 0.], [0., 0., 1.]]),
             color: [0., 1., 0., 1.],
         }],
     }
@@ -28,6 +29,10 @@ fn places_a_copy_with_row_major_rotation_and_translation() {
     );
     assert_eq!(source.triangles[0].positions[0], [1., 0., 0.]);
     assert_eq!(placed.triangles[0].color, source.triangles[0].color);
+    let normals = placed.triangles[0].normals.unwrap();
+    assert!((normals[0][1] - 1.).abs() < 1e-5, "{normals:?}");
+    assert!((normals[1][0] + 1.).abs() < 1e-5, "{normals:?}");
+    assert!((normals[2][2] - 1.).abs() < 1e-5, "{normals:?}");
 }
 
 #[test]

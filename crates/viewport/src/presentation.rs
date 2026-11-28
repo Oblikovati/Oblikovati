@@ -21,9 +21,31 @@ impl ViewportScene {
         background: [f64; 3],
         triangles: impl IntoIterator<Item = ([[f64; 3]; 3], [f32; 4], Option<usize>)>,
     ) -> Result<Self, String> {
+        Self::from_shaded_triangles(
+            background,
+            triangles
+                .into_iter()
+                .map(|(points, color, face_index)| (points, None, color, face_index)),
+        )
+    }
+    /// Convert triangles with optional analytical per-vertex normals and face ordinals.
+    /// Example: `ViewportScene::from_shaded_triangles(background, [(points, normals, color, Some(0))])?`.
+    pub fn from_shaded_triangles(
+        background: [f64; 3],
+        triangles: impl IntoIterator<
+            Item = (
+                [[f64; 3]; 3],
+                Option<[[f64; 3]; 3]>,
+                [f32; 4],
+                Option<usize>,
+            ),
+        >,
+    ) -> Result<Self, String> {
         let triangles = triangles
             .into_iter()
-            .map(|(points, color, face_index)| display_triangle(points, color, face_index))
+            .map(|(points, normals, color, face_index)| {
+                display_triangle(points, normals, color, face_index)
+            })
             .collect::<Result<Vec<_>, _>>()?;
         let scene = Self {
             background,
@@ -39,16 +61,25 @@ impl ViewportScene {
         background: [f64; 3],
         color: [f32; 4],
     ) -> Result<Self, String> {
-        Self::from_indexed_triangles(
+        Self::from_shaded_triangles(
             background,
             presentation
                 .faces
                 .iter()
                 .enumerate()
                 .flat_map(|(index, face)| {
+                    let has_normals = face.normals.len() == face.triangles.len();
                     face.triangles
                         .iter()
-                        .map(move |&points| (points, color, Some(index)))
+                        .enumerate()
+                        .map(move |(tri_index, &points)| {
+                            (
+                                points,
+                                has_normals.then(|| face.normals[tri_index]),
+                                color,
+                                Some(index),
+                            )
+                        })
                 }),
         )
     }
@@ -71,6 +102,7 @@ impl ViewportScene {
 }
 fn display_triangle(
     positions: [[f64; 3]; 3],
+    normals: Option<[[f64; 3]; 3]>,
     color: [f32; 4],
     face_index: Option<usize>,
 ) -> Result<ViewportTriangle, String> {
@@ -80,8 +112,20 @@ fn display_triangle(
             "display triangle {positions:?}: expected coordinates representable as finite display floats"
         ));
     }
+    let converted_normals = normals.map(|n| n.map(|vec| vec.map(|value| value as f32)));
+    if converted_normals
+        .iter()
+        .flatten()
+        .flatten()
+        .any(|value| !value.is_finite())
+    {
+        return Err(format!(
+            "display triangle normals {normals:?}: expected finite display normals"
+        ));
+    }
     Ok(ViewportTriangle {
         positions: converted,
+        normals: converted_normals,
         color,
         face_index,
     })
@@ -175,12 +219,12 @@ impl PartPresentation {
         options: oblikovati_martensite::PrismMeshOptions,
         color: [f32; 4],
     ) {
-        let scene = body.body_face_triangles(options).and_then(|faces| {
-            ViewportScene::from_indexed_triangles(
+        let scene = body.body_face_display_triangles(options).and_then(|faces| {
+            ViewportScene::from_shaded_triangles(
                 self.scene.background,
                 faces.into_iter().enumerate().flat_map(|(index, face)| {
                     face.into_iter()
-                        .map(move |points| (points, color, Some(index)))
+                        .map(move |tri| (tri.positions, tri.normals, color, Some(index)))
                 }),
             )
         });

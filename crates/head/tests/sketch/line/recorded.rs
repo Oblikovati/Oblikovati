@@ -17,9 +17,9 @@ const FIRST_DRAG: [i32; 2] = [900, 460];
 const LATER_DRAG: [i32; 2] = [980, 300];
 /// Each corner clear of the numeric fields, which sit just below and right of the last click.
 const CHAIN: [[i32; 2]; 3] = [[420, 260], [560, 230], [620, 320]];
-const SEPARATE: [[i32; 2]; 2] = [[900, 280], [1100, 280]];
+const SEPARATE: [[i32; 2]; 2] = [[780, 420], [980, 420]];
 /// Away from the chain's edges, so no parallel relation takes one of its four directions.
-const OBLIQUE: [[i32; 2]; 2] = [[1000, 560], [1180, 620]];
+const OBLIQUE: [[i32; 2]; 2] = [[780, 560], [960, 620]];
 const TRIANGLE_START: [f64; 2] = [-40., 40.];
 const CLEAR_START: [i32; 2] = [620, 480];
 /// Where the pointer rests while values are typed; clear of every fixture.
@@ -34,6 +34,10 @@ fn enter_length_and_angle(world: &mut ApplicationWorld, length: &str, angle: &st
 /// A line with typed length and angle from an exact start; the command is left at Ready.
 fn exact_typed_line(world: &mut ApplicationWorld, start: [f64; 2], length: &str, angle: &str) {
     world.select_line_tool();
+    world.pump(Vec::new());
+    if super::super::super::diagnostics::window_geometry("Precise Input").is_none() {
+        world.open_precise_input();
+    }
     world.precise_point(start);
     world.hover(TYPING_POINTER);
     enter_length_and_angle(world, length, angle);
@@ -96,7 +100,7 @@ fn drag_from_source_end(world: &mut ApplicationWorld, to: [i32; 2]) {
     world.drag(SOURCE_PIXELS[1], to);
     world.last_drag = Some([SOURCE_PIXELS[1], to]);
 }
-#[when("I drag from the endpoint and release")]
+#[when("the user drag from the endpoint and release")]
 fn drag_with_toolbar(world: &mut ApplicationWorld) {
     drag_from_source_end(world, FIRST_DRAG);
 }
@@ -109,7 +113,8 @@ fn preview_straight(world: &mut ApplicationWorld) {
         "expected no accepted arc"
     );
 }
-#[when("I open the Line context menu and press Escape to dismiss it")]
+#[when("the user open the Line context menu and press Escape to dismiss it")]
+#[when("the user open the Line context menu and press Escape")]
 fn menu_and_escape(world: &mut ApplicationWorld) {
     let [_, end] = world.last_drag.expect("expected an earlier drag");
     world.right_click(end);
@@ -120,18 +125,31 @@ fn menu_and_escape(world: &mut ApplicationWorld) {
     world.expect_no_text("Cancel (ESC)");
     world.expect_status("Select end of line");
 }
-#[when("I press Escape again to end Line")]
+#[then("the menu closes while Line and the pending straight preview remain active")]
+fn menu_closes_preview_active(world: &mut ApplicationWorld) {
+    world.expect_no_text("Cancel (ESC)");
+    world.expect_status("Select end of line");
+    preview_straight(world);
+}
+#[when("the user press Escape again to end Line")]
+#[when("the user press Escape again")]
 fn escape_again_ends(world: &mut ApplicationWorld) {
     world.escape();
     world.pump(Vec::new());
     world.expect_ready();
 }
-#[when("I restart Line and close Precise Input through its toolbar options")]
+#[then("Line ends and the horizontal source remains")]
+fn line_ends_source_remains(world: &mut ApplicationWorld) {
+    world.expect_ready();
+    world.expect_segment_drawn(SOURCE_PIXELS[0], SOURCE_PIXELS[1]);
+    assert_eq!(world.edited_geometry().lines().len(), 1, "accepted lines");
+}
+#[when("the user restart Line and close Precise Input through its toolbar options")]
 fn restart_and_close(world: &mut ApplicationWorld) {
     world.select_line_tool();
     world.close_precise_input();
 }
-#[when("I acquire the source endpoint and drag from it, then release")]
+#[when("the user acquire the source endpoint and drag from it, then release")]
 fn acquire_and_drag(world: &mut ApplicationWorld) {
     drag_from_source_end(world, LATER_DRAG);
 }
@@ -148,13 +166,13 @@ fn only_source(world: &mut ApplicationWorld) {
 #[given("the recorded YZ sketch fixture contains an isolated horizontal reference curve")]
 fn isolated_reference(world: &mut ApplicationWorld) {
     world.start_sketch_on("YZ Plane");
-    world.open_precise_input();
     exact_typed_line(world, REFERENCE_START, REFERENCE_LENGTH, "90");
 }
 /// With Precise Input up the recorded start is exact; otherwise any clear pixel will do.
-#[when("I start Line and choose a start point")]
+#[when("the user start Line and choose a start point")]
 fn start_point(world: &mut ApplicationWorld) {
     world.select_line_tool();
+    world.pump(Vec::new());
     if super::super::super::diagnostics::window_geometry("Precise Input").is_some() {
         world.precise_point(NUMERIC_START);
     } else {
@@ -162,17 +180,17 @@ fn start_point(world: &mut ApplicationWorld) {
     }
     world.hover(TYPING_POINTER);
 }
-#[when("I enter length 10 and angle 30 in separate dynamic fields and accept")]
+#[when("the user enter length 10 and angle 30 in separate dynamic fields and accept")]
 fn enter_numeric(world: &mut ApplicationWorld) {
     enter_length_and_angle(world, "10", "30");
 }
-#[when("I exit Line and open Measure")]
+#[when("the user exit Line and open Measure")]
 fn exit_and_measure(world: &mut ApplicationWorld) {
     world.escape();
     world.pump(Vec::new());
     world.key(ViewportPhysicalKey::M, false);
 }
-#[when("I select the new curve and the horizontal reference")]
+#[when("the user select the new curve and the horizontal reference")]
 fn select_both(world: &mut ApplicationWorld) {
     let numeric = world.line_point(1, 0.3);
     world.sketch_click(numeric);
@@ -197,14 +215,14 @@ fn distances(world: &mut ApplicationWorld) {
     world.expect_measure("Maximum distance 21.681 mm");
     world.observed_rows = Some(world.window_text("Measure"));
 }
-#[when("I close Measure, undo and redo creation")]
+#[when("the user close Measure, undo and redo creation")]
 fn undo_redo_creation(world: &mut ApplicationWorld) {
     close_measure(world);
     world.undo();
     world.expect_no_annotation("30.00");
     world.redo();
 }
-#[when("I open Measure and select both curves again")]
+#[when("the user open Measure and select both curves again")]
 fn measure_again(world: &mut ApplicationWorld) {
     measure_two_curves(world);
 }
@@ -252,7 +270,7 @@ fn closed_triangle(world: &mut ApplicationWorld) {
     for (length, angle) in [("4", "0"), ("4.0565", "90")] {
         enter_length_and_angle(world, length, angle);
     }
-    world.right_click([1200, 700]);
+    world.right_click([860, 700]);
     world.pump(Vec::new());
     world.click_text("Close");
     world.pump(Vec::new());
@@ -274,7 +292,6 @@ fn retained_groups(world: &mut ApplicationWorld) {
     world.expect_dimensions_needed(3);
     pointer_chain(world, &CHAIN);
     world.expect_dimensions_needed(9);
-    world.open_precise_input();
     exact_typed_line(world, NUMERIC_START, "10", "30");
     world.expect_dimensions_needed(11);
     closed_triangle(world);
@@ -286,7 +303,7 @@ fn retained_groups(world: &mut ApplicationWorld) {
     world.redo();
     world.expect_dimensions_needed(20);
 }
-#[when("I finish the sketch and save the part document")]
+#[when("the user finish the sketch and save the part document")]
 fn finish_sketch_and_save(world: &mut ApplicationWorld) {
     finish_and_save(world);
 }

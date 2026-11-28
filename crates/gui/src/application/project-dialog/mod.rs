@@ -211,7 +211,7 @@ impl ProjectsDialog {
         }
     }
     fn project_table(&mut self, ui: &Ui, projects: &[GuiProject]) {
-        let Some(_table) = ui.begin_table("project-list", 2) else {
+        let Some(_table) = crate::widget_abi::begin_table(ui, "project-list", 2) else {
             return;
         };
         let mut name = TableColumnSetup::new("Name");

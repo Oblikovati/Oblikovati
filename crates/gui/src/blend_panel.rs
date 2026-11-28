@@ -45,7 +45,7 @@ impl BlendDialog {
             count => format!("{count} Edges"),
         };
         crate::theme::property_label(ui, "Edges");
-        ui.text(selection);
+        crate::feature_properties::draw_pick_pill(ui, &selection, count > 0);
         crate::theme::property_label(ui, label);
         let _numeric = crate::ui_scale::numeric_font(ui);
         let _border = ui.push_style_var(imgui::StyleVar::FrameBorderSize(1.));

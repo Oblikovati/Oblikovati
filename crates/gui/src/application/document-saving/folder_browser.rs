@@ -217,11 +217,15 @@ impl FolderBrowser {
             NavigationPane::SystemLocations => self.folders.system_locations(),
         }
     }
+    pub(super) fn listing_height(&self, ui: &Ui) -> f32 {
+        (ui.content_region_avail()[1] - 122.).max(LISTING_HEIGHT)
+    }
     /// Draw the pane; returns the folder a click chose.
     fn navigation_pane(&self, ui: &Ui) -> Option<String> {
         let mut visited = None;
+        let height = self.listing_height(ui);
         ui.child_window("##folder-navigation")
-            .size([NAVIGATION_WIDTH, LISTING_HEIGHT])
+            .size([NAVIGATION_WIDTH, height])
             .border(true)
             .build(|| {
                 for heading in navigation_headings(self.navigation) {
@@ -244,6 +248,7 @@ impl FolderBrowser {
         }
     }
     fn location(&mut self, ui: &Ui, label: &str) {
+        ui.align_text_to_frame_padding();
         ui.text(label);
         ui.same_line_with_spacing(0., LABEL_GAP);
         ui.set_next_item_width(LOCATION_FIELD_WIDTH);
@@ -382,8 +387,9 @@ pub(crate) fn file_name_field(ui: &Ui, name: &mut String) -> bool {
 }
 /// Focus and select the filename after a dialog warning; example: `file_name_field_focused(ui, name, true)`.
 pub(crate) fn file_name_field_focused(ui: &Ui, name: &mut String, focus: bool) -> bool {
+    ui.align_text_to_frame_padding();
     ui.text("File name");
-    ui.same_line_with_spacing(0., LABEL_GAP);
+    ui.same_line_with_pos(110.);
     if focus || ui.is_window_appearing() {
         ui.set_keyboard_focus_here();
     }
@@ -395,8 +401,9 @@ pub(crate) fn file_name_field_focused(ui: &Ui, name: &mut String, focus: bool) -
 }
 /// Draw the file type list; example: `file_type_field(ui, &types, &mut draft.file_type)`.
 pub(crate) fn file_type_field(ui: &Ui, types: &FileTypeList, file_type: &mut usize) {
+    ui.align_text_to_frame_padding();
     ui.text("Files of type");
-    ui.same_line_with_spacing(0., LABEL_GAP);
+    ui.same_line_with_pos(110.);
     ui.set_next_item_width(-1.);
     ui.combo_simple_string("##file-type", file_type, &types.labels());
 }
@@ -438,11 +445,12 @@ pub(crate) fn dialog_button_clicks(
     can_accept: bool,
     entered: bool,
 ) -> Option<DialogEnd> {
+    ui.dummy([0., 2.]);
     let disabled = ui.begin_disabled(!can_accept);
-    let accepted = (crate::widget_abi::button(ui, accept, [80., 0.]) || entered) && can_accept;
+    let accepted = (crate::theme::primary_button(ui, accept, [80., 28.]) || entered) && can_accept;
     drop(disabled);
-    ui.same_line();
-    let cancelled = crate::widget_abi::button(ui, "Cancel", [80., 0.]);
+    ui.same_line_with_spacing(0., 6.);
+    let cancelled = crate::theme::secondary_button(ui, "Cancel", [80., 28.]);
     if accepted {
         return Some(DialogEnd::Accepted);
     }

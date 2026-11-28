@@ -29,7 +29,8 @@ pub(crate) fn selection(
     selected: &mut ExtraSelection,
     kind: ExtraKind,
 ) -> bool {
-    let Some(_table) = ui.begin_table_with_sizing(
+    let Some(_table) = crate::widget_abi::begin_table_with_sizing(
+        ui,
         "extra-selection",
         3,
         TableFlags::BORDERS | TableFlags::RESIZABLE,
@@ -52,12 +53,12 @@ pub(crate) fn selection(
         ExtraKind::Parameters => selected.parameter_chosen,
     };
     let disabled = ui.begin_disabled(available.is_none());
-    if ui.button("Add >") {
+    if crate::widget_abi::button(ui, "Add >", [0.; 2]) {
         changed |= add(view, selected, kind);
     }
     drop(disabled);
     let disabled = ui.begin_disabled(chosen_id.is_none());
-    if ui.button("< Remove") {
+    if crate::widget_abi::button(ui, "< Remove", [0.; 2]) {
         changed |= remove(view, selected, kind);
     }
     drop(disabled);

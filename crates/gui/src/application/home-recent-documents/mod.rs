@@ -119,9 +119,7 @@ impl HomeWorkspace {
         icons: &crate::icons::GuiRibbonIcons,
     ) {
         let _outline = ui.push_style_var(imgui::StyleVar::FrameBorderSize(1.));
-        ui.text("Recent");
-        self.view_controls(ui);
-        self.search_controls(ui, icons);
+        self.recent_toolbar(ui, icons);
         self.search_history(ui);
         let rows = self.shown_rows(state);
         self.checks.keep_only(&rows);

@@ -244,13 +244,18 @@ pub(super) fn dispatch_shortcut_action(
     owner: &mut dyn HeadWork,
     action: &GuiShellAction,
 ) -> Result<bool, String> {
-    if *action != GuiShellAction::OpenExtrude {
+    let revol = *action == GuiShellAction::Revolve(oblikovati_gui::GuiRevolveAction::Open);
+    if *action != GuiShellAction::OpenExtrude && !revol {
         return dispatch_gui_action(window, owner, action);
     }
     if !action.dispatchable(&owner.gui_command_state()?) {
         return Ok(false);
     }
-    window.request_extrusion();
+    if revol {
+        window.request_revolve();
+    } else {
+        window.request_extrusion();
+    }
     Ok(true)
 }
 pub(super) fn dispatch_gui_action(
@@ -488,9 +493,7 @@ pub(super) fn dispatch_sketch_double_click(
     }
     owner.edit_sketch_text_at(position, window)
 }
-pub(super) fn earliest_wake(left: Option<Duration>, right: Option<Duration>) -> Option<Duration> {
-    left.into_iter().chain(right).min()
-}
+use super::earliest_wake;
 #[cfg(test)]
 #[path = "../../tests/gui_frames.rs"]
 mod tests;

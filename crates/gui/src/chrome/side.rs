@@ -147,43 +147,48 @@ fn side_groups(
     } else {
         -32.
     };
-    ui.child_window("##ribbon-groups")
-        .size([0., group_height])
-        .build(|| {
-            crate::ribbon_panels::draw_side_groups(
-                ui,
-                ribbon.active,
-                &request.commands,
-                crate::ribbon_panels::RibbonPanelOwners {
-                    home_active: owners.home_active,
-                    icons: &icons,
-                    parameters: owners.parameters,
-                    preferences: owners.preferences,
-                    editor: owners.theme_editor,
-                    workspace: owners.workspace,
-                    workspaces: owners.workspaces,
-                    quick_access: owners.quick_access,
-                    precise_input: owners.precise_input,
-                    sketch_pattern: owners.sketch_pattern,
-                    create_block: owners.create_block,
-                    customization: &mut ribbon.customization,
-                    team_web: &mut ribbon.team_web,
-                    active_tab: ribbon.active,
-                    plane_selection_active: owners.plane_selection_active,
-                    hole_tip: ribbon.tips.model_commands() && ribbon.tips.matching("HO"),
-                    modify_group_tip: ribbon.tips.model_commands() && ribbon.tips.matching("Y"),
-                    sketch_group_tip: ribbon.tips.model_commands() && ribbon.tips.matching("K"),
-                    create_group_tip: ribbon.tips.model_commands() && ribbon.tips.matching("C"),
-                    key_tips_active: ribbon.tips.active(),
-                    sketch_tip: ribbon.tips.model_commands() && ribbon.tips.matching("SK"),
-                    extrude_tip: ribbon.tips.model_commands() && ribbon.tips.matching("EX"),
-                    tools_application_tip: ribbon.tips.tools_face_tip("OA"),
-                    tools_document_tip: ribbon.tips.tools_face_tip("OD"),
-                },
-                &mut ribbon.panels,
-                &mut ribbon.display,
-                panel_x,
-                actions,
-            );
-        });
+    let region = crate::widget_abi::child_region(
+        ui,
+        "##ribbon-groups",
+        [0., group_height],
+        0.,
+        imgui::WindowFlags::empty(),
+    );
+    if region.visible {
+        crate::ribbon_panels::draw_side_groups(
+            ui,
+            ribbon.active,
+            &request.commands,
+            crate::ribbon_panels::RibbonPanelOwners {
+                home_active: owners.home_active,
+                icons: &icons,
+                parameters: owners.parameters,
+                preferences: owners.preferences,
+                editor: owners.theme_editor,
+                workspace: owners.workspace,
+                workspaces: owners.workspaces,
+                quick_access: owners.quick_access,
+                precise_input: owners.precise_input,
+                sketch_pattern: owners.sketch_pattern,
+                create_block: owners.create_block,
+                customization: &mut ribbon.customization,
+                team_web: &mut ribbon.team_web,
+                active_tab: ribbon.active,
+                plane_selection_active: owners.plane_selection_active,
+                hole_tip: ribbon.tips.model_commands() && ribbon.tips.matching("HO"),
+                modify_group_tip: ribbon.tips.model_commands() && ribbon.tips.matching("Y"),
+                sketch_group_tip: ribbon.tips.model_commands() && ribbon.tips.matching("K"),
+                create_group_tip: ribbon.tips.model_commands() && ribbon.tips.matching("C"),
+                key_tips_active: ribbon.tips.active(),
+                sketch_tip: ribbon.tips.model_commands() && ribbon.tips.matching("SK"),
+                extrude_tip: ribbon.tips.model_commands() && ribbon.tips.matching("EX"),
+                tools_application_tip: ribbon.tips.tools_face_tip("OA"),
+                tools_document_tip: ribbon.tips.tools_face_tip("OD"),
+            },
+            &mut ribbon.panels,
+            &mut ribbon.display,
+            panel_x,
+            actions,
+        );
+    }
 }

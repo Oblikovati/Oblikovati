@@ -250,6 +250,22 @@ impl<
             loft_edit_warning: self.gui_loft_edit_warning(document, session.generation()),
             loft_preview: self.gui_loft_preview(document, session.generation()),
             sweep_preview: self.gui_sweep_preview(document, session.generation()),
+            revolve_preview: self.gui_revolve_preview(document, session.generation()),
+            coil_preview: self.gui_coil_preview(document, session.generation()),
+            emboss_preview: self.gui_emboss_preview(document, session.generation()),
+            derive_preview: self.gui_derive_preview(document, session.generation()),
+            derive_source: self.gui_derive_source(document),
+            rib_preview: self.gui_rib_preview(document, session.generation()),
+            rib_sketches: self.gui_rib_sketches(document),
+            decal_preview: self.gui_decal_preview(document, session.generation()),
+            decal_images: self.gui_decal_images(document),
+            import_preview: self.gui_import_preview(document, session.generation()),
+            import_source: self.gui_import_source(document),
+            unwrap_preview: self.gui_unwrap_preview(document, session.generation()),
+            unwrap_pick: self.gui_unwrap_pick(document, session.generation()),
+            selected_model_face: self
+                .chosen_model_face(document)
+                .map(|face| face.key.clone()),
             extrude_draft_preview: self
                 .extrusion_draft_preview
                 .as_ref()

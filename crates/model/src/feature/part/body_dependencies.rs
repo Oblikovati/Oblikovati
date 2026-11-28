@@ -63,6 +63,23 @@ fn track_replacement(
             owners.insert(id, id);
             return;
         }
+        PartFeatureDefinition::SketchRevolve(revolve) => match revolve.boolean_target() {
+            Some((_, _, source)) => source,
+            None => {
+                owners.insert(id, id);
+                return;
+            }
+        },
+        PartFeatureDefinition::SketchCoil(coil) => match coil.boolean_target() {
+            Some((_, _, source)) => source,
+            None => {
+                owners.insert(id, id);
+                return;
+            }
+        },
+        PartFeatureDefinition::SketchEmboss(emboss) => emboss.target_body().1,
+        PartFeatureDefinition::SketchRib(rib) => rib.target_body().1,
+        PartFeatureDefinition::SketchDecal(decal) => decal.target_body().1,
         PartFeatureDefinition::SketchSweep(sweep) => match sweep.boolean_target() {
             Some((_, _, source)) => source,
             None => {

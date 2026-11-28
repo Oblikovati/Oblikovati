@@ -1,17 +1,43 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Preview and commit blends from exact desktop edge selections (#4045, #4046).
 use super::*;
+#[path = "owner_coil.rs"]
+pub(super) mod owner_coil;
+#[path = "owner_decal.rs"]
+pub(super) mod owner_decal;
+#[path = "owner_derive.rs"]
+pub(super) mod owner_derive;
+#[path = "owner_emboss.rs"]
+pub(super) mod owner_emboss;
 #[path = "owner_hole.rs"]
 mod owner_hole;
+#[path = "owner_import.rs"]
+pub(super) mod owner_import;
 #[path = "owner_move_body.rs"]
 mod owner_move_body;
+#[path = "owner_revolve.rs"]
+pub(super) mod owner_revolve;
+#[path = "owner_rib.rs"]
+pub(super) mod owner_rib;
 #[path = "owner_shell_face_body.rs"]
 mod owner_shell_face_body;
 #[path = "owner_shell_feature.rs"]
 mod owner_shell_feature;
 #[path = "owner_sweep.rs"]
 pub(super) mod owner_sweep;
+#[path = "owner_unwrap.rs"]
+pub(super) mod owner_unwrap;
 use oblikovati_automation::{PreparedChamfer, PreparedFillet, prepare_chamfer, prepare_fillet};
+
+/// Bundled preview and session state for Part Create feature dialogs on `DesktopOwner`.
+#[derive(Default)]
+pub(super) struct CreateFeatureState {
+    pub(super) derive: owner_derive::DeriveOwnerState,
+    pub(super) rib: Option<owner_rib::RibPreview>,
+    pub(super) decal: Option<owner_decal::DecalPreview>,
+    pub(super) import: owner_import::ImportOwnerState,
+    pub(super) unwrap: owner_unwrap::UnwrapOwnerState,
+}
 
 impl<
     O: TransactionObserver,

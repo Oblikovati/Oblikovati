@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-labelledby="t d">
+  <title id="t">Appearance Browser</title>
+  <desc id="d">Browser window displaying a 2x2 grid of semantic color and surface appearance swatches.</desc>
+  <g id="layer-body">
+    <rect x="3.5" y="4" width="25" height="24" rx="2.5" class="f-bg-surface-elevated s-icon-line-general" fill="#181A20" stroke="#D2D7E2" stroke-width="1.25"/>
+    <path d="M3.5,9.5 H28.5" class="s-icon-line-general" fill="none" stroke="#D2D7E2" stroke-width="1.1"/>
+    <circle cx="6.8" cy="6.8" r="1.0" class="f-icon-mod-front" fill="#8172FA"/>
+    <path d="M10.5,6.8 H24.5" class="s-icon-body-front" fill="none" stroke="#9EA6B8" stroke-width="1.4" stroke-linecap="round"/>
+  </g>
+  <g id="layer-accent">
+    <rect x="6.5" y="12.2" width="8.2" height="5.8" rx="1.2" class="f-icon-mod-front s-icon-mod-stroke" fill="#8172FA" stroke="#1D1840" stroke-width="0.95"/>
+    <rect x="17.3" y="12.2" width="8.2" height="5.8" rx="1.2" class="f-icon-sel-front s-icon-sel-stroke" fill="#14B8A6" stroke="#0B2926" stroke-width="0.95"/>
+    <rect x="6.5" y="20.0" width="8.2" height="5.8" rx="1.2" class="f-icon-surf-front s-icon-surf-stroke" fill="#F59E0B" stroke="#2E1D05" stroke-width="0.95"/>
+    <rect x="17.3" y="20.0" width="8.2" height="5.8" rx="1.2" class="f-icon-body-front s-icon-body-stroke" fill="#9EA6B8" stroke="#181B22" stroke-width="0.95"/>
+  </g>
+</svg>

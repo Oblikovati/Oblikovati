@@ -177,13 +177,18 @@ fn model_ribbon_submits_icons_for_work_features_and_patterns() {
         frame.resources.source(axis).unwrap().pixels(),
         light_frame.resources.source(axis).unwrap().pixels()
     );
-    for rendered in [&frame, &light_frame] {
+    for (rendered, expected_alpha) in [(&frame, 115_u8), (&light_frame, 92_u8)] {
         let batch = rendered
             .batches
             .iter()
             .find(|batch| batch.texture == axis)
             .unwrap();
-        assert!(batch.vertices.iter().all(|vertex| vertex.srgb[3] == 115));
+        assert!(
+            batch
+                .vertices
+                .iter()
+                .all(|vertex| vertex.srgb[3] == expected_alpha)
+        );
     }
 }
 
@@ -339,7 +344,8 @@ fn small_caption_frame(owner: &mut GuiFrameEngine) -> (GuiFrame, [f32; 4]) {
     let mut bounds = [0.; 4];
     ui.window("Small caption").build(|| {
         crate::widget_abi::cursor_position(ui, [31., 47.]);
-        let _color = ui.push_style_color(imgui::StyleColor::Text, [0.2, 0.4, 0.6, 1.]);
+        let _color =
+            crate::widget_abi::push_style_color(ui, imgui::StyleColor::Text, [0.2, 0.4, 0.6, 1.]);
         owner
             .icons
             .presentation

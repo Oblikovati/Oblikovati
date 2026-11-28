@@ -242,6 +242,9 @@ impl HeadWindow for ScriptedGuiWindow {
     fn request_extrusion(&mut self) {
         self.native.request_extrusion();
     }
+    fn request_revolve(&mut self) {
+        self.native.request_revolve();
+    }
     fn reject_dimension_edit(&mut self, value: &oblikovati_gui::GuiDimensionValue, cause: &str) {
         self.native.reject_dimension_edit(value, cause);
     }

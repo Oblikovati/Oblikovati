@@ -4,8 +4,8 @@ use oblikovati_martensite::{PrismMeshOptions, PrismResolution, PrismResolutionPo
 
 /// Default display mesh, in database units and radians; example: `let mesh = DISPLAY_MESH`.
 pub const DISPLAY_MESH: PrismMeshOptions = PrismMeshOptions {
-    chord_error: 0.05,
-    angular_error: 0.5,
+    chord_error: 0.002,
+    angular_error: 0.1,
 };
 
 /// Apply the Go ADR-0042 model-relative bounds; example: `modelling_policy().validate()?`.

@@ -9,14 +9,14 @@ use martensite_tkgeombase::gprop::GProps;
 use martensite_tktopalgo::brep_gprop::BRepGProp;
 use oblikovati_model::feature::sketch_prism::PrismBoolean;
 
-pub(in crate::prism::named) struct BooleanTool {
+pub(crate) struct BooleanTool {
     pub shape: Shape,
     pub sources: Vec<(Vec<u8>, Shape)>,
     pub resolution: Option<PrismResolution>,
 }
 
 #[derive(Debug)]
-pub(in crate::prism::named) enum BooleanFailure {
+pub(crate) enum BooleanFailure {
     Refused(String),
     UnchangedCut { faces: usize, message: String },
 }
@@ -115,11 +115,11 @@ fn checked_boolean(
     crate::checked_shape::require_geometry(&result, &format!("{operation} result"))
         .map_err(|error| error.to_string())?;
     validate_result_faces(&result, operation)?;
-    let certified_tools = tools
+    let resolved_tools = tools
         .iter()
         .filter_map(|tool| Some((&tool.shape, tool.resolution?)));
     let achieved = if tools.iter().any(|tool| tool.resolution.is_some()) {
-        tolerances::check_boolean(target, certified_tools, &result, resolution, operation)?
+        tolerances::check_boolean(target, resolved_tools, &result, resolution, operation)?
     } else {
         tolerances::check(target, &result, resolution, operation)?
     };

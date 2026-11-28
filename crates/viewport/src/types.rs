@@ -15,6 +15,8 @@ impl Default for ViewportOptions {
 #[derive(Clone, Copy, Debug)]
 pub struct ViewportTriangle {
     pub positions: [[f32; 3]; 3],
+    /// Optional analytical per-vertex unit normals for smooth Phong shading.
+    pub normals: Option<[[f32; 3]; 3]>,
     pub color: [f32; 4],
     /// Scene-local B-rep face ordinal for mesh diagnostics, when available.
     pub face_index: Option<usize>,
@@ -55,7 +57,19 @@ impl ViewportTriangle {
                 self.positions
             ));
         }
+        self.validate_normals(index)?;
         self.validate_color(index)
+    }
+    fn validate_normals(&self, index: usize) -> Result<(), String> {
+        let Some(normals) = self.normals else {
+            return Ok(());
+        };
+        if normals.iter().flatten().any(|value| !value.is_finite()) {
+            return Err(format!(
+                "viewport triangle {index} normals {normals:?}: expected finite vertex normals"
+            ));
+        }
+        Ok(())
     }
     fn validate_color(&self, index: usize) -> Result<(), String> {
         if self
@@ -98,7 +112,12 @@ impl Default for ViewportCamera {
 impl ViewportCamera {
     /// The angle that shows `scale` of height at the target, in degrees: switching projection
     /// keeps what lies at the target the same size on screen.
-    #[cfg(any(target_os = "linux", target_os = "windows", test))]
+    #[cfg(any(
+        target_os = "linux",
+        target_os = "windows",
+        target_arch = "wasm32",
+        test
+    ))]
     pub(crate) fn perspective_field_of_view(&self) -> f64 {
         let delta: [f64; 3] = std::array::from_fn(|axis| self.eye[axis] - self.target[axis]);
         let distance = delta.iter().map(|value| value * value).sum::<f64>().sqrt();
@@ -192,7 +211,12 @@ pub enum ViewportEvent {
     Mapped(bool),
     CloseRequested,
 }
-#[cfg(any(target_os = "linux", target_os = "windows", test))]
+#[cfg(any(
+    target_os = "linux",
+    target_os = "windows",
+    target_arch = "wasm32",
+    test
+))]
 pub(crate) fn valid_extent(extent: [u32; 2]) -> Result<[i32; 2], String> {
     if extent
         .iter()

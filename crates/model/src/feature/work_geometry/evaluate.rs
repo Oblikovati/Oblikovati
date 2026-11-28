@@ -136,6 +136,7 @@ impl WorkGeometryEvaluation {
             WorkPlaneDefinition::SketchPrism(_)
                 | WorkPlaneDefinition::SketchSweep(_)
                 | WorkPlaneDefinition::SketchLoft(_)
+                | WorkPlaneDefinition::SketchRevolve(_)
                 | WorkPlaneDefinition::DeleteBody(_)
                 | WorkPlaneDefinition::Fillet(_)
                 | WorkPlaneDefinition::Chamfer(_)

@@ -110,6 +110,7 @@ pub struct DocumentSession<O> {
     next_sketch_name: u64,
     body_visibility: body_visibility::BodyVisibilityState,
     sketch_continuity: sketch_continuity::SketchContinuityWatches,
+    derived_sources: std::sync::Arc<std::collections::BTreeMap<String, DocumentSnapshot>>,
 }
 
 impl<O: TransactionObserver> DocumentSession<O> {
@@ -146,9 +147,25 @@ impl<O: TransactionObserver> DocumentSession<O> {
             group: None,
             body_visibility: Default::default(),
             sketch_continuity: Default::default(),
+            derived_sources: Default::default(),
             sketch_options,
             next_sketch_name: 1,
         }
+    }
+
+    /// Borrow loaded Derived Part source snapshots attached to this session.
+    pub fn derived_sources(
+        &self,
+    ) -> &std::sync::Arc<std::collections::BTreeMap<String, DocumentSnapshot>> {
+        &self.derived_sources
+    }
+
+    /// Replace loaded Derived Part source snapshots attached to this session.
+    pub(crate) fn set_derived_sources(
+        &mut self,
+        sources: std::sync::Arc<std::collections::BTreeMap<String, DocumentSnapshot>>,
+    ) {
+        self.derived_sources = sources;
     }
 
     /// Share the same numerical policy with a transient preview; example: `session.sketch_solve_options()`.

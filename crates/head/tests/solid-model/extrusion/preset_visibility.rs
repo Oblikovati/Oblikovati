@@ -144,8 +144,12 @@ fn preset_row_missing(world: &ApplicationWorld) -> bool {
     !world.window_text("Extrude").contains(EMPTY)
 }
 
-fn open_settings(world: &mut ApplicationWorld) {
-    click_in_extrude(world, "AdvancedSettings");
+pub(super) fn open_settings(world: &mut ApplicationWorld) {
+    let ([left, top], [width, _]) = diagnostics::window_geometry("Extrude").unwrap();
+    let point = diagnostics::pointer_pixels([left + width - 22., top + 45.]);
+    world.hover(point);
+    super::super::viewport_interaction::click_at(world, point);
+    world.pump(Vec::new());
 }
 
 pub(super) fn menu_row<'a>(

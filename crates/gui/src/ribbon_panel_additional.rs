@@ -81,7 +81,7 @@ pub(super) fn available(tab: RibbonTab, panel: RibbonPanel) -> bool {
         (tab, panel),
         (
             RibbonTab::Model,
-            RibbonPanel::PartModify | RibbonPanel::PartSimplification
+            RibbonPanel::PartCreate | RibbonPanel::PartModify | RibbonPanel::PartSimplification,
         ) | (RibbonTab::Tools, RibbonPanel::ToolOptions)
             | (
                 RibbonTab::Sketch,
@@ -100,6 +100,9 @@ pub(super) fn trigger(
     let title_bounds = [ui.item_rect_min(), ui.item_rect_max()];
     ui.same_line_with_spacing(0., 4.);
     let _panel_id = ui.push_id(format!("{panel:?}"));
+    let _bg = ui.push_style_color(imgui::StyleColor::Button, [0.; 4]);
+    let _border = ui.push_style_var(imgui::StyleVar::FrameBorderSize(0.));
+    let _ink = ui.push_style_color(imgui::StyleColor::Text, crate::theme::text_muted(ui));
     let clicked = ui.small_button("▼##additional-commands");
     let arrow_bounds = [ui.item_rect_min(), ui.item_rect_max()];
     let trigger = [

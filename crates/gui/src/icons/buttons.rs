@@ -6,8 +6,29 @@ use imgui::Ui;
 
 pub(crate) const FLYOUT_ROW_HEIGHT: f32 = 28.;
 
+struct TransparentCommandChrome<'a> {
+    _bg: Option<imgui::ColorStackToken<'a>>,
+    _border: Option<imgui::StyleStackToken<'a>>,
+}
+
+fn transparent_command_chrome(ui: &Ui) -> TransparentCommandChrome<'_> {
+    let active = ui.style_color(imgui::StyleColor::Button)
+        == ui.style_color(imgui::StyleColor::ButtonActive);
+    if active {
+        return TransparentCommandChrome {
+            _bg: None,
+            _border: None,
+        };
+    }
+    TransparentCommandChrome {
+        _bg: Some(ui.push_style_color(imgui::StyleColor::Button, [0.; 4])),
+        _border: Some(ui.push_style_var(imgui::StyleVar::FrameBorderSize(0.))),
+    }
+}
+
 impl GuiRibbonIcons {
     pub(crate) fn flyout_button(&self, ui: &Ui, label: &str, glyph: IconGlyph) -> bool {
+        let _chrome = transparent_command_chrome(ui);
         crate::widget_abi::icon_button(
             ui,
             label,
@@ -23,6 +44,10 @@ impl GuiRibbonIcons {
 
     pub(crate) fn brand_mark(&self, ui: &Ui, beside_toolbar: bool) {
         let texture = imgui::TextureId::new(self.key(IconGlyph::BrandMark, IconSize::Small).raw());
+        let [start_x, start_y] = ui.cursor_pos();
+        if beside_toolbar {
+            crate::widget_abi::cursor_position(ui, [start_x, start_y + 4.]);
+        }
         imgui::Image::new(texture, [16.; 2]).build(ui);
         if !beside_toolbar {
             ui.same_line();
@@ -30,17 +55,18 @@ impl GuiRibbonIcons {
         }
         let [right, _] = ui.item_rect_max();
         let top = ui.item_rect_min()[1];
-        let x = right + 4.5;
+        let x = (right + 5.).floor() + 0.5;
         ui.get_window_draw_list()
             .add_line(
                 [x, top + 1.],
                 [x, top + 15.],
-                ui.style_color(imgui::StyleColor::Border),
+                crate::theme::border_subtle(ui),
             )
             .build();
         ui.same_line_with_spacing(0., 0.);
-        ui.dummy([9., 16.]);
+        ui.dummy([10., 16.]);
         ui.same_line_with_spacing(0., 0.);
+        crate::widget_abi::cursor_position(ui, [ui.cursor_pos()[0], start_y]);
     }
 
     pub(crate) fn brand_wordmark(&self, ui: &Ui, available: f32) {
@@ -57,6 +83,7 @@ impl GuiRibbonIcons {
         glyph: IconGlyph,
         size: [f32; 2],
     ) -> bool {
+        let _chrome = transparent_command_chrome(ui);
         let pressed = crate::widget_abi::icon_button(
             ui,
             label,
@@ -93,6 +120,7 @@ impl GuiRibbonIcons {
     pub(crate) fn button(&self, ui: &Ui, label: &str, glyph: IconGlyph, size: [f32; 2]) -> bool {
         let presentation = self.presentation(ui, label, glyph, size);
         let show_caption = presentation.show_caption;
+        let _chrome = transparent_command_chrome(ui);
         let pressed = crate::widget_abi::icon_button(ui, label, presentation);
         if !show_caption && ui.is_item_hovered() {
             ui.tooltip_text(label);
@@ -103,6 +131,7 @@ impl GuiRibbonIcons {
     /// Example: `icons.compact_button(ui, "Open", IconGlyph::Open)`.
     pub(crate) fn compact_button(&self, ui: &Ui, label: &str, glyph: IconGlyph) -> bool {
         let icon = self.logical[IconSize::Small.index()];
+        let _chrome = transparent_command_chrome(ui);
         let pressed = crate::widget_abi::icon_button(
             ui,
             label,
@@ -159,9 +188,9 @@ impl GuiRibbonIcons {
     fn caption_width(&self, ui: &Ui, label: &str, style: IconSize) -> f32 {
         let caption = ui.calc_text_size_with_opts(label, true, -1.)[0];
         let inset = if style == IconSize::Large {
-            4.
+            10.
         } else {
-            self.logical[style.index()][0] + 7.
+            self.logical[style.index()][0] + 18.
         };
         caption + inset
     }
@@ -201,8 +230,16 @@ pub(crate) fn action_glyph(action: &GuiShellAction) -> Option<IconGlyph> {
         GuiShellAction::Undo => IconGlyph::Undo,
         GuiShellAction::Redo => IconGlyph::Redo,
         GuiShellAction::OpenShellFeature => IconGlyph::Shell,
+        GuiShellAction::Revolve(crate::GuiRevolveAction::Open) => IconGlyph::Revolve,
         GuiShellAction::Sweep(crate::GuiSweepAction::Open) => IconGlyph::Sweep,
         GuiShellAction::Loft(crate::GuiLoftAction::Open) => IconGlyph::Loft,
+        GuiShellAction::Coil(crate::GuiCoilAction::Open) => IconGlyph::Coil,
+        GuiShellAction::Emboss(crate::GuiEmbossAction::Open) => IconGlyph::Emboss,
+        GuiShellAction::Rib(crate::GuiRibAction::Open) => IconGlyph::Rib,
+        GuiShellAction::Decal(crate::GuiDecalAction::Open) => IconGlyph::Decal,
+        GuiShellAction::Import(crate::GuiImportAction::Open) => IconGlyph::Import,
+        GuiShellAction::Unwrap(crate::GuiUnwrapAction::Open) => IconGlyph::Unwrap,
+        GuiShellAction::Derive(crate::GuiDeriveAction::Open) => IconGlyph::Derive,
         _ => return None,
     })
 }

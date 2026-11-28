@@ -29,6 +29,8 @@ use crate::application::workspace_layout::{
 use sketch_rows::sketch_row;
 #[path = "browser_art.rs"]
 pub(crate) mod browser_art;
+#[path = "browser_import.rs"]
+pub(crate) mod browser_import;
 /// Draw the browser tree, or the rows a search leaves; example: inside the Model window.
 pub(crate) fn browser_contents(
     ui: &Ui,
@@ -105,6 +107,7 @@ impl BrowserTree<'_> {
         self.bodies(view, actions);
         self.surface_bodies(view, actions);
         self.origin(view, actions);
+        browser_import::third_party_folder(self.ui, self.browser, self.expansion);
         self.parameters();
         self.blocks(actions);
         self.sketches(view, actions);
@@ -123,8 +126,13 @@ impl BrowserTree<'_> {
         }
     }
     fn assembly(&self, view: &mut BrowserView, actions: &mut Vec<GuiShellAction>) {
-        self.ui.text("Representations");
-        self.ui.text("Relationships");
+        if let Some(_reps) = self.branch("Representations", false) {
+            self.ui.text_disabled("View: Primary");
+            self.ui.text_disabled("Position: Primary");
+        }
+        if let Some(_rels) = self.branch("Relationships", false) {
+            self.ui.text_disabled("(none)");
+        }
         self.modeling("End of Assembly", view, actions);
     }
     fn occurrences(&self, rows: &[GuiBrowserOccurrence], actions: &mut Vec<GuiShellAction>) {
@@ -219,27 +227,66 @@ impl BrowserTree<'_> {
             .document
             .and_then(|id| self.state.drawing_documents.get(&id));
         for (branch, (label, rows)) in drawing_tree::drawing_tree(drawing).iter().enumerate() {
-            let Some(_node) = self.branch(label, true) else {
+            let branch_glyph = if branch == 0 {
+                crate::icons::IconGlyph::NewDrawing
+            } else {
+                crate::icons::IconGlyph::DrawingSheet
+            };
+            let Some(_node) = self.branch(&format!("    {label}###draw-branch-{branch}"), true)
+            else {
+                browser_art::prefix(
+                    self.ui,
+                    view,
+                    branch_glyph,
+                    browser_art::tree_label_anchor(self.ui),
+                );
                 continue;
             };
+            browser_art::prefix(
+                self.ui,
+                view,
+                branch_glyph,
+                browser_art::tree_label_anchor(self.ui),
+            );
+            let guide_x = (self.ui.cursor_screen_pos()[0] - 8.).floor() + 0.5;
+            let guide_top = self.ui.cursor_screen_pos()[1];
             for (row, name) in rows.iter().enumerate() {
                 let selected = view.selected_row == Some((branch, row));
+                let row_glyph = drawing_row_glyph(name);
                 let chosen = if name == SHEET_TITLE_BLOCK {
-                    self.title_block_row(selected)
+                    self.title_block_row(selected, view)
                 } else {
-                    self.ui.selectable_config(name).selected(selected).build()
+                    let clicked = self
+                        .ui
+                        .selectable_config(format!("     {name}###draw-row-{branch}-{row}"))
+                        .selected(selected)
+                        .build();
+                    let min = self.ui.item_rect_min();
+                    browser_art::prefix(self.ui, view, row_glyph, [min[0] + 2., min[1]]);
+                    clicked
                 };
                 if chosen {
                     view.selected_row = Some((branch, row));
                 }
             }
+            let guide_bottom = self.ui.cursor_screen_pos()[1];
+            if guide_bottom > guide_top {
+                self.ui
+                    .get_window_draw_list()
+                    .add_line(
+                        [guide_x, guide_top],
+                        [guide_x, guide_bottom],
+                        crate::theme::border_subtle(self.ui),
+                    )
+                    .build();
+            }
         }
     }
     /// A selectable row that is also a branch: its arrow opens it, its text selects it.
-    fn title_block_row(&self, selected: bool) -> bool {
+    fn title_block_row(&self, selected: bool, view: &BrowserView) -> bool {
         let node = self
             .ui
-            .tree_node_config(SHEET_TITLE_BLOCK)
+            .tree_node_config(format!("    {SHEET_TITLE_BLOCK}###sheet-title-block"))
             .open_on_arrow(true)
             .default_open(true)
             .selected(selected);
@@ -247,6 +294,12 @@ impl BrowserTree<'_> {
             Some(open) => node.opened(open, imgui::Condition::Always).push(),
             None => node.push(),
         };
+        browser_art::prefix(
+            self.ui,
+            view,
+            crate::icons::IconGlyph::Annotation,
+            browser_art::tree_label_anchor(self.ui),
+        );
         let chosen = self.ui.is_item_clicked() && !self.ui.is_item_toggled_open();
         if token.is_some() {
             self.ui.text(TITLE_BLOCK_FIELD);
@@ -419,6 +472,20 @@ impl BrowserTree<'_> {
     }
 }
 const SHEET_TITLE_BLOCK: &str = "Title Block";
+fn drawing_row_glyph(name: &str) -> crate::icons::IconGlyph {
+    use crate::icons::IconGlyph;
+    if name.contains("Border") || name.contains("Sheet") {
+        IconGlyph::DrawingSheet
+    } else if name.contains("Title") || name.contains("Note") || name.contains("Text") {
+        IconGlyph::Annotation
+    } else if name.contains("Weld") {
+        IconGlyph::DrawingWeld
+    } else if name.contains("Surface") {
+        IconGlyph::DrawingSurface
+    } else {
+        IconGlyph::DrawingBase
+    }
+}
 /// What a title block holds, one level under its row on the sheet.
 const TITLE_BLOCK_FIELD: &str = "Field Text";
 pub(crate) const ORIGIN_ROWS: [&str; 7] = [

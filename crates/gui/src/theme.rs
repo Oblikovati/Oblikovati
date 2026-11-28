@@ -92,11 +92,188 @@ const CHROME_STYLE_BINDINGS: &[(ThemeToken, &[StyleColor])] = &[
 pub(crate) fn configure_chrome(style: &mut imgui::Style) -> Result<(), String> {
     let theme = oblikovati_model::theme::ThemeDefinition::dark()?;
     apply_chrome_theme(&mut style.colors, theme.palette());
+    style.window_padding = [10., 10.];
+    style.frame_padding = [8., 5.];
+    style.item_spacing = [8., 6.];
+    style.item_inner_spacing = [6., 4.];
+    style.cell_padding = [8., 5.];
+    style.indent_spacing = 16.;
+    style.scrollbar_size = 10.;
+    style.scrollbar_rounding = 9.;
+    style.grab_rounding = 4.;
+    style.window_rounding = 6.;
+    style.child_rounding = 4.;
     style.frame_rounding = 4.;
-    style.popup_rounding = 4.;
+    style.popup_rounding = 6.;
     style.tab_rounding = 4.;
+    style.window_border_size = 1.;
+    style.frame_border_size = 1.;
     style.popup_border_size = 1.;
     Ok(())
+}
+
+pub(crate) fn is_high_contrast(ui: &imgui::Ui) -> bool {
+    let surface = ui.style_color(StyleColor::WindowBg);
+    surface[..3].iter().all(|value| *value < 0.01)
+}
+
+pub(crate) fn is_light_theme(ui: &imgui::Ui) -> bool {
+    ui.style_color(StyleColor::WindowBg)[0] > 0.5
+}
+
+pub(crate) fn surface_subtle(ui: &imgui::Ui) -> [f32; 4] {
+    hex_rgb(if is_high_contrast(ui) {
+        0x14141A
+    } else if is_light_theme(ui) {
+        0xF0F2F6
+    } else {
+        0x1F222A
+    })
+}
+
+pub(crate) fn border_subtle(ui: &imgui::Ui) -> [f32; 4] {
+    hex_rgb(if is_high_contrast(ui) {
+        0x525266
+    } else if is_light_theme(ui) {
+        0xE4E7EE
+    } else {
+        0x22252E
+    })
+}
+
+pub(crate) fn text_secondary(ui: &imgui::Ui) -> [f32; 4] {
+    hex_rgb(if is_high_contrast(ui) {
+        0xE2E4EC
+    } else if is_light_theme(ui) {
+        0x4B5263
+    } else {
+        0x9CA3B2
+    })
+}
+
+pub(crate) fn text_muted(ui: &imgui::Ui) -> [f32; 4] {
+    hex_rgb(if is_high_contrast(ui) {
+        0xC4C7D4
+    } else if is_light_theme(ui) {
+        0x636B7E
+    } else {
+        0x7C8496
+    })
+}
+
+pub(crate) fn brand_accent(ui: &imgui::Ui) -> [f32; 4] {
+    hex_rgb(if is_high_contrast(ui) {
+        0xA599FF
+    } else if is_light_theme(ui) {
+        0x5B46E8
+    } else {
+        0x8172FA
+    })
+}
+
+pub(crate) fn brand_subtle(ui: &imgui::Ui) -> [f32; 4] {
+    let mut color = brand_accent(ui);
+    color[3] = if is_high_contrast(ui) {
+        0.24
+    } else if is_light_theme(ui) {
+        0.10
+    } else {
+        0.16
+    };
+    color
+}
+
+pub(crate) fn selection_accent(ui: &imgui::Ui) -> [f32; 4] {
+    hex_rgb(if is_high_contrast(ui) {
+        0x2DD4BF
+    } else if is_light_theme(ui) {
+        0x0D9488
+    } else {
+        0x14B8A6
+    })
+}
+
+pub(crate) fn selection_subtle(ui: &imgui::Ui) -> [f32; 4] {
+    let mut color = selection_accent(ui);
+    color[3] = if is_high_contrast(ui) {
+        0.28
+    } else if is_light_theme(ui) {
+        0.14
+    } else {
+        0.20
+    };
+    color
+}
+
+pub(crate) fn success_accent(ui: &imgui::Ui) -> [f32; 4] {
+    hex_rgb(if is_high_contrast(ui) {
+        0x4ADE80
+    } else if is_light_theme(ui) {
+        0x16A34A
+    } else {
+        0x22C55E
+    })
+}
+
+pub(crate) fn success_fill(ui: &imgui::Ui) -> [f32; 4] {
+    hex_rgb(if is_high_contrast(ui) {
+        0x4ADE80
+    } else {
+        0x15803D
+    })
+}
+
+pub(crate) fn error_accent(ui: &imgui::Ui) -> [f32; 4] {
+    hex_rgb(if is_high_contrast(ui) {
+        0xFB7185
+    } else if is_light_theme(ui) {
+        0xE11D48
+    } else {
+        0xF43F5E
+    })
+}
+
+pub(crate) fn secondary_button(ui: &imgui::Ui, label: &str, size: [f32; 2]) -> bool {
+    let _fill = ui.push_style_color(StyleColor::Button, surface_subtle(ui));
+    let _border = ui.push_style_var(imgui::StyleVar::FrameBorderSize(1.));
+    crate::widget_abi::button(ui, label, size)
+}
+
+pub(crate) fn property_cancel(ui: &imgui::Ui) -> bool {
+    secondary_button(ui, "Cancel", [68., 28.])
+}
+
+pub(crate) fn property_apply_new(ui: &imgui::Ui, enabled: bool) -> bool {
+    let _disabled = ui.begin_disabled(!enabled);
+    let accent = success_accent(ui);
+    let hover = success_fill(ui);
+    let _fill = ui.push_style_color(StyleColor::Button, surface_subtle(ui));
+    let _hover = ui.push_style_color(StyleColor::ButtonHovered, hover);
+    let _active = ui.push_style_color(StyleColor::ButtonActive, hover);
+    let _border = ui.push_style_color(StyleColor::Border, accent);
+    let _text = ui.push_style_color(StyleColor::Text, accent);
+    let _bw = ui.push_style_var(imgui::StyleVar::FrameBorderSize(1.));
+    let clicked = crate::widget_abi::button(ui, "+##apply-and-create-new", [28., 28.]);
+    if ui.is_item_hovered() {
+        let [lo, hi] = [ui.item_rect_min(), ui.item_rect_max()];
+        let label = "+";
+        let [tw, th] = ui.calc_text_size(label);
+        let on_accent = if is_high_contrast(ui) {
+            [0., 0., 0., 1.]
+        } else {
+            [1., 1., 1., 1.]
+        };
+        ui.get_window_draw_list().add_text(
+            [
+                ((lo[0] + hi[0] - tw) * 0.5).floor(),
+                ((lo[1] + hi[1] - th) * 0.5).floor(),
+            ],
+            on_accent,
+            label,
+        );
+        ui.tooltip_text("Apply and Create New");
+    }
+    clicked
 }
 
 pub(crate) fn active_tab_underline(ui: &imgui::Ui) {

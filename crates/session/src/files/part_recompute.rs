@@ -11,6 +11,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
         policy: Option<oblikovati_martensite::PrismResolutionPolicy>,
         attempts: &mut u64,
     ) -> Result<(), String> {
+        self.sync_derived_sources(document, &[])?;
         let (guid, policy) = self.named_part_identity(document, policy)?;
         self.commands(document)
             .map_err(|error| error.to_string())?
@@ -24,6 +25,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
         policy: Option<oblikovati_martensite::PrismResolutionPolicy>,
         attempts: &mut u64,
     ) -> Result<(), String> {
+        self.sync_derived_sources(document, &[])?;
         let (guid, policy) = self.named_part_identity(document, policy)?;
         self.commands(document)
             .map_err(|error| error.to_string())?

@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-labelledby="t d">
+  <title id="t">Rib</title>
+  <desc id="d">Isometric L-bracket reinforced by a prominent triangular Indigo-Violet structural gusset rib.</desc>
+  <g id="layer-body">
+    <polygon points="5,7 9.5,4.8 9.5,19 5,21.2" class="f-icon-body-front s-icon-body-stroke" fill="#9EA6B8" stroke="#181B22" stroke-width="1.15" stroke-linejoin="round" />
+    <polygon points="9.5,4.8 18.5,9.3 18.5,17.5 9.5,19" class="f-icon-body-side s-icon-body-stroke" fill="#677084" stroke="#181B22" stroke-width="1.15" stroke-linejoin="round" />
+    <polygon points="5,21.2 16,26.8 27,21.2 16,15.8" class="f-icon-body-top s-icon-body-stroke" fill="#D2D7E2" stroke="#181B22" stroke-width="1.15" stroke-linejoin="round" />
+    <polygon points="5,21.2 16,26.8 16,29 5,23.4" class="f-icon-body-front s-icon-body-stroke" fill="#9EA6B8" stroke="#181B22" stroke-width="1.1" stroke-linejoin="round" />
+    <polygon points="27,21.2 16,26.8 16,29 27,23.4" class="f-icon-body-side s-icon-body-stroke" fill="#677084" stroke="#181B22" stroke-width="1.1" stroke-linejoin="round" />
+  </g>
+  <g id="layer-accent">
+    <polygon points="11.5,9.2 14.5,10.7 22.5,20.5 19.5,22" class="f-icon-mod-top s-icon-mod-stroke" fill="#B4AAFF" stroke="#1D1840" stroke-width="1.1" stroke-linejoin="round" />
+    <polygon points="11.5,9.2 19.5,22 11.5,18" class="f-icon-mod-front s-icon-mod-stroke" fill="#8172FA" stroke="#1D1840" stroke-width="1.15" stroke-linejoin="round" />
+  </g>
+</svg>

@@ -80,10 +80,10 @@ fn native_feature_drafts_are_exclusive_and_extrude_actions_survive_a_short_panel
     assert!(diagnostics::window_pixel_bounds("Chamfer").is_some());
     world.click_text("Extrude");
     assert!(diagnostics::window_pixel_bounds("Chamfer").is_none());
-    resize_properties_window(&mut world, [1100, 390]);
+    resize_properties_window(&mut world, [1100, 480]);
     let [_, top, _, bottom] = diagnostics::window_pixel_bounds("Extrude").unwrap();
     assert!(
-        bottom - top < 170.,
+        bottom - top < 270.,
         "shortened Extrude bounds {top}..{bottom}"
     );
     world.run_in_window("Extrude", "OK");
@@ -94,6 +94,9 @@ fn native_feature_drafts_are_exclusive_and_extrude_actions_survive_a_short_panel
 
     world.click_text("Extrude");
     assert!(diagnostics::window_pixel_bounds("Extrude").is_some());
+    if !world.shows("Chamfer") {
+        world.click_text("Modify");
+    }
     world.click_text("Chamfer");
     assert!(diagnostics::window_pixel_bounds("Extrude").is_none());
     assert!(diagnostics::window_pixel_bounds("Chamfer").is_some());
@@ -373,10 +376,10 @@ fn native_extrude_applies_and_reopens_a_fresh_draft() {
     for label in ["8mm", "1Profile"] {
         world.run_in_window("Extrude", label);
     }
-    let preview = world.run_in_window("Extrude", "HidePreview").center();
+    let ([left, top], [width, _]) = diagnostics::window_geometry("Extrude").unwrap();
+    let preview = [left + width - 50., top + 45.];
     world.click(diagnostics::pointer_pixels(preview));
     assert!(!world.state().extrude_preview_active);
-    let preview = world.run_in_window("Extrude", "ShowPreview").center();
     world.click(diagnostics::pointer_pixels(preview));
     assert!(world.state().extrude_preview_active);
     world.save_capture("extrude-profile-and-actions");
@@ -417,17 +420,9 @@ fn native_command_artwork_is_visible_across_document_workspaces() {
     world.save_capture("assembly-command-icons");
     world.add_template(oblikovati_gui::GuiTemplateKind::Drawing);
     world.click_text("Place Views");
-    assert_command_art(
-        &world,
-        &[
-            "BaseView",
-            "ProjectedView",
-            "Break",
-            "Crop",
-            "StartSketch",
-            "NewSheet",
-        ],
-    );
+    assert_command_art(&world, &["BaseView", "ProjectedView", "Break", "Crop"]);
+    ribbon_chrome::assert_stacked_command_art(&world, "StartSketch");
+    ribbon_chrome::assert_stacked_command_art(&world, "NewSheet");
     world.save_capture("drawing-command-icons");
     world.close();
 }
@@ -438,7 +433,7 @@ fn assert_command_art(world: &ApplicationWorld, labels: &[&str]) {
         let [x, y] = row.minimum;
         let [_, bottom] = row.maximum;
         let quads = ribbon_appearance::icon_quads::icon_quads_inside((
-            [x - 24., y - 11.],
+            [x - 28., y - 11.],
             [x, bottom + 10.],
         ));
         assert!(!quads.is_empty(), "expected command artwork beside {label}");

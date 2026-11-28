@@ -5,6 +5,9 @@ use oblikovati_persistence::package::DocumentPackage;
 const GO_CUBE: &[u8] = include_bytes!(
     "../../../architecture/rust-port/receipts/2026-11-14-go-cube-fixture/go-cube.obk"
 );
+fn normalized_text(bytes: &[u8]) -> String {
+    std::str::from_utf8(bytes).unwrap().replace("\r\n", "\n")
+}
 
 #[test]
 fn go_center_point_roles_and_ownership_survive_import() {
@@ -139,7 +142,7 @@ fn go_saved_line_roles_match_reopened_go_observations() {
 
 #[test]
 fn malformed_legacy_line_role_is_refused_without_changing_package() {
-    let input = std::str::from_utf8(GO_CUBE).unwrap().replacen(
+    let input = normalized_text(GO_CUBE).replacen(
         "kind: line",
         "kind: line\n              construction: not-a-boolean",
         1,
@@ -205,7 +208,7 @@ fn imported_dimension_parameters_follow_the_saved_size_expression() {
 
 #[test]
 fn missing_dimension_source_is_declined() {
-    let input = std::str::from_utf8(GO_CUBE).unwrap().replacen(
+    let input = normalized_text(GO_CUBE).replacen(
         "expression: size\n    features:",
         "expression: missing\n    features:",
         1,
@@ -216,7 +219,7 @@ fn missing_dimension_source_is_declined() {
 
 #[test]
 fn unrecognized_sketch_metadata_is_not_discarded() {
-    let input = std::str::from_utf8(GO_CUBE).unwrap().replacen(
+    let input = normalized_text(GO_CUBE).replacen(
         "          seq: 1\n",
         "          seq: 1\n          futureField: keep-me\n",
         1,
@@ -231,7 +234,7 @@ fn unrecognized_sketch_metadata_is_not_discarded() {
 
 #[test]
 fn invalid_line_operands_and_wrong_dimension_units_are_declined() {
-    let source = std::str::from_utf8(GO_CUBE).unwrap();
+    let source = normalized_text(GO_CUBE);
     let missing_point = source.replacen("- 3\n            - id: 7", "- 99\n            - id: 7", 1);
     let wrong_unit = source.replacen(
         "expression: size\n    features:",
@@ -246,7 +249,7 @@ fn invalid_line_operands_and_wrong_dimension_units_are_declined() {
 
 #[test]
 fn unknown_constraint_and_mixed_native_section_are_refused() {
-    let source = std::str::from_utf8(GO_CUBE).unwrap();
+    let source = normalized_text(GO_CUBE);
     let unknown = source.replacen("kind: horizontal", "kind: future-relation", 1);
     let mixed = source.replacen(
         "    sketches:\n",

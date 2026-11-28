@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-pub(in crate::prism::named) use super::solid_boolean::{BooleanFailure, BooleanTool};
+pub(crate) use super::solid_boolean::{BooleanFailure, BooleanTool};
 use super::*;
 use martensite_tktopalgo::brep_builder_api::BRepBuilderAPITransform;
 use oblikovati_model::feature::sketch_prism::PrismBoolean;
@@ -31,7 +31,7 @@ impl NamedSolid {
             .map_err(|failure| failure.to_string())
     }
 
-    pub(in crate::prism::named) fn boolean_tools(
+    pub(crate) fn boolean_tools(
         &self,
         history: &DocumentEditHistory,
         document: DocumentGuid,

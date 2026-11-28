@@ -116,11 +116,11 @@ impl ParameterGroupEditor {
         let _disabled = ui.begin_disabled(self.request.pending.is_some());
         ui.text("Group name:");
         ui.input_text("##group-name", &mut self.name).build();
-        if ui.button("OK") {
+        if crate::widget_abi::button(ui, "OK", [0.; 2]) {
             self.enqueue(actions);
         }
         ui.same_line();
-        if ui.button("Cancel") {
+        if crate::widget_abi::button(ui, "Cancel", [0.; 2]) {
             self.close();
         }
         if let Some(issue) = &self.request.issue {

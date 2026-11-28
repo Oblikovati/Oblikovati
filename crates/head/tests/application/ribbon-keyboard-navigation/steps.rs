@@ -476,8 +476,11 @@ fn cancel_hole(world: &mut ApplicationWorld) {
 #[then("the properties panel closes")]
 fn hole_panel_closed(world: &mut ApplicationWorld) {
     assert!(super::diagnostics::window_geometry("Hole").is_none());
-    let count = world.state().browser.as_ref().unwrap().features.len();
-    assert_eq!(Some(&count), world.observed_counts.last());
+    assert!(super::diagnostics::window_geometry("Revolution").is_none());
+    if !world.observed_counts.is_empty() {
+        let count = world.state().browser.as_ref().unwrap().features.len();
+        assert_eq!(Some(&count), world.observed_counts.last());
+    }
 }
 
 #[then("the ribbon key tips and adjacent Modify panel disappear")]

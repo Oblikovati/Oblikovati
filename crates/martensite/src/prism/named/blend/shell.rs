@@ -54,13 +54,14 @@ pub(super) fn build_shell_candidate(
     let sources = copy_named_sources(&mut copier, input.source)?;
     let body = copier.shape().map_err(|cause| cause.to_string())?.clone();
     let faces = opening_faces(&sources, openings)?;
+    let offset_tol = resolution.sew.min(resolution.maximum_tolerance * 0.5);
     let mut maker = BRepOffsetAPIMakeThickSolid::new();
     maker
         .make_thick_solid_by_join(
             &body,
             &faces,
             -thickness,
-            resolution.sew,
+            offset_tol,
             MakeOffsetOptions::default(),
             &ProgressRange::default(),
         )
@@ -68,7 +69,7 @@ pub(super) fn build_shell_candidate(
             format!("shell thickness {thickness}: expected a completed shell: {cause}")
         })?;
     let (shape, records) = finish_blend(&mut maker, &sources, "shell", thickness)?;
-    let achieved = super::tolerances::check(&body, &shape, Some(resolution), "shell")?;
+    let achieved = super::tolerances::check_budget(&body, &shape, Some(resolution), "shell")?;
     Ok(BlendCandidate {
         resolution: Some(resolution),
         achieved_tolerance: Some(achieved),

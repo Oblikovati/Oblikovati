@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::copy_tests::{
     native_sketch_entities, verify_copy_readiness_and_undo, verify_native_entity_reference,
+    verify_retained_profile_and_undo,
 };
 use super::*;
 use oblikovati_model::{
@@ -19,13 +20,13 @@ fn native_owner_commits_constrained_slot_recipes_and_reopens_their_locked_fields
         assert!(solid_pixels(&original) > 0);
         infer_native_sketch_from_all_geometry(&mut owner);
         verify_native_placement(&mut owner, document, curved);
-        verify_copy_readiness_and_undo(
-            &mut owner,
-            &mut window,
-            &original,
-            // f1515ca8 anchors translation through the existing profile corner.
-            if curved { 2 } else { 1 },
-        );
+        // f1515ca8 anchors translation through the existing profile corner; the disjoint arc slot
+        // retains the original healthy prism profile while the overlapping straight slot declines.
+        if curved {
+            verify_retained_profile_and_undo(&mut owner, &mut window, &original, 2);
+        } else {
+            verify_copy_readiness_and_undo(&mut owner, &mut window, &original, 1);
+        }
         Client::new(owner.document_host())
             .transactions()
             .redo()
@@ -33,7 +34,7 @@ fn native_owner_commits_constrained_slot_recipes_and_reopens_their_locked_fields
         verify_reopened_placement(&mut owner, document, &path);
         assert_eq!(
             solid_pixels(&publish_native_scene(&mut owner, &mut window)),
-            0
+            if curved { solid_pixels(&original) } else { 0 }
         );
         owner.finish().unwrap();
         window.finish().unwrap();

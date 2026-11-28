@@ -31,6 +31,14 @@ fn circle_pixel(world: &mut ApplicationWorld) -> [i32; 2] {
     world.sketch_pixel_of([center[0] + circle.radius, center[1]])
 }
 fn measure_circle(world: &mut ApplicationWorld) {
+    world
+        .app()
+        .window
+        .native
+        .view
+        .navigate(oblikovati_viewport::ViewportNavigation::Fit { margin: 0.15 })
+        .unwrap();
+    world.pump(Vec::new());
     world.key(ViewportPhysicalKey::M, false);
     let at = circle_pixel(world);
     world.sketch_click(at);
@@ -92,8 +100,18 @@ fn invoke_by_shortcut(world: &mut ApplicationWorld) {
 fn select_recorded_center(world: &mut ApplicationWorld) {
     world.open_precise_input();
     world.precise_point(RECORDED_CENTER);
-    let center = world.sketch_pixel_of(RECORDED_CENTER.map(|millimetres| millimetres / 10.));
+    let mut camera = world.app().window.native.view.camera_state().unwrap();
+    let saved = camera;
+    let center_cm = RECORDED_CENTER.map(|millimetres| millimetres / 10.);
+    let world_center = [0., center_cm[0], center_cm[1]];
+    let offset: [f64; 3] = std::array::from_fn(|i| camera.eye[i] - camera.target[i]);
+    camera.target = world_center;
+    camera.eye = std::array::from_fn(|i| world_center[i] + offset[i]);
+    camera.scale *= 0.0005;
+    world.app().window.native.view.set_camera(camera).unwrap();
+    let center = world.sketch_pixel_of(center_cm);
     world.hover(center);
+    world.app().window.native.view.set_camera(saved).unwrap();
 }
 #[then("the status displays a radius of 0.000 mm")]
 fn zero_radius_status(world: &mut ApplicationWorld) {
@@ -104,7 +122,7 @@ fn enter_six(world: &mut ApplicationWorld) {
     world.type_text("6");
 }
 #[when(
-    "I select the recorded free center at (0.000, 6.553, -12.440) mm and enter 6 followed by Return"
+    "the user select the recorded free center at (0.000, 6.553, -12.440) mm and enter 6 followed by Return"
 )]
 fn typed_center_and_diameter(world: &mut ApplicationWorld) {
     typed_recorded_circle(world);
@@ -349,7 +367,7 @@ fn upper_center(world: &mut ApplicationWorld) {
     world.expect_measure("Center X 0.000 Y 27.574 Z -85.283 mm");
 }
 // circle-center-point-09
-#[when("I click the same position for its circumference")]
+#[when("the user click the same position for its circumference")]
 #[when("the user click the same screen position for its circumference")]
 fn same_position(world: &mut ApplicationWorld) {
     world.sketch_click(CENTER);

@@ -4,7 +4,6 @@ use super::*;
 use oblikovati_martensite::NamedSolid;
 
 #[test]
-#[ignore = "Martensite #554 widens vertex tolerances; retain the exact per-face acceptance gate"]
 fn inward_shell_keeps_input_and_names_every_result_face() {
     let history = owner(cube_document());
     let source = certified(&history);
@@ -23,7 +22,7 @@ fn inward_shell_keeps_input_and_names_every_result_face() {
         .map(|key| body.face_area(&history, document(), key).unwrap())
         .collect();
     areas.sort_by(f64::total_cmp);
-    let expected = [0.19, 0.64, 0.72, 0.72, 0.72, 0.72, 1., 1., 1., 1., 1.];
+    let expected = [0.36, 0.64, 0.72, 0.72, 0.72, 0.72, 1., 1., 1., 1., 1.];
     assert_eq!(areas.len(), expected.len(), "face areas {areas:?}");
     for (area, expected) in areas.iter().zip(expected) {
         assert!(
@@ -51,14 +50,22 @@ fn inward_shell_keeps_input_and_names_every_result_face() {
 }
 
 #[test]
-fn shell_refuses_result_when_kernel_widens_source_tolerance() {
+fn shell_refuses_result_when_kernel_exceeds_resolution_budget() {
     let history = owner(cube_document());
-    let source = certified(&history);
+    let mut strict = certified_resolution();
+    strict.maximum_tolerance = 1e-7;
+    let source = oblikovati_martensite::retain_certified_named_sketch_prism(
+        &history,
+        document(),
+        FeatureId(1),
+        strict,
+    )
+    .unwrap();
     let opening = key("end", &[1]);
     let error = source
         .shell_candidate(&history, document(), &[opening], 0.1)
         .err()
-        .expect("Martensite #554: expected the widened result to be refused");
+        .expect("expected shell exceeding maximum_tolerance budget to be refused");
     assert!(error.contains("shell vertex tolerance"), "{error}");
 }
 

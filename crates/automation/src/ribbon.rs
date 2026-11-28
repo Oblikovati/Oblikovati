@@ -200,10 +200,14 @@ fn part_tabs() -> Vec<RibbonTabInfo> {
                     "Create",
                     vec![
                         large("Feature.Extrude", "Extrude", "extrude"),
-                        unavailable_large("Create.Revolve", "Revolve", "revolve"),
+                        large("Create.Revolve", "Revolve", "revolve"),
                         large("Create.Sweep", "Sweep", "sweep"),
                         large("Create.Loft", "Loft", "loft"),
-                        unavailable_large("Create.Coil", "Coil", "coil"),
+                        large("Create.Coil", "Coil", "coil"),
+                        large("Create.Emboss", "Emboss", "emboss"),
+                        large("Create.Rib", "Rib", "rib"),
+                        large("Create.Decal", "Decal", "decal"),
+                        large("Create.Unwrap", "Unwrap", "unwrap"),
                     ],
                 ),
                 panel(

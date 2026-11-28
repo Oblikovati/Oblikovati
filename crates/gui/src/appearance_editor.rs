@@ -3,7 +3,7 @@
 use crate::application::model_browser::color_dialog::{self, ColorAnswer, ColorDialog};
 use crate::dockable_lifecycle::{DockRegistry, DockableState};
 use crate::dockable_window::DockableWindow;
-use crate::{GuiAssetChoice, GuiCommandState, GuiShellAction};
+use crate::{GuiAssetChoice, GuiCommandState, GuiShellAction, widget_abi};
 use imgui::{Condition, Ui};
 use oblikovati_model::assets::AppearanceMetadata;
 
@@ -171,21 +171,26 @@ impl AppearanceEditor {
         let (Some(document), Some(browser)) = (state.document, &state.browser) else {
             return;
         };
+        ui.separator();
         let _disabled = ui.begin_disabled(state.transaction_open || self.target.is_some());
-        if ui.button("Create appearance") {
+        let avail = ui.content_region_avail()[0];
+        let _pad = ui.push_style_var(imgui::StyleVar::FramePadding([6., 4.]));
+        let inline = avail >= ui.calc_text_size("Create appearanceEdit appearance")[0] + 30.;
+        let half = if inline { (avail - 6.) * 0.5 } else { avail };
+        if crate::theme::secondary_button(ui, "Create appearance", [half, 0.]) {
             ui.open_popup("##new-appearance");
         }
-        ui.same_line();
+        if inline {
+            ui.same_line_with_spacing(0., 6.);
+        }
         let editable = selected.as_deref().and_then(|id| {
-            browser.appearances.iter().find(|asset| {
-                asset.id == id
-                    && asset
-                        .appearance_preview
-                        .is_some_and(|finish| finish.document_owned)
-            })
+            browser
+                .appearances
+                .iter()
+                .find(|a| a.id == id && a.appearance_preview.is_some_and(|f| f.document_owned))
         });
         let read_only = ui.begin_disabled(editable.is_none());
-        if ui.button("Edit appearance")
+        if crate::theme::secondary_button(ui, "Edit appearance", [half, 0.])
             && let Some(asset) = editable
         {
             self.target = Some((document, asset.id.clone()));
@@ -263,12 +268,8 @@ impl AppearanceEditor {
         let title = format!("Appearance Editor — {}###appearance-editor", original.name);
         let mut open = true;
         let mut exit = EditorExit::KeepOpen;
-        crate::widget_abi::window_geometry(
-            ui,
-            [ui.io().display_size[0] * 0.34, 173.],
-            [405., 410.],
-            Condition::FirstUseEver,
-        );
+        let origin = [ui.io().display_size[0] * 0.34, 173.];
+        widget_abi::window_geometry(ui, origin, [405., 520.], Condition::FirstUseEver);
         Self::dockable_window(ui, &title, &mut open).build(|| {
             self.preview_options.draw(ui, &preview_asset(asset, draft));
             ui.input_text("Name", &mut draft.name).build();
@@ -407,8 +408,8 @@ fn draw_information(ui: &Ui, draft: &mut AppearanceDraft, template: AppearanceTe
         return;
     };
     ui.input_text("Name##information", &mut draft.name).build();
-    ui.input_text_multiline("Description", &mut draft.metadata.description, [0., 48.])
-        .build();
+    let description = &mut draft.metadata.description;
+    widget_abi::input_text_multiline(ui, "Description", description, [0., 48.]);
     ui.input_text("Keywords", &mut draft.metadata.keywords)
         .build();
     ui.text(format!("Type: {}", template.label()));
@@ -417,7 +418,7 @@ fn draw_information(ui: &Ui, draft: &mut AppearanceDraft, template: AppearanceTe
 
 fn base_color(ui: &Ui, color: &mut [u8; 3], dialog: &mut ColorDialog) {
     let [r, g, b] = *color;
-    if ui.button(format!("Color  {r}, {g}, {b}###editor-color")) {
+    if widget_abi::button(ui, &format!("Color  {r}, {g}, {b}###editor-color"), [0.; 2]) {
         dialog.begin_with_color(Some(*color));
         ui.open_popup(color_dialog::TITLE);
     }

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-labelledby="t d">
+  <title id="t">Material Browser</title>
+  <desc id="d">Isometric solid material specimen paired with a structured material library browser panel.</desc>
+  <g id="layer-body">
+    <rect x="11.5" y="4.5" width="17" height="23" rx="2.2" class="f-bg-surface-elevated s-icon-line-general" fill="#181A20" stroke="#D2D7E2" stroke-width="1.2"/>
+    <path d="M11.5,9.8 H28.5" class="s-icon-line-general" fill="none" stroke="#D2D7E2" stroke-width="1.05"/>
+    <path d="M15.5,14 H25.5 M15.5,18.5 H24.0 M15.5,23 H25.5" class="s-icon-body-front" fill="none" stroke="#9EA6B8" stroke-width="1.45" stroke-linecap="round"/>
+  </g>
+  <g id="layer-accent">
+    <rect x="14.5" y="6.3" width="11" height="1.9" rx="0.8" class="f-icon-mod-front" fill="#8172FA"/>
+    <path d="M15.5,14 H25.5" class="s-accent-selection-bright" fill="none" stroke="#2DD4BF" stroke-width="1.6" stroke-linecap="round"/>
+    <polygon points="10.5,8.2 18.0,12.0 18.0,20.5 10.5,24.3 3.0,20.5 3.0,12.0" class="f-icon-cutout" fill="#121317"/>
+    <polygon points="10.5,9.8 16.7,13 10.5,16.2 4.3,13" class="f-icon-body-top s-icon-body-stroke" fill="#D2D7E2" stroke="#181B22" stroke-width="1.15" stroke-linejoin="round"/>
+    <polygon points="4.3,13 10.5,16.2 10.5,23 4.3,19.8" class="f-icon-body-front s-icon-body-stroke" fill="#9EA6B8" stroke="#181B22" stroke-width="1.15" stroke-linejoin="round"/>
+    <polygon points="16.7,13 10.5,16.2 10.5,23 16.7,19.8" class="f-icon-body-side s-icon-body-stroke" fill="#677084" stroke="#181B22" stroke-width="1.15" stroke-linejoin="round"/>
+  </g>
+</svg>

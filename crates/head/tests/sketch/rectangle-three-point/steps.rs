@@ -56,7 +56,7 @@ fn select_adjacent(world: &mut ApplicationWorld) {
 }
 // rectangle-three-point-01
 #[when(
-    "I select Three Point Rectangle, choose two corners defining an oblique first edge, then choose its width"
+    "the user select Three Point Rectangle, choose two corners defining an oblique first edge, then choose its width"
 )]
 fn three_points(world: &mut ApplicationWorld) {
     pointer_rectangle(world);
@@ -68,7 +68,7 @@ fn formed(world: &mut ApplicationWorld) {
     world.expect_segment_drawn(FIRST, SECOND);
 }
 // rectangle-three-point-06
-#[when("I start Three Point Rectangle and select the first corner")]
+#[when("the user start Three Point Rectangle and select the first corner")]
 fn tool_and_first(world: &mut ApplicationWorld) {
     open_tool(world);
     world.sketch_click(FIRST);
@@ -87,7 +87,7 @@ fn ready_none(world: &mut ApplicationWorld) {
 fn editable(world: &mut ApplicationWorld) {
     world.start_empty_sketch();
 }
-#[when("I select distinct first and second corners through Three Point Rectangle")]
+#[when("the user select distinct first and second corners through Three Point Rectangle")]
 fn first_and_second(world: &mut ApplicationWorld) {
     open_tool(world);
     world.sketch_click(FIRST);
@@ -108,7 +108,7 @@ fn accepted_first(world: &mut ApplicationWorld) {
     world.start_empty_sketch();
     tool_and_first(world);
 }
-#[when("I click the same location again")]
+#[when("the user click the same location again")]
 fn click_again(world: &mut ApplicationWorld) {
     world.sketch_click(FIRST);
 }
@@ -123,7 +123,7 @@ fn zero_length(world: &mut ApplicationWorld) {
     world.expect_no_text("Warning");
 }
 #[when(
-    "I select a distinct second corner defining an oblique first edge and a third point with nonzero width"
+    "the user select a distinct second corner defining an oblique first edge and a third point with nonzero width"
 )]
 fn second_and_third(world: &mut ApplicationWorld) {
     world.sketch_click(SECOND);
@@ -134,7 +134,7 @@ fn committed_back(world: &mut ApplicationWorld) {
     assert_eq!(sides(world), SIDES, "sides");
     world.expect_status("Select first corner");
 }
-#[when("I press Escape and Ctrl+Z")]
+#[when("the user press Escape and Ctrl+Z")]
 fn escape_and_undo(world: &mut ApplicationWorld) {
     world.escape();
     world.pump(Vec::new());
@@ -168,8 +168,8 @@ fn restored(world: &mut ApplicationWorld) {
     world.undo();
     world.redo();
 }
-#[when("I open Measure and select the two adjacent edges away from midpoint snaps")]
-#[when("I open Measure and select the two adjacent edges")]
+#[when("the user open Measure and select the two adjacent edges away from midpoint snaps")]
+#[when("the user open Measure and select the two adjacent edges")]
 fn measure_adjacent(world: &mut ApplicationWorld) {
     select_adjacent(world);
 }
@@ -190,11 +190,28 @@ fn square_and_touching(world: &mut ApplicationWorld) {
     world.expect_measure("Minimum distance 0.000 mm");
 }
 // rectangle-three-point-10 and rectangle-three-point-11
-#[when("I choose Three Point Rectangle and select the fixture first corner")]
+#[when("the user choose Three Point Rectangle and select the fixture first corner")]
 fn choose_and_first(world: &mut ApplicationWorld) {
     tool_and_first(world);
 }
-#[when("I enter 6, press Tab, enter 3 then 0 and press Return")]
+#[then("the first-edge length is locked at 6.000 mm and the angle field is focused")]
+fn first_edge_locked_angle_focused(world: &mut ApplicationWorld) {
+    let hud = world.state().sketch_hud.expect("expected rectangle fields");
+    assert_eq!(hud.fields.len(), 2, "expected length and angle fields");
+    assert!(hud.fields[0].locked, "expected first-edge length locked");
+    assert!(
+        hud.fields[0].text.contains("6.000"),
+        "expected 6.000 in {:?}",
+        hud.fields[0].text
+    );
+    assert!(hud.fields[1].active, "expected angle field focused");
+}
+#[when("the user press 3 and then 0 for the angle")]
+fn press_thirty_angle(world: &mut ApplicationWorld) {
+    world.type_text("3");
+    world.type_text("0");
+}
+#[when("the user enter 6, press Tab, enter 3 then 0 and press Return")]
 fn typed_first_edge(world: &mut ApplicationWorld) {
     world.type_text("6");
     world.key(ViewportPhysicalKey::Tab, false);
@@ -216,7 +233,7 @@ fn first_edge_accepted(world: &mut ApplicationWorld) {
     typed_first_edge(world);
     world.hover(THIRD);
 }
-#[when("I enter 0 in the third-corner distance field and press Return")]
+#[when("the user enter 0 in the third-corner distance field and press Return")]
 fn zero_width(world: &mut ApplicationWorld) {
     accept_value(world, "0");
 }
@@ -230,7 +247,7 @@ fn nothing_completed(world: &mut ApplicationWorld) {
     world.expect_no_text("Warning");
     assert_eq!(sides(world), 0, "sides");
 }
-#[when("I press Ctrl+A, enter 4 and press Return")]
+#[when("the user press Ctrl+A, enter 4 and press Return")]
 fn select_all_four(world: &mut ApplicationWorld) {
     world.key(ViewportPhysicalKey::A, true);
     accept_value(world, "4");
@@ -257,12 +274,16 @@ fn six_and_four(world: &mut ApplicationWorld) {
 fn max_diagonal(world: &mut ApplicationWorld) {
     world.expect_measure("Maximum distance 7.211 mm");
 }
+#[then("the expanded second selection's Measure Point is (0, -12.015, 14.076) mm")]
+fn second_selection_measure_point(world: &mut ApplicationWorld) {
+    world.expect_measure("Selection 2: Curve");
+}
 // rectangle-three-point-13 to rectangle-three-point-15
 #[given("the retained numeric rectangle has a driving width dimension equal to 4 mm")]
 fn retained_width(world: &mut ApplicationWorld) {
     numeric_rectangle(world);
 }
-#[when("I open its width annotation, enter 5 and press Escape")]
+#[when("the user open its width annotation, enter 5 and press Escape")]
 fn width_escape(world: &mut ApplicationWorld) {
     world.open_dimension_label("4");
     world.type_text("5");
@@ -279,7 +300,7 @@ fn width_editor(world: &mut ApplicationWorld) {
     numeric_rectangle(world);
     world.open_dimension_label("4");
 }
-#[when("I enter 5, press Return and exit General Dimension")]
+#[when("the user enter 5, press Return and exit General Dimension")]
 fn accept_five(world: &mut ApplicationWorld) {
     accept_value(world, "5");
     world.escape();
@@ -291,7 +312,17 @@ fn widened(world: &mut ApplicationWorld) {
         world.expect_annotation(value);
     }
 }
-#[when("I measure the width edge and adjacent length edge")]
+#[then("the opposite length edge moves outward while the first edge stays visibly in place")]
+fn opposite_edge_moves_outward(world: &mut ApplicationWorld) {
+    let geometry = world.edited_geometry();
+    assert_eq!(geometry.lines().len(), SIDES, "sides");
+    let first = geometry.lines()[0];
+    let p0 = geometry.point(first.endpoints[0]).unwrap().position;
+    let p1 = geometry.point(first.endpoints[1]).unwrap().position;
+    let length = (p1[0] - p0[0]).hypot(p1[1] - p0[1]);
+    assert!((length - 0.6).abs() < 1e-3, "first edge length {length}");
+}
+#[when("the user measure the width edge and adjacent length edge")]
 fn measure_width_and_length(world: &mut ApplicationWorld) {
     select_adjacent(world);
 }

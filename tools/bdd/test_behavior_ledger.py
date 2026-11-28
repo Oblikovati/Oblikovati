@@ -357,15 +357,49 @@ class ApplicationInputsTests(unittest.TestCase):
 
 
 class BaselineCompletenessTests(unittest.TestCase):
-    def test_full_classification_still_requires_r0_evidence_fields(self) -> None:
+    def test_implemented_and_verified_scenarios_require_r0_evidence_fields(self) -> None:
         fixture = LedgerFixture()
-        first = dict(fixture.entry, state="inventoried", last_receipt=None)
-        second = dict(first, id="second", source_sha256="hash-2")
+        fixture.inventory["scenarios"][1]["source_error"] = None
+        first = dict(
+            fixture.entry,
+            state="implemented",
+            last_receipt=None,
+            baseline_source_sha256=None,
+        )
+        second = dict(
+            fixture.entry,
+            id="second",
+            source_sha256="hash-2",
+            baseline_source_sha256=None,
+        )
         ledger = fixture.run([first, second])
         with self.assertRaisesRegex(
             ValueError, "R0 evidence fields; 2 scenarios incomplete"
         ):
             require_classified(ledger)
+
+    def test_unimplemented_backlog_is_reported_without_failing_require_classified(
+        self,
+    ) -> None:
+        from behavior_ledger import incomplete_baseline_backlog
+
+        fixture = LedgerFixture()
+        first = dict(
+            fixture.entry,
+            state="inventoried",
+            last_receipt=None,
+            baseline_source_sha256=None,
+        )
+        second = dict(
+            first,
+            id="second",
+            state="blocked",
+            reason="awaiting kernel support",
+            source_sha256="hash-2",
+        )
+        ledger = fixture.run([first, second])
+        require_classified(ledger)
+        self.assertEqual(incomplete_baseline_backlog(ledger["scenarios"]), 2)
 
 
 class LedgerOutputTests(unittest.TestCase):

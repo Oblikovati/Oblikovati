@@ -60,13 +60,19 @@ pub(crate) fn panel(
     let mut close = false;
     GuiThemeEditor::dockable_window(ui, THEME_EDITOR_POPUP, &mut open).build(|| {
         crate::theme::floating_property_shadow(ui);
-        ui.text(format!("Theme: {}", theme.active_name()));
+        {
+            let _title = crate::ui_scale::dialog_title_font(ui);
+            ui.text(format!("Theme: {}", theme.active_name()));
+        }
         close = editor_actions(ui, theme, actions)
             || ui.is_window_focused() && ui.is_key_pressed_no_repeat(imgui::Key::Escape);
         duplicate_controls(ui, theme, editor, actions);
-        ui.text("Edits preview immediately. Save keeps them after restart.");
+        ui.text_colored(
+            crate::theme::text_secondary(ui),
+            "Edits preview immediately. Save keeps them after restart.",
+        );
         if !theme.editable() {
-            ui.text("Built-in theme is read-only.");
+            ui.text_colored(crate::theme::text_muted(ui), "Built-in theme is read-only.");
         }
         color_rows(ui, theme, actions);
     });
@@ -74,26 +80,29 @@ pub(crate) fn panel(
 }
 fn popup_geometry(ui: &Ui) {
     let [width, height] = ui.io().display_size;
+    let top_clear = 148.;
+    let right_clear = if width > 720. { 136. } else { 16. };
     let size = [
-        (width - 32.).clamp(1., 560.),
-        (height - 32.).clamp(1., 620.),
+        (width - right_clear - 16.).clamp(1., 560.),
+        (height - top_clear - 24.).clamp(1., 600.),
     ];
-    let position = [(width - size[0]) * 0.5, (height - size[1]) * 0.5];
-    GuiThemeEditor::fit_dockable(ui, THEME_EDITOR_POPUP, position, size);
+    let x = ((width - right_clear - size[0]) * 0.5).max(16.);
+    let y = (top_clear + ((height - top_clear - size[1]) * 0.5).max(0.)).min(height - size[1]);
+    GuiThemeEditor::fit_dockable(ui, THEME_EDITOR_POPUP, [x, y], size);
 }
 fn editor_actions(ui: &Ui, theme: &GuiThemeState, actions: &mut Vec<GuiShellAction>) -> bool {
     let disabled = ui.begin_disabled(!theme.save_available());
-    if crate::widget_abi::button(ui, "Save theme", [100., 23.]) {
+    if crate::theme::primary_button(ui, "Save theme", [100., 26.]) {
         actions.push(GuiShellAction::SaveTheme {
             name: theme.active_name().into(),
         });
     }
     drop(disabled);
-    ui.same_line();
-    let close = crate::widget_abi::button(ui, "Close", [70., 23.]);
-    ui.same_line();
+    ui.same_line_with_spacing(0., 6.);
+    let close = crate::theme::secondary_button(ui, "Close", [70., 26.]);
+    ui.same_line_with_spacing(0., 6.);
     let _disabled = ui.begin_disabled(!theme.deletion_available());
-    if crate::widget_abi::button(ui, "Delete", [70., 23.]) {
+    if crate::theme::secondary_button(ui, "Delete", [70., 26.]) {
         actions.push(GuiShellAction::DeleteTheme {
             name: theme.active_name().into(),
         });
@@ -111,9 +120,9 @@ fn duplicate_controls(
     ui.same_line();
     ui.set_next_item_width((ui.content_region_avail()[0] - 108.).clamp(1., 230.));
     ui.input_text("##theme-name", &mut editor.new_name).build();
-    ui.same_line();
+    ui.same_line_with_spacing(0., 6.);
     let _disabled = ui.begin_disabled(!theme.creation_available());
-    if crate::widget_abi::button(ui, "Duplicate", [100., 19.]) {
+    if crate::theme::secondary_button(ui, "Duplicate", [100., 24.]) {
         actions.push(GuiShellAction::DuplicateTheme {
             base: theme.active_name().into(),
             name: editor.new_name.clone(),
@@ -132,7 +141,10 @@ fn color_rows(ui: &Ui, theme: &GuiThemeState, actions: &mut Vec<GuiShellAction>)
     for row in THEME_COLOR_ROWS {
         if row.group != group {
             ui.separator();
-            ui.text(row.group);
+            {
+                let _semi = crate::ui_scale::ui_semibold_font(ui);
+                ui.text(row.group);
+            }
             group = row.group;
         }
         color_row(ui, theme, row, actions);

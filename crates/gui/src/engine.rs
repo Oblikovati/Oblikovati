@@ -13,6 +13,8 @@ use imgui::{ConfigFlags, Context};
 use std::sync::Arc;
 #[path = "engine/close_prompt_scale.rs"]
 mod close_prompt_scale;
+#[path = "engine/create_dialogs.rs"]
+mod create_dialogs;
 pub(crate) mod dock_registration;
 #[path = "engine/dock_tab_actions.rs"]
 mod dock_tab_actions;
@@ -31,6 +33,7 @@ use quick_access::{apply_home_requests, apply_quick_access};
 mod template_selection;
 #[path = "engine/workspace_layout.rs"]
 mod workspace_layout;
+use workspace_layout::home_follows_actions;
 #[derive(Clone, Debug)]
 pub struct GuiFrameRequest {
     pub extent: [u32; 2],
@@ -84,8 +87,7 @@ pub struct GuiFrameEngine {
     icons: crate::icons::GuiIconCache,
     raster_scale: f32,
     preferences: crate::ui_scale::GuiScalePreferences,
-    loft_dialog: crate::loft_dialog::LoftDialog,
-    sweep_dialog: crate::sweep_dialog::SweepDialog,
+    create_dialogs: create_dialogs::CreateFeatureDialogs,
     extrude_dialog: crate::extrude_dialog::ExtrudeDialog,
     blend_dialog: crate::blend_dialog::BlendDialog,
     hole_dialog: crate::hole_dialog::HoleDialog,
@@ -178,8 +180,7 @@ impl GuiFrameEngine {
             icons,
             raster_scale: 1.,
             preferences: Default::default(),
-            loft_dialog: Default::default(),
-            sweep_dialog: Default::default(),
+            create_dialogs: Default::default(),
             extrude_dialog: Default::default(),
             blend_dialog: Default::default(),
             hole_dialog: Default::default(),
@@ -318,7 +319,7 @@ impl GuiFrameEngine {
         let restyled = self.refresh_chrome(request);
         self.external_docks.synchronize(&request.commands);
         let mut frame = self.draw_controls(request)?;
-        frame.activity.pending_layout |= restyled || self.sweep_dialog.needs_frame();
+        frame.activity.pending_layout |= restyled || self.create_dialogs.sweep.needs_frame();
         Ok(frame)
     }
     /// Focus an accessible control; example: `engine.focus_accessible(GuiAccessibleFocus::Frame(0))`.
@@ -459,32 +460,6 @@ fn workspace_front(
         [area.right * scale[0], area.bottom * scale[1]],
     ];
     front_key(&request.commands, home_active).map(|key| (key, bounds))
-}
-/// Home is left by actions that put a document in front of it.
-fn home_follows_actions(
-    home: &mut crate::application::home_recent_documents::HomeWorkspace,
-    selected: &[GuiShellAction],
-) {
-    for action in selected {
-        match action {
-            GuiShellAction::ShowHome => home.active = true,
-            GuiShellAction::CloseDocumentWindow(_) if home.reached_from_home => {
-                home.active = true;
-            }
-            GuiShellAction::ActivateDocument(_)
-            | GuiShellAction::ActivateWindow(_)
-            | GuiShellAction::OpenDocument(_)
-            | GuiShellAction::OpenDeferredDrawing(_)
-            | GuiShellAction::CreateDocument(_)
-            | GuiShellAction::CreateProjectTemplate(_)
-            | GuiShellAction::DrawingLayout(
-                crate::GuiDrawingLayoutAction::Confirm { .. }
-                | crate::GuiDrawingLayoutAction::Acknowledge { .. },
-            )
-            | GuiShellAction::NewPart => home.active = false,
-            _ => {}
-        }
-    }
 }
 #[cfg(test)]
 #[path = "../tests/parameter_journey/platform.rs"]

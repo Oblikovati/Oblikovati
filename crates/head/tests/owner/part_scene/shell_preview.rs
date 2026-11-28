@@ -1,17 +1,23 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//! The desktop preview must report an invalid Shell rather than display it (#4106, Martensite #554).
+//! The desktop preview must report an invalid Shell rather than display it (#4106).
 use super::*;
 use oblikovati_api::wire::featureargs::Shell;
+
+pub(super) fn strict_shell_policy() -> oblikovati_martensite::PrismResolutionPolicy {
+    let mut resolution = crate::part_scene::resolution_policy::desktop_policy()
+        .for_size(1.)
+        .unwrap();
+    resolution.maximum_tolerance = 1e-7;
+    oblikovati_martensite::PrismResolutionPolicy::Fixed(resolution)
+}
 
 #[test]
 fn rejected_shell_preview_keeps_the_document_and_scene_unchanged() {
     let (owner, _) = owner();
-    let mut owner = owner
-        .with_extrusion_policy(crate::part_scene::resolution_policy::desktop_policy())
-        .unwrap();
+    let mut owner = owner.with_extrusion_policy(strict_shell_policy()).unwrap();
     let document = open_prism(&mut owner, false);
     owner.take_scene().unwrap().unwrap();
-    let prepared = shell_preview_input(&owner, document);
+    let prepared = shell_preview_input(&owner, document, "1 mm");
     let generation = owner
         .files
         .workspace()
@@ -38,7 +44,11 @@ fn rejected_shell_preview_keeps_the_document_and_scene_unchanged() {
     assert!(!owner.files.workspace().needs_save(document).unwrap());
 }
 
-fn shell_preview_input(owner: &TestOwner, document: u64) -> oblikovati_automation::PreparedShell {
+fn shell_preview_input(
+    owner: &TestOwner,
+    document: u64,
+    thickness: &str,
+) -> oblikovati_automation::PreparedShell {
     let workspace = owner.files.workspace();
     let session = workspace.session(document).unwrap();
     let guid = workspace.identity(document).unwrap().internal_name;
@@ -54,7 +64,7 @@ fn shell_preview_input(owner: &TestOwner, document: u64) -> oblikovati_automatio
         .to_vec();
     let faces = body.face_reference_keys(session.history(), guid).unwrap();
     let input = Shell {
-        thickness: "1 mm".into(),
+        thickness: thickness.into(),
         ..Default::default()
     };
     oblikovati_automation::prepare_shell(
@@ -69,9 +79,7 @@ fn shell_preview_input(owner: &TestOwner, document: u64) -> oblikovati_automatio
 #[test]
 fn shell_desktop_request_validates_selection_and_reports_kernel_refusal() {
     let (owner, _) = owner();
-    let mut owner = owner
-        .with_extrusion_policy(crate::part_scene::resolution_policy::desktop_policy())
-        .unwrap();
+    let mut owner = owner.with_extrusion_policy(strict_shell_policy()).unwrap();
     let document = open_prism(&mut owner, false);
     owner.take_scene().unwrap().unwrap();
     owner.ambient_selection.disable_all();

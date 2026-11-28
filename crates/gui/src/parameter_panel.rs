@@ -415,7 +415,7 @@ impl ParameterPanel {
         if let Some(issue) = &self.issue {
             ui.text_wrapped(issue.replace('\0', "\\0"));
         }
-        if ui.button("Done") {
+        if crate::widget_abi::button(ui, "Done", [0.; 2]) {
             self.open.set_open(false);
         }
     }
@@ -443,7 +443,9 @@ fn draw_parameter_section(
     let height = ui.frame_height_with_spacing() * (rows.len().min(8) + 1) as f32;
     let flags =
         TableFlags::BORDERS | TableFlags::ROW_BG | TableFlags::SCROLL_Y | TableFlags::RESIZABLE;
-    let Some(_table) = ui.begin_table_with_sizing(title, 10, flags, [0., height], 0.) else {
+    let Some(_table) =
+        crate::widget_abi::begin_table_with_sizing(ui, title, 10, flags, [0., height], 0.)
+    else {
         return;
     };
     configure_parameter_columns(ui);

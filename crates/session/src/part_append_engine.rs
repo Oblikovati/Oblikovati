@@ -53,17 +53,20 @@ pub struct OwnedPartReplay {
     guid: DocumentGuid,
     policy: Option<PrismResolutionPolicy>,
     prefix: PartCandidatePrefix<NamedSolid, EvaluationFailure>,
+    derived_sources: std::sync::Arc<std::collections::BTreeMap<String, DocumentSnapshot>>,
 }
 impl OwnedPartReplay {
     pub(crate) fn new(
         guid: DocumentGuid,
         policy: Option<PrismResolutionPolicy>,
         prefix: PartCandidatePrefix<NamedSolid, EvaluationFailure>,
+        derived_sources: std::sync::Arc<std::collections::BTreeMap<String, DocumentSnapshot>>,
     ) -> Self {
         Self {
             guid,
             policy,
             prefix,
+            derived_sources,
         }
     }
     /// Check the persistent identity; example: `replay.owns_identity(guid)`.
@@ -82,7 +85,8 @@ impl OwnedPartReplay {
         feature: FeatureId,
     ) -> Result<Option<(usize, OwnedPartCandidate)>, Error> {
         let mut evaluator =
-            CertifiedNamedSolidEvaluator::with_optional_policy(history, self.guid, self.policy);
+            CertifiedNamedSolidEvaluator::with_optional_policy(history, self.guid, self.policy)
+                .with_derived_sources(&self.derived_sources);
         let Some(result) = self
             .prefix
             .prepare_tail(history, candidate, feature, &mut evaluator)
@@ -130,7 +134,8 @@ impl OwnedPartReplay {
         feature: FeatureId,
     ) -> Result<Option<usize>, Error> {
         let mut evaluator =
-            CertifiedNamedSolidEvaluator::with_optional_policy(history, self.guid, self.policy);
+            CertifiedNamedSolidEvaluator::with_optional_policy(history, self.guid, self.policy)
+                .with_derived_sources(&self.derived_sources);
         self.prefix
             .validate_tail(history, candidate, feature, &mut evaluator)
             .map_err(Error)

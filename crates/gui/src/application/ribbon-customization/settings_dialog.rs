@@ -154,7 +154,7 @@ impl SettingsDialog {
         if std::mem::take(&mut draft.opening) {
             ui.open_popup(draft.mode.title());
         }
-        center_dialog(ui, [760., 390.]);
+        center_dialog(ui, [760., 480.]);
         let _dialog = ui.begin_modal_popup(draft.mode.title())?;
         let chosen = self
             .browser

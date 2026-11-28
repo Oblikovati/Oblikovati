@@ -42,6 +42,14 @@ pub enum PartFeatureFailure<Failure> {
     Metadata(Box<WorkGeometryError>),
     Inputs(SketchPrismError),
     SweepInput(Box<crate::feature::sketch_sweep::SketchSweepError>),
+    RevolveInput(Box<crate::feature::sketch_revolve::SketchRevolveError>),
+    CoilInput(String),
+    EmbossInput(String),
+    RibInput(String),
+    DecalInput(String),
+    DerivedPartInput(String),
+    ImportedModelInput(String),
+    UnwrapInput(String),
     LoftInput(String),
     Kernel(Failure),
     BodyReference(String),
@@ -351,21 +359,7 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
                 expected: "existing part feature",
             }))
         })?;
-        if matches!(
-            feature.definition(),
-            PartFeatureDefinition::SketchPrism(_)
-                | PartFeatureDefinition::SketchSweep(_)
-                | PartFeatureDefinition::SketchLoft(_)
-                | PartFeatureDefinition::DeleteBody(_)
-                | PartFeatureDefinition::Fillet(_)
-                | PartFeatureDefinition::Chamfer(_)
-                | PartFeatureDefinition::Hole(_)
-                | PartFeatureDefinition::Shell(_)
-                | PartFeatureDefinition::MoveBody(_)
-                | PartFeatureDefinition::Mirror(_)
-                | PartFeatureDefinition::CircularPattern(_)
-                | PartFeatureDefinition::RectangularPattern(_)
-        ) {
+        if feature.definition().requires_plain_plane_metadata() {
             feature
                 .validate_plane_metadata()
                 .map_err(|cause| PartFeatureFailure::Metadata(Box::new(cause)))?;
@@ -376,6 +370,30 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
             }
             PartFeatureDefinition::SketchLoft(definition) => {
                 self.evaluate_loft(snapshot, backend, id, definition)
+            }
+            PartFeatureDefinition::SketchRevolve(definition) => {
+                self.evaluate_revolve(snapshot, backend, id, definition)
+            }
+            PartFeatureDefinition::SketchCoil(definition) => {
+                self.evaluate_coil(snapshot, backend, id, definition)
+            }
+            PartFeatureDefinition::SketchEmboss(definition) => {
+                self.evaluate_emboss(snapshot, backend, id, definition)
+            }
+            PartFeatureDefinition::SketchRib(definition) => {
+                self.evaluate_rib(snapshot, backend, id, definition)
+            }
+            PartFeatureDefinition::SketchDecal(definition) => {
+                self.evaluate_decal(snapshot, backend, id, definition)
+            }
+            PartFeatureDefinition::DerivedPart(definition) => {
+                self.evaluate_derived_part(backend, id, definition)
+            }
+            PartFeatureDefinition::ImportedModel(definition) => {
+                self.evaluate_imported_model(backend, id, definition)
+            }
+            PartFeatureDefinition::Unwrap(definition) => {
+                self.evaluate_unwrap(backend, id, definition)
             }
             PartFeatureDefinition::SketchSweep(definition) => {
                 self.evaluate_sweep(snapshot, backend, id, definition)

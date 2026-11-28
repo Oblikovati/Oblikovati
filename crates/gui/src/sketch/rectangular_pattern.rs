@@ -129,7 +129,7 @@ impl RectangularPatternDialog {
         if self.document.is_none() {
             return;
         }
-        Self::fit_dockable(ui, "Rectangular Pattern", [620., 220.], [390., 365.]);
+        Self::fit_dockable(ui, "Rectangular Pattern", [620., 220.], [390., 420.]);
         let mut open = true;
         Self::dockable_window(ui, "Rectangular Pattern", &mut open).build(|| {
             ui.text(if self.edit.is_some() {

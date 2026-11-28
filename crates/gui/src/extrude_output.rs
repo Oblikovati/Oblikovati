@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::{ExtrudeDialog, GuiCommandState, GuiShellAction};
 use crate::GuiExtrudeDirection;
-use crate::icons::{GuiRibbonIcons, IconGlyph, IconSize};
+use crate::icons::{GuiRibbonIcons, IconGlyph};
 use imgui::Ui;
 use oblikovati_model::feature::sketch_prism::PrismBoolean;
 
@@ -54,48 +54,71 @@ impl ExtrudeDialog {
         true
     }
 
-    pub(super) fn draw_advanced_settings(&mut self, ui: &Ui, icons: &GuiRibbonIcons) {
+    pub(super) fn draw_compact_header(
+        &mut self,
+        ui: &Ui,
+        state: &GuiCommandState,
+        icons: &GuiRibbonIcons,
+        actions: &mut Vec<GuiShellAction>,
+    ) -> bool {
         const POPUP: &str = "##extrude-advanced-settings";
-        ui.align_text_to_frame_padding();
-        ui.text("Properties");
-        let icon = icons.logical[IconSize::Small.index()];
-        let label = "Advanced Settings";
-        let width = icon[0] + ui.calc_text_size(label)[0] + 16.;
-        ui.same_line_with_pos((ui.window_content_region_max()[0] - width).max(0.));
-        let button = crate::widget_abi::IconButtonPresentation {
-            texture: icons.key(IconGlyph::Preferences, IconSize::Small),
-            size: [width, icon[1] + 6.],
-            icon,
-            large: false,
-            show_caption: true,
-        };
-        if crate::widget_abi::icon_button(ui, label, button) {
-            ui.open_popup(POPUP);
+        let _semi = crate::ui_scale::ui_semibold_font(ui);
+        let switched_sketch = self.breadcrumb(ui, state, actions);
+        drop(_semi);
+        if switched_sketch {
+            return true;
         }
-        if let Some(_popup) = ui.begin_popup(POPUP) {
+        let right = ui.window_content_region_max()[0];
+        let btn = 24.;
+        let preview_enabled = state.extrude_preview_active || self.preview_hidden;
+        ui.same_line_with_pos((right - btn * 2. - 4.).max(0.));
+        if crate::feature_properties::draw_preview_eye_button(
+            ui,
+            icons,
+            self.preview_hidden,
+            preview_enabled,
+        ) {
+            self.toggle_preview(actions);
+        }
+        ui.same_line_with_pos((right - btn).max(0.));
+        let release = &mut self.release_sketch_on_apply;
+        let enter_only = &mut self.enter_applies_value_only;
+        let manual = &mut self.manual_boolean;
+        let presets = &mut self.presets;
+        crate::feature_properties::draw_advanced_settings_button(ui, icons, POPUP, None, |ui| {
             if ui
                 .menu_item_config("Keep sketches visible on (+)")
-                .selected(!self.release_sketch_on_apply)
+                .selected(!*release)
                 .build()
             {
-                self.release_sketch_on_apply = !self.release_sketch_on_apply;
+                *release = !*release;
             }
-            self.presets.draw_visibility_setting(ui);
+            presets.draw_visibility_setting(ui);
             if ui
                 .menu_item_config("Single ENTER to finish command")
-                .selected(!self.enter_applies_value_only)
+                .selected(!*enter_only)
                 .build()
             {
-                self.enter_applies_value_only = !self.enter_applies_value_only;
+                *enter_only = !*enter_only;
             }
             if ui
                 .menu_item_config("Predict Boolean Operation")
-                .selected(!self.manual_boolean)
+                .selected(!*manual)
                 .build()
             {
-                self.manual_boolean = !self.manual_boolean;
+                *manual = !*manual;
             }
-        }
+        });
+        let [lo_x, y] = [ui.window_pos()[0], ui.cursor_screen_pos()[1]];
+        ui.get_window_draw_list()
+            .add_line(
+                [lo_x, y],
+                [lo_x + ui.window_size()[0], y],
+                crate::theme::border_subtle(ui),
+            )
+            .build();
+        ui.dummy([0., 4.]);
+        false
     }
 
     pub(super) fn draw_output(

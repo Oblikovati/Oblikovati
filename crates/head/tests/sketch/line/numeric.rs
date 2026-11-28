@@ -44,10 +44,28 @@ fn contains_zero(world: &mut ApplicationWorld) {
     type_zero(world);
     world.expect_hud_value_invalid("0");
 }
-#[when("I press Ctrl+A and type 4")]
+#[when("the user press Ctrl+A and type 4")]
 fn select_all_four(world: &mut ApplicationWorld) {
     world.key(ViewportPhysicalKey::A, true);
     world.type_text("4");
+}
+#[then("length 4.000 mm is locked and the angle field is selected")]
+fn four_locked_angle_selected(world: &mut ApplicationWorld) {
+    let hud = world.state().sketch_hud.expect("expected line fields");
+    assert_eq!(hud.fields.len(), 2, "expected length and angle fields");
+    assert!(hud.fields[0].locked, "expected length locked");
+    assert!(
+        hud.fields[0].text.contains("4.000"),
+        "expected 4.000 in {:?}",
+        hud.fields[0].text
+    );
+    assert!(hud.fields[1].active, "expected angle field active");
+}
+#[when("the user type 3 and 0 separately and press Enter")]
+fn type_three_zero_enter(world: &mut ApplicationWorld) {
+    world.type_text("3");
+    world.type_text("0");
+    world.key(ViewportPhysicalKey::Enter, false);
 }
 #[when("press Tab then type 3 and 0 separately and press Enter")]
 fn tab_three_zero(world: &mut ApplicationWorld) {
@@ -111,19 +129,19 @@ fn undo_creation(world: &mut ApplicationWorld) {
 fn redo_creation(world: &mut ApplicationWorld) {
     world.redo();
 }
-#[when("I enter 10 in the length field")]
+#[when("the user enter 10 in the length field")]
 fn enter_ten(world: &mut ApplicationWorld) {
     world.type_text("10");
 }
-#[when("I press Tab to lock length and select angle")]
+#[when("the user press Tab to lock length and select angle")]
 fn tab_lock_length(world: &mut ApplicationWorld) {
     world.key(ViewportPhysicalKey::Tab, false);
 }
-#[when("I enter 30 in the angle field")]
+#[when("the user enter 30 in the angle field")]
 fn enter_thirty(world: &mut ApplicationWorld) {
     world.type_text("30");
 }
-#[when("I press Return and then Escape")]
+#[when("the user press Return and then Escape")]
 fn return_then_escape(world: &mut ApplicationWorld) {
     world.key(ViewportPhysicalKey::Enter, false);
     world.escape();
@@ -133,7 +151,7 @@ fn retained_ten_thirty(world: &mut ApplicationWorld) {
     world.expect_annotation("10");
     world.expect_annotation("30.00");
 }
-#[when("I dismiss the transient selector and undo then redo the creation")]
+#[when("the user dismiss the transient selector and undo then redo the creation")]
 fn undo_then_redo(world: &mut ApplicationWorld) {
     world.undo();
     world.observed_annotations = Some(world.annotation_shown("10"));

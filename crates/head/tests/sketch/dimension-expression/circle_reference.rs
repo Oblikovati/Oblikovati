@@ -40,7 +40,7 @@ fn add_line_dimension(world: &mut ApplicationWorld) {
     world.expect_annotation("6");
     world.expect_annotation("8");
 }
-#[when("I type d then 0 and press Enter")]
+#[when("the user type d then 0 and press Enter")]
 fn enter_circle_reference(world: &mut ApplicationWorld) {
     world.type_text("d");
     world.type_text("0");
@@ -51,7 +51,7 @@ fn accepted_circle_reference(world: &mut ApplicationWorld) {
     assert!(diagnostics::window_geometry("Edit Dimension").is_none());
     world.expect_annotation("fx:6");
 }
-#[when("I reopen d1")]
+#[when("the user reopen d1")]
 fn reopen_line_dimension(world: &mut ApplicationWorld) {
     world.open_dimension_label("fx:6");
 }

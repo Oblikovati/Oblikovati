@@ -210,6 +210,11 @@ impl HeadWindow for NativeHeadWindow {
             gui.request_extrusion();
         }
     }
+    fn request_revolve(&mut self) {
+        if let Some(gui) = self.gui.as_mut() {
+            gui.request_revolve();
+        }
+    }
     fn has_pending_ribbon_model_pick(&self) -> bool {
         self.gui
             .as_ref()
@@ -468,31 +473,6 @@ impl HeadWindow for NativeHeadWindow {
         Ok(ready.worker_wake)
     }
     fn finish(&mut self) -> Result<(), String> {
-        let profile_error = match (&mut self.gui, &self.ribbon_settings_directory) {
-            (Some(gui), Some(directory)) => gui.save_profile(directory).err(),
-            _ => None,
-        };
-        self.drawing_windows.close();
-        self.gui.take();
-        #[cfg(target_os = "windows")]
-        self.accessibility.take();
-        self.capture_requests.clear();
-        #[cfg(target_os = "linux")]
-        let clipboard = self.clipboard.handoff_on_shutdown();
-        self.view.close();
-        let mut errors = if self.validate_vulkan {
-            self.runtime.validation_errors()?
-        } else {
-            Vec::new()
-        };
-        #[cfg(target_os = "linux")]
-        errors.extend(clipboard.err());
-        errors.extend(profile_error);
-        if errors.is_empty() {
-            return Ok(());
-        }
-        Err(format!(
-            "head shutdown {errors:?}: expected saved workspace settings, completed clipboard retirement, and no renderer errors"
-        ))
+        self.finish_native_window()
     }
 }

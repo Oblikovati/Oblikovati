@@ -87,7 +87,7 @@ fn modes_listed(world: &mut ApplicationWorld) {
     world.expect_text("Relative");
     world.expect_text("Absolute");
 }
-#[when("I select Absolute")]
+#[when("the user select Absolute")]
 fn select_absolute(world: &mut ApplicationWorld) {
     world.click_text("Absolute");
     world.pump(Vec::new());
@@ -96,7 +96,7 @@ fn select_absolute(world: &mut ApplicationWorld) {
 fn icon_shown(world: &mut ApplicationWorld) {
     world.run_in_window(TOOLBAR, "Abs");
 }
-#[when("I enter X 5 and Y 6 and press Return")]
+#[when("the user enter X 5 and Y 6 and press Return")]
 fn enter_pair(world: &mut ApplicationWorld) {
     world.precise_point([5., 6.]);
 }
@@ -110,7 +110,7 @@ fn marker_and_reset(world: &mut ApplicationWorld) {
         "expected the typed values gone from {text:?}"
     );
 }
-#[when("I select Relative and enter the same pair and press Return")]
+#[when("the user select Relative and enter the same pair and press Return")]
 fn relative_pair(world: &mut ApplicationWorld) {
     choose_reference(world, "Relative");
     world.precise_point([5., 6.]);
@@ -131,7 +131,7 @@ fn triad_stays(world: &mut ApplicationWorld) {
     let origin = origin_pixel(world);
     expect_triad_at(world, origin);
 }
-#[when("I restore Absolute and press Escape")]
+#[when("the user restore Absolute and press Escape")]
 fn restore_absolute(world: &mut ApplicationWorld) {
     choose_reference(world, "Absolute");
     world.escape();
@@ -149,7 +149,7 @@ fn closed_35(world: &mut ApplicationWorld) {
 fn marker_from_trial(_: &mut ApplicationWorld) {
     require_recorded_fixture("precise-input-07");
 }
-#[when("I open Measure and select that marker")]
+#[when("the user open Measure and select that marker")]
 fn measure_marker(world: &mut ApplicationWorld) {
     world.key(ViewportPhysicalKey::M, false);
     let at = newest_point_pixel(world);
@@ -180,7 +180,7 @@ fn open_toolbar(world: &mut ApplicationWorld) {
     world.open_precise_input();
     assert!(toolbar_shows(world), "expected the toolbar");
 }
-#[when("I focus X, press 5, press Tab, press 6, and press Return")]
+#[when("the user focus X, press 5, press Tab, press 6, and press Return")]
 fn typed_with_tab(world: &mut ApplicationWorld) {
     world.click_precise_field("X");
     world.type_text("5");
@@ -189,7 +189,7 @@ fn typed_with_tab(world: &mut ApplicationWorld) {
     world.key(ViewportPhysicalKey::Enter, false);
     world.pump(Vec::new());
 }
-#[when("I press Escape and measure the created point")]
+#[when("the user press Escape and measure the created point")]
 fn escape_and_measure(world: &mut ApplicationWorld) {
     world.escape();
     world.pump(Vec::new());
@@ -258,6 +258,7 @@ fn a_red(world: &mut ApplicationWorld) {
 }
 #[when("I press Return")]
 #[when("the user press Return")]
+#[when("the user press Enter")]
 fn press_return(world: &mut ApplicationWorld) {
     world.key(ViewportPhysicalKey::Enter, false);
     world.pump(Vec::new());
@@ -292,7 +293,7 @@ fn in_xy_mode(world: &mut ApplicationWorld) {
     world.open_precise_input();
     world.run_in_window(TOOLBAR, "Mode");
 }
-#[when("I open the coordinate-mode dropdown")]
+#[when("the user open the coordinate-mode dropdown")]
 fn open_modes(world: &mut ApplicationWorld) {
     open_coordinate_modes(world);
 }
@@ -305,7 +306,7 @@ fn offers_modes(world: &mut ApplicationWorld) {
         world.expect_text(mode);
     }
 }
-#[when("I create a point in each mode using the original triad and the following inputs")]
+#[when("the user create a point in each mode using the original triad and the following inputs")]
 fn create_in_each_mode(world: &mut ApplicationWorld) {
     world.escape();
     world.pump(Vec::new());
@@ -316,7 +317,7 @@ fn create_in_each_mode(world: &mut ApplicationWorld) {
         world.precise_values(first, second);
     }
 }
-#[when("I measure each point in the specified sketch-plane fixture")]
+#[when("the user measure each point in the specified sketch-plane fixture")]
 fn measure_each(world: &mut ApplicationWorld) {
     world.escape();
     world.pump(Vec::new());

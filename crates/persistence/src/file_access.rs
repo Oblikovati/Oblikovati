@@ -10,6 +10,9 @@ use std::{
     path::{Path, PathBuf},
 };
 
+mod memory;
+pub use memory::{MemoryDocumentFiles, MemoryStagedFile};
+
 /// Filesystem boundary for canonical-path lookup, reads, and atomic replacement.
 pub trait DocumentFiles: AtomicFiles + PackageFileReader {
     /// Resolve a save destination, permitting a new file under an existing parent.

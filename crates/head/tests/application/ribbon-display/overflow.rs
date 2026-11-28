@@ -36,8 +36,8 @@ fn active_view_in_overflow(world: &mut ApplicationWorld) {
 #[given("the narrow application window places View in the tab overflow menu")]
 pub(super) fn view_in_overflow(world: &mut ApplicationWorld) {
     use crate::HeadWork;
-    // At the minimum window width, the current tab labels still fit with the smaller font.
-    let scale = oblikovati_model::ui_scale::UiScaleOptions::new(1.7, 1.).unwrap();
+    // At the minimum window width, keep Tools visible in the tab strip while overflowing View.
+    let scale = oblikovati_model::ui_scale::UiScaleOptions::new(1.4, 1.).unwrap();
     world.app().owner.set_ui_scale_from_gui(scale).unwrap();
     world.pump(Vec::new());
     super::window_compaction::resize_window(world, 640);
@@ -82,7 +82,14 @@ fn hidden_tabs_listed(world: &mut ApplicationWorld) {
 
 #[when("the user selects View from the overflow menu")]
 fn select_hidden_view(world: &mut ApplicationWorld) {
-    let point = super::super::diagnostics::pointer_pixels(world.run("View").center());
+    let run = world
+        .frame
+        .runs
+        .iter()
+        .rev()
+        .find(|run| run.text == "View" && world.frame.is_popup_row(run))
+        .unwrap_or_else(|| panic!("expected View in overflow popup: {}", world.text()));
+    let point = super::super::diagnostics::pointer_pixels(run.center());
     super::super::desktop_input::click(world, point);
 }
 

@@ -68,6 +68,9 @@ fn assert_empty_text_default(world: &mut ApplicationWorld) {
 }
 
 fn apply_bold_to_two_typed_characters(world: &mut ApplicationWorld) {
+    if world.state().sketch_text.unwrap().family.is_empty() {
+        text_format_choices::choose_font(world, "DejaVu Sans");
+    }
     type_content(world, b'a');
     x11_input::press_keysym(u32::from(b'b'));
     world.pump(Vec::new());
@@ -75,13 +78,13 @@ fn apply_bold_to_two_typed_characters(world: &mut ApplicationWorld) {
     world.pump(Vec::new());
     let regular = glyph_pixels(world);
     click_editor_button(world, "Bold");
-    assert_ne!(glyph_pixels(world), regular);
     let draft = world.state().sketch_text.unwrap();
     assert_eq!(draft.content, "ab");
     let [run] = draft.formatting.runs.as_deref().unwrap() else {
         panic!("expected one Bold run for ab");
     };
     assert_eq!((run.start, run.end, run.bold), (0, 2, true));
+    assert_ne!(glyph_pixels(world), regular);
     capture_when_requested(world, "text-bold-creation-preview");
 }
 

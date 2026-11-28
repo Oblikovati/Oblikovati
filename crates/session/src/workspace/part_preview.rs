@@ -135,7 +135,8 @@ impl<O: TransactionObserver> DocumentSession<O> {
         candidate: &DocumentSnapshot,
     ) -> Result<OwnedPartPreview, PartPreviewError> {
         let mut evaluator =
-            CertifiedNamedSolidEvaluator::with_optional_policy(self.history(), guid, policy);
+            CertifiedNamedSolidEvaluator::with_optional_policy(self.history(), guid, policy)
+                .with_derived_sources(&self.derived_sources);
         let reused = checkpoint_preview(self, candidate, policy, &mut evaluator, document)?;
         let used_checkpoint = reused.is_some();
         let evaluation = match reused {
@@ -157,7 +158,8 @@ impl<O: TransactionObserver> DocumentSession<O> {
         inspect: impl FnOnce(&NamedSolid) -> T,
     ) -> Result<(T, bool), PartPreviewError> {
         let mut evaluator =
-            CertifiedNamedSolidEvaluator::with_optional_policy(self.history(), guid, policy);
+            CertifiedNamedSolidEvaluator::with_optional_policy(self.history(), guid, policy)
+                .with_derived_sources(&self.derived_sources);
         if !candidate.sketches.requires_part_dependency_recompute()
             && let Some(prefix) = self.owned_part_prefix(policy)
             && let Some(result) = prefix

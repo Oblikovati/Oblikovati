@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::Viewport;
 use crate::{GuiFrame, GuiFrameCompiler, ViewportGuiSubmission};
-use martensite_vulkan::RenderError;
+use martensite_render_core::RenderError;
 impl Viewport {
     /// Observe the current target before building a GUI packet; resize invalidates the previous capture.
     /// Example: `let extent = view.drawable_extent()?;` for the next frame request.
@@ -68,6 +68,14 @@ impl Viewport {
             Ok(true)
         })?;
         self.gui_surface = None;
+        if self.layout_framing.take().is_some() {
+            let next = super::next_generation(self.camera)?;
+            if self.live()?.clear_layout_projection() {
+                self.camera = next;
+                self.completed = None;
+                self.projection_cache.get_mut().clear();
+            }
+        }
         Ok(())
     }
 }

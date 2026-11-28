@@ -4,7 +4,7 @@ use super::super::distance_editor::dimension_pick::{
 };
 use super::super::viewport_interaction::click_at;
 use super::apply_next::click_settled;
-use super::{ApplicationWorld, click_in_extrude, feature_count};
+use super::{ApplicationWorld, feature_count};
 use cucumber::{given, then, when};
 
 const FIXTURE: &str = "fixtures/cad/extrusion/extrusion-dimension-pick.opd";
@@ -30,7 +30,7 @@ fn open_multi_profile_draft(world: &mut ApplicationWorld) {
 
 #[given("Keep sketches visible on (+) is checked in Advanced Settings")]
 fn keep_sketch_checked(world: &mut ApplicationWorld) {
-    click_in_extrude(world, "AdvancedSettings");
+    super::preset_visibility::open_settings(world);
     assert!(world.checked_run(super::preset_visibility::menu_row(
         world,
         "Keepsketchesvisibleon(+)"

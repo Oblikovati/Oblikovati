@@ -112,6 +112,7 @@ fn accepted_sweep(world: &mut ApplicationWorld) {
 
 #[when("Undo is invoked")]
 fn undo(world: &mut ApplicationWorld) {
+    world.pump(vec![oblikovati_viewport::ViewportEvent::Focus(true)]);
     world.key(ViewportPhysicalKey::Z, true);
     world.pump(Vec::new());
 }
@@ -132,6 +133,7 @@ fn sweep_was_undone(world: &mut ApplicationWorld) {
 
 #[when("Redo is invoked")]
 fn redo(world: &mut ApplicationWorld) {
+    world.pump(vec![oblikovati_viewport::ViewportEvent::Focus(true)]);
     world.key(ViewportPhysicalKey::Y, true);
     world.pump(Vec::new());
 }
@@ -235,6 +237,13 @@ fn set_twist(world: &mut ApplicationWorld) {
 
 #[when("the edit is accepted")]
 fn accept_twisted_sweep(world: &mut ApplicationWorld) {
+    if super::diagnostics::window_geometry("Emboss").is_some() {
+        let pixel =
+            super::diagnostics::pointer_pixels(world.run_in_window("Emboss", "OK").center());
+        world.click(pixel);
+        world.pump(Vec::new());
+        return;
+    }
     assert!(world.run_is_enabled("OK"));
     accept(world);
 }

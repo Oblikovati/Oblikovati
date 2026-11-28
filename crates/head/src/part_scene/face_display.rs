@@ -122,11 +122,20 @@ fn build_body_scene(
         } else {
             body_color
         };
+        let has_normals = face.normals.len() == face.triangles.len();
         face.triangles
             .iter()
-            .map(move |triangle| (*triangle, color, Some(index)))
+            .enumerate()
+            .map(move |(tri_index, triangle)| {
+                (
+                    *triangle,
+                    has_normals.then(|| face.normals[tri_index]),
+                    color,
+                    Some(index),
+                )
+            })
     });
-    ViewportScene::from_indexed_triangles([0., 0., 1.], triangles)
+    ViewportScene::from_shaded_triangles([0., 0., 1.], triangles)
 }
 
 fn has_selected_mesh(cache: &FaceMeshCache, feature: FeatureId, key: &[u8]) -> bool {
@@ -197,6 +206,7 @@ mod tests {
         let face = |key| oblikovati_martensite::NamedFaceMesh {
             key: vec![key],
             triangles: vec![triangle],
+            normals: Vec::new(),
         };
         let cache = FaceMeshCache {
             source: (1, 2),

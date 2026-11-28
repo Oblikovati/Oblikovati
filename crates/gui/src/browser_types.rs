@@ -33,6 +33,24 @@ pub struct GuiModelBrowser {
     pub loft_edits: std::collections::BTreeMap<FeatureId, crate::GuiLoftEditSeed>,
     /// Authored options for editable Sweep features.
     pub sweep_edits: std::collections::BTreeMap<FeatureId, crate::GuiSweepEditSeed>,
+    /// Authored options for editable Revolve features.
+    pub revolve_edits: std::collections::BTreeMap<FeatureId, crate::GuiRevolveEditSeed>,
+    /// Authored options for editable Coil features.
+    pub coil_edits: std::collections::BTreeMap<FeatureId, crate::GuiCoilEditSeed>,
+    /// Authored options for editable Emboss features.
+    pub emboss_edits: std::collections::BTreeMap<FeatureId, crate::GuiEmbossEditSeed>,
+    /// Authored options for editable Derived Part features.
+    pub derive_edits: std::collections::BTreeMap<FeatureId, crate::GuiDeriveEditSeed>,
+    /// Authored options for editable Rib features.
+    pub rib_edits: std::collections::BTreeMap<FeatureId, crate::GuiRibEditSeed>,
+    /// Authored options for editable Decal features.
+    pub decal_edits: std::collections::BTreeMap<FeatureId, crate::GuiDecalEditSeed>,
+    /// Authored options for editable Imported Model features.
+    pub import_edits: std::collections::BTreeMap<FeatureId, crate::GuiImportEditSeed>,
+    /// Authored options for editable Unwrap features.
+    pub unwrap_edits: std::collections::BTreeMap<FeatureId, crate::GuiUnwrapEditSeed>,
+    /// Named imported mesh entries listed under the 3rd Party browser folder.
+    pub third_party_entries: Vec<String>,
     /// Editable extrusion distance sources, indexed by their current feature identities.
     pub extrusion_edits: std::collections::BTreeMap<FeatureId, GuiExtrudeEditSeed>,
     /// Authored radius expressions for editable Fillet features.

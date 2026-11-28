@@ -8,6 +8,7 @@ fn click_label(world: &mut ApplicationWorld, label: &str) {
     let point = diagnostics::pointer_pixels(center);
     x11_input::click(point);
     world.pump(Vec::new());
+    world.pump(Vec::new());
 }
 
 #[test]
@@ -188,9 +189,16 @@ fn reopen_cube_file(world: &mut ApplicationWorld, path: &std::path::Path) -> u64
 
 fn create_size_parameter(world: &mut ApplicationWorld) {
     click_label(world, "Parameters");
-    let (position, _) = diagnostics::window_geometry("Parameters").unwrap();
-    for (offset, value) in [(235., "size"), (380., "10 mm"), (475., "")] {
-        let point = diagnostics::pointer_pixels([position[0] + offset, position[1] + 140.]);
+    let (position, size) = diagnostics::window_geometry("Parameters").unwrap();
+    let end = [position[0] + size[0], position[1] + size[1]];
+    let numeric = super::rendered_label_in_rect("Numeric", position, end);
+    let add = super::rendered_label_in_rect("Add", [position[0] + 150., position[1]], end);
+    let span = add[0] - numeric[0];
+    for (point, value) in [
+        ([numeric[0] + span / 3, add[1]], "size"),
+        ([numeric[0] + span * 2 / 3, add[1]], "10 mm"),
+        (add, ""),
+    ] {
         x11_input::click(point);
         world.pump(Vec::new());
         type_text(world, value);

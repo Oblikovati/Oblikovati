@@ -99,11 +99,13 @@ impl OrientationControl {
         [position, size]: [[f32; 2]; 2],
         actions: &mut Vec<GuiShellAction>,
     ) {
-        let _surface =
-            ui.push_style_color(StyleColor::WindowBg, ui.style_color(StyleColor::PopupBg));
-        let _padding = ui.push_style_var(imgui::StyleVar::WindowPadding([4., 8.]));
+        let mut glass = ui.style_color(StyleColor::PopupBg);
+        glass[3] = 0.88;
+        let _surface = ui.push_style_color(StyleColor::WindowBg, glass);
+        let _border = ui.push_style_color(StyleColor::Border, crate::theme::border_subtle(ui));
+        let _padding = ui.push_style_var(imgui::StyleVar::WindowPadding([5., 6.]));
         let _minimum = ui.push_style_var(imgui::StyleVar::WindowMinSize([1., 1.]));
-        let _rounding = ui.push_style_var(imgui::StyleVar::WindowRounding(4.));
+        let _rounding = ui.push_style_var(imgui::StyleVar::WindowRounding(6.));
         crate::widget_abi::window_geometry(ui, position, size, imgui::Condition::Always);
         ui.window(NAVIGATION_WINDOW)
             .flags(control_flags() - WindowFlags::NO_BACKGROUND)
@@ -125,17 +127,17 @@ mod tests {
         left: 142.,
         top: 149.,
         right: 498.,
-        bottom: 431.,
+        bottom: 410.,
     };
 
     #[test]
     fn short_viewports_put_the_full_bar_inside_the_cube_corner() {
         let right = ViewControlPlacement::new(SHORT, ScreenCorner::TopRight, 120., BOTH);
         assert_eq!(right.cube, [370., 157.]);
-        assert_eq!(right.bar, [[332., 157.], [30., 176.]]);
+        assert_eq!(right.bar, [[332., 157.], [30., 138.]]);
         let left = ViewControlPlacement::new(SHORT, ScreenCorner::BottomLeft, 120., BOTH);
-        assert_eq!(left.cube, [150., 303.]);
-        assert_eq!(left.bar, [[278., 247.], [30., 176.]]);
+        assert_eq!(left.cube, [150., 282.]);
+        assert_eq!(left.bar, [[278., 264.], [30., 138.]]);
     }
 
     #[test]
@@ -146,6 +148,6 @@ mod tests {
         };
         let layout = ViewControlPlacement::new(area, ScreenCorner::TopRight, 120., BOTH);
         assert_eq!(layout.cube, [370., 157.]);
-        assert_eq!(layout.bar, [[415., 285.], [30., 176.]]);
+        assert_eq!(layout.bar, [[415., 285.], [30., 138.]]);
     }
 }

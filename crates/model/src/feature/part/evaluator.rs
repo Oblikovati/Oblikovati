@@ -113,6 +113,114 @@ pub trait PartFeatureEvaluator {
             "loft: expected an available section evaluator".into(),
         ))
     }
+    /// Construct a named solid from a solved Revolve profile and axis. Example: `backend.evaluate_revolve(feature, input)?`.
+    fn evaluate_revolve(
+        &mut self,
+        _feature: FeatureId,
+        _input: crate::feature::sketch_revolve::ResolvedSketchRevolve<'_>,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        Err(PartFeatureFailure::Unsupported(
+            "revolve: expected an available revolution evaluator".into(),
+        ))
+    }
+    /// Replace a named body with a Revolve Boolean result. Example: `backend.evaluate_revolve_boolean(feature, body, input, op)?`.
+    fn evaluate_revolve_boolean(
+        &mut self,
+        _feature: FeatureId,
+        _body: &Self::Body,
+        _input: crate::feature::sketch_revolve::ResolvedSketchRevolve<'_>,
+        operation: PrismBoolean,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        Err(PartFeatureFailure::Unsupported(format!(
+            "revolve {operation}: expected a named Boolean evaluator"
+        )))
+    }
+    /// Construct a named solid from a solved Coil profile and axis. Example: `backend.evaluate_coil(feature, input)?`.
+    fn evaluate_coil(
+        &mut self,
+        _feature: FeatureId,
+        _input: crate::feature::sketch_coil::ResolvedSketchCoil<'_>,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        Err(PartFeatureFailure::Unsupported(
+            "coil: expected an available coil evaluator".into(),
+        ))
+    }
+    /// Replace a named body with a Coil Boolean result. Example: `backend.evaluate_coil_boolean(feature, body, input, op)?`.
+    fn evaluate_coil_boolean(
+        &mut self,
+        _feature: FeatureId,
+        _body: &Self::Body,
+        _input: crate::feature::sketch_coil::ResolvedSketchCoil<'_>,
+        operation: PrismBoolean,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        Err(PartFeatureFailure::Unsupported(format!(
+            "coil {operation}: expected a named Boolean evaluator"
+        )))
+    }
+    /// Construct a named derived solid from an external source part.
+    fn evaluate_derived_part(
+        &mut self,
+        _feature: FeatureId,
+        _input: crate::feature::derived_part::ResolvedDerivedPart,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        Err(PartFeatureFailure::Unsupported(
+            "derive: expected an available derived-part evaluator".into(),
+        ))
+    }
+    /// Construct a named imported body from an external STL or STEP file.
+    fn evaluate_imported_model(
+        &mut self,
+        _feature: FeatureId,
+        _input: crate::feature::imported_model::ResolvedImportedModel,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        Err(PartFeatureFailure::Unsupported(
+            "import: expected an available imported-model evaluator".into(),
+        ))
+    }
+    /// Unfold one or more selected solid faces into a planar surface body.
+    fn evaluate_unwrap(
+        &mut self,
+        _feature: FeatureId,
+        _body: &Self::Body,
+        _input: crate::feature::unwrap::ResolvedUnwrap<'_>,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        Err(PartFeatureFailure::Unsupported(
+            "unwrap: expected an available unwrap evaluator".into(),
+        ))
+    }
+    /// Apply a solved Emboss (raise, engrave, or level-to-plane) to a target body.
+    fn evaluate_emboss(
+        &mut self,
+        _feature: FeatureId,
+        _body: &Self::Body,
+        _input: crate::feature::sketch_emboss::ResolvedSketchEmboss<'_>,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        Err(PartFeatureFailure::Unsupported(
+            "emboss: expected an available emboss evaluator".into(),
+        ))
+    }
+    /// Apply a solved Rib (open profile web/rib) to a target body.
+    fn evaluate_rib(
+        &mut self,
+        _feature: FeatureId,
+        _body: &Self::Body,
+        _input: crate::feature::sketch_rib::ResolvedSketchRib<'_>,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        Err(PartFeatureFailure::Unsupported(
+            "rib: expected an available rib evaluator".into(),
+        ))
+    }
+    /// Apply a solved Decal (sketch image on a target face) to a target body.
+    fn evaluate_decal(
+        &mut self,
+        _feature: FeatureId,
+        _body: &Self::Body,
+        _input: crate::feature::sketch_decal::ResolvedSketchDecal<'_>,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        Err(PartFeatureFailure::Unsupported(
+            "decal: expected an available decal evaluator".into(),
+        ))
+    }
     /// Construct a named solid from a solved profile and path. Example: `backend.evaluate_sweep(feature, input)?`.
     fn evaluate_sweep(
         &mut self,

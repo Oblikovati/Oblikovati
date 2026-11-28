@@ -102,25 +102,33 @@ pub type FilletNamedTopology = BlendNamedTopology;
 pub use prism::{
     BlendCandidate, BlendHistoryRecord, BlendNamedTopology, BodyPresentationSource,
     CapturedNamedSolid, CertifiedNamedSolidEvaluator, CertifiedPrismEvidence,
-    CertifiedPrismSnapshot, DrawingBaseProjection, DrawingProjectedCurve, DrawingProjection,
-    DrawingProjectionCurveKind, DrawingProjectionFrame, FaceProbe, NamedEdgeHit, NamedFaceMesh,
-    NamedPrismSnapshot, NamedSolid, PlanarProfileLoop, PrismAchievedTolerance, PrismFaceMesh,
-    PrismFaceProbe, PrismFaceRole, PrismFaceTopology, PrismHistoryRelation, PrismHistorySource,
-    PrismMeshOptions, PrismPresentation, PrismPresentationSource, PrismProbeDefinition,
-    PrismProbeLoop, PrismProbeReport, PrismProbeSnapshot, PrismResolution, PrismResolutionPolicy,
-    PrismSubentityHistory, PrismSubentityProvenance, PrismSubentityRole, PrismSurfaceKind,
-    PrismTopologySummary, RigidMotion, TopologySummary, capture_full_named_candidate,
-    complete_named_candidate, complete_named_checkpoints, drawing_base_view_bodies,
-    drawing_base_view_solids, drawing_projection_bodies, drawing_projection_solids,
-    named_part_properties, named_solid_part_properties, prepare_dependent_named_publication,
-    prepare_full_named_publication, probe_planar_prism, retain_certified_named_sketch_prism,
-    retain_certified_profile_prism, retain_certified_profile_prisms, retain_named_sketch_prism,
-    retain_planar_prism, retain_prism_on_plane, validate_full_named_snapshot,
+    CertifiedPrismSnapshot, DisplayTriangle, DrawingBaseProjection, DrawingProjectedCurve,
+    DrawingProjection, DrawingProjectionCurveKind, DrawingProjectionFrame, FaceProbe, NamedEdgeHit,
+    NamedFaceMesh, NamedPrismSnapshot, NamedSolid, PlanarProfileLoop, PrismAchievedTolerance,
+    PrismFaceMesh, PrismFaceProbe, PrismFaceRole, PrismFaceTopology, PrismHistoryRelation,
+    PrismHistorySource, PrismMeshOptions, PrismPresentation, PrismPresentationSource,
+    PrismProbeDefinition, PrismProbeLoop, PrismProbeReport, PrismProbeSnapshot, PrismResolution,
+    PrismResolutionPolicy, PrismSubentityHistory, PrismSubentityProvenance, PrismSubentityRole,
+    PrismSurfaceKind, PrismTopologySummary, RigidMotion, TopologySummary,
+    capture_full_named_candidate, complete_named_candidate, complete_named_checkpoints,
+    drawing_base_view_bodies, drawing_base_view_solids, drawing_projection_bodies,
+    drawing_projection_solids, named_part_properties, named_solid_part_properties,
+    prepare_dependent_named_publication, prepare_full_named_publication, probe_planar_prism,
+    retain_certified_named_sketch_prism, retain_certified_profile_prism,
+    retain_certified_profile_prisms, retain_named_sketch_prism, retain_planar_prism,
+    retain_prism_on_plane, validate_full_named_snapshot,
 };
 mod loft;
 pub use loft::check_loft_guide_closure;
+pub mod coil;
+mod decal;
+mod derive;
+mod emboss;
+pub mod import;
 mod revolve;
+mod rib;
 pub mod sweep;
+mod unwrap;
 pub use revolve::{
     RevolveFaceRole, RevolveProbeDefinition, RevolveProbeReport, probe_planar_revolve,
     probe_revolve_on_plane,

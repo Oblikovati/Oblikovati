@@ -83,7 +83,9 @@ pub(crate) fn draw_panel_content(
             ],
             false,
         ),
-        RibbonPanel::ManageInsert => muted::manage_insert_commands(ui, origin, owners.icons),
+        RibbonPanel::ManageInsert => {
+            muted::manage_insert_commands(ui, origin, state, owners.icons, actions)
+        }
         RibbonPanel::Create => {
             sketch::sketch_create_controls(ui, origin, state, owners.icons, actions)
         }
@@ -302,15 +304,14 @@ fn part_create_controls(
         .ribbon_command_menu(ui, EXTRUDE, true, state);
     let (position, size) = owners.icons.appearance.cell(1);
     owners.icons.cursor(ui, origin, position);
-    {
-        let _muted = ui.begin_disabled(true);
-        owners
-            .icons
-            .button(ui, "Revolve", crate::icons::IconGlyph::Revolve, size);
-    }
-    if ui.is_item_hovered_with_flags(imgui::ItemHoveredFlags::ALLOW_WHEN_DISABLED) {
-        ui.tooltip_text(NOT_PORTED);
-    }
+    owners.icons.command_button(
+        ui,
+        "Revolve",
+        GuiShellAction::Revolve(crate::GuiRevolveAction::Open),
+        state,
+        size,
+        actions,
+    );
     owners
         .quick_access
         .ribbon_command_menu(ui, "Revolve", false, state);

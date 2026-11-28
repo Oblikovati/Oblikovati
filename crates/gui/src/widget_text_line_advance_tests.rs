@@ -72,8 +72,7 @@ fn draw_input(ui: &Ui, factor: f32, content: &mut String) -> [[f32; 2]; 2] {
     let normal = ui.current_font_size();
     {
         let _advance = text_line_advance(ui, factor);
-        ui.input_text_multiline("##rows", content, [200., 100.])
-            .build();
+        super::input_text_multiline(ui, "##rows", content, [200., 100.]);
     }
     assert_eq!(normal, ui.current_font_size());
     corners

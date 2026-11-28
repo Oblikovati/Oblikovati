@@ -156,10 +156,12 @@ fn full_row(context: &mut PanelDrawContext<'_>, tab: RibbonTab, layout: &mut Rib
     let icons = context.owners.icons;
     let height = icons.appearance.full_row_height() * icons.layout_factor();
     // Scrolling remains available below the compact row's minimum width without moving the viewport.
-    ui.child_window("##ribbon-panels")
-        .size([available, height])
-        .flags(imgui::WindowFlags::HORIZONTAL_SCROLLBAR | imgui::WindowFlags::NO_SCROLLBAR)
-        .build(|| draw_row(context, tab, layout, available));
+    let flags = imgui::WindowFlags::HORIZONTAL_SCROLLBAR | imgui::WindowFlags::NO_SCROLLBAR;
+    let region =
+        crate::widget_abi::child_region(ui, "##ribbon-panels", [available, height], 0., flags);
+    if region.visible {
+        draw_row(context, tab, layout, available);
+    }
 }
 fn group_key_tip(ui: &Ui, panel: RibbonPanel, owners: &RibbonPanelOwners<'_>) {
     let tip = match panel {
