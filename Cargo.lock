@@ -2486,8 +2486,8 @@ dependencies = [
 
 [[package]]
 name = "oblikovati-api"
-version = "0.166.0"
-source = "git+https://github.com/Oblikovati/Oblikovati.API.git?rev=c8200b2da97c9a7dde43afb25debc977ff23b2fd#c8200b2da97c9a7dde43afb25debc977ff23b2fd"
+version = "0.167.0"
+source = "git+https://github.com/Oblikovati/Oblikovati.API.git?rev=609c679a880b991b165c2fbc6e2cc020d511cdd4#609c679a880b991b165c2fbc6e2cc020d511cdd4"
 dependencies = [
  "base64",
  "serde",
