@@ -435,6 +435,7 @@ fn feature_kind(definition: &PartFeatureDefinition) -> &'static str {
         Axis(_) => "line",
         Point(_) => "position",
         PointAtReference(_) => "point-reference",
+        WorkPoint(_) => "work-point",
         AxisThroughPoints(_) => "two-points",
     }
 }

@@ -193,9 +193,9 @@ impl DatumCollection {
             WorkGeometryDefinition::Axis(_) | WorkGeometryDefinition::AxisThroughPoints(_) => {
                 Self::Axes
             }
-            WorkGeometryDefinition::Point(_) | WorkGeometryDefinition::PointAtReference(_) => {
-                Self::Points
-            }
+            WorkGeometryDefinition::Point(_)
+            | WorkGeometryDefinition::PointAtReference(_)
+            | WorkGeometryDefinition::WorkPoint(_) => Self::Points,
             WorkGeometryDefinition::Fixed(_)
             | WorkGeometryDefinition::Offset { .. }
             | WorkGeometryDefinition::ParallelThroughPoint(_)

@@ -146,9 +146,23 @@ pub(super) fn constructor_kind(definition: WorkGeometryDefinition) -> Result<Str
         WorkGeometryDefinition::AxisThroughPoints(_) => Ok(WORK_AXIS_TWO_POINTS.0.into_owned()),
         WorkGeometryDefinition::Point(_) => Ok(WORK_POINT_POSITION.0.into_owned()),
         WorkGeometryDefinition::PointAtReference(_) => Ok(WORK_POINT_ON_POINT.0.into_owned()),
+        WorkGeometryDefinition::WorkPoint(definition) => Ok(work_point_kind(&definition)),
         _ => Err(Error(format!(
             "datum definition {definition:?}: expected a listed point or axis constructor"
         ))),
+    }
+}
+fn work_point_kind(
+    definition: &oblikovati_model::feature::work_point::WorkPointDefinition,
+) -> String {
+    use oblikovati_model::feature::work_point::WorkPointConstruction as Construction;
+    match definition.construction() {
+        Construction::OnVertex(_) => WORK_POINT_ON_POINT.0.into_owned(),
+        Construction::LoopCenter(_) => "loop-center".into(),
+        Construction::Grounded(_) => WORK_POINT_POSITION.0.into_owned(),
+        Construction::TwoLines { .. } => "two-lines".into(),
+        Construction::PlaneAndLine { .. } => "plane-and-line".into(),
+        Construction::ThreePlanes(_) => "three-planes".into(),
     }
 }
 pub(super) fn creation_reply(

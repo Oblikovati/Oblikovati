@@ -23,6 +23,12 @@ impl WorkPlaneResolver for WorkGeometryEvaluation {
             .cloned()
             .unwrap_or_else(|| Err(crate::feature::work_plane::unavailable_face(reference)))
     }
+    fn topology_origin(
+        &self,
+        reference: &crate::document_sketch::SketchFrameTopologyOrigin,
+    ) -> Result<[f64; 3], WorkPlaneError> {
+        self.sketch_frame_origin(reference)
+    }
 }
 impl WorkGeometryEvaluation {
     /// Resolve a current exact frame-origin reference; example: `evaluation.sketch_frame_origin(&reference)?`.
@@ -45,6 +51,12 @@ impl WorkGeometryEvaluation {
         self.datums
             .iter()
             .filter_map(|(&feature, &datum)| project_plane(datum).map(|plane| (feature, plane)))
+    }
+    /// Iterate successful current work points by identity; example: `evaluation.points().count()`.
+    pub fn points(&self) -> impl Iterator<Item = (FeatureId, [f64; 3])> + '_ {
+        self.datums
+            .iter()
+            .filter_map(|(&feature, &datum)| project_point(datum).map(|point| (feature, point)))
     }
     /// Resolve one current line by stable identity; example: `evaluation.axis(FeatureId(3))?`.
     pub fn axis(&self, feature: FeatureId) -> Result<WorkAxisLine, WorkPlaneError> {

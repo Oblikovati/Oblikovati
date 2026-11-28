@@ -54,6 +54,7 @@ pub enum WorkPlaneDefinitionRecipe {
     Point([crate::feature::work_geometry::DatumLength; 3]),
     AxisThroughPoints(crate::feature::work_geometry::WorkAxisPoints),
     PointAtReference(crate::feature::work_geometry::WorkPointReference),
+    WorkPoint(crate::feature::work_point::WorkPointRecipe),
     Fixed {
         frame: SketchPlaneRecipe,
         options: SketchPlaneOptions,
@@ -117,6 +118,7 @@ impl WorkPlaneDefinition {
             Self::Axis(axis) => Source::Axis(axis.recipe()),
             Self::Point(coordinates) => Source::Point(*coordinates),
             Self::PointAtReference(reference) => Source::PointAtReference(*reference),
+            Self::WorkPoint(definition) => Source::WorkPoint(definition.recipe()),
             Self::AxisThroughPoints(points) => Source::AxisThroughPoints(*points),
             Self::Fixed(plane) => fixed_frame_recipe(*plane),
             Self::Offset { base, distance } => offset_source_recipe(base.clone(), *distance),
@@ -260,6 +262,8 @@ fn restore_definition(
         Offset { base, distance } => validate_offset(base, distance),
         Point(coordinates) => restore_point(coordinates),
         PointAtReference(reference) => Ok(WorkPlaneDefinition::PointAtReference(reference)),
+        WorkPoint(recipe) => crate::feature::work_point::WorkPointDefinition::from_recipe(recipe)
+            .map(|definition| WorkPlaneDefinition::WorkPoint(Box::new(definition))),
         AxisThroughPoints(points) => Ok(WorkPlaneDefinition::AxisThroughPoints(points)),
     }
 }
@@ -332,6 +336,7 @@ impl WorkPlaneDefinitionRecipe {
             Self::ThickenOffset(_) => 50,
             Self::Split(_) => 51,
             Self::Mark(_) => 54,
+            Self::WorkPoint(_) => 56,
             Self::SketchSweep(recipe) => match recipe.version {
                 7 => 29,
                 6 => 28,
@@ -402,6 +407,7 @@ impl WorkPlaneDefinitionRecipe {
             Self::ThickenOffset(_) => 60,
             Self::Split(_) => 61,
             Self::Mark(_) => 64,
+            Self::WorkPoint(_) => 66,
             Self::SketchSweep(recipe) => match recipe.version {
                 7 => 34,
                 6 => 33,

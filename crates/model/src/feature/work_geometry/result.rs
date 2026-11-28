@@ -38,6 +38,9 @@ impl WorkGeometryResult {
             WorkGeometryDefinition::Point(coordinates) => {
                 resolve_position(coordinates, parameters).map(Self::Point)
             }
+            WorkGeometryDefinition::WorkPoint(definition) => {
+                definition.evaluate(parameters, current).map(Self::Point)
+            }
             WorkGeometryDefinition::AxisThroughPoints(points) => axis_between(points, current),
             plane => plane.evaluate(parameters, current).map(Self::Plane),
         }
