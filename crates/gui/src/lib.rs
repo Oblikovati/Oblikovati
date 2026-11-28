@@ -168,6 +168,7 @@ mod extrude_dialog;
 #[cfg(test)]
 mod face_draft;
 mod face_properties;
+mod finish_dialog;
 mod hole_dialog;
 mod slot_dialog;
 mod thread_dialog;
@@ -183,6 +184,10 @@ pub use delete_face_dialog::{
 pub use draft_dialog::{
     GuiDraftAction, GuiDraftEditSeed, GuiDraftPick, GuiDraftPickTarget, GuiDraftPreview,
     GuiDraftPreviewState, GuiDraftRequest,
+};
+pub use finish_dialog::{
+    GuiFinishAction, GuiFinishEditSeed, GuiFinishPick, GuiFinishPreview, GuiFinishPreviewState,
+    GuiFinishRequest, GuiFinishSelectionMode, GuiFinishType,
 };
 pub use hole_dialog::{
     GuiHoleAction, GuiHoleEditSeed, GuiHolePick, GuiHolePreview, GuiHolePreviewState,

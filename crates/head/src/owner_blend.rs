@@ -19,6 +19,8 @@ pub(super) mod owner_draft;
 pub(super) mod owner_emboss;
 #[path = "owner_fillet_v2.rs"]
 pub(super) mod owner_fillet_v2;
+#[path = "owner_finish.rs"]
+pub(super) mod owner_finish;
 #[path = "owner_hole.rs"]
 pub(super) mod owner_hole;
 #[path = "owner_import.rs"]
@@ -59,6 +61,7 @@ pub(super) struct CreateFeatureState {
     pub(super) draft: owner_draft::DraftOwnerState,
     pub(super) thread: owner_thread::ThreadOwnerState,
     pub(super) delete_face: owner_delete_face::DeleteFaceOwnerState,
+    pub(super) finish: owner_finish::FinishOwnerState,
     pub(super) fillet_v2: owner_fillet_v2::FilletV2OwnerState,
     pub(super) chamfer_v2: owner_chamfer_v2::ChamferV2OwnerState,
     pub(super) shell_v2: owner_shell_v2::ShellV2OwnerState,

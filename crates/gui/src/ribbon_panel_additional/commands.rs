@@ -211,6 +211,7 @@ fn additional_icon_entries(
             ("Draft", Glyph::Chamfer),
             ("Thread", Glyph::Thread),
             ("Delete Face", Glyph::DeleteFace),
+            ("Finish", Glyph::Finish),
         ],
         RibbonPanel::PartSimplification => &[
             ("Remove Details", Glyph::Simplify),
@@ -301,6 +302,7 @@ fn additional_action(label: &str) -> Option<GuiShellAction> {
         "Draft" => Some(GuiShellAction::Draft(crate::GuiDraftAction::Open)),
         "Thread" => Some(GuiShellAction::Thread(crate::GuiThreadAction::Open)),
         "Delete Face" => Some(GuiShellAction::DeleteFace(crate::GuiDeleteFaceAction::Open)),
+        "Finish" => Some(GuiShellAction::Finish(crate::GuiFinishAction::Open)),
         "Constraint Inference Scope" => Some(GuiShellAction::OpenInferenceScope),
         _ => None,
     }

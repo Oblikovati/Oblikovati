@@ -236,6 +236,13 @@ fn cancel_coil_panel(world: &mut ApplicationWorld) {
         world.pump(Vec::new());
         return;
     }
+    if super::super::diagnostics::window_geometry("Finish").is_some() {
+        let center = world.run_in_window("Finish", "Cancel").center();
+        world.click(super::super::diagnostics::pointer_pixels(center));
+        world.pump(Vec::new());
+        world.pump(Vec::new());
+        return;
+    }
     if super::super::diagnostics::window_geometry("Draft").is_some() {
         let center = world.run_in_window("Draft", "Cancel").center();
         world.click(super::super::diagnostics::pointer_pixels(center));

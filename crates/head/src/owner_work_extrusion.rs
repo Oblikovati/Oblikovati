@@ -137,6 +137,12 @@ macro_rules! desktop_extrusion_work {
         ) -> Result<bool, String> {
             self.delete_face_command(action)
         }
+        fn finish_from_gui(
+            &mut self,
+            action: oblikovati_gui::GuiFinishAction,
+        ) -> Result<bool, String> {
+            self.finish_command(action)
+        }
         fn fillet_v2_from_gui(
             &mut self,
             action: oblikovati_gui::GuiFilletV2Action,

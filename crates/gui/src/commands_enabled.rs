@@ -355,6 +355,7 @@ impl GuiShellAction {
             | Self::Draft(_)
             | Self::Thread(_)
             | Self::DeleteFace(_)
+            | Self::Finish(_)
             | Self::FilletV2(_)
             | Self::ChamferV2(_)
             | Self::ShellV2(_) => false,

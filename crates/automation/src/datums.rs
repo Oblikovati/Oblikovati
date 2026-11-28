@@ -179,6 +179,7 @@ impl DatumCollection {
             | WorkGeometryDefinition::Draft(_)
             | WorkGeometryDefinition::Thread(_)
             | WorkGeometryDefinition::DeleteFace(_)
+            | WorkGeometryDefinition::Finish(_)
             | WorkGeometryDefinition::Shell(_)
             | WorkGeometryDefinition::MoveBody(_)
             | WorkGeometryDefinition::Mirror(_)

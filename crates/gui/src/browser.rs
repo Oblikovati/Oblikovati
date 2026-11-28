@@ -29,6 +29,8 @@ use crate::application::workspace_layout::{
 use sketch_rows::sketch_row;
 #[path = "browser_art.rs"]
 pub(crate) mod browser_art;
+#[path = "browser_finish.rs"]
+pub(crate) mod browser_finish;
 #[path = "browser_import.rs"]
 pub(crate) mod browser_import;
 /// Draw the browser tree, or the rows a search leaves; example: inside the Model window.
@@ -106,6 +108,14 @@ impl BrowserTree<'_> {
         self.representations(view, actions);
         self.bodies(view, actions);
         self.surface_bodies(view, actions);
+        browser_finish::finishes_folder(
+            self.ui,
+            self.state,
+            self.browser,
+            self.expansion,
+            view,
+            actions,
+        );
         self.origin(view, actions);
         browser_import::third_party_folder(self.ui, self.browser, self.expansion);
         self.parameters();
@@ -252,8 +262,8 @@ impl BrowserTree<'_> {
             let guide_top = self.ui.cursor_screen_pos()[1];
             for (row, name) in rows.iter().enumerate() {
                 let selected = view.selected_row == Some((branch, row));
-                let row_glyph = drawing_row_glyph(name);
-                let chosen = if name == SHEET_TITLE_BLOCK {
+                let row_glyph = drawing_tree::drawing_row_glyph(name);
+                let chosen = if name == drawing_tree::SHEET_TITLE_BLOCK {
                     self.title_block_row(selected, view)
                 } else {
                     let clicked = self
@@ -286,7 +296,10 @@ impl BrowserTree<'_> {
     fn title_block_row(&self, selected: bool, view: &BrowserView) -> bool {
         let node = self
             .ui
-            .tree_node_config(format!("    {SHEET_TITLE_BLOCK}###sheet-title-block"))
+            .tree_node_config(format!(
+                "    {}###sheet-title-block",
+                drawing_tree::SHEET_TITLE_BLOCK
+            ))
             .open_on_arrow(true)
             .default_open(true)
             .selected(selected);
@@ -302,7 +315,7 @@ impl BrowserTree<'_> {
         );
         let chosen = self.ui.is_item_clicked() && !self.ui.is_item_toggled_open();
         if token.is_some() {
-            self.ui.text(TITLE_BLOCK_FIELD);
+            self.ui.text(drawing_tree::TITLE_BLOCK_FIELD);
         }
         chosen
     }
@@ -356,7 +369,7 @@ impl BrowserTree<'_> {
     }
     fn features(&self, view: &mut BrowserView, actions: &mut Vec<GuiShellAction>) {
         if let Some(_features) = self.branch("Features", true) {
-            for feature in &self.browser.features {
+            for feature in self.browser.features.iter().filter(|f| f.kind != "Finish") {
                 self.feature(feature, self.expansion, view, actions, true);
             }
         }
@@ -391,8 +404,7 @@ impl BrowserTree<'_> {
         if bodies.is_empty() {
             return;
         }
-        let label = format!("Surface Bodies ({})", bodies.len());
-        if let Some(_folder) = self.branch(&label, true) {
+        if let Some(_folder) = self.branch(&format!("Surface Bodies ({})", bodies.len()), true) {
             for body in bodies {
                 self.body(body, self.expansion, view, actions);
             }
@@ -471,23 +483,6 @@ impl BrowserTree<'_> {
         }
     }
 }
-const SHEET_TITLE_BLOCK: &str = "Title Block";
-fn drawing_row_glyph(name: &str) -> crate::icons::IconGlyph {
-    use crate::icons::IconGlyph;
-    if name.contains("Border") || name.contains("Sheet") {
-        IconGlyph::DrawingSheet
-    } else if name.contains("Title") || name.contains("Note") || name.contains("Text") {
-        IconGlyph::Annotation
-    } else if name.contains("Weld") {
-        IconGlyph::DrawingWeld
-    } else if name.contains("Surface") {
-        IconGlyph::DrawingSurface
-    } else {
-        IconGlyph::DrawingBase
-    }
-}
-/// What a title block holds, one level under its row on the sheet.
-const TITLE_BLOCK_FIELD: &str = "Field Text";
 pub(crate) const ORIGIN_ROWS: [&str; 7] = [
     "YZ Plane",
     "XZ Plane",
