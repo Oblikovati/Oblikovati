@@ -3,7 +3,7 @@
 use crate::application::model_browser::color_dialog::{self, ColorAnswer, ColorDialog};
 use crate::dockable_lifecycle::{DockRegistry, DockableState};
 use crate::dockable_window::DockableWindow;
-use crate::{GuiAssetChoice, GuiCommandState, GuiShellAction};
+use crate::{GuiAssetChoice, GuiCommandState, GuiShellAction, widget_abi};
 use imgui::{Condition, Ui};
 use oblikovati_model::assets::AppearanceMetadata;
 
@@ -268,12 +268,8 @@ impl AppearanceEditor {
         let title = format!("Appearance Editor — {}###appearance-editor", original.name);
         let mut open = true;
         let mut exit = EditorExit::KeepOpen;
-        crate::widget_abi::window_geometry(
-            ui,
-            [ui.io().display_size[0] * 0.34, 173.],
-            [405., 520.],
-            Condition::FirstUseEver,
-        );
+        let origin = [ui.io().display_size[0] * 0.34, 173.];
+        widget_abi::window_geometry(ui, origin, [405., 520.], Condition::FirstUseEver);
         Self::dockable_window(ui, &title, &mut open).build(|| {
             self.preview_options.draw(ui, &preview_asset(asset, draft));
             ui.input_text("Name", &mut draft.name).build();
@@ -412,8 +408,8 @@ fn draw_information(ui: &Ui, draft: &mut AppearanceDraft, template: AppearanceTe
         return;
     };
     ui.input_text("Name##information", &mut draft.name).build();
-    ui.input_text_multiline("Description", &mut draft.metadata.description, [0., 48.])
-        .build();
+    let description = &mut draft.metadata.description;
+    widget_abi::input_text_multiline(ui, "Description", description, [0., 48.]);
     ui.input_text("Keywords", &mut draft.metadata.keywords)
         .build();
     ui.text(format!("Type: {}", template.label()));
@@ -422,7 +418,7 @@ fn draw_information(ui: &Ui, draft: &mut AppearanceDraft, template: AppearanceTe
 
 fn base_color(ui: &Ui, color: &mut [u8; 3], dialog: &mut ColorDialog) {
     let [r, g, b] = *color;
-    if ui.button(format!("Color  {r}, {g}, {b}###editor-color")) {
+    if widget_abi::button(ui, &format!("Color  {r}, {g}, {b}###editor-color"), [0.; 2]) {
         dialog.begin_with_color(Some(*color));
         ui.open_popup(color_dialog::TITLE);
     }

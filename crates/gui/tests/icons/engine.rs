@@ -344,7 +344,8 @@ fn small_caption_frame(owner: &mut GuiFrameEngine) -> (GuiFrame, [f32; 4]) {
     let mut bounds = [0.; 4];
     ui.window("Small caption").build(|| {
         crate::widget_abi::cursor_position(ui, [31., 47.]);
-        let _color = ui.push_style_color(imgui::StyleColor::Text, [0.2, 0.4, 0.6, 1.]);
+        let _color =
+            crate::widget_abi::push_style_color(ui, imgui::StyleColor::Text, [0.2, 0.4, 0.6, 1.]);
         owner
             .icons
             .presentation

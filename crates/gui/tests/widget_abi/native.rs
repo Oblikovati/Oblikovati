@@ -344,7 +344,7 @@ fn draw_colored_caption(context: &mut imgui::Context, large: bool) {
     window_geometry(ui, [0., 0.], [400., 300.], Condition::Always);
     ui.window("Caption visibility").build(|| {
         cursor_position(ui, [31., 47.]);
-        let _color = ui.push_style_color(imgui::StyleColor::Text, [0.2, 0.4, 0.6, 1.]);
+        let _color = push_style_color(ui, imgui::StyleColor::Text, [0.2, 0.4, 0.6, 1.]);
         icon_button(ui, "Rectangle", caption_presentation(large));
     });
 }
@@ -358,7 +358,7 @@ fn caption_free_icon_keeps_its_image_without_text() {
             window_geometry(ui, [0., 0.], [400., 300.], Condition::Always);
             ui.window("Icon only").build(|| {
                 cursor_position(ui, [31., 47.]);
-                let _color = ui.push_style_color(imgui::StyleColor::Text, [0.2, 0.4, 0.6, 1.]);
+                let _color = push_style_color(ui, imgui::StyleColor::Text, [0.2, 0.4, 0.6, 1.]);
                 let mut presentation = caption_presentation(large);
                 presentation.show_caption = false;
                 icon_button(ui, "Rectangle", presentation);
@@ -371,4 +371,58 @@ fn caption_free_icon_keeps_its_image_without_text() {
             matches!(command, imgui::DrawCmd::Elements { cmd_params, .. } if cmd_params.texture_id.id() == 2)
         }), "expected the icon texture to remain in the draw data");
     }
+}
+
+#[test]
+fn scalar_table_multiline_and_sized_selectable_preserve_bounds_and_resizing() {
+    let mut context = probe_context();
+    let mut text = String::new();
+    let mut callback_seen = false;
+    let mut tile_size = [0.; 2];
+    let mut table_opened = false;
+    for frame in 0..4 {
+        if frame == 3 {
+            for ch in "alpha\nbeta-0123456789".chars() {
+                context.io_mut().add_input_character(ch);
+            }
+        }
+        let ui = context.frame();
+        window_geometry(ui, [0., 0.], [420., 320.], Condition::Always);
+        ui.window("Control bridge").build(|| {
+            if let Some(table) = begin_table_with_sizing(
+                ui,
+                "##scalar-table",
+                2,
+                imgui::TableFlags::BORDERS,
+                [300., 60.],
+                0.,
+            ) {
+                table_opened = true;
+                ui.table_next_row();
+                ui.table_next_column();
+                ui.text("Cell");
+                table.end();
+            }
+            if frame == 1 {
+                ui.set_keyboard_focus_here();
+            }
+            input_text_multiline_always(ui, "##scalar-multi", &mut text, [240., 80.], |data| {
+                callback_seen |= !data.str().is_empty();
+            });
+            selectable_sized(
+                ui,
+                "##scalar-tile",
+                false,
+                SelectableFlags::empty(),
+                [96., 44.],
+            );
+            tile_size = ui.item_rect_size();
+        });
+        context.render();
+    }
+    let spacing = context.style().item_spacing;
+    assert!(table_opened);
+    assert!(callback_seen);
+    assert_eq!(text, "alpha\nbeta-0123456789");
+    assert_eq!(tile_size, [96. + spacing[0], 44. + spacing[1]]);
 }

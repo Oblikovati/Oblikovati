@@ -31,7 +31,7 @@ impl PreviewLight {
 pub(super) fn grid(ui: &Ui, assets: &[&GuiAssetChoice], selection: &mut AssetRows<'_>, size: f32) {
     let width = ui.content_region_avail()[0].max(1.);
     let columns = ((width / (size + 16.).max(84.)) as usize).max(1);
-    let Some(_table) = ui.begin_table("##appearance-grid", columns) else {
+    let Some(_table) = crate::widget_abi::begin_table(ui, "##appearance-grid", columns) else {
         return;
     };
     let rows = assets.len().div_ceil(columns);
@@ -49,12 +49,13 @@ fn tile(ui: &Ui, asset: &GuiAssetChoice, selection: &mut AssetRows<'_>, size: f3
     let width = ui.content_region_avail()[0].max(1.);
     let size = size.min((width - 8.).max(1.));
     let height = size + ui.text_line_height_with_spacing() + 8.;
-    if ui
-        .selectable_config("##appearance-tile")
-        .size([width, height])
-        .selected(selection.selected.as_deref() == Some(&asset.id))
-        .build()
-    {
+    if crate::widget_abi::selectable_sized(
+        ui,
+        "##appearance-tile",
+        selection.selected.as_deref() == Some(&asset.id),
+        imgui::SelectableFlags::empty(),
+        [width, height],
+    ) {
         *selection.selected = Some(asset.id.clone());
     }
     let hovered = ui.is_item_hovered();

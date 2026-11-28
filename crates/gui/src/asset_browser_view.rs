@@ -385,7 +385,7 @@ impl DisplayOptions {
         show_library: bool,
     ) {
         let columns = 2 + usize::from(show_library) + usize::from(self.appearance);
-        let Some(_table) = ui.begin_table("##asset-list", columns) else {
+        let Some(_table) = crate::widget_abi::begin_table(ui, "##asset-list", columns) else {
             return;
         };
         let mut name = imgui::TableColumnSetup::new("Name");

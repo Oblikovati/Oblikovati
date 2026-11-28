@@ -120,7 +120,7 @@ impl ParameterGroupManager {
                 display_name: self.create_display_name.trim().into(),
                 client_id: self.client_id.trim().into(),
             },
-            ui.button("Create Group"),
+            crate::widget_abi::button(ui, "Create Group", [0.; 2]),
         );
     }
 
@@ -150,7 +150,7 @@ impl ParameterGroupManager {
                 internal_name: key.into(),
                 display_name: self.edit_display_name.trim().into(),
             },
-            ui.button("Rename Group"),
+            crate::widget_abi::button(ui, "Rename Group", [0.; 2]),
         );
     }
 
@@ -170,7 +170,7 @@ impl ParameterGroupManager {
                 internal_name: key,
                 delete_parameters: self.delete_parameters,
             },
-            ui.button("Delete Group"),
+            crate::widget_abi::button(ui, "Delete Group", [0.; 2]),
         );
     }
 

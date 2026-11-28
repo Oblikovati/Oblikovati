@@ -39,6 +39,12 @@ mod window;
 pub(crate) use window::{
     next_window_position, window_geometry, window_position, window_position_with_pivot, window_size,
 };
+#[path = "widget_control_abi.rs"]
+mod control;
+pub(crate) use control::{
+    MultilineCallbackData, begin_table, begin_table_with_sizing, input_text_multiline,
+    input_text_multiline_always, selectable_sized,
+};
 #[cfg(test)]
 #[path = "widget_text_line_advance_tests.rs"]
 mod text_line_advance_tests;
@@ -268,7 +274,7 @@ pub(crate) fn popup_choice<Row: AsRef<str>>(
     popup: &str,
     rows: &[Row],
 ) -> Option<usize> {
-    if ui.button(label) {
+    if button(ui, label, [0.; 2]) {
         ui.open_popup(popup);
     }
     let _list = ui.begin_popup(popup)?;

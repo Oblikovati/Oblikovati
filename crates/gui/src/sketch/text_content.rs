@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Keep the content selection when the user works with the adjacent editor controls.
 use super::{GuiSketchTextDraft, GuiSketchTextFieldSources};
-use imgui::{InputTextCallbackHandler, InputTextMultilineCallback, TextCallbackData, Ui};
+use crate::widget_abi::MultilineCallbackData;
+use imgui::Ui;
 use oblikovati_model::sketch::SketchTextFieldProjection;
 use std::ops::Range;
 
@@ -118,7 +119,7 @@ impl TextContentEditor {
     }
 
     fn case_control(&mut self, ui: &Ui, draft: &mut GuiSketchTextDraft) -> bool {
-        if !ui.button("UPPERCASE") {
+        if !crate::widget_abi::button(ui, "UPPERCASE", [0.; 2]) {
             return false;
         }
         self.restore = text_case::uppercase_selection(draft, self.selection.clone());
@@ -154,17 +155,18 @@ impl TextContentEditor {
         projection: Option<&SketchTextFieldProjection>,
     ) -> bool {
         let Some(projection) = projection else {
-            return native_content(ui, content, SelectionCallback(self));
+            let mut callback = SelectionCallback(self);
+            return native_content(ui, content, |input| callback.on_always(input));
         };
         let mut displayed = projection.content.clone();
         let mut changed = false;
-        let callback = ProjectedContentCallback {
+        let mut callback = ProjectedContentCallback {
             editor: self,
             projection,
             authored: content,
             changed: &mut changed,
         };
-        native_content(ui, &mut displayed, callback);
+        native_content(ui, &mut displayed, |input| callback.on_always(input));
         if !changed {
             crate::widget_abi::shade_linked_text(ui, c"##Content", projection);
         }
@@ -202,7 +204,7 @@ impl TextContentEditor {
         let symbol = symbol_choice(ui);
         ui.same_line();
         let bullet = NumberingStyle::Bullet;
-        let bullets = ui.button(bullet.label()).then_some(bullet);
+        let bullets = crate::widget_abi::button(ui, bullet.label(), [0.; 2]).then_some(bullet);
         if let Some(style) = numbering.or(bullets) {
             return self.number_paragraphs(content, style);
         }
@@ -256,10 +258,18 @@ fn all_scalars(text: &str) -> Option<Range<u32>> {
 const CONTENT_LABEL: &str = "##Content";
 const CONTENT_SIZE: [f32; 2] = [295., 100.];
 
-fn native_content(ui: &Ui, content: &mut String, callback: impl InputTextCallbackHandler) -> bool {
-    ui.input_text_multiline(CONTENT_LABEL, content, CONTENT_SIZE)
-        .callback(InputTextMultilineCallback::ALWAYS, callback)
-        .build()
+fn native_content(
+    ui: &Ui,
+    content: &mut String,
+    mut on_always: impl FnMut(&mut MultilineCallbackData),
+) -> bool {
+    crate::widget_abi::input_text_multiline_always(
+        ui,
+        CONTENT_LABEL,
+        content,
+        CONTENT_SIZE,
+        &mut on_always,
+    )
 }
 
 struct ProjectedContentCallback<'a> {
@@ -269,23 +279,21 @@ struct ProjectedContentCallback<'a> {
     changed: &'a mut bool,
 }
 
-impl InputTextCallbackHandler for ProjectedContentCallback<'_> {
-    fn on_always(&mut self, mut input: TextCallbackData) {
+impl ProjectedContentCallback<'_> {
+    fn on_always(&mut self, input: &mut MultilineCallbackData) {
         let shown = |source| project_position(self.projection, source);
         let previous = self.editor.selection_or_cursor();
         let previous = shown(previous.start)..shown(previous.end);
         let edit = projected_field_edit(self.projection, input.str(), previous, input.cursor_pos())
             .map(|edit| (edit.authored, edit.input, edit.replacement.to_owned()));
         if let Some((authored, displayed, replacement)) = edit {
-            self.apply_edit(&mut input, authored, displayed, replacement);
+            self.apply_edit(input, authored, displayed, replacement);
             return;
         }
-        self.update_selection(&mut input);
+        self.update_selection(input);
     }
-}
 
-impl ProjectedContentCallback<'_> {
-    fn update_selection(&mut self, input: &mut TextCallbackData) {
+    fn update_selection(&mut self, input: &mut MultilineCallbackData) {
         let shown = |source| project_position(self.projection, source);
         let native_caret = input.cursor_pos();
         let display = native_selection(input);
@@ -309,7 +317,7 @@ impl ProjectedContentCallback<'_> {
 
     fn apply_edit(
         &mut self,
-        input: &mut TextCallbackData,
+        input: &mut MultilineCallbackData,
         authored: Range<usize>,
         displayed: Range<usize>,
         replacement: String,
@@ -330,7 +338,7 @@ impl ProjectedContentCallback<'_> {
     }
 }
 
-fn native_selection(input: &TextCallbackData) -> Range<usize> {
+fn native_selection(input: &MultilineCallbackData) -> Range<usize> {
     let selection = input.selection();
     if !selection.is_empty() {
         return selection;
@@ -340,7 +348,7 @@ fn native_selection(input: &TextCallbackData) -> Range<usize> {
     caret..caret
 }
 
-fn set_native_selection(input: &mut TextCallbackData, selection: Range<usize>, caret: usize) {
+fn set_native_selection(input: &mut MultilineCallbackData, selection: Range<usize>, caret: usize) {
     if let (Ok(start), Ok(end)) = (i32::try_from(selection.start), i32::try_from(selection.end)) {
         input.set_cursor_pos(caret);
         *input.selection_start_mut() = start;
@@ -349,8 +357,8 @@ fn set_native_selection(input: &mut TextCallbackData, selection: Range<usize>, c
 }
 
 struct SelectionCallback<'a>(&'a mut TextContentEditor);
-impl InputTextCallbackHandler for SelectionCallback<'_> {
-    fn on_always(&mut self, mut input: TextCallbackData) {
+impl SelectionCallback<'_> {
+    fn on_always(&mut self, input: &mut MultilineCallbackData) {
         if let Some(range) = self
             .0
             .restore
@@ -358,7 +366,7 @@ impl InputTextCallbackHandler for SelectionCallback<'_> {
             .filter(|range| input.str().get(range.clone()).is_some())
         {
             let caret = range.end;
-            set_native_selection(&mut input, range, caret);
+            set_native_selection(input, range, caret);
         }
         self.0.selection = input.selection();
         self.0.cursor = input.cursor_pos();
@@ -370,7 +378,7 @@ fn numbering_choice(ui: &Ui) -> Option<NumberingStyle> {
     let _list = ui.begin_combo("##text-numbering", "Numbering")?;
     NumberingStyle::CHOICES
         .into_iter()
-        .find(|style| ui.selectable(style.label()))
+        .find(|style| crate::widget_abi::selectable(ui, style.label(), false, false))
 }
 
 fn symbol_choice(ui: &Ui) -> Option<&'static str> {
@@ -378,7 +386,9 @@ fn symbol_choice(ui: &Ui) -> Option<&'static str> {
     let _symbols = ui.begin_combo("##text-symbols", "Symbols")?;
     [("Diameter", "⌀"), ("Degree", "°"), ("Plus or minus", "±")]
         .into_iter()
-        .find_map(|(name, symbol)| ui.selectable(name).then_some(symbol))
+        .find_map(|(name, symbol)| {
+            crate::widget_abi::selectable(ui, name, false, false).then_some(symbol)
+        })
 }
 
 #[cfg(test)]

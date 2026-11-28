@@ -219,7 +219,8 @@ impl ModelStateTable {
         self.dirty |= crate::model_state_table_extra::selection(ui, view, &mut self.extra, kind);
     }
     fn properties(&mut self, ui: &Ui) {
-        let Some(_panes) = ui.begin_table_with_sizing(
+        let Some(_panes) = crate::widget_abi::begin_table_with_sizing(
+            ui,
             "property-selection",
             3,
             TableFlags::BORDERS | TableFlags::RESIZABLE,
