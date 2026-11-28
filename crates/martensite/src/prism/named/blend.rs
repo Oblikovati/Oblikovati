@@ -12,6 +12,8 @@ mod combine;
 mod delete_face;
 mod direct_edit;
 mod draft;
+mod extend_surface;
+mod extend_surface_geom;
 pub(super) mod extrusion_boolean;
 mod fillet_topology;
 mod fillet_v2;

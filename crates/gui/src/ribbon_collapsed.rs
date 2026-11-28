@@ -36,8 +36,10 @@ pub(super) fn row_widths(
     // Keep the scrollable ribbon when the groups would have too little room for captions.
     let caption_floor = count * (minimum + context.ui.calc_text_size("M...")[0]);
     if widths_without_exit(panels, normal).sum::<f32>() <= room || room < caption_floor {
-        let expanded = layout.expanded_count(tab, panels, natural, available, factor);
-        return (panels.iter().copied().map(normal).collect(), expanded);
+        let normal_widths: Vec<f32> = panels.iter().copied().map(normal).collect();
+        let expanded =
+            layout.expanded_count(tab, panels, natural, &normal_widths, available, factor);
+        return (normal_widths, expanded);
     }
     (
         compressed_group_widths(context, panels, room, minimum, count),
@@ -51,7 +53,7 @@ fn normal_group_width(
     panel: RibbonPanel,
     natural: f32,
 ) -> f32 {
-    if tab == RibbonTab::Manage {
+    if matches!(tab, RibbonTab::Manage | RibbonTab::Model) {
         caption_width(context, tab, panel)
     } else {
         natural
@@ -134,7 +136,7 @@ fn caption_padding(context: &PanelDrawContext<'_>) -> f32 {
 pub(super) fn minimum_width(tab: RibbonTab) -> f32 {
     match tab {
         RibbonTab::Sketch => 64.,
-        RibbonTab::Model => 92.,
+        RibbonTab::Model => 76.,
         _ => 108.,
     }
 }

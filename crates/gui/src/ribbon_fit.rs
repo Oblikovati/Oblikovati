@@ -30,6 +30,31 @@ pub(crate) fn expanded_panel_count_reserving(
         .unwrap_or(0)
 }
 
+pub(crate) fn expanded_panel_count_with_collapsed(
+    widths: &[f32],
+    collapsed: &[f32],
+    separator: f32,
+    available: f32,
+) -> usize {
+    (1..=widths.len())
+        .rev()
+        .find(|expanded| {
+            let panels: f32 = widths
+                .iter()
+                .enumerate()
+                .map(|(index, width)| {
+                    if index < *expanded {
+                        *width
+                    } else {
+                        collapsed.get(index).copied().unwrap_or(0.)
+                    }
+                })
+                .sum();
+            panels + separator * widths.len().saturating_sub(1) as f32 <= available
+        })
+        .unwrap_or(0)
+}
+
 fn ribbon_row_width(widths: &[f32], expanded: usize, separator: f32, collapsed: f32) -> f32 {
     let panels: f32 = widths
         .iter()

@@ -149,6 +149,7 @@ glyph_catalog! {
     DeleteFace => "delete-face",
     DirectEdit => "direct-edit",
     Finish => "finish",
+    ExtendSurface => "extend-surface",
 }
 
 pub(crate) fn document_glyph(kind: crate::GuiTemplateKind) -> IconGlyph {

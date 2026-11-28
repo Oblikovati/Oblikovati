@@ -173,6 +173,7 @@ mod delete_face_dialog;
 mod dimensions;
 mod direct_edit_dialog;
 mod draft_dialog;
+mod extend_surface_dialog;
 mod extrude_dialog;
 #[cfg(test)]
 mod face_draft;
@@ -200,6 +201,11 @@ pub use direct_edit_dialog::{
 pub use draft_dialog::{
     GuiDraftAction, GuiDraftEditSeed, GuiDraftPick, GuiDraftPickTarget, GuiDraftPreview,
     GuiDraftPreviewState, GuiDraftRequest,
+};
+pub use extend_surface_dialog::{
+    GuiExtendSurfaceAction, GuiExtendSurfaceEditSeed, GuiExtendSurfaceExtentMode,
+    GuiExtendSurfacePick, GuiExtendSurfacePreview, GuiExtendSurfacePreviewState,
+    GuiExtendSurfaceRequest,
 };
 pub use finish_dialog::{
     GuiFinishAction, GuiFinishEditSeed, GuiFinishPick, GuiFinishPreview, GuiFinishPreviewState,

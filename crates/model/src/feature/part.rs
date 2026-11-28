@@ -15,6 +15,7 @@ mod body_resolution;
 mod checkpoints;
 mod combine_evaluation;
 mod delete_face_evaluation;
+mod extend_surface_evaluation;
 mod finish_evaluation;
 
 mod direct_edit_evaluation;
@@ -72,6 +73,7 @@ pub enum PartFeatureDefinition {
     Split(Box<super::split::SplitDefinition>),
     Mark(Box<super::mark::MarkDefinition>),
     Finish(Box<super::finish::FinishDefinition>),
+    ExtendSurface(Box<super::extend_surface::ExtendSurfaceDefinition>),
     MoveBody(Box<super::move_body::MoveBodyDefinition>),
     Shell(Box<super::shell::ShellDefinition>),
     Mirror(Box<super::mirror::MirrorDefinition>),
@@ -136,6 +138,7 @@ impl PartFeatureDefinition {
             Self::Split(_) => "split",
             Self::Mark(_) => "mark",
             Self::Finish(_) => "finish",
+            Self::ExtendSurface(_) => "extend-surface",
             Self::MoveBody(_) => "move-body",
             Self::Shell(_) => "shell",
             Self::Mirror(_) => "mirror",
@@ -177,6 +180,7 @@ impl PartFeatureDefinition {
                 | Self::Split(_)
                 | Self::Mark(_)
                 | Self::Finish(_)
+                | Self::ExtendSurface(_)
                 | Self::Shell(_)
                 | Self::MoveBody(_)
                 | Self::Mirror(_)

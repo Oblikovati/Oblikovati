@@ -212,6 +212,17 @@ where
             .map(PrefixBody::Created)
     }
 
+    fn evaluate_extend_surface(
+        &mut self,
+        feature: FeatureId,
+        body: &Self::Body,
+        input: crate::feature::extend_surface::ResolvedExtendSurface,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        self.0
+            .evaluate_extend_surface(feature, body.get(), input)
+            .map(PrefixBody::Created)
+    }
+
     fn evaluate_shell(
         &mut self,
         feature: FeatureId,

@@ -16,6 +16,7 @@ pub mod direct_edit;
 pub mod draft;
 mod error;
 mod evaluation;
+pub mod extend_surface;
 pub mod extrusion_pattern;
 pub mod fillet;
 pub mod fillet_options;

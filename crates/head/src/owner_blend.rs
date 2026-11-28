@@ -19,6 +19,8 @@ pub(super) mod owner_direct_edit;
 pub(super) mod owner_draft;
 #[path = "owner_emboss.rs"]
 pub(super) mod owner_emboss;
+#[path = "owner_extend_surface.rs"]
+pub(super) mod owner_extend_surface;
 #[path = "owner_fillet_v2.rs"]
 pub(super) mod owner_fillet_v2;
 #[path = "owner_finish.rs"]
@@ -83,6 +85,7 @@ pub(super) struct CreateFeatureState {
     pub(super) mark: owner_mark::MarkOwnerState,
     pub(super) finish: owner_finish::FinishOwnerState,
     pub(super) ucs: owner_ucs::UcsOwnerState,
+    pub(super) extend_surface: owner_extend_surface::ExtendSurfaceOwnerState,
     pub(super) fillet_v2: owner_fillet_v2::FilletV2OwnerState,
     pub(super) chamfer_v2: owner_chamfer_v2::ChamferV2OwnerState,
     pub(super) shell_v2: owner_shell_v2::ShellV2OwnerState,

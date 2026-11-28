@@ -29,9 +29,21 @@ pub(crate) fn enabled(action: &GuiShellAction, state: &GuiCommandState) -> Optio
         GuiShellAction::Ucs(action) => action.enabled(state),
         GuiShellAction::WorkPoint(action) => action.enabled(state),
         GuiShellAction::WorkPlane(action) => action.enabled(state),
+        GuiShellAction::ExtendSurface(action) => action.enabled(state),
         GuiShellAction::FilletV2(action) => action.enabled(state),
         GuiShellAction::ChamferV2(action) => action.enabled(state),
         GuiShellAction::ShellV2(action) => action.enabled(state),
         _ => return None,
     })
+}
+
+pub(crate) fn jump_history_enabled(state: &GuiCommandState, document: u64, position: i64) -> bool {
+    !state.transaction_open
+        && state.histories.iter().any(|history| {
+            history.document == document
+                && position >= 0
+                && usize::try_from(position)
+                    .ok()
+                    .is_some_and(|pos| pos <= history.entries.as_ref().map_or(0, Vec::len))
+        })
 }

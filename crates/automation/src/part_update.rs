@@ -420,6 +420,7 @@ fn feature_kind(definition: &PartFeatureDefinition) -> &'static str {
         Split(_) => "split",
         Mark(_) => "mark",
         Finish(_) => "finish",
+        ExtendSurface(_) => "extend-surface",
         Shell(_) => "shell",
         Mirror(_) => "mirror",
         CircularPattern(_) => "circular-pattern",

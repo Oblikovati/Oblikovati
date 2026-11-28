@@ -33,6 +33,7 @@ mod direct_edit;
 mod draft;
 mod edit;
 mod emboss;
+mod extend_surface;
 mod extrusion;
 mod feature_suppression;
 mod file_host;
@@ -79,6 +80,10 @@ pub use draft::{
 };
 pub use emboss::{
     EmbossInputs, PreparedEmboss, build_emboss_definition, prepare_emboss_definition,
+};
+pub use extend_surface::{
+    ExtendSurfaceInputs, PreparedExtendSurface, build_extend_surface_definition,
+    prepare_extend_surface_definition, replace_extend_surface,
 };
 pub use extrusion::{
     CapturedExtrudeCandidate, ExtrudePrefixReplay, ExtrudeRegionAccess, ExtrudeReplayPrefix,

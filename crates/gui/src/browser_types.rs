@@ -76,6 +76,9 @@ pub struct GuiModelBrowser {
     pub finish_edits: std::collections::BTreeMap<FeatureId, crate::GuiFinishEditSeed>,
     /// Authored UCS features mapped to their persisted visibility flag.
     pub ucs_features: std::collections::BTreeMap<FeatureId, bool>,
+    /// Authored options for editable Extend Surface features.
+    pub extend_surface_edits:
+        std::collections::BTreeMap<FeatureId, crate::GuiExtendSurfaceEditSeed>,
     /// Named imported mesh entries listed under the 3rd Party browser folder.
     pub third_party_entries: Vec<String>,
     /// Editable extrusion distance sources, indexed by their current feature identities.

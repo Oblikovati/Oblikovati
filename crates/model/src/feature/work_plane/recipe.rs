@@ -30,6 +30,7 @@ pub enum WorkPlaneDefinitionRecipe {
     Mark(crate::feature::mark::MarkRecipe),
     Finish(crate::feature::finish::FinishRecipe),
     Ucs(crate::feature::ucs::UcsRecipe),
+    ExtendSurface(crate::feature::extend_surface::ExtendSurfaceRecipe),
     MoveBody(crate::feature::move_body::MoveBodyRecipe),
     Shell(crate::feature::shell::ShellRecipe),
     Mirror(crate::feature::mirror::MirrorRecipe),
@@ -96,6 +97,7 @@ impl WorkPlaneDefinition {
             Self::Mark(definition) => Source::Mark(definition.recipe()),
             Self::Finish(definition) => Source::Finish(definition.recipe()),
             Self::Ucs(definition) => Source::Ucs(definition.recipe()),
+            Self::ExtendSurface(definition) => Source::ExtendSurface(definition.recipe()),
             Self::MoveBody(definition) => Source::MoveBody(definition.recipe()),
             Self::Shell(definition) => Source::Shell(definition.recipe()),
             Self::Mirror(mirror) => Source::Mirror(mirror.recipe().clone()),
@@ -209,6 +211,7 @@ fn restore_definition(
         Ucs(recipe) => crate::feature::ucs::UcsDefinition::from_recipe(recipe)
             .map(|definition| WorkPlaneDefinition::Ucs(Box::new(definition)))
             .map_err(WorkPlaneError::BodyReference),
+        ExtendSurface(recipe) => crate::feature::extend_surface::restore_definition(recipe),
         Chamfer(recipe) => crate::feature::chamfer::ChamferDefinition::from_recipe(&recipe)
             .map(|definition| WorkPlaneDefinition::Chamfer(Box::new(definition)))
             .map_err(WorkPlaneError::BodyReference),

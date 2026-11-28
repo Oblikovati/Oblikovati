@@ -95,6 +95,15 @@ macro_rules! hole_work_methods {
                 "work plane {action:?}: expected a certified part owner"
             ))
         }
+        /// Dispatch an Extend Surface Properties panel action; example: `work.extend_surface_from_gui(action)?`.
+        fn extend_surface_from_gui(
+            &mut self,
+            action: oblikovati_gui::GuiExtendSurfaceAction,
+        ) -> Result<bool, String> {
+            Err(format!(
+                "extend surface {action:?}: expected a certified part owner"
+            ))
+        }
         /// Dispatch a Fillet v2 Properties panel action; example: `work.fillet_v2_from_gui(action)?`.
         fn fillet_v2_from_gui(
             &mut self,
@@ -190,6 +199,12 @@ macro_rules! forward_hole_work_methods {
             action: oblikovati_gui::GuiWorkPlaneAction,
         ) -> Result<bool, String> {
             self.$owner.work_plane_from_gui(action)
+        }
+        fn extend_surface_from_gui(
+            &mut self,
+            action: oblikovati_gui::GuiExtendSurfaceAction,
+        ) -> Result<bool, String> {
+            self.$owner.extend_surface_from_gui(action)
         }
         fn fillet_v2_from_gui(
             &mut self,

@@ -173,6 +173,12 @@ macro_rules! desktop_extrusion_work {
         ) -> Result<bool, String> {
             self.work_plane_command(action)
         }
+        fn extend_surface_from_gui(
+            &mut self,
+            action: oblikovati_gui::GuiExtendSurfaceAction,
+        ) -> Result<bool, String> {
+            self.extend_surface_command(action)
+        }
         fn fillet_v2_from_gui(
             &mut self,
             action: oblikovati_gui::GuiFilletV2Action,

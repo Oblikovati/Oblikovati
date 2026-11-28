@@ -436,4 +436,41 @@ impl DocumentSnapshot {
             })
             .map(|_| ())
     }
+
+    /// Append Extend Surface inputs; example: `snapshot.create_extend_surface("Extend1", definition, ids)?`.
+    pub fn create_extend_surface(
+        &mut self,
+        name: &str,
+        definition: crate::feature::extend_surface::ExtendSurfaceDefinition,
+        ids: &mut RecipeReservations<'_>,
+    ) -> Result<FeatureId, HistoryError> {
+        let reads = definition.reads();
+        self.create_body_feature(
+            name,
+            PartFeatureDefinition::ExtendSurface(Box::new(definition)),
+            reads,
+            ids,
+        )
+    }
+
+    /// Replace an existing Extend Surface definition in place; example: `snapshot.edit_extend_surface(id, definition)?`.
+    pub fn edit_extend_surface(
+        &mut self,
+        feature: FeatureId,
+        definition: crate::feature::extend_surface::ExtendSurfaceDefinition,
+    ) -> Result<(), HistoryError> {
+        let reads = definition.reads();
+        self.work_geometry
+            .replace(
+                feature,
+                PartFeatureDefinition::ExtendSurface(Box::new(definition)),
+                reads,
+            )
+            .map_err(|cause| {
+                HistoryError::PartProgram(crate::feature::part::PartFeatureProgramError::Sequence(
+                    cause,
+                ))
+            })
+            .map(|_| ())
+    }
 }

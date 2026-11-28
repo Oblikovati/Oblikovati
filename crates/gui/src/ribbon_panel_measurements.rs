@@ -29,6 +29,7 @@ impl RibbonPanelLayout {
         tab: RibbonTab,
         panels: &[RibbonPanel],
         collapsed: f32,
+        collapsed_widths: &[f32],
         available: f32,
         factor: f32,
     ) -> usize {
@@ -49,6 +50,14 @@ impl RibbonPanelLayout {
                 crate::ribbon_fit::expanded_panel_count(widths, 8., collapsed, available)
             };
             return fit(&widths).max(fit(&widths[..=insert]));
+        }
+        if required.is_none() && tab == RibbonTab::Model {
+            return crate::ribbon_fit::expanded_panel_count_with_collapsed(
+                &widths,
+                collapsed_widths,
+                8.,
+                available,
+            );
         }
         if required.is_none() {
             return crate::ribbon_fit::expanded_panel_count(&widths, 8., collapsed, available);

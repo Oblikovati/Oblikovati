@@ -425,6 +425,9 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
             PartFeatureDefinition::Finish(definition) => {
                 self.evaluate_finish(backend, id, definition)
             }
+            PartFeatureDefinition::ExtendSurface(definition) => {
+                self.evaluate_extend_surface(backend, id, definition)
+            }
             definition @ (PartFeatureDefinition::Mirror(_)
             | PartFeatureDefinition::CircularPattern(_)
             | PartFeatureDefinition::RectangularPattern(_)) => {
