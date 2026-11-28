@@ -27,6 +27,7 @@ pub enum WorkPlaneDefinitionRecipe {
     DeleteFace(crate::feature::delete_face::DeleteFaceRecipe),
     ThickenOffset(crate::feature::thicken_offset::ThickenOffsetRecipe),
     Split(crate::feature::split::SplitRecipe),
+    Mark(crate::feature::mark::MarkRecipe),
     MoveBody(crate::feature::move_body::MoveBodyRecipe),
     Shell(crate::feature::shell::ShellRecipe),
     Mirror(crate::feature::mirror::MirrorRecipe),
@@ -88,6 +89,7 @@ impl WorkPlaneDefinition {
             Self::DeleteFace(definition) => Source::DeleteFace(definition.recipe()),
             Self::ThickenOffset(definition) => Source::ThickenOffset(definition.recipe()),
             Self::Split(definition) => Source::Split(definition.recipe()),
+            Self::Mark(definition) => Source::Mark(definition.recipe()),
             Self::MoveBody(definition) => Source::MoveBody(definition.recipe()),
             Self::Shell(definition) => Source::Shell(definition.recipe()),
             Self::Mirror(mirror) => Source::Mirror(mirror.recipe().clone()),
@@ -187,6 +189,9 @@ fn restore_definition(
         }
         Split(recipe) => crate::feature::split::SplitDefinition::from_recipe(recipe)
             .map(|definition| WorkPlaneDefinition::Split(Box::new(definition)))
+            .map_err(WorkPlaneError::BodyReference),
+        Mark(recipe) => crate::feature::mark::MarkDefinition::from_recipe(recipe)
+            .map(|definition| WorkPlaneDefinition::Mark(Box::new(definition)))
             .map_err(WorkPlaneError::BodyReference),
         Chamfer(recipe) => crate::feature::chamfer::ChamferDefinition::from_recipe(&recipe)
             .map(|definition| WorkPlaneDefinition::Chamfer(Box::new(definition)))
@@ -326,6 +331,7 @@ impl WorkPlaneDefinitionRecipe {
             Self::DeleteFace(_) => 53,
             Self::ThickenOffset(_) => 50,
             Self::Split(_) => 51,
+            Self::Mark(_) => 54,
             Self::SketchSweep(recipe) => match recipe.version {
                 7 => 29,
                 6 => 28,
@@ -395,6 +401,7 @@ impl WorkPlaneDefinitionRecipe {
             Self::DeleteFace(_) => 63,
             Self::ThickenOffset(_) => 60,
             Self::Split(_) => 61,
+            Self::Mark(_) => 64,
             Self::SketchSweep(recipe) => match recipe.version {
                 7 => 34,
                 6 => 33,

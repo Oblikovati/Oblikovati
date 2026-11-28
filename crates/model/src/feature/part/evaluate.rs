@@ -61,6 +61,7 @@ pub enum PartFeatureFailure<Failure> {
     DeleteFaceInput(String),
     DirectEditInput(String),
     SplitInput(String),
+    MarkInput(String),
     ShellInput(String),
     MoveBodyInput(String),
     Unsupported(String),
@@ -166,29 +167,6 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
     pub fn into_body(mut self, feature: FeatureId) -> Option<Body> {
         self.bodies.remove(&feature.into())
     }
-}
-fn datum_health<Failure>(
-    record: &FeatureHealthRecord<PartFeatureFailure<Failure>>,
-) -> Option<FeatureHealthRecord<WorkGeometryError>> {
-    use crate::feature::FeatureEvaluationStatus;
-    let status = match &record.status {
-        FeatureEvaluationStatus::Healthy => FeatureEvaluationStatus::Healthy,
-        FeatureEvaluationStatus::Suppressed => FeatureEvaluationStatus::Suppressed,
-        FeatureEvaluationStatus::ConditionFailed(error) => {
-            FeatureEvaluationStatus::ConditionFailed(error.clone())
-        }
-        FeatureEvaluationStatus::Blocked { drivers } => FeatureEvaluationStatus::Blocked {
-            drivers: drivers.clone(),
-        },
-        FeatureEvaluationStatus::Failed(
-            PartFeatureFailure::Datum(error) | PartFeatureFailure::Metadata(error),
-        ) => FeatureEvaluationStatus::Failed((**error).clone()),
-        FeatureEvaluationStatus::Failed(_) => return None,
-    };
-    Some(FeatureHealthRecord {
-        feature: record.feature,
-        status,
-    })
 }
 impl DocumentSnapshot {
     /// Replay every active datum and prism input with local failure quarantine.
@@ -440,6 +418,9 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
             PartFeatureDefinition::Split(definition) => {
                 self.evaluate_split(snapshot, backend, id, definition)
             }
+            PartFeatureDefinition::Mark(definition) => {
+                self.evaluate_mark(snapshot, backend, id, definition)
+            }
             definition @ (PartFeatureDefinition::Mirror(_)
             | PartFeatureDefinition::CircularPattern(_)
             | PartFeatureDefinition::RectangularPattern(_)) => {
@@ -468,3 +449,27 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
     }
 }
 pub(super) use super::delete::require_replay_current;
+
+fn datum_health<Failure>(
+    record: &FeatureHealthRecord<PartFeatureFailure<Failure>>,
+) -> Option<FeatureHealthRecord<WorkGeometryError>> {
+    use crate::feature::FeatureEvaluationStatus;
+    let status = match &record.status {
+        FeatureEvaluationStatus::Healthy => FeatureEvaluationStatus::Healthy,
+        FeatureEvaluationStatus::Suppressed => FeatureEvaluationStatus::Suppressed,
+        FeatureEvaluationStatus::ConditionFailed(error) => {
+            FeatureEvaluationStatus::ConditionFailed(error.clone())
+        }
+        FeatureEvaluationStatus::Blocked { drivers } => FeatureEvaluationStatus::Blocked {
+            drivers: drivers.clone(),
+        },
+        FeatureEvaluationStatus::Failed(
+            PartFeatureFailure::Datum(error) | PartFeatureFailure::Metadata(error),
+        ) => FeatureEvaluationStatus::Failed((**error).clone()),
+        FeatureEvaluationStatus::Failed(_) => return None,
+    };
+    Some(FeatureHealthRecord {
+        feature: record.feature,
+        status,
+    })
+}

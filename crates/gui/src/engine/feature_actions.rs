@@ -181,6 +181,7 @@ enum Draft {
     ThickenOffset,
     DirectEdit,
     Split,
+    Mark,
     MoveBody,
 }
 
@@ -248,6 +249,9 @@ fn requested_draft(action: &GuiShellAction) -> Option<Draft> {
         ) => Draft::DirectEdit,
         GuiShellAction::Split(crate::GuiSplitAction::Open | crate::GuiSplitAction::OpenEdit(_)) => {
             Draft::Split
+        }
+        GuiShellAction::Mark(crate::GuiMarkAction::Open | crate::GuiMarkAction::OpenEdit(_)) => {
+            Draft::Mark
         }
         GuiShellAction::OpenMoveBody => Draft::MoveBody,
         _ => return None,
@@ -351,6 +355,9 @@ pub(super) fn open_drafts(
     }
     if draft != Draft::Split {
         split.close(actions);
+    }
+    if draft != Draft::Mark {
+        create.mark.close(actions);
     }
     if draft != Draft::MoveBody {
         motion.close(actions);
@@ -458,6 +465,10 @@ pub(super) fn open_drafts(
         GuiShellAction::Split(crate::GuiSplitAction::Open) => split.open(state, None),
         GuiShellAction::Split(crate::GuiSplitAction::OpenEdit(feature)) => {
             split.open(state, Some(feature))
+        }
+        GuiShellAction::Mark(crate::GuiMarkAction::Open) => create.mark.open(state, None, actions),
+        GuiShellAction::Mark(crate::GuiMarkAction::OpenEdit(feature)) => {
+            create.mark.open(state, Some(feature), actions)
         }
         GuiShellAction::OpenMoveBody => motion.open(state),
         _ => {}

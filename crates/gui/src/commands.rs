@@ -359,24 +359,17 @@ pub enum GuiShellAction {
     OpenMoveBody,
     PreviewMoveBody(Option<GuiMoveBodyRequest>),
     CreateMoveBody(GuiMoveBodyRequest),
-    /// Open, preview, or commit a Part Modify Hole feature.
+    /// Open, pick, preview, or commit Part Modify features (Hole, Slot, Combine, Draft, Thread, Delete Face, Thicken/Offset, Direct Edit, Split, Mark).
     Hole(crate::GuiHoleAction),
-    /// Open, preview, or commit a Part Modify Slot feature.
     Slot(crate::GuiSlotAction),
-    /// Open, pick, preview, or commit a Part Modify Combine feature.
     Combine(crate::GuiCombineAction),
-    /// Open, preview, or commit a Part Modify Draft feature.
     Draft(crate::GuiDraftAction),
-    /// Open, preview, or commit a Part Modify Thread feature.
     Thread(crate::GuiThreadAction),
-    /// Open, pick, preview, or commit a Part Modify Delete Face feature.
     DeleteFace(crate::GuiDeleteFaceAction),
-    /// Open, pick, preview, or commit a Part Modify Thicken/Offset feature.
     ThickenOffset(crate::GuiThickenOffsetAction),
-    /// Open, pick, preview, or commit a Direct Edit feature.
     DirectEdit(crate::GuiDirectEditAction),
-    /// Open, pick, preview, or commit a Part Modify Split feature.
     Split(crate::GuiSplitAction),
+    Mark(crate::GuiMarkAction),
     /// Selection mode, preview, or commit for Part Modify Fillet v2.
     FilletV2(crate::GuiFilletV2Action),
     ChamferV2(crate::GuiChamferV2Action),

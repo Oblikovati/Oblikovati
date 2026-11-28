@@ -349,4 +349,51 @@ impl DocumentSnapshot {
             })
             .map(|_| ())
     }
+
+    /// Append Mark inputs; example: `snapshot.create_mark("Mark1", definition, ids)?`.
+    pub fn create_mark(
+        &mut self,
+        name: &str,
+        definition: crate::feature::mark::MarkDefinition,
+        ids: &mut RecipeReservations<'_>,
+    ) -> Result<FeatureId, HistoryError> {
+        let reads = definition.reads(self).map_err(|cause| {
+            HistoryError::PartProgram(crate::feature::part::PartFeatureProgramError::Mark {
+                feature: FeatureId(0),
+                cause,
+            })
+        })?;
+        self.create_body_feature(
+            name,
+            PartFeatureDefinition::Mark(Box::new(definition)),
+            reads,
+            ids,
+        )
+    }
+
+    /// Replace an existing Mark definition in place; example: `snapshot.edit_mark(id, definition)?`.
+    pub fn edit_mark(
+        &mut self,
+        feature: FeatureId,
+        definition: crate::feature::mark::MarkDefinition,
+    ) -> Result<(), HistoryError> {
+        let reads = definition.reads(self).map_err(|cause| {
+            HistoryError::PartProgram(crate::feature::part::PartFeatureProgramError::Mark {
+                feature,
+                cause,
+            })
+        })?;
+        self.work_geometry
+            .replace(
+                feature,
+                PartFeatureDefinition::Mark(Box::new(definition)),
+                reads,
+            )
+            .map_err(|cause| {
+                HistoryError::PartProgram(crate::feature::part::PartFeatureProgramError::Sequence(
+                    cause,
+                ))
+            })
+            .map(|_| ())
+    }
 }

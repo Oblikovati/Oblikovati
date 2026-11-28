@@ -358,6 +358,7 @@ impl GuiShellAction {
             | Self::ThickenOffset(_)
             | Self::DirectEdit(_)
             | Self::Split(_)
+            | Self::Mark(_)
             | Self::FilletV2(_)
             | Self::ChamferV2(_)
             | Self::ShellV2(_) => false,

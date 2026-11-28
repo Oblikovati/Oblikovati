@@ -25,6 +25,7 @@ pub(super) fn cancel_customization(world: &mut ApplicationWorld) {
         "Derived Part",
         "Import",
         "Unwrap",
+        "Mark",
     ] {
         if let Some((position, size)) = diagnostics::window_geometry(title) {
             let center = world

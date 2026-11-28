@@ -18,6 +18,7 @@ mod delete_face_evaluation;
 
 mod direct_edit_evaluation;
 mod hole_evaluation;
+mod mark_evaluation;
 mod move_body_evaluation;
 pub use checkpoints::{CheckpointedPart, PartReplayCheckpoints};
 mod delete;
@@ -67,6 +68,7 @@ pub enum PartFeatureDefinition {
     DeleteFace(Box<super::delete_face::DeleteFaceDefinition>),
     ThickenOffset(Box<super::thicken_offset::ThickenOffsetDefinition>),
     Split(Box<super::split::SplitDefinition>),
+    Mark(Box<super::mark::MarkDefinition>),
     MoveBody(Box<super::move_body::MoveBodyDefinition>),
     Shell(Box<super::shell::ShellDefinition>),
     Mirror(Box<super::mirror::MirrorDefinition>),
@@ -126,6 +128,7 @@ impl PartFeatureDefinition {
             Self::DeleteFace(_) => "delete-face",
             Self::ThickenOffset(_) => "thicken-offset",
             Self::Split(_) => "split",
+            Self::Mark(_) => "mark",
             Self::MoveBody(_) => "move-body",
             Self::Shell(_) => "shell",
             Self::Mirror(_) => "mirror",
@@ -164,6 +167,7 @@ impl PartFeatureDefinition {
                 | Self::DeleteFace(_)
                 | Self::ThickenOffset(_)
                 | Self::Split(_)
+                | Self::Mark(_)
                 | Self::Shell(_)
                 | Self::MoveBody(_)
                 | Self::Mirror(_)

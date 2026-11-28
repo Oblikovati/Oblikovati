@@ -24,6 +24,8 @@ mod solid_fillet;
 mod solid_hole;
 #[path = "../import/steps.rs"]
 mod solid_import;
+#[path = "../mark/steps.rs"]
+mod solid_mark;
 #[path = "../rib/steps.rs"]
 mod solid_rib;
 #[path = "../shell/steps.rs"]

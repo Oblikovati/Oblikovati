@@ -224,6 +224,7 @@ fn populate_browser<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
     browser.draft_edits = super::owner_blend::owner_draft::edit_seeds(snapshot);
     browser.delete_face_edits = super::owner_blend::owner_delete_face::edit_seeds(snapshot);
     browser.thicken_offset_edits = super::owner_blend::owner_thicken_offset::edit_seeds(snapshot);
+    browser.mark_edits = super::owner_blend::owner_mark::edit_seeds(snapshot);
     browser.third_party_entries = super::owner_blend::owner_import::third_party_entries(snapshot);
     browser.extrusion_edits = snapshot
         .work_geometry

@@ -41,6 +41,7 @@ mod fillet_v2;
 mod hole;
 mod import;
 mod loft;
+mod mark;
 mod revolve;
 mod rib;
 mod shell;
@@ -101,6 +102,9 @@ pub use import::{
 };
 pub use loft::{
     PreparedLoft, loft_definition, prepare_loft, replace_loft_section, replace_loft_takeoff,
+};
+pub use mark::{
+    MarkFeatureInputs, PreparedMark, build_mark_definition, prepare_mark_definition, replace_mark,
 };
 pub use revolve::{
     PreparedRevolve, REVOLVE_ANGLE_ROLE, REVOLVE_SECOND_ANGLE_ROLE, RevolveInputs,

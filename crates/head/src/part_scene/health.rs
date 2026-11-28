@@ -103,6 +103,7 @@ fn status_reason(
         | FeatureEvaluationStatus::Failed(PartFeatureFailure::DeleteFaceInput(cause))
         | FeatureEvaluationStatus::Failed(PartFeatureFailure::DirectEditInput(cause))
         | FeatureEvaluationStatus::Failed(PartFeatureFailure::SplitInput(cause))
+        | FeatureEvaluationStatus::Failed(PartFeatureFailure::MarkInput(cause))
         | FeatureEvaluationStatus::Failed(PartFeatureFailure::ShellInput(cause))
         | FeatureEvaluationStatus::Failed(PartFeatureFailure::MoveBodyInput(cause))
         | FeatureEvaluationStatus::Failed(PartFeatureFailure::Unsupported(cause)) => cause.clone(),

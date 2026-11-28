@@ -182,6 +182,7 @@ impl DatumCollection {
             | WorkGeometryDefinition::DeleteFace(_)
             | WorkGeometryDefinition::ThickenOffset(_)
             | WorkGeometryDefinition::Split(_)
+            | WorkGeometryDefinition::Mark(_)
             | WorkGeometryDefinition::Shell(_)
             | WorkGeometryDefinition::MoveBody(_)
             | WorkGeometryDefinition::Mirror(_)

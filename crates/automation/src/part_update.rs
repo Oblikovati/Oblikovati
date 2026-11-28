@@ -418,6 +418,7 @@ fn feature_kind(definition: &PartFeatureDefinition) -> &'static str {
         DeleteFace(_) => "delete-face",
         ThickenOffset(_) => "thicken-offset",
         Split(_) => "split",
+        Mark(_) => "mark",
         Shell(_) => "shell",
         Mirror(_) => "mirror",
         CircularPattern(_) => "circular-pattern",

@@ -22,6 +22,7 @@ pub mod fillet_options;
 mod footprint;
 pub mod hole;
 pub mod imported_model;
+pub mod mark;
 pub mod mirror;
 pub mod move_body;
 pub mod part;
