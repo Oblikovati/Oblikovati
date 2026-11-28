@@ -166,6 +166,7 @@ mod face_draft;
 mod face_properties;
 mod hole_dialog;
 mod slot_dialog;
+mod thread_dialog;
 pub use application::model_browser::feature_properties::{GuiFeatureCondition, GuiFeatureEdit};
 pub use hole_dialog::{
     GuiHoleAction, GuiHoleEditSeed, GuiHolePick, GuiHolePreview, GuiHolePreviewState,
@@ -174,6 +175,10 @@ pub use hole_dialog::{
 pub use slot_dialog::{
     GuiSlotAction, GuiSlotEditSeed, GuiSlotPick, GuiSlotPreview, GuiSlotPreviewState,
     GuiSlotRequest,
+};
+pub use thread_dialog::{
+    GuiThreadAction, GuiThreadEditSeed, GuiThreadPick, GuiThreadPreview, GuiThreadPreviewState,
+    GuiThreadRequest,
 };
 mod loft_dialog;
 mod move_body_dialog;

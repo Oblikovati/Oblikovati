@@ -363,6 +363,8 @@ pub enum GuiShellAction {
     Hole(crate::GuiHoleAction),
     /// Open, preview, or commit a Part Modify Slot feature.
     Slot(crate::GuiSlotAction),
+    /// Open, preview, or commit a Part Modify Thread feature.
+    Thread(crate::GuiThreadAction),
     /// Selection mode, preview, or commit for Part Modify Fillet v2.
     FilletV2(crate::GuiFilletV2Action),
     ChamferV2(crate::GuiChamferV2Action),

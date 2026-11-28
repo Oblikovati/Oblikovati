@@ -147,6 +147,7 @@ enum Draft {
     Shell,
     Hole,
     Slot,
+    Thread,
     MoveBody,
 }
 
@@ -194,6 +195,9 @@ fn requested_draft(action: &GuiShellAction) -> Option<Draft> {
         GuiShellAction::Slot(crate::GuiSlotAction::Open | crate::GuiSlotAction::OpenEdit(_)) => {
             Draft::Slot
         }
+        GuiShellAction::Thread(
+            crate::GuiThreadAction::Open | crate::GuiThreadAction::OpenEdit(_),
+        ) => Draft::Thread,
         GuiShellAction::OpenMoveBody => Draft::MoveBody,
         _ => return None,
     })
@@ -270,6 +274,9 @@ pub(super) fn open_drafts(
     if draft != Draft::Slot {
         slot.close(actions);
     }
+    if draft != Draft::Thread {
+        create.thread.close(actions);
+    }
     if draft != Draft::MoveBody {
         motion.close(actions);
     }
@@ -339,6 +346,12 @@ pub(super) fn open_drafts(
         GuiShellAction::Slot(crate::GuiSlotAction::Open) => slot.open(state, None),
         GuiShellAction::Slot(crate::GuiSlotAction::OpenEdit(feature)) => {
             slot.open(state, Some(feature))
+        }
+        GuiShellAction::Thread(crate::GuiThreadAction::Open) => {
+            create.thread.open(state, None, actions)
+        }
+        GuiShellAction::Thread(crate::GuiThreadAction::OpenEdit(feature)) => {
+            create.thread.open(state, Some(feature), actions)
         }
         GuiShellAction::OpenMoveBody => motion.open(state),
         _ => {}
