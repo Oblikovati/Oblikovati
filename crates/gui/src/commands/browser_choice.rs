@@ -81,4 +81,9 @@ pub enum GuiBrowserChoice {
         key: String,
         visible: bool,
     },
+    /// Toggle visibility of an authored datum feature (Work Plane / Axis / Point).
+    DatumVisible {
+        feature: oblikovati_model::feature::FeatureId,
+        visible: bool,
+    },
 }

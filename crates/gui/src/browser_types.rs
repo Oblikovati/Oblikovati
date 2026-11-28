@@ -29,6 +29,8 @@ pub struct GuiModelBrowser {
     /// Rectangular patterns owned by each sketch.
     pub rectangular_patterns: Vec<GuiBrowserRectangularPattern>,
     pub features: Vec<GuiBrowserFeature>,
+    /// Authored datum features currently marked hidden in the model.
+    pub hidden_datums: std::collections::BTreeSet<FeatureId>,
     /// Authored output and path of each saved Loft.
     pub loft_edits: std::collections::BTreeMap<FeatureId, crate::GuiLoftEditSeed>,
     /// Authored options for editable Sweep features.

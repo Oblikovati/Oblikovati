@@ -78,6 +78,11 @@ mod ribbon_part_assets;
 mod ribbon_split;
 mod selection_filter;
 pub use selection_filter::{GuiSelectionFilter, GuiSelectionFilterEntry, GuiSelectionKind};
+mod work_plane_dialog;
+pub use work_plane_dialog::types::{
+    GuiWorkPlaneAction, GuiWorkPlaneMode, GuiWorkPlanePick, GuiWorkPlaneRequest,
+    GuiWorkPlaneViewportPick,
+};
 mod sketch;
 pub use application::document_opening::GuiInspectedFile;
 pub use application::document_tabs::windows::{GuiDocumentWindow, active_window_name};

@@ -96,6 +96,7 @@ impl GuiFrameEngine {
                 self.extrude_dialog
                     .distance_prompt()
                     .or_else(|| self.create_dialogs.status_prompt())
+                    .or_else(|| self.offset_plane.status_prompt())
                     .or_else(|| self.direct_edit_dialog.status_prompt())
                     .or_else(|| self.blend_dialog.status_prompt()),
             ),
@@ -195,10 +196,11 @@ impl GuiFrameEngine {
         selected.retain(|action| !matches!(action, GuiShellAction::OpenModelStateTable));
         self.model_state_table
             .panel(ui, &request.commands, &mut selected);
-        feature_actions::sync_offset_plane(
+        super::work_plane::sync_offset_plane(
             &request.commands,
             &mut self.workspace,
             &mut self.offset_plane,
+            &mut self.create_dialogs.work_plane,
             &mut selected,
         );
         for action in &selected {

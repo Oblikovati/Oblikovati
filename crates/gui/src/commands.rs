@@ -326,6 +326,8 @@ pub enum GuiShellAction {
     StartSketchOnWorkPlane(oblikovati_model::feature::FeatureId),
     /// Open the offset-plane editor for the active part.
     OpenOffsetPlane,
+    /// Interactive Work Plane creation, preview, and commit actions (#3918).
+    WorkPlane(crate::GuiWorkPlaneAction),
     /// Validate an offset expression against the active document.
     ValidateOffsetPlane {
         document: u64,

@@ -101,33 +101,10 @@ pub(super) fn draw_feature_dialogs(
     shell.panel(ui, commands, area, selected);
     motion.panel(ui, commands, area, selected);
     offset.panel(ui, commands, area, selected);
-}
-
-pub(super) fn sync_offset_plane(
-    commands: &GuiCommandState,
-    workspace: &mut crate::application::workspace_layout::WorkspaceLayout,
-    offset_plane: &mut crate::offset_plane::OffsetPlaneDialog,
-    selected: &mut Vec<GuiShellAction>,
-) {
-    let open_offset = selected.contains(&GuiShellAction::OpenOffsetPlane);
-    selected.retain(|action| !matches!(action, GuiShellAction::OpenOffsetPlane));
-    if !open_offset && !offset_plane.active() {
-        return;
-    }
-    let base = workspace
-        .take_selected_origin_plane()
-        .map(crate::GuiOffsetPlaneBase::Origin)
-        .or_else(|| selected_work_plane(commands).map(crate::GuiOffsetPlaneBase::WorkPlane))
-        .or_else(|| {
-            commands
-                .model_face_chosen
-                .then_some(crate::GuiOffsetPlaneBase::SelectedFace)
-        });
-    if open_offset && let Some(document) = commands.document {
-        offset_plane.open(document, base);
-    } else if let Some(base) = base {
-        offset_plane.choose(base);
-    }
+    let browser_picks = super::work_plane::parse_browser_picks(hole_plane.as_deref(), picked_axis);
+    create
+        .work_plane
+        .sync_and_draw(ui, commands, area, browser_picks, selected);
 }
 
 pub(super) fn resolve_menu_extrude(commands: &GuiCommandState, actions: &mut [GuiShellAction]) {

@@ -106,3 +106,25 @@ pub(super) fn loft_edit_action(feature: &GuiBrowserFeature) -> Option<GuiShellAc
         feature.id,
     )))
 }
+
+pub(super) fn datum_visibility_menu_item(
+    ui: &imgui::Ui,
+    state: &crate::GuiCommandState,
+    browser: &GuiModelBrowser,
+    feature: &GuiBrowserFeature,
+    actions: &mut Vec<GuiShellAction>,
+) {
+    if !matches!(feature.kind, "Work Plane" | "Work Axis" | "Work Point") {
+        return;
+    }
+    let visible = !browser.hidden_datums.contains(&feature.id);
+    if ui.menu_item_config("Visibility").selected(visible).build() {
+        actions.push(GuiShellAction::BrowserChoice {
+            document: state.document.unwrap_or(0),
+            choice: crate::GuiBrowserChoice::DatumVisible {
+                feature: feature.id,
+                visible: !visible,
+            },
+        });
+    }
+}

@@ -16,6 +16,7 @@ pub(super) struct CreateFeatureDialogs {
     pub(super) unwrap: crate::unwrap_dialog::UnwrapDialog,
     pub(super) thread: crate::thread_dialog::ThreadDialog,
     pub(super) mark: crate::mark_dialog::MarkDialog,
+    pub(super) work_plane: crate::work_plane_dialog::WorkPlaneDialog,
 }
 
 impl CreateFeatureDialogs {
@@ -57,7 +58,9 @@ impl CreateFeatureDialogs {
     }
 
     pub(super) fn status_prompt(&self) -> Option<&'static str> {
-        self.unwrap.status_prompt()
+        self.work_plane
+            .status_prompt()
+            .or_else(|| self.unwrap.status_prompt())
     }
 
     pub(super) fn take_sketch_plane_request(&mut self) -> bool {

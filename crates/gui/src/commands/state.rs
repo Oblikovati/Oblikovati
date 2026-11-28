@@ -242,6 +242,10 @@ pub struct GuiCommandState {
     pub fillet_available: bool,
     /// The selected work plane or face has a current planar frame.
     pub look_at_available: bool,
+    /// Latest viewport pick routed to the active Work Plane constructor.
+    pub work_plane_pick: Option<crate::GuiWorkPlaneViewportPick>,
+    /// True when a transient live Work Plane preview is displayed in the viewport.
+    pub work_plane_preview_active: bool,
     /// A selected model entity can define an orientation pivot.
     pub orientation_selection_available: bool,
     /// The saved orientation control selection pivot preference.
