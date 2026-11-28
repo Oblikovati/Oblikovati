@@ -7,6 +7,8 @@ use oblikovati_model::feature::{
     hole::{HoleDefinition, HoleExtent, HolePosition, HoleRecipe},
 };
 
+#[path = "boundary_patch_replay.rs"]
+mod boundary_patch_replay;
 #[path = "chamfer_v2.rs"]
 mod chamfer_v2;
 #[path = "combine_replay.rs"]

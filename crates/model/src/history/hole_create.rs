@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Create an authored Hole in the common part history (#4093).
+#[path = "boundary_patch_create.rs"]
+mod boundary_patch_create;
 use super::*;
 use crate::feature::{FeatureId, hole::HoleDefinition, part::PartFeatureDefinition};
 

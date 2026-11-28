@@ -410,6 +410,13 @@ impl PartFeatureEvaluator for CertifiedNamedSolidEvaluator<'_> {
     ) -> Result<NamedSolid, PartFeatureFailure<EvaluationFailure>> {
         self.evaluate_named_finish(feature, body, input)
     }
+    fn evaluate_boundary_patch(
+        &mut self,
+        feature: FeatureId,
+        input: oblikovati_model::feature::boundary_patch::ResolvedBoundaryPatch<'_>,
+    ) -> Result<NamedSolid, PartFeatureFailure<EvaluationFailure>> {
+        self.evaluate_named_boundary_patch(feature, input)
+    }
     fn evaluate_shell(
         &mut self,
         feature: FeatureId,

@@ -72,6 +72,10 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
                     None,
                 ]
             }
+            PartFeatureDefinition::BoundaryPatch(definition) => {
+                let mut iter = definition.referenced_sketches().into_iter();
+                [iter.next(), iter.next(), iter.next()]
+            }
             _ => return Ok(()),
         };
         let candidate = snapshot.to_mut();
