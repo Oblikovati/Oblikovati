@@ -39,6 +39,16 @@ pub(super) fn resolve_body_face<B: PartFeatureEvaluator>(
     .map_err(WorkGeometryError::BodyReference)
 }
 
+pub(super) fn resolve_named_entity<Body, Value>(
+    bodies: &BTreeMap<BodySlot, Body>,
+    lineage: &BodyLineageIndex,
+    source: FeatureId,
+    key: &[u8],
+    resolve: impl Fn(&Body) -> Result<Value, String>,
+) -> Result<Value, String> {
+    resolve_reference(bodies, lineage, source, key, resolve).map(|(_, value)| value)
+}
+
 pub(super) fn resolve_body_frame_origin<B: PartFeatureEvaluator>(
     bodies: &BTreeMap<BodySlot, B::Body>,
     lineage: &BodyLineageIndex,

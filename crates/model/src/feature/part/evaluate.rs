@@ -429,6 +429,9 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
             PartFeatureDefinition::Shell(definition) => {
                 self.evaluate_shell(snapshot, backend, id, definition)
             }
+            PartFeatureDefinition::WorkPlaneExtended(definition) => {
+                self.evaluate_work_plane_extended(snapshot, backend, id, definition)
+            }
             _ => {
                 let bodies = &self.bodies;
                 let lineage = &self.body_lineage;

@@ -132,13 +132,13 @@ fn duplicate_and_forward_ids_cannot_restore_over_a_valid_recipe() {
 #[test]
 fn versions_and_invalid_definitions_are_named_restore_failures() {
     let mut recipe = authored_program().work_plane_recipe().unwrap();
-    for version in [0, 52] {
+    for version in [0, 69] {
         recipe.version = version;
         let error = FeatureSequence::from_work_plane_recipe(&recipe).unwrap_err();
         assert_eq!(error, WorkPlaneProgramRecipeError::Version(version));
         assert_eq!(
             error.to_string(),
-            format!("work plane program version {version}: expected 1 through 51")
+            format!("work plane program version {version}: expected 1 through 68")
         );
         assert!(error.source().is_none());
     }

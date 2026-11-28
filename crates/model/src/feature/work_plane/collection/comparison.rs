@@ -36,6 +36,7 @@ impl WorkPlaneDefinition {
             (LineThroughPoint(first), LineThroughPoint(second)) => first == second,
             (ThroughThreePoints(first), ThroughThreePoints(second)) => first == second,
             (ParallelThroughPoint(first), ParallelThroughPoint(second)) => first == second,
+            (WorkPlaneExtended(first), WorkPlaneExtended(second)) => first.same_recipe(second),
             (Axis(first), Axis(second)) => first.same_recipe(*second),
             (Point(first), Point(second)) => same_coordinates(*first, *second),
             (AxisThroughPoints(first), AxisThroughPoints(second)) => first == second,

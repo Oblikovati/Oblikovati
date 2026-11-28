@@ -44,6 +44,7 @@ impl WorkGeometryDefinition {
             Self::ThroughThreePoints(points) => {
                 points.iter().copied().filter_map(point_key).collect()
             }
+            Self::WorkPlaneExtended(definition) => return definition.reads(),
             Self::PointAtReference(reference) => point_key(*reference).into_iter().collect(),
             Self::Point(coordinates) => coordinate_keys(coordinates),
             Self::AxisThroughPoints(points) => point_pair_keys(*points),

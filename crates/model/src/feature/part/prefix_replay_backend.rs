@@ -44,6 +44,56 @@ where
         self.0.resolve_planar_face(body.get(), key)
     }
 
+    fn resolve_topology_point(&self, body: &Self::Body, key: &[u8]) -> Result<[f64; 3], String> {
+        self.0.resolve_topology_point(body.get(), key)
+    }
+
+    fn resolve_straight_edge(
+        &self,
+        body: &Self::Body,
+        key: &[u8],
+    ) -> Result<crate::feature::work_axis::WorkAxisLine, String> {
+        self.0.resolve_straight_edge(body.get(), key)
+    }
+
+    fn resolve_torus_midplane(
+        &self,
+        body: &Self::Body,
+        key: &[u8],
+    ) -> Result<crate::sketch::SketchPlane, String> {
+        self.0.resolve_torus_midplane(body.get(), key)
+    }
+
+    fn resolve_tangent_plane_through_point(
+        &self,
+        body: &Self::Body,
+        face_key: &[u8],
+        point: [f64; 3],
+    ) -> Result<crate::sketch::SketchPlane, String> {
+        self.0
+            .resolve_tangent_plane_through_point(body.get(), face_key, point)
+    }
+
+    fn resolve_tangent_plane_through_line(
+        &self,
+        body: &Self::Body,
+        face_key: &[u8],
+        line: crate::feature::work_axis::WorkAxisLine,
+    ) -> Result<crate::sketch::SketchPlane, String> {
+        self.0
+            .resolve_tangent_plane_through_line(body.get(), face_key, line)
+    }
+
+    fn resolve_tangent_plane_parallel(
+        &self,
+        body: &Self::Body,
+        face_key: &[u8],
+        plane: crate::sketch::SketchPlane,
+    ) -> Result<crate::sketch::SketchPlane, String> {
+        self.0
+            .resolve_tangent_plane_parallel(body.get(), face_key, plane)
+    }
+
     fn evaluate_blend(
         &mut self,
         kind: PartBlendKind,
