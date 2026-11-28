@@ -5,6 +5,8 @@ use super::*;
 pub(super) mod owner_chamfer_v2;
 #[path = "owner_coil.rs"]
 pub(super) mod owner_coil;
+#[path = "owner_combine.rs"]
+pub(super) mod owner_combine;
 #[path = "owner_decal.rs"]
 pub(super) mod owner_decal;
 #[path = "owner_derive.rs"]
@@ -45,6 +47,7 @@ pub(super) struct CreateFeatureState {
     pub(super) unwrap: owner_unwrap::UnwrapOwnerState,
     pub(super) hole: owner_hole::HoleOwnerState,
     pub(super) slot: owner_slot::SlotOwnerState,
+    pub(super) combine: owner_combine::CombineOwnerState,
     pub(super) fillet_v2: owner_fillet_v2::FilletV2OwnerState,
     pub(super) chamfer_v2: owner_chamfer_v2::ChamferV2OwnerState,
 }

@@ -53,6 +53,8 @@ pub struct GuiModelBrowser {
     pub hole_edits: std::collections::BTreeMap<FeatureId, crate::GuiHoleEditSeed>,
     /// Authored options for editable Slot features.
     pub slot_edits: std::collections::BTreeMap<FeatureId, crate::GuiSlotEditSeed>,
+    /// Authored options for editable Combine features.
+    pub combine_edits: std::collections::BTreeMap<FeatureId, crate::GuiCombineEditSeed>,
     /// Named imported mesh entries listed under the 3rd Party browser folder.
     pub third_party_entries: Vec<String>,
     /// Editable extrusion distance sources, indexed by their current feature identities.

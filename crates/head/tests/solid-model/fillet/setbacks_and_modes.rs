@@ -323,7 +323,14 @@ fn feature_lists_1_and_2_edges_at_2mm(world: &mut ApplicationWorld) {
 
 #[when("I cancel the edit")]
 fn cancel_fillet_edit(world: &mut ApplicationWorld) {
-    click_fillet_control(world, "Cancel");
+    if super::super::diagnostics::window_geometry("Combine").is_some() {
+        let center = world.run_in_window("Combine", "Cancel").center();
+        world.click(super::super::diagnostics::pointer_pixels(center));
+        world.pump(Vec::new());
+        world.pump(Vec::new());
+    } else {
+        click_fillet_control(world, "Cancel");
+    }
 }
 
 #[then("the created fillet remains visible")]
