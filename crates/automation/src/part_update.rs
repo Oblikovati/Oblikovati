@@ -420,6 +420,7 @@ fn feature_kind(definition: &PartFeatureDefinition) -> &'static str {
         ThickenOffset(_) => "thicken-offset",
         Stitch(_) => "stitch",
         Split(_) => "split",
+        SurfaceTrim(_) => "surface-trim",
         Mark(_) => "mark",
         Finish(_) => "finish",
         ExtendSurface(_) => "extend-surface",

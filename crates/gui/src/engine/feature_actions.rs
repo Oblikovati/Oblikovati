@@ -96,6 +96,9 @@ pub(super) fn draw_feature_dialogs(
     thicken.panel(ui, commands, area, icons, selected);
     direct_edit.panel(ui, commands, area, selected);
     split.panel(ui, commands, area, icons, hole_plane.as_deref(), selected);
+    create
+        .surface_trim
+        .panel(ui, commands, area, hole_plane.as_deref(), selected);
     shell.panel(ui, commands, area, selected);
     motion.panel(ui, commands, area, selected);
     offset.panel(ui, commands, area, selected);
@@ -157,6 +160,7 @@ enum Draft {
     ThickenOffset,
     DirectEdit,
     Split,
+    SurfaceTrim,
     Mark,
     Finish,
     ExtendSurface,
@@ -234,6 +238,9 @@ fn requested_draft(action: &GuiShellAction) -> Option<Draft> {
         GuiShellAction::Split(crate::GuiSplitAction::Open | crate::GuiSplitAction::OpenEdit(_)) => {
             Draft::Split
         }
+        GuiShellAction::SurfaceTrim(
+            crate::GuiSurfaceTrimAction::Open | crate::GuiSurfaceTrimAction::OpenEdit(_),
+        ) => Draft::SurfaceTrim,
         GuiShellAction::Mark(crate::GuiMarkAction::Open | crate::GuiMarkAction::OpenEdit(_)) => {
             Draft::Mark
         }
@@ -435,6 +442,12 @@ pub(super) fn open_drafts(
         GuiShellAction::Split(crate::GuiSplitAction::Open) => split.open(state, None),
         GuiShellAction::Split(crate::GuiSplitAction::OpenEdit(feature)) => {
             split.open(state, Some(feature))
+        }
+        GuiShellAction::SurfaceTrim(crate::GuiSurfaceTrimAction::Open) => {
+            create.surface_trim.open(state, None, actions)
+        }
+        GuiShellAction::SurfaceTrim(crate::GuiSurfaceTrimAction::OpenEdit(feature)) => {
+            create.surface_trim.open(state, Some(feature), actions)
         }
         GuiShellAction::Mark(crate::GuiMarkAction::Open) => create.mark.open(state, None, actions),
         GuiShellAction::Mark(crate::GuiMarkAction::OpenEdit(feature)) => {

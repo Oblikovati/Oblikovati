@@ -55,6 +55,8 @@ pub(super) mod owner_slot;
 pub(super) mod owner_split;
 #[path = "owner_stitch.rs"]
 pub(super) mod owner_stitch;
+#[path = "owner_surface_trim.rs"]
+pub(super) mod owner_surface_trim;
 #[path = "owner_sweep.rs"]
 pub(super) mod owner_sweep;
 #[path = "owner_thicken_offset.rs"]
@@ -92,6 +94,7 @@ pub(super) struct CreateFeatureState {
     pub(super) thicken_offset: owner_thicken_offset::ThickenOffsetOwnerState,
     pub(super) stitch: owner_stitch::StitchOwnerState,
     pub(super) split: owner_split::SplitOwnerState,
+    pub(super) surface_trim: owner_surface_trim::SurfaceTrimOwnerState,
     pub(super) mark: owner_mark::MarkOwnerState,
     pub(super) finish: owner_finish::FinishOwnerState,
     pub(super) ruled_surface: owner_ruled_surface::RuledSurfaceOwnerState,

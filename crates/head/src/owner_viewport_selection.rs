@@ -77,6 +77,9 @@ impl<
         if let Some(changed) = self.pick_split_geometry(document, line, depth_window)? {
             return Ok(changed);
         }
+        if let Some(changed) = self.pick_surface_trim_geometry(document, line, depth_window)? {
+            return Ok(changed);
+        }
         if let Some(changed) = self.pick_mark_geometry(document, line, depth_window)? {
             return Ok(changed);
         }

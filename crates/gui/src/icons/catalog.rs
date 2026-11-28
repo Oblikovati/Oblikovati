@@ -154,6 +154,7 @@ glyph_catalog! {
     ExtendSurface => "extend-surface",
     RuledSurface => "ruled-surface",
     Stitch => "stitch",
+    TrimSurface => "trim-surface",
 }
 
 pub(crate) fn document_glyph(kind: crate::GuiTemplateKind) -> IconGlyph {

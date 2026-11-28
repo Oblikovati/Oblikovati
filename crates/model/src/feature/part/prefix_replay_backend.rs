@@ -255,6 +255,18 @@ where
         evaluate_ruled_surface: crate::feature::ruled_surface::ResolvedRuledSurface,
     );
 
+    fn evaluate_surface_trim(
+        &mut self,
+        feature: FeatureId,
+        body: &Self::Body,
+        tool_body: Option<&Self::Body>,
+        input: crate::feature::surface_trim::ResolvedSurfaceTrim,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        self.0
+            .evaluate_surface_trim(feature, body.get(), tool_body.map(PrefixBody::get), input)
+            .map(PrefixBody::Created)
+    }
+
     fn evaluate_shell(
         &mut self,
         feature: FeatureId,

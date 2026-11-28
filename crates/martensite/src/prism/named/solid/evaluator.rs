@@ -14,6 +14,21 @@ use oblikovati_model::{
     sketch::SketchPlane,
 };
 
+macro_rules! delegate_named_body_eval {
+    ($($method:ident($input:ty) => $target:ident;)+) => {
+        $(
+            fn $method(
+                &mut self,
+                feature: FeatureId,
+                body: &NamedSolid,
+                input: $input,
+            ) -> Result<NamedSolid, PartFeatureFailure<EvaluationFailure>> {
+                self.$target(feature, body, input)
+            }
+        )+
+    };
+}
+
 impl CertifiedNamedSolidEvaluator<'_> {
     /// Replay a private candidate, recomputing sketches that depend on Part datums.
     /// Example: `evaluator.evaluate_private_candidate(candidate)?`.
@@ -410,13 +425,13 @@ impl PartFeatureEvaluator for CertifiedNamedSolidEvaluator<'_> {
     ) -> Result<NamedSolid, PartFeatureFailure<EvaluationFailure>> {
         self.evaluate_named_replace_face(feature, body, new_bodies, input)
     }
-    fn evaluate_thicken_offset(
-        &mut self,
-        feature: FeatureId,
-        body: &NamedSolid,
-        input: oblikovati_model::feature::thicken_offset::ResolvedThickenOffset,
-    ) -> Result<NamedSolid, PartFeatureFailure<EvaluationFailure>> {
-        self.evaluate_named_thicken_offset(feature, body, input)
+    delegate_named_body_eval! {
+        evaluate_thicken_offset(oblikovati_model::feature::thicken_offset::ResolvedThickenOffset) => evaluate_named_thicken_offset;
+        evaluate_direct_edit(oblikovati_model::feature::direct_edit::ResolvedDirectEdit) => evaluate_named_direct_edit;
+        evaluate_mark(oblikovati_model::feature::mark::ResolvedMark) => evaluate_named_mark;
+        evaluate_finish(oblikovati_model::feature::finish::ResolvedFinish) => evaluate_named_finish;
+        evaluate_extend_surface(oblikovati_model::feature::extend_surface::ResolvedExtendSurface) => evaluate_named_extend_surface;
+        evaluate_ruled_surface(oblikovati_model::feature::ruled_surface::ResolvedRuledSurface) => evaluate_named_ruled_surface;
     }
     fn evaluate_stitch(
         &mut self,
@@ -426,14 +441,6 @@ impl PartFeatureEvaluator for CertifiedNamedSolidEvaluator<'_> {
     ) -> Result<NamedSolid, PartFeatureFailure<EvaluationFailure>> {
         self.evaluate_named_stitch(feature, surfaces, input)
     }
-    fn evaluate_direct_edit(
-        &mut self,
-        feature: FeatureId,
-        body: &NamedSolid,
-        input: oblikovati_model::feature::direct_edit::ResolvedDirectEdit,
-    ) -> Result<NamedSolid, PartFeatureFailure<EvaluationFailure>> {
-        self.evaluate_named_direct_edit(feature, body, input)
-    }
     fn evaluate_split(
         &mut self,
         feature: FeatureId,
@@ -442,29 +449,14 @@ impl PartFeatureEvaluator for CertifiedNamedSolidEvaluator<'_> {
     ) -> Result<Vec<NamedSolid>, PartFeatureFailure<EvaluationFailure>> {
         self.evaluate_named_split(feature, body, input)
     }
-    fn evaluate_mark(
+    fn evaluate_surface_trim(
         &mut self,
         feature: FeatureId,
         body: &NamedSolid,
-        input: oblikovati_model::feature::mark::ResolvedMark,
+        tool_body: Option<&NamedSolid>,
+        input: oblikovati_model::feature::surface_trim::ResolvedSurfaceTrim,
     ) -> Result<NamedSolid, PartFeatureFailure<EvaluationFailure>> {
-        self.evaluate_named_mark(feature, body, input)
-    }
-    fn evaluate_finish(
-        &mut self,
-        feature: FeatureId,
-        body: &NamedSolid,
-        input: oblikovati_model::feature::finish::ResolvedFinish,
-    ) -> Result<NamedSolid, PartFeatureFailure<EvaluationFailure>> {
-        self.evaluate_named_finish(feature, body, input)
-    }
-    fn evaluate_extend_surface(
-        &mut self,
-        feature: FeatureId,
-        body: &NamedSolid,
-        input: oblikovati_model::feature::extend_surface::ResolvedExtendSurface,
-    ) -> Result<NamedSolid, PartFeatureFailure<EvaluationFailure>> {
-        self.evaluate_named_extend_surface(feature, body, input)
+        self.evaluate_named_surface_trim(feature, body, tool_body, input)
     }
     fn evaluate_boundary_patch(
         &mut self,
@@ -472,14 +464,6 @@ impl PartFeatureEvaluator for CertifiedNamedSolidEvaluator<'_> {
         input: oblikovati_model::feature::boundary_patch::ResolvedBoundaryPatch<'_>,
     ) -> Result<NamedSolid, PartFeatureFailure<EvaluationFailure>> {
         self.evaluate_named_boundary_patch(feature, input)
-    }
-    fn evaluate_ruled_surface(
-        &mut self,
-        feature: FeatureId,
-        body: &NamedSolid,
-        input: oblikovati_model::feature::ruled_surface::ResolvedRuledSurface,
-    ) -> Result<NamedSolid, PartFeatureFailure<EvaluationFailure>> {
-        self.evaluate_named_ruled_surface(feature, body, input)
     }
     fn evaluate_shell(
         &mut self,

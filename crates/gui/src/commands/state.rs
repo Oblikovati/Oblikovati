@@ -169,6 +169,8 @@ pub struct GuiCommandState {
     pub direct_edit_pick: Option<crate::GuiDirectEditPick>,
     pub split_preview: Option<crate::GuiSplitPreviewState>,
     pub split_pick: Option<crate::GuiSplitPick>,
+    pub surface_trim_preview: Option<crate::GuiSurfaceTrimPreviewState>,
+    pub surface_trim_pick: Option<crate::GuiSurfaceTrimPick>,
     pub mark_eligibility: crate::GuiMarkEligibility,
     pub mark_preview: Option<crate::GuiMarkPreviewState>,
     pub mark_face_pick: Option<crate::GuiMarkFacePick>,

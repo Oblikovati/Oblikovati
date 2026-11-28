@@ -38,6 +38,8 @@ mod slot_replay;
 mod split_replay;
 #[path = "stitch_replay.rs"]
 mod stitch_replay;
+#[path = "surface_trim_replay.rs"]
+mod surface_trim_replay;
 #[path = "thicken_offset_replay.rs"]
 mod thicken_offset_replay;
 #[path = "thread_replay.rs"]

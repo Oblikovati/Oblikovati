@@ -234,6 +234,10 @@ pub(crate) fn draw_panel_content(
                     "Stitch",
                     GuiShellAction::Stitch(crate::GuiStitchAction::Open),
                 ),
+                (
+                    "Trim",
+                    GuiShellAction::SurfaceTrim(crate::GuiSurfaceTrimAction::Open),
+                ),
             ]
             .into_iter()
             .enumerate()

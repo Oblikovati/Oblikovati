@@ -63,6 +63,7 @@ pub enum PartFeatureFailure<Failure> {
     DirectEditInput(String),
     SplitInput(String),
     StitchInput(String),
+    SurfaceTrimInput(String),
     MarkInput(String),
     FinishInput(String),
     RuledSurfaceInput(String),
@@ -427,6 +428,9 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
             PartFeatureDefinition::DirectEdit(def) => self.evaluate_direct_edit(backend, id, def),
             PartFeatureDefinition::Split(definition) => {
                 self.evaluate_split(snapshot, backend, id, definition)
+            }
+            PartFeatureDefinition::SurfaceTrim(definition) => {
+                self.evaluate_surface_trim(backend, id, definition)
             }
             PartFeatureDefinition::Mark(definition) => {
                 self.evaluate_mark(snapshot, backend, id, definition)

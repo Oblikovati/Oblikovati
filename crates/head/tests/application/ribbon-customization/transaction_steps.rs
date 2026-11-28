@@ -97,7 +97,7 @@ fn assert_edit_controls(world: &ApplicationWorld, enabled: bool) {
 #[when("the user clicks Apply")]
 #[when("the user clicks \"Apply\"")]
 fn apply(world: &mut ApplicationWorld) {
-    for window in ["Ruled Surface", "Stitch"] {
+    for window in ["Ruled Surface", "Stitch", "Trim Surface"] {
         if super::super::diagnostics::window_geometry(window).is_some() {
             let center = world.run_in_window(window, "Apply").center();
             world.click(super::super::diagnostics::pointer_pixels(center));

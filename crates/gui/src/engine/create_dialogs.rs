@@ -18,6 +18,7 @@ pub(super) struct CreateFeatureDialogs {
     pub(super) mark: crate::mark_dialog::MarkDialog,
     pub(super) finish: crate::finish_dialog::FinishDialog,
     pub(super) stitch: crate::stitch_dialog::StitchDialog,
+    pub(super) surface_trim: crate::surface_trim_dialog::SurfaceTrimDialog,
     pub(super) grounded_point: crate::work_point::overlay::GroundedPointHud,
     pub(super) work_plane: crate::work_plane_dialog::WorkPlaneDialog,
     pub(super) extend_surface: crate::extend_surface_dialog::ExtendSurfaceDialog,
@@ -44,6 +45,7 @@ impl CreateFeatureDialogs {
         self.mark.register_dockable(registry)?;
         self.finish.register_dockable(registry)?;
         self.stitch.register_dockable(registry)?;
+        self.surface_trim.register_dockable(registry)?;
         self.grounded_point.register_dockable(registry)?;
         self.extend_surface.register_dockable(registry)?;
         self.boundary_patch.register_dockable(registry)?;
@@ -73,6 +75,7 @@ impl CreateFeatureDialogs {
         self.ruled_surface.synchronize(state, actions);
         self.replace_face.synchronize(state, actions);
         self.stitch.synchronize(state, actions);
+        self.surface_trim.synchronize(state, actions);
         self.sweep.synchronize(state, actions);
         self.loft.synchronize(state, actions);
         self.grounded_point.synchronize(state);
@@ -129,6 +132,7 @@ impl CreateFeatureDialogs {
         self.ruled_surface.close(actions);
         self.replace_face.close(actions);
         self.stitch.close(actions);
+        self.surface_trim.close(actions);
     }
     pub(super) fn draw(
         &mut self,

@@ -127,6 +127,7 @@ fn dialog_closes(world: &mut ApplicationWorld) {
     assert!(super::diagnostics::window_geometry("Customize").is_none());
     assert!(super::diagnostics::window_geometry("Edit Annotation Scale").is_none());
     assert!(super::diagnostics::window_geometry("Stitch").is_none());
+    assert!(super::diagnostics::window_geometry("Trim Surface").is_none());
 }
 #[then("the active document tab displays the saved file name")]
 fn tab_has_file_name(world: &mut ApplicationWorld) {

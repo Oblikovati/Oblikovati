@@ -35,6 +35,7 @@ pub enum WorkPlaneDefinitionRecipe {
     ThickenOffset(crate::feature::thicken_offset::ThickenOffsetRecipe),
     Stitch(crate::feature::stitch::StitchRecipe),
     Split(crate::feature::split::SplitRecipe),
+    SurfaceTrim(crate::feature::surface_trim::SurfaceTrimRecipe),
     Mark(crate::feature::mark::MarkRecipe),
     Finish(crate::feature::finish::FinishRecipe),
     RuledSurface(crate::feature::ruled_surface::RuledSurfaceRecipe),
@@ -106,6 +107,7 @@ impl WorkPlaneDefinition {
             Self::ThickenOffset(definition) => Source::ThickenOffset(definition.recipe()),
             Self::Stitch(definition) => Source::Stitch(definition.recipe()),
             Self::Split(definition) => Source::Split(definition.recipe()),
+            Self::SurfaceTrim(definition) => Source::SurfaceTrim(definition.recipe()),
             Self::Mark(definition) => Source::Mark(definition.recipe()),
             Self::Finish(definition) => Source::Finish(definition.recipe()),
             Self::RuledSurface(definition) => Source::RuledSurface(definition.recipe()),
@@ -224,6 +226,11 @@ fn restore_definition(
         Split(recipe) => crate::feature::split::SplitDefinition::from_recipe(recipe)
             .map(|definition| WorkPlaneDefinition::Split(Box::new(definition)))
             .map_err(WorkPlaneError::BodyReference),
+        SurfaceTrim(recipe) => {
+            crate::feature::surface_trim::SurfaceTrimDefinition::from_recipe(recipe)
+                .map(|definition| WorkPlaneDefinition::SurfaceTrim(Box::new(definition)))
+                .map_err(WorkPlaneError::BodyReference)
+        }
         Mark(recipe) => crate::feature::mark::MarkDefinition::from_recipe(recipe)
             .map(|definition| WorkPlaneDefinition::Mark(Box::new(definition)))
             .map_err(WorkPlaneError::BodyReference),

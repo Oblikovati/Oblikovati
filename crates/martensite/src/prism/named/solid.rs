@@ -455,5 +455,6 @@ mod shell_evaluation;
 mod slot_evaluation;
 mod split_evaluation;
 mod stitch_evaluation;
+mod surface_trim_evaluation;
 mod thicken_offset_evaluation;
 mod thread_evaluation;

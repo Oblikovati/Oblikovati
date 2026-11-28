@@ -21,6 +21,7 @@ impl WorkGeometryDefinition {
             Self::ThickenOffset(definition) => return definition.reads(),
             Self::Stitch(definition) => return definition.reads(),
             Self::Split(definition) => return definition.reads(),
+            Self::SurfaceTrim(definition) => return definition.reads(),
             Self::Finish(definition) => return definition.reads(),
             Self::ExtendSurface(definition) => return definition.reads(),
             Self::BoundaryPatch(definition) => return definition.reads(),

@@ -25,6 +25,7 @@ pub(crate) fn enabled(action: &GuiShellAction, state: &GuiCommandState) -> Optio
         GuiShellAction::Stitch(action) => action.enabled(state),
         GuiShellAction::DirectEdit(action) => action.enabled(state),
         GuiShellAction::Split(action) => action.enabled(state),
+        GuiShellAction::SurfaceTrim(action) => action.enabled(state),
         GuiShellAction::Mark(action) => action.enabled(state),
         GuiShellAction::Finish(action) => action.enabled(state),
         GuiShellAction::RuledSurface(action) => action.enabled(state),
