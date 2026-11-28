@@ -168,6 +168,7 @@ mod extrude_dialog;
 mod face_draft;
 mod face_properties;
 mod hole_dialog;
+mod mark_dialog;
 mod slot_dialog;
 mod thread_dialog;
 pub use application::model_browser::feature_properties::{GuiFeatureCondition, GuiFeatureEdit};
@@ -182,6 +183,10 @@ pub use draft_dialog::{
 pub use hole_dialog::{
     GuiHoleAction, GuiHoleEditSeed, GuiHolePick, GuiHolePreview, GuiHolePreviewState,
     GuiHoleRequest, GuiHoleSeatKind, GuiHoleTermination,
+};
+pub use mark_dialog::{
+    GuiMarkAction, GuiMarkEditSeed, GuiMarkEligibility, GuiMarkFacePick, GuiMarkGeometrySet,
+    GuiMarkPreview, GuiMarkPreviewState, GuiMarkRequest, GuiMarkSketchPick,
 };
 pub use slot_dialog::{
     GuiSlotAction, GuiSlotEditSeed, GuiSlotPick, GuiSlotPreview, GuiSlotPreviewState,
