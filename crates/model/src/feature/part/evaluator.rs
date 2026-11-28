@@ -200,6 +200,17 @@ pub trait PartFeatureEvaluator {
             "finish: expected an available named-face evaluator".into(),
         ))
     }
+    /// Extend selected boundary edges of an open surface body; example: `backend.evaluate_extend_surface(id, body, input)`.
+    fn evaluate_extend_surface(
+        &mut self,
+        _feature: FeatureId,
+        _body: &Self::Body,
+        _input: crate::feature::extend_surface::ResolvedExtendSurface,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        Err(PartFeatureFailure::Unsupported(
+            "extend surface: expected an available surface extension evaluator".into(),
+        ))
+    }
     /// Resolve the sweep from a sketch plane to the current target body's bounds.
     /// Example: `backend.prism_through_all_span(body, plane, direction)?`.
     fn prism_through_all_span(

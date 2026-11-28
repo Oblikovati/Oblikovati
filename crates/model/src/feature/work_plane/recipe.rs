@@ -29,6 +29,7 @@ pub enum WorkPlaneDefinitionRecipe {
     Split(crate::feature::split::SplitRecipe),
     Mark(crate::feature::mark::MarkRecipe),
     Finish(crate::feature::finish::FinishRecipe),
+    ExtendSurface(crate::feature::extend_surface::ExtendSurfaceRecipe),
     MoveBody(crate::feature::move_body::MoveBodyRecipe),
     Shell(crate::feature::shell::ShellRecipe),
     Mirror(crate::feature::mirror::MirrorRecipe),
@@ -92,6 +93,7 @@ impl WorkPlaneDefinition {
             Self::Split(definition) => Source::Split(definition.recipe()),
             Self::Mark(definition) => Source::Mark(definition.recipe()),
             Self::Finish(definition) => Source::Finish(definition.recipe()),
+            Self::ExtendSurface(definition) => Source::ExtendSurface(definition.recipe()),
             Self::MoveBody(definition) => Source::MoveBody(definition.recipe()),
             Self::Shell(definition) => Source::Shell(definition.recipe()),
             Self::Mirror(mirror) => Source::Mirror(mirror.recipe().clone()),
@@ -198,6 +200,7 @@ fn restore_definition(
         Finish(recipe) => crate::feature::finish::FinishDefinition::from_recipe(recipe)
             .map(|definition| WorkPlaneDefinition::Finish(Box::new(definition)))
             .map_err(WorkPlaneError::BodyReference),
+        ExtendSurface(recipe) => crate::feature::extend_surface::restore_definition(recipe),
         Chamfer(recipe) => crate::feature::chamfer::ChamferDefinition::from_recipe(&recipe)
             .map(|definition| WorkPlaneDefinition::Chamfer(Box::new(definition)))
             .map_err(WorkPlaneError::BodyReference),
@@ -338,6 +341,7 @@ impl WorkPlaneDefinitionRecipe {
             Self::Split(_) => 51,
             Self::Mark(_) => 54,
             Self::Finish(_) => 55,
+            Self::ExtendSurface(_) => 61,
             Self::SketchSweep(recipe) => match recipe.version {
                 7 => 29,
                 6 => 28,
@@ -409,6 +413,7 @@ impl WorkPlaneDefinitionRecipe {
             Self::Split(_) => 61,
             Self::Mark(_) => 64,
             Self::Finish(_) => 65,
+            Self::ExtendSurface(_) => 71,
             Self::SketchSweep(recipe) => match recipe.version {
                 7 => 34,
                 6 => 33,

@@ -17,6 +17,8 @@ mod delete_face_replay;
 mod direct_edit_replay;
 #[path = "draft_replay.rs"]
 mod draft_replay;
+#[path = "extend_surface_replay.rs"]
+mod extend_surface_replay;
 #[path = "fillet_v2.rs"]
 mod fillet_v2;
 #[path = "finish_replay.rs"]

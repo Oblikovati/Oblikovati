@@ -141,6 +141,31 @@ impl BlendNamedTopology {
         )
     }
 
+    pub(crate) fn from_extended_shell_preserving_body(
+        history: &DocumentEditHistory,
+        document: DocumentGuid,
+        feature: FeatureId,
+        primary_body: Vec<u8>,
+        deleted: Vec<Vec<u8>>,
+        shape: Shape,
+        resolution: Option<PrismResolution>,
+    ) -> Result<Self, String> {
+        let active_body =
+            SemanticReferenceName::new(document, feature.0, 4, "extend-surface", "body", &[1])?
+                .encode()?;
+        Self::from_tagged_shell_with_bodies(
+            history,
+            document,
+            feature,
+            "extend-surface",
+            primary_body,
+            active_body,
+            deleted,
+            shape,
+            resolution,
+        )
+    }
+
     fn from_tagged_shell(
         history: &DocumentEditHistory,
         document: DocumentGuid,
@@ -151,6 +176,31 @@ impl BlendNamedTopology {
     ) -> Result<Self, String> {
         let body =
             SemanticReferenceName::new(document, feature.0, 4, tag, "body", &[1])?.encode()?;
+        Self::from_tagged_shell_with_bodies(
+            history,
+            document,
+            feature,
+            tag,
+            body.clone(),
+            body,
+            Vec::new(),
+            shape,
+            resolution,
+        )
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn from_tagged_shell_with_bodies(
+        history: &DocumentEditHistory,
+        document: DocumentGuid,
+        feature: FeatureId,
+        tag: &str,
+        primary_body: Vec<u8>,
+        active_body: Vec<u8>,
+        deleted: Vec<Vec<u8>>,
+        shape: Shape,
+        resolution: Option<PrismResolution>,
+    ) -> Result<Self, String> {
         let faces = shapes(&shape, ShapeEnum::Face)?
             .into_iter()
             .enumerate()
@@ -184,7 +234,12 @@ impl BlendNamedTopology {
             })
             .collect::<Result<Vec<_>, String>>()?;
         let vertices = incident_names(document, feature, &shape, ShapeEnum::Vertex, 3, &edges)?;
-        let entries: Vec<_> = std::iter::once((body.clone(), shape.clone()))
+        let mut body_entries = vec![(active_body.clone(), shape.clone())];
+        if primary_body != active_body {
+            body_entries.push((primary_body.clone(), shape.clone()));
+        }
+        let entries: Vec<_> = body_entries
+            .into_iter()
             .chain(faces)
             .chain(edges)
             .chain(vertices)
@@ -203,11 +258,11 @@ impl BlendNamedTopology {
             resolution,
             achieved_tolerance: None,
             live,
-            deleted: Vec::new(),
+            deleted,
             splits: BTreeMap::new(),
             bindings,
-            active_body: body.clone(),
-            primary_body: body,
+            active_body,
+            primary_body,
             shape,
             thread_overlays: Vec::new(),
             mark_overlays: Vec::new(),

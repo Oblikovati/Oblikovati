@@ -439,6 +439,7 @@ mod delete_face_evaluation;
 mod direct_edit_evaluation;
 mod draft_evaluation;
 mod evaluator;
+mod extend_surface_evaluation;
 mod extrusion_boolean;
 mod extrusion_pattern;
 mod extrusion_span;

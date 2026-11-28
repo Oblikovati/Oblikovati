@@ -410,6 +410,14 @@ impl PartFeatureEvaluator for CertifiedNamedSolidEvaluator<'_> {
     ) -> Result<NamedSolid, PartFeatureFailure<EvaluationFailure>> {
         self.evaluate_named_finish(feature, body, input)
     }
+    fn evaluate_extend_surface(
+        &mut self,
+        feature: FeatureId,
+        body: &NamedSolid,
+        input: oblikovati_model::feature::extend_surface::ResolvedExtendSurface,
+    ) -> Result<NamedSolid, PartFeatureFailure<EvaluationFailure>> {
+        self.evaluate_named_extend_surface(feature, body, input)
+    }
     fn evaluate_shell(
         &mut self,
         feature: FeatureId,
