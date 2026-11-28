@@ -55,6 +55,7 @@ pub(super) fn feature_kind_name(
                 "Thicken"
             }
         }
+        oblikovati_model::feature::part::PartFeatureDefinition::Stitch(_) => "Stitch",
         DeleteBody(_) => "Delete Body",
         oblikovati_model::feature::part::PartFeatureDefinition::Fixed(_)
         | oblikovati_model::feature::part::PartFeatureDefinition::Offset { .. }

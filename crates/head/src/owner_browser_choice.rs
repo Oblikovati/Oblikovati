@@ -247,6 +247,11 @@ impl<
                 commands.set_body_visible(key, *visible)?;
             }
         }
+        if let Body { key, .. } = choice
+            && self.pick_stitch_browser_body(document, key)?
+        {
+            return Ok(true);
+        }
         if matches!(choice, Nothing | Root | Body { toggle: false, .. }) {
             self.model_face = None;
             self.model_edges.clear();

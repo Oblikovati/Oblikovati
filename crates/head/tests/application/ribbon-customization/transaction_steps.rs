@@ -97,13 +97,15 @@ fn assert_edit_controls(world: &ApplicationWorld, enabled: bool) {
 #[when("the user clicks Apply")]
 #[when("the user clicks \"Apply\"")]
 fn apply(world: &mut ApplicationWorld) {
-    if super::super::diagnostics::window_geometry("Ruled Surface").is_some() {
-        let center = world.run_in_window("Ruled Surface", "Apply").center();
-        world.click(super::super::diagnostics::pointer_pixels(center));
-        world.pump(Vec::new());
-        world.pump(Vec::new());
-        world.pump(Vec::new());
-        return;
+    for window in ["Ruled Surface", "Stitch"] {
+        if super::super::diagnostics::window_geometry(window).is_some() {
+            let center = world.run_in_window(window, "Apply").center();
+            world.click(super::super::diagnostics::pointer_pixels(center));
+            world.pump(Vec::new());
+            world.pump(Vec::new());
+            world.pump(Vec::new());
+            return;
+        }
     }
     click_in_customize(world, "Apply");
 }
