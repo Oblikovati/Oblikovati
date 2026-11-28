@@ -100,6 +100,7 @@ pub enum PartFeatureDefinition {
     Point([DatumLength; 3]),
     PointAtReference(WorkPointReference),
     AxisThroughPoints(WorkAxisPoints),
+    Ucs(Box<super::ucs::UcsDefinition>),
 }
 impl PartFeatureDefinition {
     /// Return the stable feature vocabulary reported by diagnostics; example: `definition.kind() == "extrude"`.
@@ -136,6 +137,7 @@ impl PartFeatureDefinition {
             Self::RectangularPattern(_) => "rectangular-pattern",
             Self::Axis(_) | Self::AxisThroughPoints(_) => "work-axis",
             Self::Point(_) | Self::PointAtReference(_) => "work-point",
+            Self::Ucs(_) => "ucs",
             _ => "work-plane",
         }
     }

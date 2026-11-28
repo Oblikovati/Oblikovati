@@ -40,6 +40,7 @@ impl WorkPlaneDefinition {
             (Point(first), Point(second)) => same_coordinates(*first, *second),
             (AxisThroughPoints(first), AxisThroughPoints(second)) => first == second,
             (PointAtReference(first), PointAtReference(second)) => first == second,
+            (Ucs(first), Ucs(second)) => first.same_recipe(second),
             (Fixed(first), Fixed(second)) => first.same_recipe(*second),
             (first @ Offset { .. }, second @ Offset { .. }) => same_offset(first, second),
             _ => false,

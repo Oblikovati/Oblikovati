@@ -3,6 +3,9 @@
 use super::*;
 use crate::feature::{FeatureId, hole::HoleDefinition, part::PartFeatureDefinition};
 
+#[path = "ucs_create.rs"]
+mod ucs_create;
+
 impl DocumentEditHistory {
     /// Add a Hole inside a transaction; example: `history.create_hole(&token, "Hole", definition)?`.
     pub fn create_hole(

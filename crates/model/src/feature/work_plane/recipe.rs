@@ -28,6 +28,7 @@ pub enum WorkPlaneDefinitionRecipe {
     ThickenOffset(crate::feature::thicken_offset::ThickenOffsetRecipe),
     Split(crate::feature::split::SplitRecipe),
     Mark(crate::feature::mark::MarkRecipe),
+    Ucs(crate::feature::ucs::UcsRecipe),
     MoveBody(crate::feature::move_body::MoveBodyRecipe),
     Shell(crate::feature::shell::ShellRecipe),
     Mirror(crate::feature::mirror::MirrorRecipe),
@@ -90,6 +91,7 @@ impl WorkPlaneDefinition {
             Self::ThickenOffset(definition) => Source::ThickenOffset(definition.recipe()),
             Self::Split(definition) => Source::Split(definition.recipe()),
             Self::Mark(definition) => Source::Mark(definition.recipe()),
+            Self::Ucs(definition) => Source::Ucs(definition.recipe()),
             Self::MoveBody(definition) => Source::MoveBody(definition.recipe()),
             Self::Shell(definition) => Source::Shell(definition.recipe()),
             Self::Mirror(mirror) => Source::Mirror(mirror.recipe().clone()),
@@ -192,6 +194,9 @@ fn restore_definition(
             .map_err(WorkPlaneError::BodyReference),
         Mark(recipe) => crate::feature::mark::MarkDefinition::from_recipe(recipe)
             .map(|definition| WorkPlaneDefinition::Mark(Box::new(definition)))
+            .map_err(WorkPlaneError::BodyReference),
+        Ucs(recipe) => crate::feature::ucs::UcsDefinition::from_recipe(recipe)
+            .map(|definition| WorkPlaneDefinition::Ucs(Box::new(definition)))
             .map_err(WorkPlaneError::BodyReference),
         Chamfer(recipe) => crate::feature::chamfer::ChamferDefinition::from_recipe(&recipe)
             .map(|definition| WorkPlaneDefinition::Chamfer(Box::new(definition)))
@@ -332,6 +337,7 @@ impl WorkPlaneDefinitionRecipe {
             Self::ThickenOffset(_) => 50,
             Self::Split(_) => 51,
             Self::Mark(_) => 54,
+            Self::Ucs(_) => 59,
             Self::SketchSweep(recipe) => match recipe.version {
                 7 => 29,
                 6 => 28,
@@ -402,6 +408,7 @@ impl WorkPlaneDefinitionRecipe {
             Self::ThickenOffset(_) => 60,
             Self::Split(_) => 61,
             Self::Mark(_) => 64,
+            Self::Ucs(_) => 69,
             Self::SketchSweep(recipe) => match recipe.version {
                 7 => 34,
                 6 => 33,

@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::{WorkGeometryDefinition, WorkGeometryError, point::resolve_position};
 use crate::{
-    feature::work_axis::WorkAxisLine, parameter::ParameterCollection, sketch::SketchPlane,
+    feature::{ucs::ResolvedUcs, work_axis::WorkAxisLine},
+    parameter::ParameterCollection,
+    sketch::SketchPlane,
 };
 
 /// Kind views share one current result table, never separate owned feature collections.
@@ -10,6 +12,7 @@ pub(super) enum WorkGeometryResult {
     Plane(SketchPlane),
     Axis(WorkAxisLine),
     Point([f64; 3]),
+    Ucs(ResolvedUcs),
 }
 impl WorkGeometryResult {
     pub(super) fn with_plane_orientation(
@@ -39,6 +42,7 @@ impl WorkGeometryResult {
                 resolve_position(coordinates, parameters).map(Self::Point)
             }
             WorkGeometryDefinition::AxisThroughPoints(points) => axis_between(points, current),
+            WorkGeometryDefinition::Ucs(definition) => Ok(Self::Ucs(definition.resolved())),
             plane => plane.evaluate(parameters, current).map(Self::Plane),
         }
     }
@@ -47,6 +51,7 @@ impl WorkGeometryResult {
             Self::Plane(_) => "plane",
             Self::Axis(_) => "axis",
             Self::Point(_) => "point",
+            Self::Ucs(_) => "ucs",
         }
     }
 }
