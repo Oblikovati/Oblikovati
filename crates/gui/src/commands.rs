@@ -370,6 +370,7 @@ pub enum GuiShellAction {
     DeleteFace(crate::GuiDeleteFaceAction),
     ReplaceFace(crate::GuiReplaceFaceAction),
     ThickenOffset(crate::GuiThickenOffsetAction),
+    Stitch(crate::GuiStitchAction),
     DirectEdit(crate::GuiDirectEditAction),
     Split(crate::GuiSplitAction),
     Mark(crate::GuiMarkAction),

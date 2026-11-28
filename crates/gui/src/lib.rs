@@ -190,6 +190,7 @@ mod mark_dialog;
 mod replace_face_dialog;
 mod slot_dialog;
 mod split_dialog;
+mod stitch_dialog;
 mod thicken_offset_dialog;
 mod thread_dialog;
 pub use application::model_browser::feature_properties::{GuiFeatureCondition, GuiFeatureEdit};
@@ -237,6 +238,10 @@ pub use slot_dialog::{
 pub use split_dialog::{
     GuiSplitAction, GuiSplitEditSeed, GuiSplitPick, GuiSplitPickKind, GuiSplitPickMode,
     GuiSplitPreview, GuiSplitPreviewState, GuiSplitRequest,
+};
+pub use stitch_dialog::{
+    GuiStitchAction, GuiStitchEditSeed, GuiStitchFreeEdge, GuiStitchPick, GuiStitchPreview,
+    GuiStitchPreviewState, GuiStitchRequest,
 };
 pub use thicken_offset_dialog::{
     GuiThickenOffsetAction, GuiThickenOffsetEditSeed, GuiThickenOffsetPick,
