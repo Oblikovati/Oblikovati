@@ -13,7 +13,7 @@ pub use commands::{
     WebCameraSnapshot, WebCommand, WebDocumentSummary, WebFeatureSummary, WebParameterSummary,
     WebStateSnapshot, WebTheme, WebViewOrientation,
 };
-pub use navigation::WebNavigationController;
+pub use navigation::{WebNavigationController, oriented_camera};
 pub use sample::{empty_part_package, sample_prism_package};
 #[cfg(any(target_os = "linux", target_os = "windows", target_arch = "wasm32"))]
 pub use session::WebSession;

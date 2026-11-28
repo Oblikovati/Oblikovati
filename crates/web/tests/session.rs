@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! End-to-end native WebGPU tests for `oblikovati-web`'s `WebSession`.
-#![cfg(not(target_arch = "wasm32"))]
+#![cfg(any(target_os = "linux", target_os = "windows"))]
 
 use oblikovati_viewport::{
     ViewportOptions, ViewportPresentation, WebKeyEvent, WebModifiers, WebPointerEvent,
