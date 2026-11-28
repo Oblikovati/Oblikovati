@@ -68,6 +68,18 @@ pub trait PartFeatureEvaluator {
             "hole: expected an available named-face evaluator".into(),
         ))
     }
+    /// Construct a named machined slot cut; example: `backend.evaluate_slot(id, body, face, input)`.
+    fn evaluate_slot(
+        &mut self,
+        _feature: FeatureId,
+        _body: &Self::Body,
+        _face: &[u8],
+        _input: crate::feature::slot::ResolvedSlot,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        Err(PartFeatureFailure::Unsupported(
+            "slot: expected an available named-face evaluator".into(),
+        ))
+    }
     /// Resolve the sweep from a sketch plane to the current target body's bounds.
     /// Example: `backend.prism_through_all_span(body, plane, direction)?`.
     fn prism_through_all_span(

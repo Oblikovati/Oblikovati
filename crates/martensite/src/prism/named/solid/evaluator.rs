@@ -475,6 +475,15 @@ impl PartFeatureEvaluator for CertifiedNamedSolidEvaluator<'_> {
     ) -> Result<NamedSolid, PartFeatureFailure<EvaluationFailure>> {
         self.evaluate_named_hole(feature, body, face, input)
     }
+    fn evaluate_slot(
+        &mut self,
+        feature: FeatureId,
+        body: &NamedSolid,
+        face: &[u8],
+        input: oblikovati_model::feature::slot::ResolvedSlot,
+    ) -> Result<NamedSolid, PartFeatureFailure<EvaluationFailure>> {
+        self.evaluate_named_slot(feature, body, face, input)
+    }
     fn evaluate_shell(
         &mut self,
         feature: FeatureId,

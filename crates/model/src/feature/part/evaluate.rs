@@ -413,6 +413,9 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
             PartFeatureDefinition::Hole(definition) => {
                 self.evaluate_hole(snapshot, backend, id, definition)
             }
+            PartFeatureDefinition::Slot(definition) => {
+                self.evaluate_slot(snapshot, backend, id, definition)
+            }
             definition @ (PartFeatureDefinition::Mirror(_)
             | PartFeatureDefinition::CircularPattern(_)
             | PartFeatureDefinition::RectangularPattern(_)) => {

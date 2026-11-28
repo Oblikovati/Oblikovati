@@ -165,7 +165,7 @@ pub(super) fn analytic_bounds(shape: &Shape, operation: &str) -> Result<[f64; 6]
     }
     Ok(result)
 }
-fn through_depth(bounds: [f64; 6], axis: [[f64; 3]; 2]) -> Result<f64, String> {
+pub(super) fn through_depth(bounds: [f64; 6], axis: [[f64; 3]; 2]) -> Result<f64, String> {
     let [origin, direction] = axis;
     let depth: f64 = (0..3)
         .map(|index| {
@@ -185,7 +185,7 @@ fn through_depth(bounds: [f64; 6], axis: [[f64; 3]; 2]) -> Result<f64, String> {
     Ok(depth)
 }
 
-fn surface_depth(
+pub(super) fn surface_depth(
     history: &DocumentEditHistory,
     document: DocumentGuid,
     body: &NamedSolid,

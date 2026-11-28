@@ -76,6 +76,17 @@ where
             .evaluate_hole(feature, body.get(), face, input)
             .map(PrefixBody::Created)
     }
+    fn evaluate_slot(
+        &mut self,
+        feature: FeatureId,
+        body: &Self::Body,
+        face: &[u8],
+        input: crate::feature::slot::ResolvedSlot,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        self.0
+            .evaluate_slot(feature, body.get(), face, input)
+            .map(PrefixBody::Created)
+    }
     fn evaluate_shell(
         &mut self,
         feature: FeatureId,

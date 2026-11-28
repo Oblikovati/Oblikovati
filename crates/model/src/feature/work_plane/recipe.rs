@@ -19,6 +19,7 @@ pub enum WorkPlaneDefinitionRecipe {
     Chamfer(crate::feature::chamfer::ChamferRecipe),
     Fillet(crate::feature::fillet::FilletRecipe),
     Hole(crate::feature::hole::HoleRecipe),
+    Slot(crate::feature::slot::SlotRecipe),
     MoveBody(crate::feature::move_body::MoveBodyRecipe),
     Shell(crate::feature::shell::ShellRecipe),
     Mirror(crate::feature::mirror::MirrorRecipe),
@@ -72,6 +73,7 @@ impl WorkPlaneDefinition {
             Self::Chamfer(definition) => Source::Chamfer(definition.recipe()),
             Self::Fillet(definition) => Source::Fillet(definition.recipe()),
             Self::Hole(definition) => Source::Hole(definition.recipe()),
+            Self::Slot(definition) => Source::Slot(definition.recipe()),
             Self::MoveBody(definition) => Source::MoveBody(definition.recipe()),
             Self::Shell(definition) => Source::Shell(definition.recipe()),
             Self::Mirror(mirror) => Source::Mirror(mirror.recipe().clone()),
@@ -141,6 +143,9 @@ fn restore_definition(
             .map_err(WorkPlaneError::BodyReference),
         Hole(recipe) => crate::feature::hole::HoleDefinition::from_recipe(recipe)
             .map(|definition| WorkPlaneDefinition::Hole(Box::new(definition)))
+            .map_err(WorkPlaneError::BodyReference),
+        Slot(recipe) => crate::feature::slot::SlotDefinition::from_recipe(recipe)
+            .map(|definition| WorkPlaneDefinition::Slot(Box::new(definition)))
             .map_err(WorkPlaneError::BodyReference),
         Chamfer(recipe) => crate::feature::chamfer::ChamferDefinition::from_recipe(&recipe)
             .map(|definition| WorkPlaneDefinition::Chamfer(Box::new(definition)))
@@ -272,6 +277,7 @@ impl WorkPlaneDefinitionRecipe {
             Self::SketchDecal(_) => 43,
             Self::ImportedModel(_) => 44,
             Self::Unwrap(_) => 45,
+            Self::Slot(_) => 46,
             Self::SketchSweep(recipe) => match recipe.version {
                 7 => 29,
                 6 => 28,
@@ -331,6 +337,7 @@ impl WorkPlaneDefinitionRecipe {
             Self::SketchDecal(_) => 49,
             Self::ImportedModel(_) => 50,
             Self::Unwrap(_) => 51,
+            Self::Slot(_) => 53,
             Self::SketchSweep(recipe) => match recipe.version {
                 7 => 34,
                 6 => 33,

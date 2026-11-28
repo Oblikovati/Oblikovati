@@ -30,6 +30,7 @@ pub mod sketch_prism;
 pub mod sketch_revolve;
 pub mod sketch_rib;
 pub mod sketch_sweep;
+pub mod slot;
 mod suppression;
 pub mod unwrap;
 mod validation;

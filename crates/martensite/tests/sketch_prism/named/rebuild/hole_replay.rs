@@ -11,6 +11,8 @@ use oblikovati_model::feature::{
 mod hole_frame_origin;
 #[path = "hole_v2.rs"]
 mod hole_v2;
+#[path = "slot_replay.rs"]
+mod slot_replay;
 
 fn hole_document() -> DocumentSnapshot {
     let mut snapshot = cube_document();
