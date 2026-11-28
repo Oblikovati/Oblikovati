@@ -143,6 +143,7 @@ glyph_catalog! {
     RibbonDensity => "layout-single",
     BrandWordmark => "view-cube",
     CopyObject => "copy-object",
+    DirectEdit => "direct-edit",
 }
 
 pub(crate) fn document_glyph(kind: crate::GuiTemplateKind) -> IconGlyph {

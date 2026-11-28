@@ -29,6 +29,8 @@ use crate::application::workspace_layout::{
 use sketch_rows::sketch_row;
 #[path = "browser_art.rs"]
 pub(crate) mod browser_art;
+#[path = "browser_direct_edit.rs"]
+mod browser_direct_edit;
 #[path = "browser_import.rs"]
 pub(crate) mod browser_import;
 /// Draw the browser tree, or the rows a search leaves; example: inside the Model window.
@@ -252,7 +254,7 @@ impl BrowserTree<'_> {
             let guide_top = self.ui.cursor_screen_pos()[1];
             for (row, name) in rows.iter().enumerate() {
                 let selected = view.selected_row == Some((branch, row));
-                let row_glyph = drawing_row_glyph(name);
+                let row_glyph = drawing_tree::drawing_row_glyph(name);
                 let chosen = if name == SHEET_TITLE_BLOCK {
                     self.title_block_row(selected, view)
                 } else {
@@ -468,25 +470,17 @@ impl BrowserTree<'_> {
                 }
                 sketch_row(self.ui, self.state, row, view, actions);
             }
+            browser_direct_edit::direct_edit_operation_rows(
+                self.ui,
+                self.state,
+                self.browser,
+                feature,
+                actions,
+            );
         }
     }
 }
 const SHEET_TITLE_BLOCK: &str = "Title Block";
-fn drawing_row_glyph(name: &str) -> crate::icons::IconGlyph {
-    use crate::icons::IconGlyph;
-    if name.contains("Border") || name.contains("Sheet") {
-        IconGlyph::DrawingSheet
-    } else if name.contains("Title") || name.contains("Note") || name.contains("Text") {
-        IconGlyph::Annotation
-    } else if name.contains("Weld") {
-        IconGlyph::DrawingWeld
-    } else if name.contains("Surface") {
-        IconGlyph::DrawingSurface
-    } else {
-        IconGlyph::DrawingBase
-    }
-}
-/// What a title block holds, one level under its row on the sheet.
 const TITLE_BLOCK_FIELD: &str = "Field Text";
 pub(crate) const ORIGIN_ROWS: [&str; 7] = [
     "YZ Plane",

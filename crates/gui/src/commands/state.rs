@@ -154,6 +154,8 @@ pub struct GuiCommandState {
     pub combine_pick: Option<crate::GuiCombinePick>,
     pub draft_preview: Option<crate::GuiDraftPreviewState>,
     pub draft_pick: Option<crate::GuiDraftPick>,
+    pub direct_edit_preview: Option<crate::GuiDirectEditPreviewState>,
+    pub direct_edit_pick: Option<crate::GuiDirectEditPick>,
     pub fillet_v2_preview: Option<crate::GuiFilletV2PreviewState>,
     pub fillet_v2_pick: Option<crate::GuiFilletV2Pick>,
     pub chamfer_v2_preview: Option<crate::GuiChamferV2PreviewState>,

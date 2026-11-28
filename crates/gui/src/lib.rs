@@ -162,6 +162,7 @@ pub use fillet_panel::{
 };
 mod combine_dialog;
 mod dimensions;
+mod direct_edit_dialog;
 mod draft_dialog;
 mod extrude_dialog;
 #[cfg(test)]
@@ -173,6 +174,10 @@ pub use application::model_browser::feature_properties::{GuiFeatureCondition, Gu
 pub use combine_dialog::{
     GuiCombineAction, GuiCombineEditSeed, GuiCombinePick, GuiCombinePickMode, GuiCombinePreview,
     GuiCombinePreviewState, GuiCombineRequest,
+};
+pub use direct_edit_dialog::{
+    GuiDirectEditAction, GuiDirectEditEditSeed, GuiDirectEditPick, GuiDirectEditPreview,
+    GuiDirectEditPreviewState, GuiDirectEditRequest,
 };
 pub use draft_dialog::{
     GuiDraftAction, GuiDraftEditSeed, GuiDraftPick, GuiDraftPickTarget, GuiDraftPreview,

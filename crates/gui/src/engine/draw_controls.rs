@@ -96,6 +96,7 @@ impl GuiFrameEngine {
                 self.extrude_dialog
                     .distance_prompt()
                     .or_else(|| self.create_dialogs.status_prompt())
+                    .or_else(|| self.direct_edit_dialog.status_prompt())
                     .or_else(|| self.blend_dialog.status_prompt()),
             ),
         );
@@ -274,7 +275,9 @@ impl GuiFrameEngine {
                 ui,
                 request,
                 &mut selected,
-                self.blend_dialog.active() || self.part_context_open,
+                self.blend_dialog.active()
+                    || self.direct_edit_dialog.active()
+                    || self.part_context_open,
             );
         } else {
             self.part_context_open = false;
@@ -288,6 +291,7 @@ impl GuiFrameEngine {
                 &mut self.slot_dialog,
                 &mut self.combine_dialog,
                 &mut self.draft_dialog,
+                &mut self.direct_edit_dialog,
             ),
             (&mut self.move_body_dialog, &mut self.blend_dialog),
             &mut self.create_dialogs,
@@ -330,6 +334,7 @@ impl GuiFrameEngine {
             &mut self.slot_dialog,
             &mut self.combine_dialog,
             &mut self.draft_dialog,
+            &mut self.direct_edit_dialog,
             &mut self.shell_feature_dialog,
             &mut self.move_body_dialog,
             &mut self.offset_plane,
