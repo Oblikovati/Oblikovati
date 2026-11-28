@@ -141,6 +141,9 @@ pub(super) fn source(glyph: IconGlyph, light: bool) -> Option<&'static str> {
         IconGlyph::Rib => include_str!("../../assets/identity/cmd-model-rib-32.svg"),
         IconGlyph::Decal => include_str!("../../assets/identity/cmd-model-decal-32.svg"),
         IconGlyph::Unwrap => include_str!("../../assets/identity/cmd-model-unwrap-32.svg"),
+        IconGlyph::BoundaryPatch => {
+            include_str!("../../assets/identity/cmd-model-boundary-patch-32.svg")
+        }
         IconGlyph::Measure => {
             include_str!("../../assets/identity/cmd-sketch-measure-entity-picking-32.svg")
         }

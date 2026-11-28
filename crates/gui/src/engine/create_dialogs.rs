@@ -17,6 +17,7 @@ pub(super) struct CreateFeatureDialogs {
     pub(super) thread: crate::thread_dialog::ThreadDialog,
     pub(super) mark: crate::mark_dialog::MarkDialog,
     pub(super) finish: crate::finish_dialog::FinishDialog,
+    pub(super) boundary_patch: crate::boundary_patch_dialog::BoundaryPatchDialog,
 }
 
 impl CreateFeatureDialogs {
@@ -36,6 +37,7 @@ impl CreateFeatureDialogs {
         self.thread.register_dockable(registry)?;
         self.mark.register_dockable(registry)?;
         self.finish.register_dockable(registry)?;
+        self.boundary_patch.register_dockable(registry)?;
         self.loft.register_dockable(registry)
     }
 
@@ -55,6 +57,7 @@ impl CreateFeatureDialogs {
         self.thread.synchronize(state, actions);
         self.mark.synchronize(state, actions);
         self.finish.synchronize(state, actions);
+        self.boundary_patch.synchronize(state, actions);
         self.sweep.synchronize(state, actions);
         self.loft.synchronize(state, actions);
     }
@@ -71,6 +74,23 @@ impl CreateFeatureDialogs {
 
     pub(super) fn is_opening(&self) -> bool {
         self.derive.is_opening() || self.import.is_opening()
+    }
+
+    pub(super) fn close_all(&mut self, actions: &mut Vec<GuiShellAction>) {
+        self.revolve.close(actions);
+        self.coil.close(actions);
+        self.emboss.close(actions);
+        self.derive.close(actions);
+        self.rib.close(actions);
+        self.decal.close(actions);
+        self.import.close(actions);
+        self.unwrap.close(actions);
+        self.sweep.close(actions);
+        self.loft.close(actions);
+        self.thread.close(actions);
+        self.mark.close(actions);
+        self.finish.close(actions);
+        self.boundary_patch.close(actions);
     }
 
     pub(super) fn draw(
@@ -100,5 +120,7 @@ impl CreateFeatureDialogs {
         self.thread.panel(ui, commands, (area, icons), selected);
         self.mark.panel(ui, commands, (area, icons), selected);
         self.finish.panel(ui, commands, (area, icons), selected);
+        self.boundary_patch
+            .panel(ui, commands, (area, icons), selected);
     }
 }

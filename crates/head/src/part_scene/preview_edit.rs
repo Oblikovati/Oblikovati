@@ -162,6 +162,9 @@ impl DesktopPartScenes {
             | oblikovati_model::feature::part::PartFeatureDefinition::SketchLoft(_) => {
                 NEW_SOLID_PREVIEW
             }
+            oblikovati_model::feature::part::PartFeatureDefinition::BoundaryPatch(_) => {
+                [245. / 255., 158. / 255., 11. / 255., 0.42]
+            }
             _ => [1., 0.65, 0.1, 1.],
         };
         render_preview(

@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Preview and commit blends from exact desktop edge selections (#4045, #4046).
 use super::*;
+#[path = "owner_boundary_patch.rs"]
+pub(super) mod owner_boundary_patch;
 #[path = "owner_chamfer_v2.rs"]
 pub(super) mod owner_chamfer_v2;
 #[path = "owner_coil.rs"]
@@ -74,6 +76,7 @@ pub(super) struct CreateFeatureState {
     pub(super) split: owner_split::SplitOwnerState,
     pub(super) mark: owner_mark::MarkOwnerState,
     pub(super) finish: owner_finish::FinishOwnerState,
+    pub(super) boundary_patch: owner_boundary_patch::BoundaryPatchOwnerState,
     pub(super) fillet_v2: owner_fillet_v2::FilletV2OwnerState,
     pub(super) chamfer_v2: owner_chamfer_v2::ChamferV2OwnerState,
     pub(super) shell_v2: owner_shell_v2::ShellV2OwnerState,

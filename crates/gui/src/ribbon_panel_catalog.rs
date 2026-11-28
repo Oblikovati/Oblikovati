@@ -252,7 +252,8 @@ pub(crate) fn panels_for_placement(
 fn side_model_groups(panel: RibbonPanel) -> impl Iterator<Item = RibbonPanel> {
     use RibbonPanel::*;
     let extra: &[RibbonPanel] = match panel {
-        PartPattern => &[PartFreeform, PartSurface, Parameters],
+        PartPattern => &[PartFreeform],
+        PartSurface => &[Parameters],
         PartSimplification => &[PartPlastic, ToolMeasure, Insert, PartHarness, PartFactory],
         PartSimulation => &[PartConvert],
         _ => &[],
@@ -293,6 +294,7 @@ pub(crate) fn panels_for(tab: RibbonTab, state: &GuiCommandState) -> Vec<RibbonP
             PartExplore,
             PartWorkFeatures,
             PartPattern,
+            PartSurface,
             PartSimplification,
             Parameters,
             PartSimulation,

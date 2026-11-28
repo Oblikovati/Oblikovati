@@ -360,21 +360,20 @@ impl GuiShellAction {
             | Self::Split(_)
             | Self::Mark(_)
             | Self::Finish(_)
+            | Self::BoundaryPatch(_)
             | Self::FilletV2(_)
             | Self::ChamferV2(_)
             | Self::ShellV2(_) => false,
             Self::PreviewMoveBody(None) | Self::PreviewShellFeature(None) => true,
             Self::PreviewMoveBody(Some(r)) | Self::CreateMoveBody(r) => motion::request(state, r),
-            Self::PreviewShellFeature(Some(request)) | Self::CreateShellFeature(request) => {
-                shell_enabled::request(state, request)
+            Self::PreviewShellFeature(Some(r)) | Self::CreateShellFeature(r) => {
+                shell_enabled::request(state, r)
             }
             Self::OpenFillet | Self::OpenChamfer => blend_enabled::create(state),
             Self::PreviewFillet(None) | Self::PreviewChamfer(None) => true,
             Self::OpenFilletEdit(feature) => blend_enabled::open(state, *feature),
             Self::OpenChamferEdit(feature) => blend_enabled::open_chamfer(state, *feature),
-            Self::PreviewFilletEdit(request) | Self::EditFilletRadius(request) => {
-                blend_enabled::edit(state, request)
-            }
+            Self::PreviewFilletEdit(r) | Self::EditFilletRadius(r) => blend_enabled::edit(state, r),
             Self::PreviewChamferEdit(request) | Self::EditChamferDistance(request) => {
                 blend_enabled::edit_chamfer(state, request)
             }

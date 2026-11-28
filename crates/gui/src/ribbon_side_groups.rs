@@ -110,7 +110,6 @@ fn group_is_unavailable(panel: RibbonPanel) -> bool {
         panel,
         PartShapeGenerator
             | PartFreeform
-            | PartSurface
             | PartPlastic
             | PartHarness
             | PartFactory

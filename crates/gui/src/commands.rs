@@ -371,6 +371,7 @@ pub enum GuiShellAction {
     Split(crate::GuiSplitAction),
     Mark(crate::GuiMarkAction),
     Finish(crate::GuiFinishAction),
+    BoundaryPatch(crate::GuiBoundaryPatchAction),
     /// Selection mode, preview, or commit for Part Modify Fillet v2.
     FilletV2(crate::GuiFilletV2Action),
     ChamferV2(crate::GuiChamferV2Action),

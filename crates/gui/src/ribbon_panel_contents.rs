@@ -212,6 +212,16 @@ pub(crate) fn draw_panel_content(
                 false,
             );
         }
+        RibbonPanel::PartSurface => {
+            owners.icons.command_button(
+                ui,
+                "Boundary Patch",
+                GuiShellAction::BoundaryPatch(crate::GuiBoundaryPatchAction::Open),
+                state,
+                owners.icons.appearance.single_cell(),
+                actions,
+            );
+        }
         RibbonPanel::PartSimplification => {
             muted::muted_command(
                 ui,

@@ -61,6 +61,7 @@ glyph_catalog! {
     Rib => "rib",
     Decal => "decal",
     Unwrap => "unwrap",
+    BoundaryPatch => "boundary-patch",
     Hole => "hole",
     Thread => "thread",
     Mark => "mark",

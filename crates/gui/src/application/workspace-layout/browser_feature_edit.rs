@@ -62,6 +62,9 @@ pub(super) fn feature_edit_action(
     if browser.finish_edits.contains_key(&feature.id) {
         return GuiShellAction::Finish(crate::GuiFinishAction::OpenEdit(feature.id));
     }
+    if browser.boundary_patch_edits.contains_key(&feature.id) {
+        return GuiShellAction::BoundaryPatch(crate::GuiBoundaryPatchAction::OpenEdit(feature.id));
+    }
     if browser.shell_v2_edits.contains_key(&feature.id) {
         return GuiShellAction::OpenShellEdit(feature.id);
     }
