@@ -17,7 +17,7 @@ pub use named::{
     DrawingBaseProjection, DrawingProjectedCurve, DrawingProjection, DrawingProjectionCurveKind,
     DrawingProjectionFrame, MarkEligibility, NamedEdgeHit, NamedFaceMesh, NamedKeyedVertexHit,
     NamedPrismSnapshot, NamedSolid, NamedVertexHit, PrismFaceTopology, PrismSurfaceKind,
-    RigidMotion, SharedFilletVertex, SolidFilletEdgeGroups, ThreadableFaceInfo,
+    RigidMotion, RuledSurfaceArrow, SharedFilletVertex, SolidFilletEdgeGroups, ThreadableFaceInfo,
     capture_full_named_candidate, check_mark_eligibility, complete_named_candidate,
     complete_named_checkpoints, drawing_base_view_bodies, drawing_base_view_solids,
     drawing_projection_bodies, drawing_projection_solids, finish_appearance_rgb_u8,

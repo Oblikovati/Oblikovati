@@ -31,6 +31,7 @@ pub mod move_body;
 pub mod part;
 pub mod rectangular_pattern;
 mod replay;
+pub mod ruled_surface;
 pub mod shell;
 pub mod sketch_coil;
 pub mod sketch_decal;

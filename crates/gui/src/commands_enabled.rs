@@ -360,6 +360,7 @@ impl GuiShellAction {
             | Self::Split(_)
             | Self::Mark(_)
             | Self::Finish(_)
+            | Self::RuledSurface(_)
             | Self::WorkAxis(_)
             | Self::Ucs(_)
             | Self::WorkPoint(_)

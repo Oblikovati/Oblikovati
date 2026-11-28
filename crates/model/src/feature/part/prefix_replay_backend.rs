@@ -25,6 +25,21 @@ pub(super) struct PrefixBackend<'backend, 'body, Backend>(
     pub(super) std::marker::PhantomData<&'body ()>,
 );
 
+macro_rules! forward_body_eval {
+    ($($method:ident: $input:ty),+ $(,)?) => {
+        $(
+            fn $method(
+                &mut self,
+                feature: FeatureId,
+                body: &Self::Body,
+                input: $input,
+            ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+                self.0.$method(feature, body.get(), input).map(PrefixBody::Created)
+            }
+        )+
+    };
+}
+
 impl<'a, Backend: PartFeatureEvaluator> PartFeatureEvaluator for PrefixBackend<'_, 'a, Backend>
 where
     Backend::Body: 'a,
@@ -245,38 +260,12 @@ where
             .map(|bodies| bodies.into_iter().map(PrefixBody::Created).collect())
     }
 
-    fn evaluate_mark(
-        &mut self,
-        feature: FeatureId,
-        body: &Self::Body,
-        input: crate::feature::mark::ResolvedMark,
-    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
-        self.0
-            .evaluate_mark(feature, body.get(), input)
-            .map(PrefixBody::Created)
-    }
-
-    fn evaluate_finish(
-        &mut self,
-        feature: FeatureId,
-        body: &Self::Body,
-        input: crate::feature::finish::ResolvedFinish,
-    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
-        self.0
-            .evaluate_finish(feature, body.get(), input)
-            .map(PrefixBody::Created)
-    }
-
-    fn evaluate_extend_surface(
-        &mut self,
-        feature: FeatureId,
-        body: &Self::Body,
-        input: crate::feature::extend_surface::ResolvedExtendSurface,
-    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
-        self.0
-            .evaluate_extend_surface(feature, body.get(), input)
-            .map(PrefixBody::Created)
-    }
+    forward_body_eval!(
+        evaluate_mark: crate::feature::mark::ResolvedMark,
+        evaluate_finish: crate::feature::finish::ResolvedFinish,
+        evaluate_extend_surface: crate::feature::extend_surface::ResolvedExtendSurface,
+        evaluate_ruled_surface: crate::feature::ruled_surface::ResolvedRuledSurface,
+    );
 
     fn evaluate_shell(
         &mut self,

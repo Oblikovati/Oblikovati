@@ -171,6 +171,8 @@ pub struct GuiCommandState {
     pub mark_sketch_pick: Option<crate::GuiMarkSketchPick>,
     pub finish_preview: Option<crate::GuiFinishPreviewState>,
     pub finish_pick: Option<crate::GuiFinishPick>,
+    pub ruled_surface_preview: Option<crate::GuiRuledSurfacePreviewState>,
+    pub ruled_surface_pick: Option<crate::GuiRuledSurfacePick>,
     pub ucs: crate::GuiUcsState,
     pub extend_surface_preview: Option<crate::GuiExtendSurfacePreviewState>,
     pub extend_surface_pick: Option<crate::GuiExtendSurfacePick>,

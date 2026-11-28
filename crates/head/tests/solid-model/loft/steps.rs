@@ -34,6 +34,8 @@ mod solid_import;
 mod solid_mark;
 #[path = "../rib/steps.rs"]
 mod solid_rib;
+#[path = "../ruled-surface/steps.rs"]
+mod solid_ruled_surface;
 #[path = "../shell/steps.rs"]
 mod solid_shell;
 #[path = "../slot/steps.rs"]

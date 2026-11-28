@@ -51,6 +51,7 @@ mod loft;
 mod mark;
 mod revolve;
 mod rib;
+mod ruled_surface;
 mod shell;
 mod shell_v2;
 mod slot;
@@ -129,6 +130,10 @@ pub use revolve::{
 pub use rib::{
     PreparedRib, RibInputs, build_rib_definition, open_profile_lines, prepare_rib_definition,
     replace_rib,
+};
+pub use ruled_surface::{
+    PreparedRuledSurface, RuledSurfaceInputs, build_ruled_surface_definition,
+    prepare_ruled_surface_definition, replace_ruled_surface,
 };
 pub use shell::{PreparedShell, prepare_shell};
 pub use shell_v2::{

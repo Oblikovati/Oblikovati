@@ -222,6 +222,10 @@ pub(crate) fn draw_panel_content(
                     "Extend",
                     GuiShellAction::ExtendSurface(crate::GuiExtendSurfaceAction::Open),
                 ),
+                (
+                    "Ruled Surface",
+                    GuiShellAction::RuledSurface(crate::GuiRuledSurfaceAction::Open),
+                ),
             ]
             .into_iter()
             .enumerate()

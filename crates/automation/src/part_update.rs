@@ -422,6 +422,7 @@ fn feature_kind(definition: &PartFeatureDefinition) -> &'static str {
         Finish(_) => "finish",
         ExtendSurface(_) => "extend-surface",
         BoundaryPatch(_) => "boundary-patch",
+        RuledSurface(_) => "ruled-surface",
         Shell(_) => "shell",
         Mirror(_) => "mirror",
         CircularPattern(_) => "circular-pattern",

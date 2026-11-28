@@ -12,6 +12,7 @@ pub(super) fn project_cues(window: &dyn HeadWindow, commands: &mut GuiCommandSta
     project_cue(window, &mut commands.face_toolbar_anchor);
     project_extrude_handle(window, commands);
     project_ucs_triads(window, commands);
+    project_ruled_surface_arrow(window, commands);
     if shared {
         commands
             .model_pick_cue
@@ -68,6 +69,15 @@ fn project_single_triad(window: &dyn HeadWindow, triad: &mut oblikovati_gui::Gui
     triad.x_pixel = window.model_pixel(triad.x_tip_world).ok();
     triad.y_pixel = window.model_pixel(triad.y_tip_world).ok();
     triad.z_pixel = window.model_pixel(triad.z_tip_world).ok();
+}
+
+fn project_ruled_surface_arrow(window: &dyn HeadWindow, commands: &mut GuiCommandState) {
+    if let Some(preview) = commands.ruled_surface_preview.as_mut()
+        && let Some(arrow) = preview.arrow.as_mut()
+    {
+        arrow.origin_pixel = window.model_pixel(arrow.origin_world).ok();
+        arrow.tip_pixel = window.model_pixel(arrow.tip_world).ok();
+    }
 }
 
 fn project_cue(window: &dyn HeadWindow, cue: &mut Option<GuiModelPickCue>) {

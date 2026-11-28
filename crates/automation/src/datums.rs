@@ -189,6 +189,7 @@ impl DatumCollection {
             | WorkGeometryDefinition::Split(_)
             | WorkGeometryDefinition::Mark(_)
             | WorkGeometryDefinition::Finish(_)
+            | WorkGeometryDefinition::RuledSurface(_)
             | WorkGeometryDefinition::Ucs(_)
             | WorkGeometryDefinition::ExtendSurface(_)
             | WorkGeometryDefinition::BoundaryPatch(_)

@@ -31,6 +31,8 @@ mod hole_frame_origin;
 mod hole_v2;
 #[path = "mark_replay.rs"]
 mod mark_replay;
+#[path = "ruled_surface_replay.rs"]
+mod ruled_surface_replay;
 #[path = "shell_v2.rs"]
 mod shell_v2;
 #[path = "slot_replay.rs"]

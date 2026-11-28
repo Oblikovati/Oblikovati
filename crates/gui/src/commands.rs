@@ -373,6 +373,7 @@ pub enum GuiShellAction {
     Split(crate::GuiSplitAction),
     Mark(crate::GuiMarkAction),
     Finish(crate::GuiFinishAction),
+    RuledSurface(crate::GuiRuledSurfaceAction),
     Ucs(crate::GuiUcsAction),
     WorkPoint(crate::GuiWorkPointAction),
     ExtendSurface(crate::GuiExtendSurfaceAction),

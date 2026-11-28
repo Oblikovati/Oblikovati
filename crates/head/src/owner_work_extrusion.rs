@@ -164,6 +164,12 @@ macro_rules! desktop_extrusion_work {
         ) -> Result<bool, String> {
             self.finish_command(action)
         }
+        fn ruled_surface_from_gui(
+            &mut self,
+            action: oblikovati_gui::GuiRuledSurfaceAction,
+        ) -> Result<bool, String> {
+            self.ruled_surface_command(action)
+        }
         fn ucs_from_gui(&mut self, action: oblikovati_gui::GuiUcsAction) -> Result<bool, String> {
             self.ucs_command(action)
         }

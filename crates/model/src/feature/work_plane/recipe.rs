@@ -1,7 +1,13 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 use super::{WorkPlaneDefinition, WorkPlaneDistance, WorkPlaneError, WorkPlaneReference};
-use crate::sketch::{SketchPlane, SketchPlaneOptions, SketchPlaneRecipe};
+use crate::sketch::{SketchPlaneOptions, SketchPlaneRecipe};
+#[path = "recipe_helpers.rs"]
+mod recipe_helpers;
+use recipe_helpers::{
+    fixed_frame_recipe, offset_source_recipe, restore_frame, restore_line_angle, restore_line_axis,
+    restore_prism_inputs,
+};
 
 /// Versioned authored construction data; no evaluated caches are stored.
 #[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
@@ -29,6 +35,7 @@ pub enum WorkPlaneDefinitionRecipe {
     Split(crate::feature::split::SplitRecipe),
     Mark(crate::feature::mark::MarkRecipe),
     Finish(crate::feature::finish::FinishRecipe),
+    RuledSurface(crate::feature::ruled_surface::RuledSurfaceRecipe),
     Ucs(crate::feature::ucs::UcsRecipe),
     ExtendSurface(crate::feature::extend_surface::ExtendSurfaceRecipe),
     BoundaryPatch(crate::feature::boundary_patch::BoundaryPatchRecipe),
@@ -97,6 +104,7 @@ impl WorkPlaneDefinition {
             Self::Split(definition) => Source::Split(definition.recipe()),
             Self::Mark(definition) => Source::Mark(definition.recipe()),
             Self::Finish(definition) => Source::Finish(definition.recipe()),
+            Self::RuledSurface(definition) => Source::RuledSurface(definition.recipe()),
             Self::Ucs(definition) => Source::Ucs(definition.recipe()),
             Self::ExtendSurface(definition) => Source::ExtendSurface(definition.recipe()),
             Self::BoundaryPatch(definition) => Source::BoundaryPatch(definition.recipe()),
@@ -210,6 +218,11 @@ fn restore_definition(
         Finish(recipe) => crate::feature::finish::FinishDefinition::from_recipe(recipe)
             .map(|definition| WorkPlaneDefinition::Finish(Box::new(definition)))
             .map_err(WorkPlaneError::BodyReference),
+        RuledSurface(recipe) => {
+            crate::feature::ruled_surface::RuledSurfaceDefinition::from_recipe(recipe)
+                .map(|definition| WorkPlaneDefinition::RuledSurface(Box::new(definition)))
+                .map_err(WorkPlaneError::BodyReference)
+        }
         Ucs(recipe) => crate::feature::ucs::UcsDefinition::from_recipe(recipe)
             .map(|definition| WorkPlaneDefinition::Ucs(Box::new(definition)))
             .map_err(WorkPlaneError::BodyReference),
@@ -333,49 +346,3 @@ impl WorkPlaneDefinitionRecipe {
 
 #[path = "recipe_versions.rs"]
 mod recipe_versions;
-
-fn restore_line_axis(
-    recipe: crate::feature::work_axis::WorkAxisLineRecipe,
-) -> Result<WorkPlaneDefinition, WorkPlaneError> {
-    crate::feature::work_axis::WorkAxisLine::from_recipe(recipe)
-        .map(WorkPlaneDefinition::Axis)
-        .map_err(WorkPlaneError::Axis)
-}
-
-fn fixed_frame_recipe(plane: SketchPlane) -> WorkPlaneDefinitionRecipe {
-    WorkPlaneDefinitionRecipe::Fixed {
-        frame: plane.recipe(),
-        options: plane.options(),
-    }
-}
-
-fn restore_frame(
-    frame: SketchPlaneRecipe,
-    options: SketchPlaneOptions,
-) -> Result<WorkPlaneDefinition, WorkPlaneError> {
-    SketchPlane::from_recipe(frame, options)
-        .map(WorkPlaneDefinition::Fixed)
-        .map_err(WorkPlaneError::Frame)
-}
-
-fn restore_line_angle(
-    source: crate::feature::work_geometry::WorkPlaneLineAngle,
-) -> Result<WorkPlaneDefinition, WorkPlaneError> {
-    source.angle.validate_source()?;
-    Ok(WorkPlaneDefinition::AtAngleAboutAxis(source))
-}
-
-fn restore_prism_inputs(
-    recipe: crate::feature::sketch_prism::SketchPrismRecipe,
-) -> Result<WorkPlaneDefinition, WorkPlaneError> {
-    crate::feature::sketch_prism::SketchPrismDefinition::from_recipe(&recipe)
-        .map(|definition| WorkPlaneDefinition::SketchPrism(Box::new(definition)))
-        .map_err(WorkPlaneError::Prism)
-}
-
-fn offset_source_recipe(
-    base: WorkPlaneReference,
-    distance: WorkPlaneDistance,
-) -> WorkPlaneDefinitionRecipe {
-    WorkPlaneDefinitionRecipe::Offset { base, distance }
-}

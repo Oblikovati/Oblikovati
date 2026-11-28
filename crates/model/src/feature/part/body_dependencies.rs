@@ -108,6 +108,10 @@ fn track_replacement(
         PartFeatureDefinition::Mark(mark) => mark.body_source(),
         PartFeatureDefinition::Finish(finish) => finish.body_source(),
         PartFeatureDefinition::ExtendSurface(extend) => extend.body_source(),
+        PartFeatureDefinition::RuledSurface(_) => {
+            owners.insert(id, id);
+            return;
+        }
         PartFeatureDefinition::Shell(shell) => shell.body_source(),
         PartFeatureDefinition::MoveBody(motion) => motion.body_source(),
         PartFeatureDefinition::Mirror(mirror) => mirror.recipe().sources[0],

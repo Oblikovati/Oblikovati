@@ -21,6 +21,7 @@ pub(super) struct CreateFeatureDialogs {
     pub(super) work_plane: crate::work_plane_dialog::WorkPlaneDialog,
     pub(super) extend_surface: crate::extend_surface_dialog::ExtendSurfaceDialog,
     pub(super) boundary_patch: crate::boundary_patch_dialog::BoundaryPatchDialog,
+    pub(super) ruled_surface: crate::ruled_surface_dialog::RuledSurfaceDialog,
 }
 
 impl CreateFeatureDialogs {
@@ -43,6 +44,7 @@ impl CreateFeatureDialogs {
         self.grounded_point.register_dockable(registry)?;
         self.extend_surface.register_dockable(registry)?;
         self.boundary_patch.register_dockable(registry)?;
+        self.ruled_surface.register_dockable(registry)?;
         self.loft.register_dockable(registry)
     }
 
@@ -64,6 +66,7 @@ impl CreateFeatureDialogs {
         self.finish.synchronize(state, actions);
         self.extend_surface.synchronize(state, actions);
         self.boundary_patch.synchronize(state, actions);
+        self.ruled_surface.synchronize(state, actions);
         self.sweep.synchronize(state, actions);
         self.loft.synchronize(state, actions);
         self.grounded_point.synchronize(state);
@@ -117,8 +120,8 @@ impl CreateFeatureDialogs {
         self.finish.close(actions);
         self.extend_surface.close(actions);
         self.boundary_patch.close(actions);
+        self.ruled_surface.close(actions);
     }
-
     pub(super) fn draw(
         &mut self,
         ui: &imgui::Ui,
@@ -151,5 +154,7 @@ impl CreateFeatureDialogs {
             .panel(ui, commands, (area, icons), selected);
         self.boundary_patch
             .panel(ui, commands, (area, icons), selected);
+        self.ruled_surface
+            .panel(ui, commands, (area, icons, picked_axis), selected);
     }
 }
