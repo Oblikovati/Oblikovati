@@ -157,6 +157,17 @@ impl DocumentFiles for MemoryDocumentFiles {
     }
 }
 
+fn virtual_root() -> &'static Path {
+    #[cfg(windows)]
+    {
+        Path::new(r"C:\")
+    }
+    #[cfg(not(windows))]
+    {
+        Path::new("/")
+    }
+}
+
 fn normalize_virtual_path(path: &Path) -> io::Result<PathBuf> {
     if path.file_name().is_none() {
         return Err(io::Error::new(
@@ -164,12 +175,13 @@ fn normalize_virtual_path(path: &Path) -> io::Result<PathBuf> {
             format!("memory path {path:?}: expected a path with a file name"),
         ));
     }
-    let mut normalized = PathBuf::from("/");
+    let root = virtual_root();
+    let mut normalized = root.to_path_buf();
     for component in path.components() {
         match component {
             Component::RootDir | Component::CurDir | Component::Prefix(_) => {}
             Component::ParentDir => {
-                if normalized != Path::new("/") {
+                if normalized != root {
                     normalized.pop();
                 }
             }
@@ -195,7 +207,9 @@ mod tests {
         let mut files = MemoryDocumentFiles::default();
         let path = Path::new("/web/sub/../Part1.opd");
         let saved = files.save_path(path).unwrap();
-        assert_eq!(saved, PathBuf::from("/web/Part1.opd"));
+        assert_eq!(saved, virtual_root().join("web").join("Part1.opd"));
+        #[cfg(not(target_arch = "wasm32"))]
+        assert!(saved.is_absolute(), "expected absolute path, got {saved:?}");
         assert!(files.canonical_path(&saved).is_err());
 
         create_file(path, b"first", &mut files).unwrap();
