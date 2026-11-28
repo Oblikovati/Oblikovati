@@ -49,6 +49,7 @@ mod hole;
 mod import;
 mod loft;
 mod mark;
+mod replace_face;
 mod revolve;
 mod rib;
 mod ruled_surface;
@@ -121,6 +122,10 @@ pub use loft::{
 };
 pub use mark::{
     MarkFeatureInputs, PreparedMark, build_mark_definition, prepare_mark_definition, replace_mark,
+};
+pub use replace_face::{
+    PreparedReplaceFace, ReplaceFaceFeatureInputs, build_replace_face_definition,
+    prepare_replace_face_definition, replace_replace_face,
 };
 pub use revolve::{
     PreparedRevolve, REVOLVE_ANGLE_ROLE, REVOLVE_SECOND_ANGLE_ROLE, RevolveInputs,
@@ -454,16 +459,12 @@ pub use drawing_views::{
 mod wire_json;
 pub use wire_json::{decode_wire_arguments, encode_wire_reply};
 pub(crate) use wire_json::{decode_wire_arguments as decode, encode_wire_reply as encode};
-
 mod inventory;
 pub use inventory::file_host_methods;
-
 mod assets;
 pub use assets::ASSET_QUERY_METHODS;
-
 mod asset_commands;
 pub use asset_commands::ASSET_COMMAND_METHODS;
-
 mod asset_assignments;
 pub use asset_assignments::ASSET_ASSIGNMENT_METHODS;
 mod part_topology;
@@ -481,13 +482,10 @@ pub use part_update::{
     part_replay_is_stale, preview_part_datums, refresh_part_sketches, resolve_slot_face,
     slot_datums_for_face,
 };
-
 mod body_commands;
 pub use body_commands::BODY_COMMAND_METHODS;
-
 mod themes;
 pub use themes::{THEME_QUERY_METHODS, ThemeQueryHost};
-
 mod color_schemes;
 mod keymap;
 mod marking_menu;

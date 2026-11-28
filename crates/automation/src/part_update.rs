@@ -416,6 +416,7 @@ fn feature_kind(definition: &PartFeatureDefinition) -> &'static str {
         Draft(_) => "draft",
         Thread(_) => "thread",
         DeleteFace(_) => "delete-face",
+        ReplaceFace(_) => "replace-face",
         ThickenOffset(_) => "thicken-offset",
         Split(_) => "split",
         Mark(_) => "mark",

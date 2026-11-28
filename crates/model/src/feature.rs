@@ -30,6 +30,7 @@ pub mod mirror;
 pub mod move_body;
 pub mod part;
 pub mod rectangular_pattern;
+pub mod replace_face;
 mod replay;
 pub mod ruled_surface;
 pub mod shell;

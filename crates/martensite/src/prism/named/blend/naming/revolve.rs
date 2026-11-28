@@ -5,7 +5,13 @@ use super::{
     *,
 };
 use crate::revolve::{RevolveCandidate, RevolveFaceRole, SurfaceRevolveCandidate};
-use martensite_tkbrep::topexp::Explorer;
+use martensite_tkbrep::{
+    brep_adaptor::{BRepAdaptorCurve, BRepAdaptorSurface},
+    topexp::Explorer,
+    topods,
+};
+use martensite_tkg3d::adaptor3d::{Adaptor3dCurve, Adaptor3dSurface};
+use martensite_tkmath::geom_abs::{CurveType, SurfaceType};
 use oblikovati_model::identity::SemanticReferenceName;
 
 impl BlendNamedTopology {
@@ -22,14 +28,23 @@ impl BlendNamedTopology {
                 .encode()?;
         let faces = name_revolve_faces(document, feature, sketch_id, "revolve", candidate.faces)?;
         require_unique(&faces)?;
-        let edges = incident_names(
+        let edges = match name_periodic_torus_seams(
             document,
             feature,
+            sketch_id,
             &candidate.shape,
-            ShapeEnum::Edge,
-            2,
             &faces,
-        )?;
+        )? {
+            Some(seams) => seams,
+            None => incident_names(
+                document,
+                feature,
+                &candidate.shape,
+                ShapeEnum::Edge,
+                2,
+                &faces,
+            )?,
+        };
         let vertices = incident_names(
             document,
             feature,
@@ -215,4 +230,54 @@ fn face_contains_edge(face: &Shape, edge: &Shape) -> bool {
     Explorer::new(face, ShapeEnum::Edge, ShapeEnum::Shape)
         .ok()
         .is_some_and(|mut iter| iter.any(|candidate| candidate.is_same(edge)))
+}
+
+type NamedShapeList = Vec<(Vec<u8>, Shape)>;
+
+/// Name the two periodic seam circles of a full 360-degree torus solid by their geometric
+/// orientation relative to the torus revolution axis (parallel vs meridian seam).
+fn name_periodic_torus_seams(
+    document: DocumentGuid,
+    feature: FeatureId,
+    sketch_id: u64,
+    solid: &Shape,
+    faces: &[(Vec<u8>, Shape)],
+) -> Result<Option<NamedShapeList>, String> {
+    let [(_, face)] = faces else {
+        return Ok(None);
+    };
+    let native_face = topods::face(face).map_err(|cause| cause.to_string())?;
+    let surf =
+        BRepAdaptorSurface::with_face(&native_face, false).map_err(|cause| cause.to_string())?;
+    if surf.get_type().map_err(|cause| cause.to_string())? != SurfaceType::Torus {
+        return Ok(None);
+    }
+    let torus = surf.torus().map_err(|cause| cause.to_string())?;
+    let axis = *torus.position().direction().coordinates();
+    let all_edges = shapes(solid, ShapeEnum::Edge)?;
+    if all_edges.len() != 2 {
+        return Ok(None);
+    }
+    let mut named = Vec::with_capacity(2);
+    for edge in all_edges {
+        let native_edge = topods::edge(&edge).map_err(|cause| cause.to_string())?;
+        let curve = BRepAdaptorCurve::with_edge(&native_edge).map_err(|cause| cause.to_string())?;
+        if curve.get_type().map_err(|cause| cause.to_string())? != CurveType::Circle {
+            return Ok(None);
+        }
+        let circle = curve.circle().map_err(|cause| cause.to_string())?;
+        let normal = *circle.position().direction().coordinates();
+        let alignment = (normal[0] * axis[0] + normal[1] * axis[1] + normal[2] * axis[2]).abs();
+        let role = if alignment > 0.5 {
+            "seam-parallel"
+        } else {
+            "seam-meridian"
+        };
+        let key =
+            SemanticReferenceName::new(document, feature.0, 2, "revolve", role, &[sketch_id])?
+                .encode()?;
+        named.push((key, edge));
+    }
+    require_unique(&named)?;
+    Ok(Some(named))
 }

@@ -204,6 +204,18 @@ pub trait PartFeatureEvaluator {
             "delete face: expected an available named-face evaluator".into(),
         ))
     }
+    /// Replace selected faces on a solid with replacement surfaces/faces; example: `backend.evaluate_replace_face(id, body, &new_bodies, input)`.
+    fn evaluate_replace_face(
+        &mut self,
+        _feature: FeatureId,
+        _body: &Self::Body,
+        _new_bodies: &[&Self::Body],
+        _input: crate::feature::replace_face::ResolvedReplaceFace,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        Err(PartFeatureFailure::Unsupported(
+            "replace face: expected an available face-replacement evaluator".into(),
+        ))
+    }
     /// Thicken selected faces into a solid or offset them into a surface shell.
     fn evaluate_thicken_offset(
         &mut self,

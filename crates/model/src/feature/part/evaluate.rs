@@ -59,6 +59,7 @@ pub enum PartFeatureFailure<Failure> {
     DraftInput(String),
     ThreadInput(String),
     DeleteFaceInput(String),
+    ReplaceFaceInput(String),
     DirectEditInput(String),
     SplitInput(String),
     MarkInput(String),
@@ -413,6 +414,9 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
             PartFeatureDefinition::DeleteFace(definition) => {
                 self.evaluate_delete_face(backend, id, definition)
             }
+            PartFeatureDefinition::ReplaceFace(definition) => {
+                self.evaluate_replace_face(backend, id, definition)
+            }
             PartFeatureDefinition::ThickenOffset(definition) => {
                 self.evaluate_thicken_offset(backend, id, definition)
             }
@@ -473,27 +477,6 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
     }
 }
 pub(super) use super::delete::require_replay_current;
-
-fn datum_health<Failure>(
-    record: &FeatureHealthRecord<PartFeatureFailure<Failure>>,
-) -> Option<FeatureHealthRecord<WorkGeometryError>> {
-    use crate::feature::FeatureEvaluationStatus;
-    let status = match &record.status {
-        FeatureEvaluationStatus::Healthy => FeatureEvaluationStatus::Healthy,
-        FeatureEvaluationStatus::Suppressed => FeatureEvaluationStatus::Suppressed,
-        FeatureEvaluationStatus::ConditionFailed(error) => {
-            FeatureEvaluationStatus::ConditionFailed(error.clone())
-        }
-        FeatureEvaluationStatus::Blocked { drivers } => FeatureEvaluationStatus::Blocked {
-            drivers: drivers.clone(),
-        },
-        FeatureEvaluationStatus::Failed(
-            PartFeatureFailure::Datum(error) | PartFeatureFailure::Metadata(error),
-        ) => FeatureEvaluationStatus::Failed((**error).clone()),
-        FeatureEvaluationStatus::Failed(_) => return None,
-    };
-    Some(FeatureHealthRecord {
-        feature: record.feature,
-        status,
-    })
-}
+#[path = "datum_health.rs"]
+mod datum_health_projection;
+use datum_health_projection::datum_health;

@@ -227,6 +227,19 @@ where
             .map(PrefixBody::Created)
     }
 
+    fn evaluate_replace_face(
+        &mut self,
+        feature: FeatureId,
+        body: &Self::Body,
+        new_bodies: &[&Self::Body],
+        input: crate::feature::replace_face::ResolvedReplaceFace,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        let inner: Vec<_> = new_bodies.iter().map(|tool| tool.get()).collect();
+        self.0
+            .evaluate_replace_face(feature, body.get(), &inner, input)
+            .map(PrefixBody::Created)
+    }
+
     fn evaluate_thicken_offset(
         &mut self,
         feature: FeatureId,

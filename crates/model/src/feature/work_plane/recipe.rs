@@ -31,6 +31,7 @@ pub enum WorkPlaneDefinitionRecipe {
     Draft(crate::feature::draft::DraftRecipe),
     Thread(crate::feature::thread::ThreadRecipe),
     DeleteFace(crate::feature::delete_face::DeleteFaceRecipe),
+    ReplaceFace(crate::feature::replace_face::ReplaceFaceRecipe),
     ThickenOffset(crate::feature::thicken_offset::ThickenOffsetRecipe),
     Split(crate::feature::split::SplitRecipe),
     Mark(crate::feature::mark::MarkRecipe),
@@ -100,6 +101,7 @@ impl WorkPlaneDefinition {
             Self::Draft(definition) => Source::Draft(definition.recipe()),
             Self::Thread(definition) => Source::Thread(definition.recipe()),
             Self::DeleteFace(definition) => Source::DeleteFace(definition.recipe()),
+            Self::ReplaceFace(definition) => Source::ReplaceFace(definition.recipe()),
             Self::ThickenOffset(definition) => Source::ThickenOffset(definition.recipe()),
             Self::Split(definition) => Source::Split(definition.recipe()),
             Self::Mark(definition) => Source::Mark(definition.recipe()),
@@ -202,6 +204,11 @@ fn restore_definition(
         DeleteFace(recipe) => {
             crate::feature::delete_face::DeleteFaceDefinition::from_recipe(recipe)
                 .map(|definition| WorkPlaneDefinition::DeleteFace(Box::new(definition)))
+                .map_err(WorkPlaneError::BodyReference)
+        }
+        ReplaceFace(recipe) => {
+            crate::feature::replace_face::ReplaceFaceDefinition::from_recipe(recipe)
+                .map(|definition| WorkPlaneDefinition::ReplaceFace(Box::new(definition)))
                 .map_err(WorkPlaneError::BodyReference)
         }
         ThickenOffset(recipe) => {

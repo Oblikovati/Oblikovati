@@ -39,6 +39,7 @@ mod prefix_replay;
 mod prefix_replay_backend;
 mod prism_replacement;
 mod reads;
+mod replace_face_evaluation;
 mod resolver;
 mod split_evaluation;
 mod transfer;
@@ -71,6 +72,7 @@ pub enum PartFeatureDefinition {
     Draft(Box<super::draft::DraftDefinition>),
     Thread(Box<super::thread::ThreadDefinition>),
     DeleteFace(Box<super::delete_face::DeleteFaceDefinition>),
+    ReplaceFace(Box<super::replace_face::ReplaceFaceDefinition>),
     ThickenOffset(Box<super::thicken_offset::ThickenOffsetDefinition>),
     Split(Box<super::split::SplitDefinition>),
     Mark(Box<super::mark::MarkDefinition>),
@@ -138,6 +140,7 @@ impl PartFeatureDefinition {
             Self::Draft(_) => "draft",
             Self::Thread(_) => "thread",
             Self::DeleteFace(_) => "delete-face",
+            Self::ReplaceFace(_) => "replace-face",
             Self::ThickenOffset(_) => "thicken-offset",
             Self::Split(_) => "split",
             Self::Mark(_) => "mark",
@@ -182,6 +185,7 @@ impl PartFeatureDefinition {
                 | Self::Draft(_)
                 | Self::Thread(_)
                 | Self::DeleteFace(_)
+                | Self::ReplaceFace(_)
                 | Self::ThickenOffset(_)
                 | Self::Split(_)
                 | Self::Mark(_)

@@ -449,6 +449,7 @@ mod hole_placement;
 mod loft_revolve;
 mod mark_evaluation;
 mod move_body_evaluation;
+mod replace_face_evaluation;
 mod ruled_surface_evaluation;
 mod shell_evaluation;
 mod slot_evaluation;

@@ -401,6 +401,15 @@ impl PartFeatureEvaluator for CertifiedNamedSolidEvaluator<'_> {
     ) -> Result<NamedSolid, PartFeatureFailure<EvaluationFailure>> {
         self.evaluate_named_delete_face(feature, body, input)
     }
+    fn evaluate_replace_face(
+        &mut self,
+        feature: FeatureId,
+        body: &NamedSolid,
+        new_bodies: &[&NamedSolid],
+        input: oblikovati_model::feature::replace_face::ResolvedReplaceFace,
+    ) -> Result<NamedSolid, PartFeatureFailure<EvaluationFailure>> {
+        self.evaluate_named_replace_face(feature, body, new_bodies, input)
+    }
     fn evaluate_thicken_offset(
         &mut self,
         feature: FeatureId,
