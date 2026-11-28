@@ -42,6 +42,7 @@ mod reads;
 mod replace_face_evaluation;
 mod resolver;
 mod split_evaluation;
+mod stitch_evaluation;
 mod transfer;
 pub use prefix_replay::BorrowedPartReplay;
 pub use transfer::{CapturedPartTransfer, CompletedPartTransfer};
@@ -74,6 +75,7 @@ pub enum PartFeatureDefinition {
     DeleteFace(Box<super::delete_face::DeleteFaceDefinition>),
     ReplaceFace(Box<super::replace_face::ReplaceFaceDefinition>),
     ThickenOffset(Box<super::thicken_offset::ThickenOffsetDefinition>),
+    Stitch(Box<super::stitch::StitchDefinition>),
     Split(Box<super::split::SplitDefinition>),
     Mark(Box<super::mark::MarkDefinition>),
     Finish(Box<super::finish::FinishDefinition>),
@@ -142,6 +144,7 @@ impl PartFeatureDefinition {
             Self::DeleteFace(_) => "delete-face",
             Self::ReplaceFace(_) => "replace-face",
             Self::ThickenOffset(_) => "thicken-offset",
+            Self::Stitch(_) => "stitch",
             Self::Split(_) => "split",
             Self::Mark(_) => "mark",
             Self::Finish(_) => "finish",
@@ -187,6 +190,7 @@ impl PartFeatureDefinition {
                 | Self::DeleteFace(_)
                 | Self::ReplaceFace(_)
                 | Self::ThickenOffset(_)
+                | Self::Stitch(_)
                 | Self::Split(_)
                 | Self::Mark(_)
                 | Self::Finish(_)

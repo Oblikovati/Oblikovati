@@ -20,14 +20,6 @@ mod attributes;
 mod boundary_patch;
 mod chamfer;
 mod chamfer_v2;
-pub use boundary_patch::{
-    BoundaryPatchInputs, PreparedBoundaryPatch, build_boundary_patch_definition,
-    prepare_boundary_patch_definition, replace_boundary_patch,
-};
-pub use chamfer::{PreparedChamfer, prepare_chamfer};
-pub use chamfer_v2::{
-    ChamferV2Inputs, build_chamfer_v2_definition, prepare_chamfer_v2, replace_chamfer,
-};
 mod coil;
 mod combine;
 mod command_owner;
@@ -40,6 +32,7 @@ mod edit;
 mod emboss;
 mod extend_surface;
 mod extrusion;
+mod feature_reexports;
 mod feature_suppression;
 mod file_host;
 mod fillet;
@@ -57,58 +50,12 @@ mod shell;
 mod shell_v2;
 mod slot;
 mod split;
+mod stitch;
 mod sweep;
 mod thicken_offset;
 mod thread;
 mod unwrap;
-pub use coil::{CoilInputs, PreparedCoil, build_coil_definition, prepare_coil_definition};
-pub use combine::{
-    CombineInputs, PreparedCombine, build_combine_definition, prepare_combine_definition,
-    replace_combine,
-};
-pub use decal::{
-    DecalInputs, PreparedDecal, build_decal_definition, prepare_decal_definition, replace_decal,
-};
-pub use delete_face::{
-    DeleteFaceFeatureInputs, PreparedDeleteFace, build_delete_face_definition,
-    prepare_delete_face_definition, replace_delete_face,
-};
-pub use derive::{
-    DeriveInputs, PreparedDerivedPart, build_derived_part_definition,
-    prepare_derived_part_definition, replace_derived_part,
-};
-pub use direct_edit::{
-    DirectEditFeatureInputs, PreparedDirectEdit, build_direct_edit_definition,
-    prepare_direct_edit_definition, replace_direct_edit,
-};
-pub use draft::{
-    DraftFeatureInputs, PreparedDraft, build_draft_definition, prepare_draft_definition,
-    replace_draft,
-};
-pub use emboss::{
-    EmbossInputs, PreparedEmboss, build_emboss_definition, prepare_emboss_definition,
-};
-pub use extend_surface::{
-    ExtendSurfaceInputs, PreparedExtendSurface, build_extend_surface_definition,
-    prepare_extend_surface_definition, replace_extend_surface,
-};
-pub use extrusion::{
-    CapturedExtrudeCandidate, ExtrudePrefixReplay, ExtrudeRegionAccess, ExtrudeReplayPrefix,
-    PreparedExtrusion, commit_prepared_extrusion, evaluated_extrude_distance, prepare_extrusion,
-    prepare_owned_extrusion, prepare_owned_extrusion_profiles, validate_extrude_distance,
-};
-pub use fillet::{
-    CertifiedFilletAccess, CertifiedFilletValidation, FilletAccess, FilletValidation,
-    PreparedFillet, prepare_fillet,
-};
-pub use fillet_v2::{
-    FilletCornerSetbackInput, FilletEdgeSetInput, FilletV2Inputs, FilletVariablePointInput,
-    build_fillet_v2_definition, evaluate_positive_cm, prepare_fillet_v2, replace_fillet,
-};
-pub use finish::{
-    FinishFeatureInputs, PreparedFinish, build_finish_definition, prepare_finish_definition,
-    replace_finish,
-};
+pub use feature_reexports::*;
 pub use hole::{
     HoleFeatureInputs, HoleSeatInput, HoleTerminationInput, PreparedHole, build_hole_definition,
     prepare_hole, prepare_hole_definition, replace_hole,
@@ -151,6 +98,10 @@ pub use slot::{
 pub use split::{
     PreparedSplit, SplitFeatureInputs, build_split_definition, prepare_split_definition,
     replace_split,
+};
+pub use stitch::{
+    PreparedStitch, StitchInputs, build_stitch_definition, prepare_stitch_definition,
+    replace_stitch,
 };
 pub use sweep::{
     PreparedSweep, automatic_sweep, prepare_surface_sweep, prepare_sweep, prepare_sweep_for_target,

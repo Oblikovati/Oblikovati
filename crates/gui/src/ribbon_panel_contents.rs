@@ -230,6 +230,10 @@ pub(crate) fn draw_panel_content(
                     "Ruled Surface",
                     GuiShellAction::RuledSurface(crate::GuiRuledSurfaceAction::Open),
                 ),
+                (
+                    "Stitch",
+                    GuiShellAction::Stitch(crate::GuiStitchAction::Open),
+                ),
             ]
             .into_iter()
             .enumerate()

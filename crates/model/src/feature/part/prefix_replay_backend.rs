@@ -194,38 +194,12 @@ where
             .map(PrefixBody::Created)
     }
 
-    fn evaluate_draft(
-        &mut self,
-        feature: FeatureId,
-        body: &Self::Body,
-        input: crate::feature::draft::ResolvedDraft,
-    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
-        self.0
-            .evaluate_draft(feature, body.get(), input)
-            .map(PrefixBody::Created)
-    }
-
-    fn evaluate_thread(
-        &mut self,
-        feature: FeatureId,
-        body: &Self::Body,
-        input: crate::feature::thread::ResolvedThread,
-    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
-        self.0
-            .evaluate_thread(feature, body.get(), input)
-            .map(PrefixBody::Created)
-    }
-
-    fn evaluate_delete_face(
-        &mut self,
-        feature: FeatureId,
-        body: &Self::Body,
-        input: crate::feature::delete_face::ResolvedDeleteFace,
-    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
-        self.0
-            .evaluate_delete_face(feature, body.get(), input)
-            .map(PrefixBody::Created)
-    }
+    forward_body_eval!(
+        evaluate_draft: crate::feature::draft::ResolvedDraft,
+        evaluate_thread: crate::feature::thread::ResolvedThread,
+        evaluate_delete_face: crate::feature::delete_face::ResolvedDeleteFace,
+        evaluate_thicken_offset: crate::feature::thicken_offset::ResolvedThickenOffset,
+    );
 
     fn evaluate_replace_face(
         &mut self,
@@ -240,14 +214,15 @@ where
             .map(PrefixBody::Created)
     }
 
-    fn evaluate_thicken_offset(
+    fn evaluate_stitch(
         &mut self,
         feature: FeatureId,
-        body: &Self::Body,
-        input: crate::feature::thicken_offset::ResolvedThickenOffset,
+        surfaces: &[&Self::Body],
+        input: crate::feature::stitch::ResolvedStitch,
     ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        let inner: Vec<_> = surfaces.iter().map(|body| body.get()).collect();
         self.0
-            .evaluate_thicken_offset(feature, body.get(), input)
+            .evaluate_stitch(feature, &inner, input)
             .map(PrefixBody::Created)
     }
 

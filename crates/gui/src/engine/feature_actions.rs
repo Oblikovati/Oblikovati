@@ -162,6 +162,7 @@ enum Draft {
     ExtendSurface,
     BoundaryPatch,
     RuledSurface,
+    Stitch,
     MoveBody,
 }
 
@@ -248,6 +249,9 @@ fn requested_draft(action: &GuiShellAction) -> Option<Draft> {
         GuiShellAction::RuledSurface(
             crate::GuiRuledSurfaceAction::Open | crate::GuiRuledSurfaceAction::OpenEdit(_),
         ) => Draft::RuledSurface,
+        GuiShellAction::Stitch(
+            crate::GuiStitchAction::Open | crate::GuiStitchAction::OpenEdit(_),
+        ) => Draft::Stitch,
         GuiShellAction::OpenMoveBody => Draft::MoveBody,
         _ => return None,
     })
@@ -415,6 +419,12 @@ pub(super) fn open_drafts(
         }
         GuiShellAction::ThickenOffset(crate::GuiThickenOffsetAction::OpenEdit(feature)) => {
             thicken.open(state, Some(feature), actions)
+        }
+        GuiShellAction::Stitch(crate::GuiStitchAction::Open) => {
+            create.stitch.open(state, None, actions)
+        }
+        GuiShellAction::Stitch(crate::GuiStitchAction::OpenEdit(feature)) => {
+            create.stitch.open(state, Some(feature), actions)
         }
         GuiShellAction::DirectEdit(crate::GuiDirectEditAction::Open) => {
             direct_edit.open(state, None, actions)

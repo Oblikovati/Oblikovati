@@ -44,6 +44,7 @@ pub mod sketch_rib;
 pub mod sketch_sweep;
 pub mod slot;
 pub mod split;
+pub mod stitch;
 mod suppression;
 pub mod thicken_offset;
 pub mod thread;

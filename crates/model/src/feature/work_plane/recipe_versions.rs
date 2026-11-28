@@ -46,6 +46,7 @@ impl WorkPlaneDefinitionRecipe {
             Self::BoundaryPatch(_) => 60,
             Self::ExtendSurface(_) => 61,
             Self::ReplaceFace(_) => 62,
+            Self::Stitch(_) => 64,
             Self::RuledSurface(_) => 66,
             Self::SketchSweep(recipe) => match recipe.version {
                 7 => 29,
@@ -125,6 +126,7 @@ impl WorkPlaneDefinitionRecipe {
             Self::BoundaryPatch(_) => 70,
             Self::ExtendSurface(_) => 71,
             Self::ReplaceFace(_) => 72,
+            Self::Stitch(_) => 74,
             Self::RuledSurface(_) => 76,
             Self::SketchSweep(recipe) => match recipe.version {
                 7 => 34,

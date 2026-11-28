@@ -62,6 +62,15 @@ macro_rules! hole_work_methods {
                 "thicken/offset {action:?}: expected a certified part owner"
             ))
         }
+        /// Dispatch a Stitch dialog action; example: `work.stitch_from_gui(action)?`.
+        fn stitch_from_gui(
+            &mut self,
+            action: oblikovati_gui::GuiStitchAction,
+        ) -> Result<bool, String> {
+            Err(format!(
+                "stitch {action:?}: expected a certified part owner"
+            ))
+        }
         /// Dispatch a Direct Edit toolbar action; example: `work.direct_edit_from_gui(action)?`.
         fn direct_edit_from_gui(
             &mut self,
@@ -202,6 +211,12 @@ macro_rules! forward_hole_work_methods {
             action: oblikovati_gui::GuiThickenOffsetAction,
         ) -> Result<bool, String> {
             self.$owner.thicken_offset_from_gui(action)
+        }
+        fn stitch_from_gui(
+            &mut self,
+            action: oblikovati_gui::GuiStitchAction,
+        ) -> Result<bool, String> {
+            self.$owner.stitch_from_gui(action)
         }
         fn direct_edit_from_gui(
             &mut self,

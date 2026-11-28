@@ -53,6 +53,8 @@ pub(super) mod owner_shell_v2;
 pub(super) mod owner_slot;
 #[path = "owner_split.rs"]
 pub(super) mod owner_split;
+#[path = "owner_stitch.rs"]
+pub(super) mod owner_stitch;
 #[path = "owner_sweep.rs"]
 pub(super) mod owner_sweep;
 #[path = "owner_thicken_offset.rs"]
@@ -88,6 +90,7 @@ pub(super) struct CreateFeatureState {
     pub(super) delete_face: owner_delete_face::DeleteFaceOwnerState,
     pub(super) replace_face: owner_replace_face::ReplaceFaceOwnerState,
     pub(super) thicken_offset: owner_thicken_offset::ThickenOffsetOwnerState,
+    pub(super) stitch: owner_stitch::StitchOwnerState,
     pub(super) split: owner_split::SplitOwnerState,
     pub(super) mark: owner_mark::MarkOwnerState,
     pub(super) finish: owner_finish::FinishOwnerState,

@@ -9,6 +9,8 @@ use crate::feature::{FeatureId, hole::HoleDefinition, part::PartFeatureDefinitio
 mod replace_face_create;
 #[path = "ruled_surface_create.rs"]
 mod ruled_surface_create;
+#[path = "stitch_create.rs"]
+mod stitch_create;
 #[path = "ucs_create.rs"]
 mod ucs_create;
 

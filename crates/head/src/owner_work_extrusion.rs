@@ -149,6 +149,12 @@ macro_rules! desktop_extrusion_work {
         ) -> Result<bool, String> {
             self.thicken_offset_command(action)
         }
+        fn stitch_from_gui(
+            &mut self,
+            action: oblikovati_gui::GuiStitchAction,
+        ) -> Result<bool, String> {
+            self.stitch_command(action)
+        }
         fn direct_edit_from_gui(
             &mut self,
             action: oblikovati_gui::GuiDirectEditAction,

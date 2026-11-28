@@ -5,6 +5,22 @@ use crate::feature::{
     FeatureId,
     sketch_prism::{PrismBoolean, ResolvedSketchPrism},
 };
+macro_rules! unsupported_body_eval {
+    ($($(#[$meta:meta])* $method:ident($input:ty) => $msg:expr;)+) => {
+        $(
+            $(#[$meta])*
+            fn $method(
+                &mut self,
+                _feature: FeatureId,
+                _body: &Self::Body,
+                _input: $input,
+            ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+                Err(PartFeatureFailure::Unsupported($msg.into()))
+            }
+        )+
+    };
+}
+
 /// The model resolves current source inputs; the injected adapter owns kernel construction and validation.
 pub trait PartFeatureEvaluator {
     type Body;
@@ -216,26 +232,35 @@ pub trait PartFeatureEvaluator {
             "replace face: expected an available face-replacement evaluator".into(),
         ))
     }
-    /// Thicken selected faces into a solid or offset them into a surface shell.
-    fn evaluate_thicken_offset(
-        &mut self,
-        _feature: FeatureId,
-        _body: &Self::Body,
-        _input: crate::feature::thicken_offset::ResolvedThickenOffset,
-    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
-        Err(PartFeatureFailure::Unsupported(
-            "thicken/offset: expected an available face thicken/offset evaluator".into(),
-        ))
+    unsupported_body_eval! {
+        /// Thicken selected faces into a solid or offset them into a surface shell.
+        evaluate_thicken_offset(crate::feature::thicken_offset::ResolvedThickenOffset) =>
+            "thicken/offset: expected an available face thicken/offset evaluator";
+        /// Apply Direct Edit transformations; example: `backend.evaluate_direct_edit(id, body, input)`.
+        evaluate_direct_edit(crate::feature::direct_edit::ResolvedDirectEdit) =>
+            "direct edit: expected an available direct-edit evaluator";
+        /// Imprint or project sketch mark geometry sets onto a solid body.
+        evaluate_mark(crate::feature::mark::ResolvedMark) =>
+            "mark: expected an available named solid mark evaluator";
+        /// Apply a surface finish assignment to selected faces; example: `backend.evaluate_finish(id, body, input)`.
+        evaluate_finish(crate::feature::finish::ResolvedFinish) =>
+            "finish: expected an available named-face evaluator";
+        /// Extend selected boundary edges of an open surface body; example: `backend.evaluate_extend_surface(id, body, input)`.
+        evaluate_extend_surface(crate::feature::extend_surface::ResolvedExtendSurface) =>
+            "extend surface: expected an available surface extension evaluator";
+        /// Build a ruled surface shell from selected boundary edges; example: `backend.evaluate_ruled_surface(id, body, input)`.
+        evaluate_ruled_surface(crate::feature::ruled_surface::ResolvedRuledSurface) =>
+            "ruled surface: expected an available named-edge ruled-surface evaluator";
     }
-    /// Apply Direct Edit transformations; example: `backend.evaluate_direct_edit(id, body, input)`.
-    fn evaluate_direct_edit(
+    /// Sew two or more selected surface bodies into a stitched surface shell or solid.
+    fn evaluate_stitch(
         &mut self,
         _feature: FeatureId,
-        _body: &Self::Body,
-        _input: crate::feature::direct_edit::ResolvedDirectEdit,
+        _surfaces: &[&Self::Body],
+        _input: crate::feature::stitch::ResolvedStitch,
     ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
         Err(PartFeatureFailure::Unsupported(
-            "direct edit: expected an available direct-edit evaluator".into(),
+            "stitch: expected an available surface sewing evaluator".into(),
         ))
     }
     /// Split faces of a solid or split a solid body; example: `backend.evaluate_split(id, body, input)`.
@@ -249,39 +274,6 @@ pub trait PartFeatureEvaluator {
             "split: expected an available B-rep split evaluator".into(),
         ))
     }
-    /// Imprint or project sketch mark geometry sets onto a solid body.
-    fn evaluate_mark(
-        &mut self,
-        _feature: FeatureId,
-        _body: &Self::Body,
-        _input: crate::feature::mark::ResolvedMark,
-    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
-        Err(PartFeatureFailure::Unsupported(
-            "mark: expected an available named solid mark evaluator".into(),
-        ))
-    }
-    /// Apply a surface finish assignment to selected faces; example: `backend.evaluate_finish(id, body, input)`.
-    fn evaluate_finish(
-        &mut self,
-        _feature: FeatureId,
-        _body: &Self::Body,
-        _input: crate::feature::finish::ResolvedFinish,
-    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
-        Err(PartFeatureFailure::Unsupported(
-            "finish: expected an available named-face evaluator".into(),
-        ))
-    }
-    /// Extend selected boundary edges of an open surface body; example: `backend.evaluate_extend_surface(id, body, input)`.
-    fn evaluate_extend_surface(
-        &mut self,
-        _feature: FeatureId,
-        _body: &Self::Body,
-        _input: crate::feature::extend_surface::ResolvedExtendSurface,
-    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
-        Err(PartFeatureFailure::Unsupported(
-            "extend surface: expected an available surface extension evaluator".into(),
-        ))
-    }
     /// Construct a named surface body from boundary sketch curves and optional guide rails.
     fn evaluate_boundary_patch(
         &mut self,
@@ -290,17 +282,6 @@ pub trait PartFeatureEvaluator {
     ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
         Err(PartFeatureFailure::Unsupported(
             "boundary patch: expected an available surface patch evaluator".into(),
-        ))
-    }
-    /// Build a ruled surface shell from selected boundary edges; example: `backend.evaluate_ruled_surface(id, body, input)`.
-    fn evaluate_ruled_surface(
-        &mut self,
-        _feature: FeatureId,
-        _body: &Self::Body,
-        _input: crate::feature::ruled_surface::ResolvedRuledSurface,
-    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
-        Err(PartFeatureFailure::Unsupported(
-            "ruled surface: expected an available named-edge ruled-surface evaluator".into(),
         ))
     }
     /// Resolve the sweep from a sketch plane to the current target body's bounds.

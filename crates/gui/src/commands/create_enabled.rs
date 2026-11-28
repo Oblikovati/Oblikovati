@@ -22,6 +22,7 @@ pub(crate) fn enabled(action: &GuiShellAction, state: &GuiCommandState) -> Optio
         GuiShellAction::DeleteFace(action) => action.enabled(state),
         GuiShellAction::ReplaceFace(action) => action.enabled(state),
         GuiShellAction::ThickenOffset(action) => action.enabled(state),
+        GuiShellAction::Stitch(action) => action.enabled(state),
         GuiShellAction::DirectEdit(action) => action.enabled(state),
         GuiShellAction::Split(action) => action.enabled(state),
         GuiShellAction::Mark(action) => action.enabled(state),

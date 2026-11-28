@@ -357,6 +357,7 @@ impl GuiShellAction {
             | Self::DeleteFace(_)
             | Self::ReplaceFace(_)
             | Self::ThickenOffset(_)
+            | Self::Stitch(_)
             | Self::DirectEdit(_)
             | Self::Split(_)
             | Self::Mark(_)

@@ -418,6 +418,14 @@ impl PartFeatureEvaluator for CertifiedNamedSolidEvaluator<'_> {
     ) -> Result<NamedSolid, PartFeatureFailure<EvaluationFailure>> {
         self.evaluate_named_thicken_offset(feature, body, input)
     }
+    fn evaluate_stitch(
+        &mut self,
+        feature: FeatureId,
+        surfaces: &[&NamedSolid],
+        input: oblikovati_model::feature::stitch::ResolvedStitch,
+    ) -> Result<NamedSolid, PartFeatureFailure<EvaluationFailure>> {
+        self.evaluate_named_stitch(feature, surfaces, input)
+    }
     fn evaluate_direct_edit(
         &mut self,
         feature: FeatureId,

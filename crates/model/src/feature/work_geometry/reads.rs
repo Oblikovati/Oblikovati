@@ -19,6 +19,7 @@ impl WorkGeometryDefinition {
             Self::DeleteFace(definition) => return definition.reads(),
             Self::ReplaceFace(definition) => return definition.reads(),
             Self::ThickenOffset(definition) => return definition.reads(),
+            Self::Stitch(definition) => return definition.reads(),
             Self::Split(definition) => return definition.reads(),
             Self::Finish(definition) => return definition.reads(),
             Self::ExtendSurface(definition) => return definition.reads(),

@@ -68,6 +68,8 @@ pub struct GuiModelBrowser {
     /// Authored options for editable Thicken/Offset features.
     pub thicken_offset_edits:
         std::collections::BTreeMap<FeatureId, crate::GuiThickenOffsetEditSeed>,
+    /// Authored options for editable Surface Stitch features.
+    pub stitch_edits: std::collections::BTreeMap<FeatureId, crate::GuiStitchEditSeed>,
     /// Authored operations for editable Direct Edit features.
     pub direct_edit_edits: std::collections::BTreeMap<FeatureId, crate::GuiDirectEditEditSeed>,
     /// Authored options for editable Split features.

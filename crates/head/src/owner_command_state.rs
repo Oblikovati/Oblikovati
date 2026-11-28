@@ -280,6 +280,8 @@ impl<
             replace_face_pick: self.gui_replace_face_pick(document, session.generation()),
             thicken_offset_preview: self.gui_thicken_offset_preview(document, session.generation()),
             thicken_offset_pick: self.gui_thicken_offset_pick(document, session.generation()),
+            stitch_preview: self.gui_stitch_preview(document, session.generation()),
+            stitch_pick: self.gui_stitch_pick(document, session.generation()),
             direct_edit_preview: self.gui_direct_edit_preview(document, session.generation()),
             direct_edit_pick: self.gui_direct_edit_pick(document, session.generation()),
             split_preview: self.gui_split_preview(document, session.generation()),
