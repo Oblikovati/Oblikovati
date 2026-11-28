@@ -173,7 +173,7 @@ impl<
         Ok(Vec::new())
     }
 
-    pub(super) fn resolve_body_for_edge(
+    pub(in crate::owner) fn resolve_body_for_edge(
         &self,
         document: u64,
         edge: &[u8],

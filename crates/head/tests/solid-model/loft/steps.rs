@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Exercise the Loft command through native ribbon and viewport input.
+#[path = "../chamfer/steps.rs"]
+mod solid_chamfer;
 #[path = "../coil/steps.rs"]
 mod solid_coil;
 #[path = "../decal/steps.rs"]

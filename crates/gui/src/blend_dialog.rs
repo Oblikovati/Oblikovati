@@ -20,6 +20,7 @@ pub(crate) struct BlendDialog {
     attempted_edit: Option<crate::GuiFilletEditRequest>,
     submitted_edit: Option<crate::GuiFilletEditRequest>,
     v2: crate::fillet_panel::FilletV2State,
+    chamfer_v2: crate::chamfer_panel::ChamferV2State,
 }
 impl DockableWindow for BlendDialog {}
 impl BlendDialog {
@@ -60,6 +61,7 @@ impl BlendDialog {
         self.submitted_edit = None;
         let pick_seq = state.fillet_v2_pick.as_ref().map_or(0, |p| p.sequence);
         self.v2.reset_new("2 mm", pick_seq);
+        self.reset_chamfer_v2(state);
     }
     pub(crate) fn open_chamfer(&mut self, state: &GuiCommandState) {
         self.open_for(state, true);
@@ -114,6 +116,7 @@ impl BlendDialog {
         } else {
             self.v2.reset_new(&self.radius, pick_seq);
         }
+        self.hydrate_chamfer_v2(state, feature, chamfer);
     }
     fn edit_request(&self) -> Option<crate::GuiFilletEditRequest> {
         let (feature, generation) = self.edit?;
@@ -152,6 +155,7 @@ impl BlendDialog {
         self.v2.submitted_v2 = None;
         self.v2.partial_modal = None;
         self.v2.pending_commit_after_partial = false;
+        self.clear_chamfer_v2(actions);
     }
     pub(crate) fn sync_before_docking(
         &mut self,
@@ -196,6 +200,7 @@ impl BlendDialog {
         }) {
             self.close(actions);
         }
+        self.sync_chamfer_v2(state, actions);
     }
     fn refresh_preview(&mut self, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
         if self.edit.is_some() {

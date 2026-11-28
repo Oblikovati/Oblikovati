@@ -75,6 +75,8 @@ impl<
         }
         browser.fillet_v2_edits =
             super::owner_blend::owner_fillet_v2::edit_seeds(snapshot, session.generation());
+        browser.chamfer_v2_edits =
+            super::owner_blend::owner_chamfer_v2::edit_seeds(snapshot, session.generation());
         browser.occurrences = occurrences::browser_occurrences(&self.files, document)?;
         browser.selected_occurrence =
             self.selected_occurrence.as_ref().and_then(|(owner, path)| {

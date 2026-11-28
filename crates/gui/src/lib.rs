@@ -148,6 +148,12 @@ mod sketch_constraints;
 pub use sketch_constraints::GuiSketchConstraint;
 
 mod blend_dialog;
+mod chamfer_panel;
+pub use chamfer_panel::{
+    GuiChamferPartialState, GuiChamferPickMode, GuiChamferTab, GuiChamferV2Action,
+    GuiChamferV2EditSeed, GuiChamferV2Pick, GuiChamferV2Preview, GuiChamferV2PreviewState,
+    GuiChamferV2Request,
+};
 mod fillet_panel;
 pub use fillet_panel::{
     GuiFilletCornerSetback, GuiFilletEdgeSet, GuiFilletSelectionMode, GuiFilletSharedVertex,

@@ -97,6 +97,10 @@ pub struct PreparedChamfer {
     definition: ChamferDefinition,
 }
 impl PreparedChamfer {
+    /// Construct from pre-validated name and definition.
+    pub(crate) fn from_parts(name: String, definition: ChamferDefinition) -> Self {
+        Self { name, definition }
+    }
     /// Append the draft to a candidate; example: `prepared.create(candidate, ids)?`.
     pub fn create(
         self,

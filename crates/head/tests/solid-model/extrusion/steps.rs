@@ -193,6 +193,13 @@ fn uncommitted_rectangle_preview(world: &mut ApplicationWorld) {
 
 #[when("Cancel is clicked")]
 fn cancel_extrusion(world: &mut ApplicationWorld) {
+    if super::diagnostics::window_geometry("Chamfer").is_some() {
+        let button = world.run_in_window("Chamfer", "Cancel").center();
+        world.click(super::diagnostics::pointer_pixels(button));
+        world.pump(Vec::new());
+        world.pump(Vec::new());
+        return;
+    }
     if super::diagnostics::window_geometry("Slot").is_some() {
         let button = world.run_in_window("Slot", "Cancel").center();
         world.click(super::diagnostics::pointer_pixels(button));

@@ -365,6 +365,7 @@ pub enum GuiShellAction {
     Slot(crate::GuiSlotAction),
     /// Selection mode, preview, or commit for Part Modify Fillet v2.
     FilletV2(crate::GuiFilletV2Action),
+    ChamferV2(crate::GuiChamferV2Action),
     /// Open the Shell properties draft.
     OpenShellFeature,
     /// Show or clear the exact Shell preview.

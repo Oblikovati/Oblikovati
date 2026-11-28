@@ -172,6 +172,12 @@ macro_rules! forward_owner_view_work {
         ) -> Result<bool, String> {
             self.$owner.fillet_v2_from_gui(action)
         }
+        fn chamfer_v2_from_gui(
+            &mut self,
+            action: oblikovati_gui::GuiChamferV2Action,
+        ) -> Result<bool, String> {
+            self.$owner.chamfer_v2_from_gui(action)
+        }
         fn preview_fillet_from_gui(
             &mut self,
             request: Option<&oblikovati_gui::GuiFilletRequest>,

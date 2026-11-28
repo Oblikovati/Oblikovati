@@ -19,6 +19,15 @@ macro_rules! hole_work_methods {
                 "fillet {action:?}: expected a certified part owner"
             ))
         }
+        /// Dispatch a Chamfer v2 Properties panel action; example: `work.chamfer_v2_from_gui(action)?`.
+        fn chamfer_v2_from_gui(
+            &mut self,
+            action: oblikovati_gui::GuiChamferV2Action,
+        ) -> Result<bool, String> {
+            Err(format!(
+                "chamfer {action:?}: expected a certified part owner"
+            ))
+        }
     };
 }
 pub(crate) use hole_work_methods;

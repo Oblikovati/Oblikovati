@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Preview and commit blends from exact desktop edge selections (#4045, #4046).
 use super::*;
+#[path = "owner_chamfer_v2.rs"]
+pub(super) mod owner_chamfer_v2;
 #[path = "owner_coil.rs"]
 pub(super) mod owner_coil;
 #[path = "owner_decal.rs"]
@@ -44,6 +46,7 @@ pub(super) struct CreateFeatureState {
     pub(super) hole: owner_hole::HoleOwnerState,
     pub(super) slot: owner_slot::SlotOwnerState,
     pub(super) fillet_v2: owner_fillet_v2::FilletV2OwnerState,
+    pub(super) chamfer_v2: owner_chamfer_v2::ChamferV2OwnerState,
 }
 
 impl<

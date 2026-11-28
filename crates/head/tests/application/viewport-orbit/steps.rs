@@ -233,6 +233,13 @@ fn screen_up(camera: &oblikovati_viewport::ViewportCamera) -> [f64; 3] {
 }
 #[when("I click Cancel")]
 fn click_cancel(world: &mut ApplicationWorld) {
+    if diagnostics::window_geometry("Chamfer").is_some() {
+        let button = world.run_in_window("Chamfer", "Cancel").center();
+        world.click(diagnostics::pointer_pixels(button));
+        world.pump(Vec::new());
+        world.pump(Vec::new());
+        return;
+    }
     choose(world, "Cancel");
 }
 #[when("I click OK")]

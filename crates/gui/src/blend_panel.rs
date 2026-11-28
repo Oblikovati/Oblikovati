@@ -2,9 +2,71 @@
 //! Dockable properties for Fillet v2 and Chamfer blend drafts.
 use super::*;
 use crate::fillet_panel::PartialFilletModal;
-use crate::{GuiFilletV2Action, GuiFilletV2Preview};
+use crate::{GuiChamferV2Action, GuiChamferV2Preview, GuiFilletV2Action, GuiFilletV2Preview};
 
 impl BlendDialog {
+    pub(super) fn reset_chamfer_v2(&mut self, state: &GuiCommandState) {
+        let pick_seq = state.chamfer_v2_pick.as_ref().map_or(0, |p| p.sequence);
+        self.chamfer_v2.reset_new(pick_seq);
+    }
+
+    pub(super) fn hydrate_chamfer_v2(
+        &mut self,
+        state: &GuiCommandState,
+        feature: oblikovati_model::feature::FeatureId,
+        chamfer: bool,
+    ) {
+        let pick_seq = state.chamfer_v2_pick.as_ref().map_or(0, |p| p.sequence);
+        if chamfer
+            && let Some(seed) = state
+                .browser
+                .as_ref()
+                .and_then(|browser| browser.chamfer_v2_edits.get(&feature))
+        {
+            self.radius = seed.distance.clone();
+            self.chamfer_v2.hydrate_edit(seed, pick_seq);
+        } else {
+            self.chamfer_v2.reset_new(pick_seq);
+        }
+    }
+
+    pub(super) fn clear_chamfer_v2(&mut self, actions: &mut Vec<GuiShellAction>) {
+        if self.chamfer
+            && (self.chamfer_v2.attempted.is_some()
+                || self.chamfer_v2.face_pick_active
+                || self.chamfer_v2.tab == crate::GuiChamferTab::Partial)
+        {
+            actions.push(GuiShellAction::ChamferV2(GuiChamferV2Action::Clear));
+        }
+        self.chamfer_v2.attempted = None;
+        self.chamfer_v2.submitted_close = None;
+        self.chamfer_v2.submitted_apply = None;
+        self.chamfer_v2.failure_modal = None;
+    }
+
+    pub(super) fn sync_chamfer_v2(
+        &mut self,
+        state: &GuiCommandState,
+        actions: &mut Vec<GuiShellAction>,
+    ) {
+        if self
+            .chamfer_v2
+            .submitted_close
+            .as_ref()
+            .is_some_and(|req| state.document_generation != Some(req.generation))
+        {
+            self.close(actions);
+        }
+        if self
+            .chamfer_v2
+            .submitted_apply
+            .as_ref()
+            .is_some_and(|req| state.document_generation != Some(req.generation))
+        {
+            self.chamfer_v2.reset_after_apply();
+        }
+    }
+
     pub(crate) fn panel(
         &mut self,
         ui: &Ui,
@@ -30,41 +92,120 @@ impl BlendDialog {
         actions: &mut Vec<GuiShellAction>,
         area: crate::application::document_creation::workspaces::WorkspaceArea,
     ) {
-        let style = ui.clone_style();
-        let height = 3. * ui.frame_height_with_spacing() + 2. * style.window_padding[1] + 28.;
-        crate::widget_abi::fit_viewport_properties(ui, "Chamfer", area, [280., height]);
+        self.chamfer_v2
+            .sync_ambient_edges(state, self.edit.is_some());
+        self.chamfer_v2.consume_pick(state);
+
+        let height = self
+            .chamfer_v2
+            .fitted_height(ui)
+            .min((area.bottom - area.top - 28.0).max(160.0));
+        crate::widget_abi::fit_viewport_properties(ui, "Chamfer", area, [280.0, height]);
         let _border = crate::theme::property_window_border(ui);
         let mut open = true;
         Self::dockable_window(ui, "Chamfer", &mut open).build(|| {
             crate::theme::floating_property_shadow(ui);
-            self.draw_chamfer_properties(ui, state);
-            self.refresh_preview(state, actions);
+            self.chamfer_v2.draw_body(
+                ui,
+                state,
+                &mut self.radius,
+                self.edit.is_some(),
+                self.edited_edges,
+                actions,
+            );
+            self.refresh_chamfer_v2_preview(state, actions);
             ui.separator();
-            self.controls(ui, state, actions);
+            self.draw_chamfer_v2_footer(ui, state, actions);
         });
+        self.chamfer_v2.draw_failure_modal(ui);
         if !open {
             self.close(actions);
         }
     }
 
-    fn draw_chamfer_properties(&mut self, ui: &Ui, state: &GuiCommandState) {
-        let count = if self.edit.is_some() {
-            self.edited_edges
-        } else {
-            state.selected_edge_count
+    fn refresh_chamfer_v2_preview(
+        &mut self,
+        state: &GuiCommandState,
+        actions: &mut Vec<GuiShellAction>,
+    ) {
+        let Some(document) = self.document else {
+            return;
         };
-        let selection = match count {
-            0 => "Select Edges".to_owned(),
-            1 => "1 Edge".to_owned(),
-            count => format!("{count} Edges"),
-        };
-        crate::theme::property_label(ui, "Edges");
-        crate::feature_properties::draw_pick_pill(ui, &selection, count > 0);
-        crate::theme::property_label(ui, "Distance");
-        let _numeric = crate::ui_scale::numeric_font(ui);
-        let _border = ui.push_style_var(imgui::StyleVar::FrameBorderSize(1.));
-        if ui.input_text("##blend-value", &mut self.radius).build() {
-            self.submitted = None;
+        let feature = self.edit.map(|(id, _)| id);
+        let request = self
+            .chamfer_v2
+            .request(document, state, feature, &self.radius)
+            .filter(|req| {
+                GuiShellAction::ChamferV2(GuiChamferV2Action::Preview(Box::new(req.clone())))
+                    .dispatchable(state)
+            });
+        if self.chamfer_v2.attempted != request {
+            self.chamfer_v2.attempted = request.clone();
+            match request {
+                Some(req) => actions.push(GuiShellAction::ChamferV2(GuiChamferV2Action::Preview(
+                    Box::new(req),
+                ))),
+                None => actions.push(GuiShellAction::ChamferV2(GuiChamferV2Action::Clear)),
+            }
+        }
+    }
+
+    fn draw_chamfer_v2_footer(
+        &mut self,
+        ui: &Ui,
+        state: &GuiCommandState,
+        actions: &mut Vec<GuiShellAction>,
+    ) {
+        let local_ok = self.chamfer_v2.local_error(&self.radius).is_none();
+        let feature = self.edit.map(|(id, _)| id);
+        let req = self
+            .document
+            .and_then(|doc| self.chamfer_v2.request(doc, state, feature, &self.radius));
+        let has_edges = req.as_ref().is_some_and(|r| !r.edges.is_empty());
+        let commit_ready = local_ok
+            && req.as_ref().is_some_and(|r| {
+                GuiShellAction::ChamferV2(GuiChamferV2Action::Commit(Box::new(r.clone())))
+                    .dispatchable(state)
+            });
+        let preview_failed = state.chamfer_v2_preview.as_ref().and_then(|p| {
+            req.as_ref()
+                .filter(|r| p.request == **r)
+                .and_then(|_| match &p.result {
+                    GuiChamferV2Preview::Failed(msg) => Some(msg.clone()),
+                    _ => None,
+                })
+        });
+        let can_ok = local_ok && has_edges && (commit_ready || preview_failed.is_some());
+        let accepted = crate::theme::property_accept(ui, can_ok)
+            || (can_ok && ui.is_window_focused() && ui.is_key_pressed_no_repeat(imgui::Key::Enter));
+        if accepted && let Some(req) = req.clone() {
+            if let Some(msg) = preview_failed {
+                self.chamfer_v2.failure_modal = Some(msg);
+            } else if commit_ready {
+                self.chamfer_v2.submitted_close = Some(req.clone());
+                actions.push(GuiShellAction::ChamferV2(GuiChamferV2Action::Commit(
+                    Box::new(req),
+                )));
+            }
+        }
+        ui.same_line_with_spacing(0.0, 6.0);
+        let can_apply = self.edit.is_none() && commit_ready;
+        let _dis = ui.begin_disabled(!can_apply);
+        if ui.button("Apply##chamfer-apply")
+            && can_apply
+            && let Some(req) = req
+        {
+            self.chamfer_v2.submitted_apply = Some(req.clone());
+            actions.push(GuiShellAction::ChamferV2(GuiChamferV2Action::Apply(
+                Box::new(req),
+            )));
+        }
+        drop(_dis);
+        ui.same_line_with_spacing(0.0, 6.0);
+        if crate::theme::property_cancel(ui)
+            || (ui.is_window_focused() && ui.is_key_pressed_no_repeat(imgui::Key::Escape))
+        {
+            self.close(actions);
         }
     }
 

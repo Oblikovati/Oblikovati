@@ -17,6 +17,7 @@ pub(crate) fn enabled(action: &GuiShellAction, state: &GuiCommandState) -> Optio
         GuiShellAction::Hole(action) => action.enabled(state),
         GuiShellAction::Slot(action) => action.enabled(state),
         GuiShellAction::FilletV2(action) => action.enabled(state),
+        GuiShellAction::ChamferV2(action) => action.enabled(state),
         _ => return None,
     })
 }
