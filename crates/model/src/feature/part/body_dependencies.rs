@@ -91,6 +91,7 @@ fn track_replacement(
         PartFeatureDefinition::Chamfer(chamfer) => chamfer.body_source(),
         PartFeatureDefinition::Hole(hole) => hole.body_source(),
         PartFeatureDefinition::Slot(slot) => slot.body_source(),
+        PartFeatureDefinition::Draft(draft) => draft.body_source(),
         PartFeatureDefinition::Shell(shell) => shell.body_source(),
         PartFeatureDefinition::MoveBody(motion) => motion.body_source(),
         PartFeatureDefinition::Mirror(mirror) => mirror.recipe().sources[0],

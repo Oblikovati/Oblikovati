@@ -12,6 +12,7 @@ impl WorkGeometryDefinition {
             Self::Fillet(definition) => return definition.reads(),
             Self::Hole(definition) => return definition.reads(),
             Self::Slot(definition) => return definition.reads(),
+            Self::Draft(definition) => return definition.reads(),
             Self::Shell(definition) => return definition.reads(),
             Self::Mirror(definition) => return definition.reads(),
             Self::CircularPattern(definition) => return definition.reads(),

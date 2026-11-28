@@ -109,6 +109,16 @@ where
             .evaluate_slot(feature, body.get(), face, input)
             .map(PrefixBody::Created)
     }
+    fn evaluate_draft(
+        &mut self,
+        feature: FeatureId,
+        body: &Self::Body,
+        input: crate::feature::draft::ResolvedDraft,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        self.0
+            .evaluate_draft(feature, body.get(), input)
+            .map(PrefixBody::Created)
+    }
     fn evaluate_shell(
         &mut self,
         feature: FeatureId,

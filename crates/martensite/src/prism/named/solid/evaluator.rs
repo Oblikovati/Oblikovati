@@ -461,6 +461,14 @@ impl PartFeatureEvaluator for CertifiedNamedSolidEvaluator<'_> {
     ) -> Result<NamedSolid, PartFeatureFailure<EvaluationFailure>> {
         self.evaluate_named_slot(feature, body, face, input)
     }
+    fn evaluate_draft(
+        &mut self,
+        feature: FeatureId,
+        body: &NamedSolid,
+        input: oblikovati_model::feature::draft::ResolvedDraft,
+    ) -> Result<NamedSolid, PartFeatureFailure<EvaluationFailure>> {
+        self.evaluate_named_draft(feature, body, input)
+    }
     fn evaluate_shell(
         &mut self,
         feature: FeatureId,

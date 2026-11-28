@@ -54,6 +54,7 @@ pub enum PartFeatureDefinition {
     Fillet(Box<super::fillet::FilletDefinition>),
     Hole(Box<super::hole::HoleDefinition>),
     Slot(Box<super::slot::SlotDefinition>),
+    Draft(Box<super::draft::DraftDefinition>),
     MoveBody(Box<super::move_body::MoveBodyDefinition>),
     Shell(Box<super::shell::ShellDefinition>),
     Mirror(Box<super::mirror::MirrorDefinition>),
@@ -106,6 +107,7 @@ impl PartFeatureDefinition {
             Self::Fillet(_) => "fillet",
             Self::Hole(_) => "hole",
             Self::Slot(_) => "slot",
+            Self::Draft(_) => "draft",
             Self::MoveBody(_) => "move-body",
             Self::Shell(_) => "shell",
             Self::Mirror(_) => "mirror",
@@ -137,6 +139,7 @@ impl PartFeatureDefinition {
                 | Self::Chamfer(_)
                 | Self::Hole(_)
                 | Self::Slot(_)
+                | Self::Draft(_)
                 | Self::Shell(_)
                 | Self::MoveBody(_)
                 | Self::Mirror(_)

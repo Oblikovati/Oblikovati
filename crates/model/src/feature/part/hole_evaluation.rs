@@ -91,4 +91,41 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
         self.bodies.insert(feature.into(), result);
         Ok(())
     }
+
+    pub(super) fn evaluate_draft<B: PartFeatureEvaluator<Body = Body, Failure = Failure>>(
+        &mut self,
+        backend: &mut B,
+        feature: FeatureId,
+        definition: &crate::feature::draft::DraftDefinition,
+    ) -> Result<(), PartFeatureFailure<Failure>> {
+        let input = definition
+            .resolve()
+            .map_err(PartFeatureFailure::DraftInput)?;
+        let slot = resolve_body_slot(
+            &self.bodies,
+            &self.body_lineage,
+            backend,
+            definition.body_source(),
+            definition.body(),
+        )
+        .map_err(PartFeatureFailure::BodyReference)?;
+        let before = self.bodies.get(&slot).ok_or_else(|| {
+            PartFeatureFailure::BodyReference(format!(
+                "draft body slot {slot:?}: expected a current body"
+            ))
+        })?;
+        backend
+            .resolve_planar_face(before, definition.pull_direction())
+            .map_err(PartFeatureFailure::BodyReference)?;
+        let result = backend.evaluate_draft(feature, before, input)?;
+        backend
+            .verify_body_reference(&result, definition.body())
+            .map_err(PartFeatureFailure::BodyReference)?;
+        self.body_lineage
+            .replace(slot, feature)
+            .map_err(PartFeatureFailure::BodyReference)?;
+        self.bodies.remove(&slot);
+        self.bodies.insert(feature.into(), result);
+        Ok(())
+    }
 }

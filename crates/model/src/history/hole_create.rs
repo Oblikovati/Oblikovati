@@ -90,4 +90,41 @@ impl DocumentSnapshot {
             })
             .map(|_| ())
     }
+
+    /// Append Draft inputs; example: `snapshot.create_draft("FaceDraft1", definition, ids)?`.
+    pub fn create_draft(
+        &mut self,
+        name: &str,
+        definition: crate::feature::draft::DraftDefinition,
+        ids: &mut RecipeReservations<'_>,
+    ) -> Result<FeatureId, HistoryError> {
+        let reads = definition.reads();
+        self.create_body_feature(
+            name,
+            PartFeatureDefinition::Draft(Box::new(definition)),
+            reads,
+            ids,
+        )
+    }
+
+    /// Replace an existing Draft definition in place; example: `snapshot.edit_draft(id, definition)?`.
+    pub fn edit_draft(
+        &mut self,
+        feature: FeatureId,
+        definition: crate::feature::draft::DraftDefinition,
+    ) -> Result<(), HistoryError> {
+        let reads = definition.reads();
+        self.work_geometry
+            .replace(
+                feature,
+                PartFeatureDefinition::Draft(Box::new(definition)),
+                reads,
+            )
+            .map_err(|cause| {
+                HistoryError::PartProgram(crate::feature::part::PartFeatureProgramError::Sequence(
+                    cause,
+                ))
+            })
+            .map(|_| ())
+    }
 }
