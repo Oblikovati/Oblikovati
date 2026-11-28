@@ -42,6 +42,7 @@ mod replay_observer;
 mod shell_evaluation;
 mod sketch_body_evaluation;
 mod sketch_recompute;
+mod thicken_offset_evaluation;
 pub use super::work_plane::{
     WorkPlaneProgramRecipe as PartFeatureProgramRecipe,
     WorkPlaneProgramRecipeError as PartFeatureProgramRecipeError,
@@ -56,6 +57,7 @@ pub enum PartFeatureDefinition {
     Hole(Box<super::hole::HoleDefinition>),
     Slot(Box<super::slot::SlotDefinition>),
     Combine(Box<super::combine::CombineDefinition>),
+    ThickenOffset(Box<super::thicken_offset::ThickenOffsetDefinition>),
     MoveBody(Box<super::move_body::MoveBodyDefinition>),
     Shell(Box<super::shell::ShellDefinition>),
     Mirror(Box<super::mirror::MirrorDefinition>),
@@ -109,6 +111,7 @@ impl PartFeatureDefinition {
             Self::Hole(_) => "hole",
             Self::Slot(_) => "slot",
             Self::Combine(_) => "combine",
+            Self::ThickenOffset(_) => "thicken-offset",
             Self::MoveBody(_) => "move-body",
             Self::Shell(_) => "shell",
             Self::Mirror(_) => "mirror",
@@ -141,6 +144,7 @@ impl PartFeatureDefinition {
                 | Self::Hole(_)
                 | Self::Slot(_)
                 | Self::Combine(_)
+                | Self::ThickenOffset(_)
                 | Self::Shell(_)
                 | Self::MoveBody(_)
                 | Self::Mirror(_)

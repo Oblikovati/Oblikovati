@@ -17,6 +17,8 @@ mod rigid_motion;
 mod shell;
 mod slot;
 mod solid_boolean;
+mod thicken_offset;
+mod thicken_offset_chain;
 mod tolerances;
 pub use fillet_topology::{SharedFilletVertex, SolidFilletEdgeGroups};
 pub use rigid_motion::RigidMotion;

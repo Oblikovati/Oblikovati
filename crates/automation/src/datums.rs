@@ -176,6 +176,7 @@ impl DatumCollection {
             | WorkGeometryDefinition::Hole(_)
             | WorkGeometryDefinition::Slot(_)
             | WorkGeometryDefinition::Combine(_)
+            | WorkGeometryDefinition::ThickenOffset(_)
             | WorkGeometryDefinition::Shell(_)
             | WorkGeometryDefinition::MoveBody(_)
             | WorkGeometryDefinition::Mirror(_)

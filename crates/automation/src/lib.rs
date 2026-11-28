@@ -43,6 +43,7 @@ mod rib;
 mod shell;
 mod slot;
 mod sweep;
+mod thicken_offset;
 mod unwrap;
 pub use coil::{CoilInputs, PreparedCoil, build_coil_definition, prepare_coil_definition};
 pub use combine::{
@@ -100,6 +101,10 @@ pub use slot::{
 pub use sweep::{
     PreparedSweep, automatic_sweep, prepare_surface_sweep, prepare_sweep, prepare_sweep_for_target,
     prepare_sweep_taper, prepare_sweep_twist, sweep_boolean_target,
+};
+pub use thicken_offset::{
+    PreparedThickenOffset, ThickenOffsetInputs, build_thicken_offset_definition,
+    prepare_thicken_offset_definition, replace_thicken_offset,
 };
 pub use unwrap::{
     PreparedUnwrap, UnwrapInputs, build_unwrap_definition, prepare_unwrap_definition,

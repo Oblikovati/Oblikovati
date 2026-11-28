@@ -121,6 +121,16 @@ where
             .evaluate_combine(feature, base.get(), &inner, input)
             .map(PrefixBody::Created)
     }
+    fn evaluate_thicken_offset(
+        &mut self,
+        feature: FeatureId,
+        body: &Self::Body,
+        input: crate::feature::thicken_offset::ResolvedThickenOffset,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        self.0
+            .evaluate_thicken_offset(feature, body.get(), input)
+            .map(PrefixBody::Created)
+    }
     fn evaluate_shell(
         &mut self,
         feature: FeatureId,

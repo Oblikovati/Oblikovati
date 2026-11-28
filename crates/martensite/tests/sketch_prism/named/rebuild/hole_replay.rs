@@ -19,6 +19,8 @@ mod hole_frame_origin;
 mod hole_v2;
 #[path = "slot_replay.rs"]
 mod slot_replay;
+#[path = "thicken_offset_replay.rs"]
+mod thicken_offset_replay;
 
 fn hole_document() -> DocumentSnapshot {
     let mut snapshot = cube_document();

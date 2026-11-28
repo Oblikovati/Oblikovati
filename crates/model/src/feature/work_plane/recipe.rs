@@ -21,6 +21,7 @@ pub enum WorkPlaneDefinitionRecipe {
     Hole(crate::feature::hole::HoleRecipe),
     Slot(crate::feature::slot::SlotRecipe),
     Combine(crate::feature::combine::CombineRecipe),
+    ThickenOffset(crate::feature::thicken_offset::ThickenOffsetRecipe),
     MoveBody(crate::feature::move_body::MoveBodyRecipe),
     Shell(crate::feature::shell::ShellRecipe),
     Mirror(crate::feature::mirror::MirrorRecipe),
@@ -76,6 +77,7 @@ impl WorkPlaneDefinition {
             Self::Hole(definition) => Source::Hole(definition.recipe()),
             Self::Slot(definition) => Source::Slot(definition.recipe()),
             Self::Combine(definition) => Source::Combine(definition.recipe()),
+            Self::ThickenOffset(definition) => Source::ThickenOffset(definition.recipe()),
             Self::MoveBody(definition) => Source::MoveBody(definition.recipe()),
             Self::Shell(definition) => Source::Shell(definition.recipe()),
             Self::Mirror(mirror) => Source::Mirror(mirror.recipe().clone()),
@@ -152,6 +154,11 @@ fn restore_definition(
         Combine(recipe) => crate::feature::combine::CombineDefinition::from_recipe(recipe)
             .map(|definition| WorkPlaneDefinition::Combine(Box::new(definition)))
             .map_err(WorkPlaneError::BodyReference),
+        ThickenOffset(recipe) => {
+            crate::feature::thicken_offset::ThickenOffsetDefinition::from_recipe(recipe)
+                .map(|definition| WorkPlaneDefinition::ThickenOffset(Box::new(definition)))
+                .map_err(WorkPlaneError::BodyReference)
+        }
         Chamfer(recipe) => crate::feature::chamfer::ChamferDefinition::from_recipe(&recipe)
             .map(|definition| WorkPlaneDefinition::Chamfer(Box::new(definition)))
             .map_err(WorkPlaneError::BodyReference),
@@ -284,6 +291,7 @@ impl WorkPlaneDefinitionRecipe {
             Self::Unwrap(_) => 45,
             Self::Slot(_) => 46,
             Self::Combine(_) => 49,
+            Self::ThickenOffset(_) => 50,
             Self::SketchSweep(recipe) => match recipe.version {
                 7 => 29,
                 6 => 28,
@@ -346,6 +354,7 @@ impl WorkPlaneDefinitionRecipe {
             Self::Unwrap(_) => 51,
             Self::Slot(_) => 53,
             Self::Combine(_) => 59,
+            Self::ThickenOffset(_) => 60,
             Self::SketchSweep(recipe) => match recipe.version {
                 7 => 34,
                 6 => 33,

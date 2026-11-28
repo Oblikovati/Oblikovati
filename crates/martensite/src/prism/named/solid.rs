@@ -469,3 +469,4 @@ mod hole_placement;
 mod move_body_evaluation;
 mod shell_evaluation;
 mod slot_evaluation;
+mod thicken_offset_evaluation;
