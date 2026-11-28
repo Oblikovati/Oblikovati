@@ -59,6 +59,11 @@ pub(super) enum PreparedGeometry {
         base: oblikovati_model::feature::work_plane::WorkPlaneReference,
         expression: String,
     },
+    ExtendedAngle {
+        base: oblikovati_model::feature::work_plane::WorkPlaneReference,
+        edge: oblikovati_model::feature::work_plane::WorkPlaneEdgeReference,
+        expression: String,
+    },
     Definition(WorkGeometryDefinition),
     Offset {
         base: oblikovati_model::feature::work_plane::WorkPlaneReference,
@@ -203,7 +208,8 @@ impl DatumCollection {
             | WorkGeometryDefinition::LineThroughPoint(_)
             | WorkGeometryDefinition::NormalToAxis(_)
             | WorkGeometryDefinition::ThroughTwoAxes(_)
-            | WorkGeometryDefinition::AtAngleAboutAxis(_) => Self::Planes,
+            | WorkGeometryDefinition::AtAngleAboutAxis(_)
+            | WorkGeometryDefinition::WorkPlaneExtended(_) => Self::Planes,
         };
         self == kind
     }

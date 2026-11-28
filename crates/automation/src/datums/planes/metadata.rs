@@ -16,6 +16,9 @@ pub(super) fn constructor(definition: WorkGeometryDefinition) -> Result<String, 
             Ok(WORK_PLANE_PLANE_AND_POINT.0.into_owned())
         }
         WorkGeometryDefinition::Offset { .. } => Ok(WORK_PLANE_OFFSET.0.into_owned()),
+        WorkGeometryDefinition::WorkPlaneExtended(definition) => {
+            Ok(super::extended::constructor_kind(&definition))
+        }
         _ => Err(Error(format!(
             "plane definition {definition:?}: expected a supported plane definition"
         ))),
@@ -37,6 +40,16 @@ pub(super) fn append_inputs(
             .resolve(&snapshot.parameters)
             .ok()
             .map(|value| (value, Dimension::Angle, "Angle")),
+        WorkGeometryDefinition::WorkPlaneExtended(definition) => match definition.as_ref() {
+            oblikovati_model::feature::work_plane::WorkPlaneExtendedDefinition::AngleToPlaneAroundEdge {
+                angle,
+                ..
+            } => angle
+                .resolve(&snapshot.parameters)
+                .ok()
+                .map(|value| (value, Dimension::Angle, "Angle")),
+            _ => None,
+        },
         _ => None,
     };
     if let Some((value, dimension, label)) = scalar {
@@ -58,6 +71,9 @@ fn reference_slots(definition: &WorkGeometryDefinition) -> Option<Vec<WorkPlaneR
         WorkGeometryDefinition::ParallelThroughPoint(_) => Some(super::parallel::slots()),
         WorkGeometryDefinition::Offset { .. } => {
             Some(super::reference_only::slots(&[("Base plane", "plane")]))
+        }
+        WorkGeometryDefinition::WorkPlaneExtended(definition) => {
+            Some(super::extended::slots(definition))
         }
         _ => None,
     }

@@ -15,7 +15,7 @@ pub use named::{
     BlendCandidate, BlendHistoryRecord, BlendNamedTopology, CapturedNamedSolid,
     CertifiedNamedSolidEvaluator, CertifiedPrismEvidence, DrawingBaseProjection,
     DrawingProjectedCurve, DrawingProjection, DrawingProjectionCurveKind, DrawingProjectionFrame,
-    MarkEligibility, NamedEdgeHit, NamedFaceMesh, NamedPrismSnapshot, NamedSolid,
+    MarkEligibility, NamedEdgeHit, NamedFaceMesh, NamedPrismSnapshot, NamedSolid, NamedVertexHit,
     PrismFaceTopology, PrismSurfaceKind, RigidMotion, SharedFilletVertex, SolidFilletEdgeGroups,
     ThreadableFaceInfo, capture_full_named_candidate, check_mark_eligibility,
     complete_named_candidate, complete_named_checkpoints, drawing_base_view_bodies,

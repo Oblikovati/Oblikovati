@@ -30,6 +30,9 @@ fn plane_geometry(
         kind if kind == WORK_PLANE_TWO_LINES.0 => two_axes::create(request, snapshot),
         kind if kind == WORK_PLANE_THREE_POINTS.0 => three_points::create(request, snapshot),
         kind if kind == WORK_PLANE_PLANE_AND_POINT.0 => parallel::create(request, snapshot),
+        kind if kind == WORK_PLANE_TWO_PLANES.0 => {
+            super::extended::create_midplane(request, snapshot)
+        }
         _ => Err(Error(format!(
             "plane constructor {:?}: expected supported {WORK_PLANE_FIXED:?}, {WORK_PLANE_OFFSET:?}, {WORK_PLANE_PLANE_AND_POINT:?}, {WORK_PLANE_THREE_POINTS:?}, {WORK_PLANE_LINE_AND_POINT:?}, {WORK_PLANE_NORMAL_TO_CURVE:?}, {WORK_PLANE_TWO_LINES:?}, or {WORK_PLANE_LINE_PLANE_ANGLE:?}",
             request.kind

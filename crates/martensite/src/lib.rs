@@ -104,7 +104,7 @@ pub use prism::{
     CapturedNamedSolid, CertifiedNamedSolidEvaluator, CertifiedPrismEvidence,
     CertifiedPrismSnapshot, DisplayTriangle, DrawingBaseProjection, DrawingProjectedCurve,
     DrawingProjection, DrawingProjectionCurveKind, DrawingProjectionFrame, FaceProbe,
-    MarkEligibility, NamedEdgeHit, NamedFaceMesh, NamedPrismSnapshot, NamedSolid,
+    MarkEligibility, NamedEdgeHit, NamedFaceMesh, NamedPrismSnapshot, NamedSolid, NamedVertexHit,
     PlanarProfileLoop, PrismAchievedTolerance, PrismFaceMesh, PrismFaceProbe, PrismFaceRole,
     PrismFaceTopology, PrismHistoryRelation, PrismHistorySource, PrismMeshOptions,
     PrismPresentation, PrismPresentationSource, PrismProbeDefinition, PrismProbeLoop,

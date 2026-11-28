@@ -3,6 +3,7 @@ use super::*;
 use oblikovati_model::{feature::work_plane::WorkPlaneResolver, sketch::SketchPlane};
 pub(in crate::datums) mod axis_point;
 mod display;
+pub(in crate::datums) mod extended;
 mod inputs;
 pub(in crate::datums) mod line_angle;
 mod metadata;
