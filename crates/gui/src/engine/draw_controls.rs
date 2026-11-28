@@ -281,7 +281,11 @@ impl GuiFrameEngine {
         feature_actions::open_drafts(
             &request.commands,
             &mut selected,
-            (&mut self.shell_feature_dialog, &mut self.hole_dialog),
+            (
+                &mut self.shell_feature_dialog,
+                &mut self.hole_dialog,
+                &mut self.slot_dialog,
+            ),
             (&mut self.move_body_dialog, &mut self.blend_dialog),
             &mut self.create_dialogs,
             &mut self.extrude_dialog,
@@ -320,6 +324,7 @@ impl GuiFrameEngine {
         let modify_dialogs = (
             &mut self.blend_dialog,
             &mut self.hole_dialog,
+            &mut self.slot_dialog,
             &mut self.shell_feature_dialog,
             &mut self.move_body_dialog,
             &mut self.offset_plane,

@@ -140,6 +140,17 @@ fn choose_to_surface_xy(world: &mut ApplicationWorld) {
 
 #[then("the selector shows one surface and OK is enabled")]
 fn selector_shows_one_surface_ok_enabled(world: &mut ApplicationWorld) {
+    if super::super::diagnostics::window_geometry("Slot").is_some() {
+        let text = super::super::world::squeezed(&world.window_text("Slot"));
+        assert!(
+            text.contains("1Surface"),
+            "expected 1 Surface pill in Slot window, saw {text}"
+        );
+        let preview = world.state().slot_preview.expect("expected slot preview");
+        assert_eq!(preview.result, oblikovati_gui::GuiSlotPreview::Ready);
+        assert!(world.run_is_enabled("OK"));
+        return;
+    }
     let text = super::super::world::squeezed(&world.window_text(HOLE_WINDOW));
     assert!(
         text.contains("1Surface"),

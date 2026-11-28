@@ -38,6 +38,9 @@ pub(super) fn feature_edit_action(
     if browser.hole_edits.contains_key(&feature.id) {
         return GuiShellAction::Hole(crate::GuiHoleAction::OpenEdit(feature.id));
     }
+    if browser.slot_edits.contains_key(&feature.id) {
+        return GuiShellAction::Slot(crate::GuiSlotAction::OpenEdit(feature.id));
+    }
     if browser.chamfer_edits.contains_key(&feature.id) {
         return GuiShellAction::OpenChamferEdit(feature.id);
     }

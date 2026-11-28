@@ -361,6 +361,8 @@ pub enum GuiShellAction {
     CreateMoveBody(GuiMoveBodyRequest),
     /// Open, preview, or commit a Part Modify Hole feature.
     Hole(crate::GuiHoleAction),
+    /// Open, preview, or commit a Part Modify Slot feature.
+    Slot(crate::GuiSlotAction),
     /// Open the Shell properties draft.
     OpenShellFeature,
     /// Show or clear the exact Shell preview.

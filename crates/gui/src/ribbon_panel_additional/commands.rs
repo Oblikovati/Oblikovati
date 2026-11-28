@@ -206,6 +206,7 @@ fn additional_icon_entries(
             ("Bend Part", Glyph::BendPart),
             ("Copy Object", Glyph::CopyObject),
             ("Shell", Glyph::Shell),
+            ("Slot", Glyph::Hole),
         ],
         RibbonPanel::PartSimplification => &[
             ("Remove Details", Glyph::Simplify),
@@ -291,6 +292,7 @@ fn additional_action(label: &str) -> Option<GuiShellAction> {
         "Unwrap" => Some(GuiShellAction::Unwrap(crate::GuiUnwrapAction::Open)),
         "Move Bodies" => Some(GuiShellAction::OpenMoveBody),
         crate::shell_ribbon::LABEL => Some(GuiShellAction::OpenShellFeature),
+        "Slot" => Some(GuiShellAction::Slot(crate::GuiSlotAction::Open)),
         "Constraint Inference Scope" => Some(GuiShellAction::OpenInferenceScope),
         _ => None,
     }

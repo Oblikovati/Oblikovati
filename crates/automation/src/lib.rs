@@ -35,6 +35,7 @@ mod loft;
 mod revolve;
 mod rib;
 mod shell;
+mod slot;
 mod sweep;
 mod unwrap;
 pub use coil::{CoilInputs, PreparedCoil, build_coil_definition, prepare_coil_definition};
@@ -78,6 +79,10 @@ pub use rib::{
     replace_rib,
 };
 pub use shell::{PreparedShell, prepare_shell};
+pub use slot::{
+    PreparedSlot, SlotFeatureInputs, SlotSeatInput, build_slot_definition, prepare_slot_definition,
+    replace_slot,
+};
 pub use sweep::{
     PreparedSweep, automatic_sweep, prepare_surface_sweep, prepare_sweep, prepare_sweep_for_target,
     prepare_sweep_taper, prepare_sweep_twist, sweep_boolean_target,

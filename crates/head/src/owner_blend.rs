@@ -23,6 +23,8 @@ pub(super) mod owner_rib;
 mod owner_shell_face_body;
 #[path = "owner_shell_feature.rs"]
 mod owner_shell_feature;
+#[path = "owner_slot.rs"]
+pub(super) mod owner_slot;
 #[path = "owner_sweep.rs"]
 pub(super) mod owner_sweep;
 #[path = "owner_unwrap.rs"]
@@ -38,6 +40,7 @@ pub(super) struct CreateFeatureState {
     pub(super) import: owner_import::ImportOwnerState,
     pub(super) unwrap: owner_unwrap::UnwrapOwnerState,
     pub(super) hole: owner_hole::HoleOwnerState,
+    pub(super) slot: owner_slot::SlotOwnerState,
 }
 
 impl<

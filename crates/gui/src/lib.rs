@@ -153,10 +153,15 @@ mod extrude_dialog;
 mod face_draft;
 mod face_properties;
 mod hole_dialog;
+mod slot_dialog;
 pub use application::model_browser::feature_properties::{GuiFeatureCondition, GuiFeatureEdit};
 pub use hole_dialog::{
     GuiHoleAction, GuiHoleEditSeed, GuiHolePick, GuiHolePreview, GuiHolePreviewState,
     GuiHoleRequest, GuiHoleSeatKind, GuiHoleTermination,
+};
+pub use slot_dialog::{
+    GuiSlotAction, GuiSlotEditSeed, GuiSlotPick, GuiSlotPreview, GuiSlotPreviewState,
+    GuiSlotRequest,
 };
 mod loft_dialog;
 mod move_body_dialog;

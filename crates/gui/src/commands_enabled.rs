@@ -348,7 +348,8 @@ impl GuiShellAction {
             | Self::Decal(_)
             | Self::Import(_)
             | Self::Unwrap(_)
-            | Self::Hole(_) => false,
+            | Self::Hole(_)
+            | Self::Slot(_) => false,
             Self::PreviewMoveBody(None) | Self::PreviewShellFeature(None) => true,
             Self::PreviewMoveBody(Some(r)) | Self::CreateMoveBody(r) => motion::request(state, r),
             Self::PreviewShellFeature(Some(request)) | Self::CreateShellFeature(request) => {

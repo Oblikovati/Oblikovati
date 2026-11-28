@@ -265,6 +265,8 @@ impl<
             unwrap_pick: self.gui_unwrap_pick(document, session.generation()),
             hole_preview: self.gui_hole_preview(document, session.generation()),
             hole_pick: self.gui_hole_pick(document, session.generation()),
+            slot_preview: self.gui_slot_preview(document, session.generation()),
+            slot_pick: self.gui_slot_pick(document, session.generation()),
             selected_model_face: self
                 .chosen_model_face(document)
                 .map(|face| face.key.clone()),
