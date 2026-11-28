@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Schedule ViewCube motion on the native owner without blocking input.
 use super::NativeHeadWindow;
+use crate::clock::Instant;
 use oblikovati_viewport::{ViewportCamera, ViewportCameraTransition, ViewportNavigation};
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 // Keep the original swing duration and leave room for high-refresh presentation.
 const SWING_TIME: Duration = Duration::from_millis(350);

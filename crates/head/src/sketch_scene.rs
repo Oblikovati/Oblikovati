@@ -12,7 +12,7 @@ pub struct HeadSketchSceneUpdate {
 }
 /// A hidden sketch still shows while it is chosen in the browser or edited.
 /// Example: `sketch_shows(sketch, &session.selected_browser_sketches(), true)`.
-#[cfg(any(target_os = "linux", target_os = "windows"))]
+#[cfg(any(target_os = "linux", target_os = "windows", target_arch = "wasm32"))]
 pub(crate) fn sketch_shows(
     sketch: &oblikovati_model::document_sketch::PlacedSketch,
     called_up: &[DocumentSketchId],
@@ -21,8 +21,8 @@ pub(crate) fn sketch_shows(
     (show_stored && sketch.visible()) || called_up.contains(&sketch.id())
 }
 
-#[cfg(any(target_os = "linux", target_os = "windows"))]
+#[cfg(any(target_os = "linux", target_os = "windows", target_arch = "wasm32"))]
 #[path = "sketch_scene_runtime.rs"]
 mod runtime;
-#[cfg(any(target_os = "linux", target_os = "windows"))]
+#[cfg(any(target_os = "linux", target_os = "windows", target_arch = "wasm32"))]
 pub(crate) use runtime::{ActiveCurvature, DesktopSketchScenes, sketch_document_file_name};

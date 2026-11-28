@@ -92,6 +92,16 @@ fn system_root() -> Result<PathBuf, String> {
     Ok(root)
 }
 
+#[cfg(target_arch = "wasm32")]
+fn system_opener() -> Result<PathBuf, String> {
+    Err("desktop opener: external process launch is unavailable in WebAssembly".into())
+}
+
+#[cfg(target_arch = "wasm32")]
+fn directory_opener() -> Result<PathBuf, String> {
+    system_opener()
+}
+
 #[cfg(test)]
 #[test]
 fn resource_browser_refuses_non_https_and_whitespace() {

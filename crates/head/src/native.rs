@@ -1,13 +1,17 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use crate::{HeadOptions, HeadPresentation, HeadSummary, HeadWindow};
+#[cfg(any(target_os = "linux", target_os = "windows"))]
+use crate::{HeadOptions, HeadSummary};
+use crate::{HeadPresentation, HeadWindow};
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 #[allow(unsafe_code)]
 #[path = "native/addin_launch.rs"]
 mod addin_launch;
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 #[path = "native_preferences.rs"]
 mod preferences;
-use oblikovati_viewport::{
-    Viewport, ViewportEvent, ViewportPresentation, ViewportRuntime, ViewportScene, ViewportWake,
-};
+#[cfg(any(target_os = "linux", target_os = "windows"))]
+use oblikovati_viewport::ViewportPresentation;
+use oblikovati_viewport::{Viewport, ViewportEvent, ViewportRuntime, ViewportScene, ViewportWake};
 mod saved_view;
 use saved_view::{SavedWindowView, SketchCameraState};
 pub struct NativeHeadWindow {
@@ -62,7 +66,7 @@ pub struct NativeHeadWindow {
     accessibility_title: String,
     injected_events: std::collections::VecDeque<ViewportEvent>,
     ribbon_settings_directory: Option<std::path::PathBuf>,
-    gui_epoch: std::time::Instant,
+    gui_epoch: crate::clock::Instant,
     clipboard: std::rc::Rc<clipboard::NativeClipboardChannel>,
     // Last so the GUI context drops before another test acquires the lease.
     #[cfg(test)]
@@ -75,6 +79,7 @@ mod scene_status;
 #[macro_use]
 #[path = "native/view_inputs.rs"]
 mod view_inputs;
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 use view_inputs::validate_window_extent;
 mod head_window;
 mod status_telemetry;
@@ -86,11 +91,18 @@ mod clipboard;
 #[cfg(target_os = "windows")]
 #[path = "native/clipboard_windows.rs"]
 mod clipboard;
+#[cfg(target_arch = "wasm32")]
+#[path = "native/clipboard_web.rs"]
+mod clipboard;
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 mod owner;
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 use owner::{NativeDesktopOwner, NativeOwnerWake, native_owner_at, native_script_engine};
-#[cfg(test)]
+#[cfg(all(test, any(target_os = "linux", target_os = "windows")))]
 use owner::{NativeScriptDesktop, native_owner, native_script_owner};
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 mod run;
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 pub use run::{run_native, run_native_documents};
 #[cfg(test)]
 #[path = "../tests/navigation/native.rs"]

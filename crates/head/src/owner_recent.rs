@@ -22,7 +22,7 @@ impl<
     }
     /// A failed write leaves the list in effect for this session and reports the cause.
     pub(super) fn note_recent_file(&mut self, path: &str) {
-        let now = std::time::SystemTime::now()
+        let now = crate::clock::system_time_now()
             .duration_since(std::time::UNIX_EPOCH)
             .map_or(0, |since| since.as_secs());
         note_recent_document(&mut self.recent_documents, path, now);
@@ -57,7 +57,7 @@ impl<
         self.recent_rows.clone()
     }
     fn refresh_recent_rows(&mut self) {
-        let now = std::time::SystemTime::now();
+        let now = crate::clock::system_time_now();
         self.recent_rows = self
             .recent_documents
             .iter()

@@ -1,15 +1,110 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Construct the native window and its owner-thread services.
 use super::*;
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 use oblikovati_viewport::ViewportOptions;
 
 impl NativeHeadWindow {
+    /// Open a browser WebGPU head window around a worker-owned `ViewportRuntime` and `Viewport`.
+    /// Example: `NativeHeadWindow::open_web(runtime, view, false)?`.
+    #[cfg(target_arch = "wasm32")]
+    pub fn open_web(
+        runtime: ViewportRuntime,
+        mut view: Viewport,
+        validate_webgpu: bool,
+    ) -> Result<Self, String> {
+        let wake = ViewportWake::new()?;
+        view.submit(&ViewportScene {
+            background: [0.; 3],
+            triangles: Vec::new(),
+        })?;
+        let clipboard =
+            clipboard::NativeClipboardChannel::open(oblikovati_viewport::WebClipboard::default());
+        Ok(Self {
+            capture_files: Box::new(crate::NativeWindowCaptureFiles),
+            capture_requests: Vec::new(),
+            exit_requested: false,
+            runtime,
+            validate_vulkan: validate_webgpu,
+            view,
+            orientation_transition: None,
+            drawing_windows: Default::default(),
+            view_projection: Default::default(),
+            marked_view: None,
+            wake,
+            scene_status: None,
+            current_scene: None,
+            scene_depth_bounds: None,
+            presentation_bounds: None,
+            preview_background: None,
+            sketch_scene: None,
+            glyph_hover: None,
+            glyph_target: None,
+            glyph_candidates: None,
+            tool_hover: None,
+            datum_declines: Vec::new(),
+            navigation: Default::default(),
+            sketch_view: None,
+            document_title: None,
+            status_pointer: None,
+            status_projection: Default::default(),
+            view_slot: 0,
+            saved_views: Default::default(),
+            wire_camera_stamp: None,
+            command_notice: None,
+            gui: None,
+            accessibility_title: "Oblikovati".into(),
+            injected_events: Default::default(),
+            ribbon_settings_directory: None,
+            gui_epoch: crate::clock::Instant::now(),
+            clipboard,
+        })
+    }
+
+    /// Push a browser DOM event into the head window queue.
+    #[cfg(target_arch = "wasm32")]
+    pub fn push_web_event(&mut self, event: ViewportEvent) {
+        self.view.push_event(event);
+    }
+
+    /// Resize the browser WebGPU canvas backing store and enqueue a resize event.
+    #[cfg(target_arch = "wasm32")]
+    pub fn resize_web(&mut self, extent: [u32; 2]) -> Result<(), String> {
+        self.view.resize(extent).map(|_| ())
+    }
+
+    /// Capture the current WebGPU framebuffer asynchronously for E2E verification.
+    #[cfg(target_arch = "wasm32")]
+    pub async fn capture_web_async(&self) -> Result<oblikovati_viewport::ViewportCapture, String> {
+        self.view.capture_async().await
+    }
+
+    /// Name the active WebGPU device.
+    #[cfg(target_arch = "wasm32")]
+    pub fn device_name(&self) -> String {
+        self.runtime.device_name()
+    }
+
+    /// Return accumulated WebGPU validation errors.
+    #[cfg(target_arch = "wasm32")]
+    pub fn validation_errors(&self) -> Result<Vec<String>, String> {
+        self.runtime.validation_errors()
+    }
+
+    /// Return the window's wake handle for wiring `DesktopOwner`.
+    #[cfg(target_arch = "wasm32")]
+    pub fn wake_handle(&self) -> ViewportWake {
+        self.wake.clone()
+    }
+
     /// Open an owner-thread desktop target; example: `let window = NativeHeadWindow::open()?;`.
+    #[cfg(any(target_os = "linux", target_os = "windows"))]
     pub fn open() -> Result<Self, String> {
         Self::open_with_capture_files(Box::new(crate::NativeWindowCaptureFiles))
     }
     /// Inject PNG publication while retaining the same native renderer.
     /// Example: `NativeHeadWindow::open_with_capture_files(Box::new(files))?`.
+    #[cfg(any(target_os = "linux", target_os = "windows"))]
     pub fn open_with_capture_files(
         capture_files: Box<dyn crate::WindowCaptureFiles>,
     ) -> Result<Self, String> {
@@ -17,9 +112,11 @@ impl NativeHeadWindow {
     }
     /// Open a window at the requested drawable size.
     /// Example: `NativeHeadWindow::open_with_extent([800, 600])?`.
+    #[cfg(any(target_os = "linux", target_os = "windows"))]
     pub fn open_with_extent(extent: [u32; 2]) -> Result<Self, String> {
         Self::open_with_options(extent, Box::new(crate::NativeWindowCaptureFiles))
     }
+    #[cfg(any(target_os = "linux", target_os = "windows"))]
     fn open_with_options(
         extent: [u32; 2],
         capture_files: Box<dyn crate::WindowCaptureFiles>,
@@ -115,7 +212,7 @@ impl NativeHeadWindow {
             accessibility_title: "Oblikovati".into(),
             injected_events: Default::default(),
             ribbon_settings_directory: None,
-            gui_epoch: std::time::Instant::now(),
+            gui_epoch: crate::clock::Instant::now(),
             clipboard,
             #[cfg(test)]
             _context_lease: context_lease,
@@ -123,6 +220,7 @@ impl NativeHeadWindow {
     }
 }
 
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 fn native_validation(setting: Option<&std::ffi::OsStr>) -> bool {
     match setting.and_then(std::ffi::OsStr::to_str) {
         Some("1") => true,

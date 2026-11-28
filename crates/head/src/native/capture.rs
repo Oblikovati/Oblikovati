@@ -14,6 +14,11 @@ impl NativeHeadWindow {
 }
 impl NativeHeadWindow {
     pub(super) fn present_native_frame(&mut self) -> Result<HeadPresentation, String> {
+        #[cfg(target_arch = "wasm32")]
+        {
+            let completed = self.view.present_frame()?;
+            return self.finish_native_presentation(completed);
+        }
         #[cfg(target_os = "linux")]
         if self.capture_requests.is_empty() {
             let last = self.view.completed_generations();
@@ -27,15 +32,18 @@ impl NativeHeadWindow {
             }?;
             return self.finish_native_presentation(completed);
         }
-        let ViewportPresentation::Completed(capture) = self.view.present()? else {
-            return self.finish_native_presentation(false);
-        };
-        let completed = self.finish_native_presentation(true)?;
-        if let Some(gui) = &mut self.gui {
-            gui.note_presented_frame(&capture);
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            let ViewportPresentation::Completed(capture) = self.view.present()? else {
+                return self.finish_native_presentation(false);
+            };
+            let completed = self.finish_native_presentation(true)?;
+            if let Some(gui) = &mut self.gui {
+                gui.note_presented_frame(&capture);
+            }
+            self.publish_window_captures(&capture)?;
+            Ok(completed)
         }
-        self.publish_window_captures(&capture)?;
-        Ok(completed)
     }
 
     fn finish_native_presentation(&mut self, completed: bool) -> Result<HeadPresentation, String> {

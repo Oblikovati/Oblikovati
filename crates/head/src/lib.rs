@@ -6,12 +6,18 @@
 mod document_fixture_path;
 #[cfg(any(target_os = "linux", target_os = "windows", test))]
 mod accessibility;
-#[cfg(any(target_os = "linux", target_os = "windows", test))]
+#[cfg(any(
+    target_os = "linux",
+    target_os = "windows",
+    target_arch = "wasm32",
+    test
+))]
 mod assembly_producer;
+mod clock;
 #[cfg(any(target_os = "linux", target_os = "windows"))]
 #[allow(unsafe_code)]
 mod native_services;
-#[cfg(any(target_os = "linux", target_os = "windows"))]
+#[cfg(any(target_os = "linux", target_os = "windows", target_arch = "wasm32"))]
 mod part_view_display;
 #[cfg(all(test, target_os = "linux"))]
 #[path = "../../gui/src/test_context.rs"]
@@ -19,7 +25,7 @@ mod test_context;
 #[cfg(all(test, target_os = "windows"))]
 #[path = "../../gui/src/test_context_lease.rs"]
 mod test_context;
-#[cfg(any(target_os = "linux", target_os = "windows"))]
+#[cfg(any(target_os = "linux", target_os = "windows", target_arch = "wasm32"))]
 mod view_orientation;
 #[cfg(any(target_os = "linux", target_os = "windows"))]
 pub use native_services::NativeAddInDesktop;
@@ -27,116 +33,120 @@ pub use native_services::NativeAddInDesktop;
 mod addin_discovery;
 mod arguments;
 pub use arguments::{HeadCommand, HeadOptions, parse_arguments};
-#[cfg(any(target_os = "linux", target_os = "windows"))]
+#[cfg(any(target_os = "linux", target_os = "windows", target_arch = "wasm32"))]
 mod camera_automation;
-#[cfg(any(target_os = "linux", target_os = "windows"))]
+#[cfg(any(target_os = "linux", target_os = "windows", target_arch = "wasm32"))]
 mod frames;
-#[cfg(any(target_os = "linux", target_os = "windows"))]
+#[cfg(any(target_os = "linux", target_os = "windows", target_arch = "wasm32"))]
 mod viewport_automation;
-#[cfg(any(target_os = "linux", target_os = "windows"))]
+#[cfg(any(target_os = "linux", target_os = "windows", target_arch = "wasm32"))]
 mod window_caller;
-#[cfg(any(target_os = "linux", target_os = "windows"))]
+#[cfg(any(target_os = "linux", target_os = "windows", target_arch = "wasm32"))]
 pub use frames::{
     HeadGuiUpdate, HeadOrientationFitFrame, HeadPresentation, HeadSummary, HeadWindow, run_window,
     run_window_with_owner,
 };
-#[cfg(any(target_os = "linux", target_os = "windows"))]
+#[cfg(any(target_os = "linux", target_os = "windows", target_arch = "wasm32"))]
 mod native;
-#[cfg(any(target_os = "linux", target_os = "windows"))]
+#[cfg(any(target_os = "linux", target_os = "windows", target_arch = "wasm32"))]
 mod navigation;
+#[cfg(any(target_os = "linux", target_os = "windows", target_arch = "wasm32"))]
+pub use native::NativeHeadWindow;
 #[cfg(any(target_os = "linux", target_os = "windows"))]
-pub use native::{NativeHeadWindow, run_native, run_native_documents};
-#[cfg(any(target_os = "linux", target_os = "windows"))]
+pub use native::{run_native, run_native_documents};
+#[cfg(any(target_os = "linux", target_os = "windows", target_arch = "wasm32"))]
 mod startup;
-#[cfg(any(target_os = "linux", target_os = "windows"))]
+#[cfg(any(target_os = "linux", target_os = "windows", target_arch = "wasm32"))]
 pub use startup::run_window_with_documents;
-#[cfg(any(target_os = "linux", target_os = "windows"))]
+#[cfg(any(target_os = "linux", target_os = "windows", target_arch = "wasm32"))]
 mod capture_png;
-#[cfg(any(target_os = "linux", target_os = "windows"))]
+#[cfg(any(target_os = "linux", target_os = "windows", target_arch = "wasm32"))]
 mod window_capture;
-#[cfg(any(target_os = "linux", target_os = "windows"))]
+#[cfg(any(target_os = "linux", target_os = "windows", target_arch = "wasm32"))]
 #[macro_use]
 #[path = "work_orientation.rs"]
 mod orientation_work;
-#[cfg(any(target_os = "linux", target_os = "windows"))]
+#[cfg(any(target_os = "linux", target_os = "windows", target_arch = "wasm32"))]
 #[macro_use]
 mod work_datum;
-#[cfg(any(target_os = "linux", target_os = "windows"))]
+#[cfg(any(target_os = "linux", target_os = "windows", target_arch = "wasm32"))]
 mod work_blend;
-#[cfg(any(target_os = "linux", target_os = "windows"))]
+#[cfg(any(target_os = "linux", target_os = "windows", target_arch = "wasm32"))]
 mod work_drawing;
-#[cfg(any(target_os = "linux", target_os = "windows"))]
+#[cfg(any(target_os = "linux", target_os = "windows", target_arch = "wasm32"))]
 mod work_hole;
-#[cfg(any(target_os = "linux", target_os = "windows"))]
+#[cfg(any(target_os = "linux", target_os = "windows", target_arch = "wasm32"))]
 mod work_inference_scope;
-#[cfg(any(target_os = "linux", target_os = "windows"))]
+#[cfg(any(target_os = "linux", target_os = "windows", target_arch = "wasm32"))]
 mod work_move_body;
-#[cfg(any(target_os = "linux", target_os = "windows"))]
+#[cfg(any(target_os = "linux", target_os = "windows", target_arch = "wasm32"))]
 mod work_part_view;
-#[cfg(any(target_os = "linux", target_os = "windows"))]
+#[cfg(any(target_os = "linux", target_os = "windows", target_arch = "wasm32"))]
 mod work_project;
-#[cfg(any(target_os = "linux", target_os = "windows"))]
+#[cfg(any(target_os = "linux", target_os = "windows", target_arch = "wasm32"))]
 mod work_shell_feature;
-#[cfg(any(target_os = "linux", target_os = "windows"))]
+#[cfg(any(target_os = "linux", target_os = "windows", target_arch = "wasm32"))]
 mod work_sweep;
-#[cfg(any(target_os = "linux", target_os = "windows"))]
+#[cfg(any(target_os = "linux", target_os = "windows", target_arch = "wasm32"))]
 #[macro_use]
 mod work_metadata;
-#[cfg(any(target_os = "linux", target_os = "windows"))]
+#[cfg(any(target_os = "linux", target_os = "windows", target_arch = "wasm32"))]
 #[macro_use]
 mod work_appearance;
-#[cfg(any(target_os = "linux", target_os = "windows"))]
+#[cfg(any(target_os = "linux", target_os = "windows", target_arch = "wasm32"))]
 #[macro_use]
 mod work_selection;
-#[cfg(any(target_os = "linux", target_os = "windows"))]
+#[cfg(any(target_os = "linux", target_os = "windows", target_arch = "wasm32"))]
 mod work;
-#[cfg(any(target_os = "linux", target_os = "windows"))]
+#[cfg(any(target_os = "linux", target_os = "windows", target_arch = "wasm32"))]
 mod work_extrusion;
-#[cfg(any(target_os = "linux", target_os = "windows"))]
+#[cfg(any(target_os = "linux", target_os = "windows", target_arch = "wasm32"))]
 mod work_forwarding;
-#[cfg(any(target_os = "linux", target_os = "windows"))]
+#[cfg(any(target_os = "linux", target_os = "windows", target_arch = "wasm32"))]
 #[path = "work_idle.rs"]
 mod work_idle;
-#[cfg(any(target_os = "linux", target_os = "windows"))]
+#[cfg(any(target_os = "linux", target_os = "windows", target_arch = "wasm32"))]
 mod work_inspect;
-#[cfg(any(target_os = "linux", target_os = "windows"))]
+#[cfg(any(target_os = "linux", target_os = "windows", target_arch = "wasm32"))]
 mod work_sketch;
-#[cfg(any(target_os = "linux", target_os = "windows"))]
+#[cfg(any(target_os = "linux", target_os = "windows", target_arch = "wasm32"))]
 mod work_sketch_forwarding;
-#[cfg(any(target_os = "linux", target_os = "windows"))]
+#[cfg(any(target_os = "linux", target_os = "windows", target_arch = "wasm32"))]
 mod work_status;
-#[cfg(any(target_os = "linux", target_os = "windows"))]
+#[cfg(any(target_os = "linux", target_os = "windows", target_arch = "wasm32"))]
 mod work_theme;
-#[cfg(any(target_os = "linux", target_os = "windows"))]
+#[cfg(any(target_os = "linux", target_os = "windows", target_arch = "wasm32"))]
 pub use capture_png::{NativeWindowCaptureFiles, WindowCaptureFiles};
-#[cfg(any(target_os = "linux", target_os = "windows"))]
+#[cfg(any(target_os = "linux", target_os = "windows", target_arch = "wasm32"))]
 pub use window_capture::{DesktopWindowCaptures, WindowCaptureJob};
-#[cfg(any(target_os = "linux", target_os = "windows"))]
+#[cfg(any(target_os = "linux", target_os = "windows", target_arch = "wasm32"))]
 pub use work::HeadWork;
-#[cfg(any(target_os = "linux", target_os = "windows"))]
+#[cfg(any(target_os = "linux", target_os = "windows", target_arch = "wasm32"))]
 pub use work_sketch::HeadSketchWork;
-#[cfg(any(target_os = "linux", target_os = "windows"))]
+#[cfg(any(target_os = "linux", target_os = "windows", target_arch = "wasm32"))]
 pub use work_status::{HeadInvalidation, HeadWorkStatus};
-#[cfg(any(target_os = "linux", target_os = "windows"))]
+#[cfg(any(target_os = "linux", target_os = "windows", target_arch = "wasm32"))]
 mod owner;
-#[cfg(any(target_os = "linux", target_os = "windows"))]
+#[cfg(any(target_os = "linux", target_os = "windows", target_arch = "wasm32"))]
 mod selection_preferences;
-#[cfg(any(target_os = "linux", target_os = "windows"))]
+#[cfg(any(target_os = "linux", target_os = "windows", target_arch = "wasm32"))]
 pub use selection_preferences::SelectionPreferenceAccess;
-#[cfg(any(target_os = "linux", target_os = "windows"))]
+#[cfg(any(target_os = "linux", target_os = "windows", target_arch = "wasm32"))]
 mod part_scene;
-#[cfg(any(target_os = "linux", target_os = "windows"))]
+#[cfg(any(target_os = "linux", target_os = "windows", target_arch = "wasm32"))]
 pub use owner::{DesktopCommandNotice, DesktopDispatchOptions, DesktopHistoryAction, DesktopOwner};
-#[cfg(any(target_os = "linux", target_os = "windows"))]
+#[cfg(any(target_os = "linux", target_os = "windows", target_arch = "wasm32"))]
 pub use part_scene::{HeadSceneStatus, HeadSceneUpdate};
-#[cfg(any(target_os = "linux", target_os = "windows"))]
+#[cfg(any(target_os = "linux", target_os = "windows", target_arch = "wasm32"))]
 mod observations;
-#[cfg(any(target_os = "linux", target_os = "windows"))]
+#[cfg(any(target_os = "linux", target_os = "windows", target_arch = "wasm32"))]
 pub use observations::{DesktopObservations, MissingInterestNotice};
-#[cfg(any(target_os = "linux", target_os = "windows"))]
+#[cfg(any(target_os = "linux", target_os = "windows", target_arch = "wasm32"))]
 mod scripts;
-#[cfg(any(target_os = "linux", target_os = "windows"))]
+#[cfg(any(target_os = "linux", target_os = "windows", target_arch = "wasm32"))]
 pub use scripts::{DesktopScripts, ScriptDocumentOwner};
+#[cfg(target_arch = "wasm32")]
+pub mod web_host;
 use std::{ffi::OsString, io::Write};
 const USAGE: &str = "usage: oblikovati [--frames N] [--] [FILE ...]\n       oblikovati --help\n       oblikovati --version\n\nOpen native documents and .opj projects. The first project is active.\n0 frames runs until the window closes. A positive count bounds a smoke run.";
 /// Execute the desktop entry point with injected output; example: `run(&["--help".into()], output)?;`.
@@ -183,7 +193,12 @@ mod drawing_fixture_replay;
 #[path = "../../../test-utilities/rust/selected_sketch_prism.rs"]
 mod scene_fixture;
 
-#[cfg(any(target_os = "linux", target_os = "windows", test))]
+#[cfg(any(
+    target_os = "linux",
+    target_os = "windows",
+    target_arch = "wasm32",
+    test
+))]
 #[path = "placement/input.rs"]
 mod placement_input;
 
@@ -207,23 +222,28 @@ mod sketch_scene;
 pub use sketch_scene::HeadSketchSceneUpdate;
 
 // #3795: these private states require the DesktopOwner and placement runtime.
-#[cfg(any(target_os = "linux", target_os = "windows"))]
+#[cfg(any(target_os = "linux", target_os = "windows", target_arch = "wasm32"))]
 mod sketch_geometric;
 /// Ids of extra document windows, which never collide with a document's own id.
-#[cfg(any(target_os = "linux", target_os = "windows"))]
+#[cfg(any(target_os = "linux", target_os = "windows", target_arch = "wasm32"))]
 pub(crate) const FIRST_EXTRA_WINDOW: u64 = 1 << 40;
-#[cfg(any(target_os = "linux", target_os = "windows", test))]
+#[cfg(any(
+    target_os = "linux",
+    target_os = "windows",
+    target_arch = "wasm32",
+    test
+))]
 #[path = "sketch/mod.rs"]
 mod sketch_inspect;
-#[cfg(any(target_os = "linux", target_os = "windows"))]
+#[cfg(any(target_os = "linux", target_os = "windows", target_arch = "wasm32"))]
 mod sketch_tool;
 
-#[cfg(any(target_os = "linux", target_os = "windows"))]
+#[cfg(any(target_os = "linux", target_os = "windows", target_arch = "wasm32"))]
 mod sketch_dimension;
-#[cfg(any(target_os = "linux", target_os = "windows"))]
+#[cfg(any(target_os = "linux", target_os = "windows", target_arch = "wasm32"))]
 mod sketch_operands;
 
 mod dimension_annotations;
 pub use dimension_annotations::{HeadDimensionAnnotation, HeadDimensionAnnotations};
-#[cfg(any(target_os = "linux", target_os = "windows"))]
+#[cfg(any(target_os = "linux", target_os = "windows", target_arch = "wasm32"))]
 pub use owner::owner_precise_input::HeadConstraintMark;

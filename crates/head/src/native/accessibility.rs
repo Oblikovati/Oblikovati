@@ -1,14 +1,28 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Synchronize the native AT-SPI tree with the actual application bar.
 use super::NativeHeadWindow;
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 use crate::accessibility::{
     actions::FrameRequest,
     frame::{FrameControl, FrameSemantics},
 };
 use oblikovati_viewport::ViewportEvent;
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 mod requests;
 
 impl NativeHeadWindow {
+    #[cfg(target_arch = "wasm32")]
+    pub(super) fn update_accessibility(
+        &mut self,
+        event: Option<&ViewportEvent>,
+        commands: &oblikovati_gui::GuiCommandState,
+        update: &mut crate::HeadGuiUpdate,
+    ) -> Result<(), String> {
+        let _ = (event, commands, update);
+        Ok(())
+    }
+
+    #[cfg(any(target_os = "linux", target_os = "windows"))]
     pub(super) fn update_accessibility(
         &mut self,
         event: Option<&ViewportEvent>,
@@ -64,6 +78,7 @@ impl NativeHeadWindow {
         Ok(())
     }
 }
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 fn focus_target(control: FrameControl) -> oblikovati_gui::GuiAccessibleFocus {
     match control {
         FrameControl::Minimize => oblikovati_gui::GuiAccessibleFocus::Frame(0),
@@ -72,6 +87,7 @@ fn focus_target(control: FrameControl) -> oblikovati_gui::GuiAccessibleFocus {
         FrameControl::Answer(choice) => oblikovati_gui::GuiAccessibleFocus::ClosePrompt(choice),
     }
 }
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 fn frame_control(index: usize) -> Option<FrameControl> {
     match index {
         0 => Some(FrameControl::Minimize),
@@ -80,6 +96,7 @@ fn frame_control(index: usize) -> Option<FrameControl> {
         _ => None,
     }
 }
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 fn dispatch_control(control: FrameControl, update: &mut crate::HeadGuiUpdate) {
     match control {
         FrameControl::Minimize => {
