@@ -125,6 +125,12 @@ macro_rules! desktop_extrusion_work {
         ) -> Result<bool, String> {
             self.draft_command(action)
         }
+        fn direct_edit_from_gui(
+            &mut self,
+            action: oblikovati_gui::GuiDirectEditAction,
+        ) -> Result<bool, String> {
+            self.direct_edit_command(action)
+        }
         fn fillet_v2_from_gui(
             &mut self,
             action: oblikovati_gui::GuiFilletV2Action,

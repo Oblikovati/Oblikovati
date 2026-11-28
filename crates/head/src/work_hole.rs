@@ -26,6 +26,15 @@ macro_rules! hole_work_methods {
         ) -> Result<bool, String> {
             Err(format!("draft {action:?}: expected a certified part owner"))
         }
+        /// Dispatch a Direct Edit toolbar action; example: `work.direct_edit_from_gui(action)?`.
+        fn direct_edit_from_gui(
+            &mut self,
+            action: oblikovati_gui::GuiDirectEditAction,
+        ) -> Result<bool, String> {
+            Err(format!(
+                "direct edit {action:?}: expected a certified part owner"
+            ))
+        }
         /// Dispatch a Fillet v2 Properties panel action; example: `work.fillet_v2_from_gui(action)?`.
         fn fillet_v2_from_gui(
             &mut self,
@@ -73,6 +82,12 @@ macro_rules! forward_hole_work_methods {
             action: oblikovati_gui::GuiDraftAction,
         ) -> Result<bool, String> {
             self.$owner.draft_from_gui(action)
+        }
+        fn direct_edit_from_gui(
+            &mut self,
+            action: oblikovati_gui::GuiDirectEditAction,
+        ) -> Result<bool, String> {
+            self.$owner.direct_edit_from_gui(action)
         }
         fn fillet_v2_from_gui(
             &mut self,

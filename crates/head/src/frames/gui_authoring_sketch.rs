@@ -108,6 +108,7 @@ pub(super) fn apply(owner: &mut dyn HeadWork, action: &GuiShellAction) -> Result
         GuiShellAction::Hole(action) => owner.hole_from_gui(action.clone()),
         GuiShellAction::Slot(action) => owner.slot_from_gui(action.clone()),
         GuiShellAction::Combine(action) => owner.combine_from_gui(action.clone()),
+        GuiShellAction::DirectEdit(action) => owner.direct_edit_from_gui(action.clone()),
         GuiShellAction::Draft(action) => owner.draft_from_gui(action.clone()),
         GuiShellAction::FilletV2(action) => owner.fillet_v2_from_gui(action.clone()),
         GuiShellAction::ChamferV2(action) => owner.chamfer_v2_from_gui(action.clone()),

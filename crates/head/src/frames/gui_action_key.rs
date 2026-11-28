@@ -157,6 +157,7 @@ pub(super) fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
         | GuiShellAction::Hole(_)
         | GuiShellAction::Slot(_)
         | GuiShellAction::Combine(_)
+        | GuiShellAction::DirectEdit(_)
         | GuiShellAction::Draft(_)
         | GuiShellAction::FilletV2(_)
         | GuiShellAction::ChamferV2(_)

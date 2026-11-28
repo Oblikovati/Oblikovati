@@ -236,6 +236,7 @@ impl DirectEditDialog {
         self.body = None;
         self.faces.clear();
         self.snap_parallel = false;
+        self.attempted = None;
         actions.push(GuiShellAction::DirectEdit(GuiDirectEditAction::SetFilter(
             filter,
         )));
@@ -250,6 +251,7 @@ impl DirectEditDialog {
             self.faces.clear();
             self.snap_parallel = false;
             self.editing_op_index = None;
+            self.attempted = None;
             actions.push(GuiShellAction::DirectEdit(
                 GuiDirectEditAction::ClearSelection,
             ));
@@ -369,7 +371,11 @@ impl DirectEditDialog {
         manipulator::draw_manipulator(ui, state, area, self.mode, self.has_geometry_selection());
 
         let width = 344.0;
-        let height = 186.0;
+        let height = if self.mode == DirectEditMode::Scale {
+            240.0
+        } else {
+            204.0
+        };
         widget_abi::fit_viewport_properties(ui, DIRECT_EDIT_WINDOW, area, [width, height]);
         let _border = crate::theme::property_window_border(ui);
         let mut open = true;
