@@ -461,6 +461,11 @@ impl Viewport {
         self.update_overlay(|render| render.datum_planes(planes))
     }
 
+    /// Replace reference work axes without modifying solid geometry; example: `view.set_datum_axes(&axes)?`.
+    pub fn set_datum_axes(&mut self, axes: &[crate::ViewportDatumAxis]) -> Result<bool, String> {
+        self.update_overlay(|render| render.datum_axes(axes))
+    }
+
     fn update_overlay(
         &mut self,
         replace: impl FnOnce(&mut RenderView) -> Result<bool, String>,

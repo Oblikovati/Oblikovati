@@ -105,7 +105,7 @@ impl NamedSolid {
         Ok(hits)
     }
 
-    fn native_edge<'a>(
+    pub(super) fn native_edge<'a>(
         &'a self,
         history: &'a DocumentEditHistory,
         document: DocumentGuid,

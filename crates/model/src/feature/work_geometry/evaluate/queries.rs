@@ -46,6 +46,12 @@ impl WorkGeometryEvaluation {
             .iter()
             .filter_map(|(&feature, &datum)| project_plane(datum).map(|plane| (feature, plane)))
     }
+    /// Iterate successful current axes by identity; example: `evaluation.axes().count()`.
+    pub fn axes(&self) -> impl Iterator<Item = (FeatureId, WorkAxisLine)> + '_ {
+        self.datums
+            .iter()
+            .filter_map(|(&feature, &datum)| project_axis(datum).map(|axis| (feature, axis)))
+    }
     /// Resolve one current line by stable identity; example: `evaluation.axis(FeatureId(3))?`.
     pub fn axis(&self, feature: FeatureId) -> Result<WorkAxisLine, WorkPlaneError> {
         self.resolve_kind(feature, "axis", project_axis)

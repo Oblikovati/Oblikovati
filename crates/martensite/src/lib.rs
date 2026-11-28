@@ -100,13 +100,13 @@ pub type FilletHistoryRecord = BlendHistoryRecord;
 /// Compatibility name for a shared named blend result.
 pub type FilletNamedTopology = BlendNamedTopology;
 pub use prism::{
-    BlendCandidate, BlendHistoryRecord, BlendNamedTopology, BodyPresentationSource,
-    CapturedNamedSolid, CertifiedNamedSolidEvaluator, CertifiedPrismEvidence,
-    CertifiedPrismSnapshot, DisplayTriangle, DrawingBaseProjection, DrawingProjectedCurve,
-    DrawingProjection, DrawingProjectionCurveKind, DrawingProjectionFrame, FaceProbe,
-    MarkEligibility, NamedEdgeHit, NamedFaceMesh, NamedPrismSnapshot, NamedSolid,
-    PlanarProfileLoop, PrismAchievedTolerance, PrismFaceMesh, PrismFaceProbe, PrismFaceRole,
-    PrismFaceTopology, PrismHistoryRelation, PrismHistorySource, PrismMeshOptions,
+    AnalyticEdgeAxis, AnalyticEdgeAxisKind, BlendCandidate, BlendHistoryRecord, BlendNamedTopology,
+    BodyPresentationSource, CapturedNamedSolid, CertifiedNamedSolidEvaluator,
+    CertifiedPrismEvidence, CertifiedPrismSnapshot, DisplayTriangle, DrawingBaseProjection,
+    DrawingProjectedCurve, DrawingProjection, DrawingProjectionCurveKind, DrawingProjectionFrame,
+    FaceProbe, MarkEligibility, NamedEdgeHit, NamedFaceMesh, NamedPrismSnapshot, NamedSolid,
+    NamedVertexHit, PlanarProfileLoop, PrismAchievedTolerance, PrismFaceMesh, PrismFaceProbe,
+    PrismFaceRole, PrismFaceTopology, PrismHistoryRelation, PrismHistorySource, PrismMeshOptions,
     PrismPresentation, PrismPresentationSource, PrismProbeDefinition, PrismProbeLoop,
     PrismProbeReport, PrismProbeSnapshot, PrismResolution, PrismResolutionPolicy,
     PrismSubentityHistory, PrismSubentityProvenance, PrismSubentityRole, PrismSurfaceKind,
