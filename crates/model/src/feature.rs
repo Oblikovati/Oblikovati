@@ -46,6 +46,7 @@ pub mod slot;
 pub mod split;
 pub mod stitch;
 mod suppression;
+pub mod surface_trim;
 pub mod thicken_offset;
 pub mod thread;
 pub mod ucs;

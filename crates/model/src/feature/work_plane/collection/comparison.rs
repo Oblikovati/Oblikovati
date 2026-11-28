@@ -15,6 +15,7 @@ impl WorkPlaneDefinition {
             (Stitch(first), Stitch(second)) => first == second,
             (Split(first), Split(second)) => first == second,
             (ReplaceFace(first), ReplaceFace(second)) => first == second,
+            (SurfaceTrim(first), SurfaceTrim(second)) => first == second,
             (Shell(first), Shell(second)) => first == second,
             (Mirror(first), Mirror(second)) => first.same_recipe(second),
             (CircularPattern(first), CircularPattern(second)) => first.same_recipe(second),

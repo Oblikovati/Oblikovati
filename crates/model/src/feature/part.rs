@@ -53,6 +53,7 @@ mod ruled_surface_evaluation;
 mod shell_evaluation;
 mod sketch_body_evaluation;
 mod sketch_recompute;
+mod surface_trim_evaluation;
 mod thicken_offset_evaluation;
 mod work_plane_evaluation;
 pub use super::work_plane::{
@@ -77,6 +78,7 @@ pub enum PartFeatureDefinition {
     ThickenOffset(Box<super::thicken_offset::ThickenOffsetDefinition>),
     Stitch(Box<super::stitch::StitchDefinition>),
     Split(Box<super::split::SplitDefinition>),
+    SurfaceTrim(Box<super::surface_trim::SurfaceTrimDefinition>),
     Mark(Box<super::mark::MarkDefinition>),
     Finish(Box<super::finish::FinishDefinition>),
     ExtendSurface(Box<super::extend_surface::ExtendSurfaceDefinition>),
@@ -146,6 +148,7 @@ impl PartFeatureDefinition {
             Self::ThickenOffset(_) => "thicken-offset",
             Self::Stitch(_) => "stitch",
             Self::Split(_) => "split",
+            Self::SurfaceTrim(_) => "surface-trim",
             Self::Mark(_) => "mark",
             Self::Finish(_) => "finish",
             Self::ExtendSurface(_) => "extend-surface",
@@ -192,6 +195,7 @@ impl PartFeatureDefinition {
                 | Self::ThickenOffset(_)
                 | Self::Stitch(_)
                 | Self::Split(_)
+                | Self::SurfaceTrim(_)
                 | Self::Mark(_)
                 | Self::Finish(_)
                 | Self::ExtendSurface(_)

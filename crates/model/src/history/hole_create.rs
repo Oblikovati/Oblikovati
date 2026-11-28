@@ -11,6 +11,8 @@ mod replace_face_create;
 mod ruled_surface_create;
 #[path = "stitch_create.rs"]
 mod stitch_create;
+#[path = "surface_trim_create.rs"]
+mod surface_trim_create;
 #[path = "ucs_create.rs"]
 mod ucs_create;
 

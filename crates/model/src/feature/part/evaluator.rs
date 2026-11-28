@@ -274,6 +274,18 @@ pub trait PartFeatureEvaluator {
             "split: expected an available B-rep split evaluator".into(),
         ))
     }
+    /// Trim an open surface body against a cutting plane or surface face.
+    fn evaluate_surface_trim(
+        &mut self,
+        _feature: FeatureId,
+        _body: &Self::Body,
+        _tool_body: Option<&Self::Body>,
+        _input: crate::feature::surface_trim::ResolvedSurfaceTrim,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        Err(PartFeatureFailure::Unsupported(
+            "surface trim: expected an available B-rep surface trim evaluator".into(),
+        ))
+    }
     /// Construct a named surface body from boundary sketch curves and optional guide rails.
     fn evaluate_boundary_patch(
         &mut self,

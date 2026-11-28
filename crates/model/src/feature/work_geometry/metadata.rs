@@ -23,6 +23,7 @@ impl AuthoredFeature<WorkGeometryDefinition> {
                     | WorkGeometryDefinition::DeleteFace(_)
                     | WorkGeometryDefinition::ReplaceFace(_)
                     | WorkGeometryDefinition::Split(_)
+                    | WorkGeometryDefinition::SurfaceTrim(_)
                     | WorkGeometryDefinition::Shell(_)
                     | WorkGeometryDefinition::MoveBody(_)
                     | WorkGeometryDefinition::Mirror(_)

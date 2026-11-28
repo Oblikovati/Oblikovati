@@ -110,6 +110,7 @@ fn track_replacement(
             return;
         }
         PartFeatureDefinition::Split(split) => split.body_source(),
+        PartFeatureDefinition::SurfaceTrim(trim) => trim.body_source(),
         PartFeatureDefinition::Mark(mark) => mark.body_source(),
         PartFeatureDefinition::Finish(finish) => finish.body_source(),
         PartFeatureDefinition::ExtendSurface(extend) => extend.body_source(),
