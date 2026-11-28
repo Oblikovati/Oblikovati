@@ -245,6 +245,31 @@ impl WebCadRuntime {
         serde_json::to_string(&errors).map_err(|error| JsValue::from_str(&error.to_string()))
     }
 
+    /// Return the host Oblikovati API major/minor version as JSON.
+    pub fn api_version_json(&self) -> String {
+        let (major, minor) = self.host.api_version();
+        format!("{{\"major\":{major},\"minor\":{minor}}}")
+    }
+
+    /// Validate a WebAssembly add-in's compiled API version against the host contract.
+    pub fn check_addin_compatibility(&self, major: i32, minor: i32) -> Result<(), JsValue> {
+        WebDesktopHost::check_addin_compatibility(major, minor)
+            .map_err(|error| JsValue::from_str(&error))
+    }
+
+    /// Execute a public Oblikovati API wire call on behalf of a loaded WebAssembly add-in.
+    pub fn call_api(
+        &mut self,
+        method: &str,
+        request: &[u8],
+    ) -> Result<js_sys::Uint8Array, JsValue> {
+        let reply = self
+            .host
+            .call_api(method, request)
+            .map_err(|error| JsValue::from_str(&error))?;
+        Ok(js_sys::Uint8Array::from(reply.as_slice()))
+    }
+
     /// Cleanly retire the desktop host and terminate background WASM workers.
     pub fn close(&mut self) {
         let _ = self.host.finish();
