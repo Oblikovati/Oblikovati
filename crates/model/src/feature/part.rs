@@ -14,6 +14,7 @@ mod body_lineage;
 mod body_resolution;
 mod checkpoints;
 mod combine_evaluation;
+mod delete_face_evaluation;
 
 mod hole_evaluation;
 mod move_body_evaluation;
@@ -30,6 +31,7 @@ pub use evaluate::{
 pub use evaluator::PartFeatureEvaluator;
 mod extrusion_pattern;
 mod prefix_replay;
+mod prefix_replay_backend;
 mod prism_replacement;
 mod reads;
 mod resolver;
@@ -57,6 +59,7 @@ pub enum PartFeatureDefinition {
     Slot(Box<super::slot::SlotDefinition>),
     Combine(Box<super::combine::CombineDefinition>),
     Draft(Box<super::draft::DraftDefinition>),
+    DeleteFace(Box<super::delete_face::DeleteFaceDefinition>),
     MoveBody(Box<super::move_body::MoveBodyDefinition>),
     Shell(Box<super::shell::ShellDefinition>),
     Mirror(Box<super::mirror::MirrorDefinition>),
@@ -111,6 +114,7 @@ impl PartFeatureDefinition {
             Self::Slot(_) => "slot",
             Self::Combine(_) => "combine",
             Self::Draft(_) => "draft",
+            Self::DeleteFace(_) => "delete-face",
             Self::MoveBody(_) => "move-body",
             Self::Shell(_) => "shell",
             Self::Mirror(_) => "mirror",
@@ -144,6 +148,7 @@ impl PartFeatureDefinition {
                 | Self::Slot(_)
                 | Self::Combine(_)
                 | Self::Draft(_)
+                | Self::DeleteFace(_)
                 | Self::Shell(_)
                 | Self::MoveBody(_)
                 | Self::Mirror(_)

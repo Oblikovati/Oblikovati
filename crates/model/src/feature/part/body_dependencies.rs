@@ -93,6 +93,7 @@ fn track_replacement(
         PartFeatureDefinition::Slot(slot) => slot.body_source(),
         PartFeatureDefinition::Combine(combine) => combine.base_source(),
         PartFeatureDefinition::Draft(draft) => draft.body_source(),
+        PartFeatureDefinition::DeleteFace(delete_face) => delete_face.body_source(),
         PartFeatureDefinition::Shell(shell) => shell.body_source(),
         PartFeatureDefinition::MoveBody(motion) => motion.body_source(),
         PartFeatureDefinition::Mirror(mirror) => mirror.recipe().sources[0],

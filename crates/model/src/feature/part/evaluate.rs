@@ -57,6 +57,7 @@ pub enum PartFeatureFailure<Failure> {
     ChamferInput(String),
     HoleInput(String),
     DraftInput(String),
+    DeleteFaceInput(String),
     ShellInput(String),
     MoveBodyInput(String),
     Unsupported(String),
@@ -422,6 +423,9 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
             }
             PartFeatureDefinition::Draft(definition) => {
                 self.evaluate_draft(backend, id, definition)
+            }
+            PartFeatureDefinition::DeleteFace(definition) => {
+                self.evaluate_delete_face(backend, id, definition)
             }
             definition @ (PartFeatureDefinition::Mirror(_)
             | PartFeatureDefinition::CircularPattern(_)

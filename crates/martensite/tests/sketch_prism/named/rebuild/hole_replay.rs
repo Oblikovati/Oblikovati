@@ -11,6 +11,8 @@ use oblikovati_model::feature::{
 mod chamfer_v2;
 #[path = "combine_replay.rs"]
 mod combine_replay;
+#[path = "delete_face_replay.rs"]
+mod delete_face_replay;
 #[path = "draft_replay.rs"]
 mod draft_replay;
 #[path = "fillet_v2.rs"]

@@ -164,4 +164,41 @@ impl DocumentSnapshot {
             })
             .map(|_| ())
     }
+
+    /// Append Delete Face inputs; example: `snapshot.create_delete_face("Delete Face1", definition, ids)?`.
+    pub fn create_delete_face(
+        &mut self,
+        name: &str,
+        definition: crate::feature::delete_face::DeleteFaceDefinition,
+        ids: &mut RecipeReservations<'_>,
+    ) -> Result<FeatureId, HistoryError> {
+        let reads = definition.reads();
+        self.create_body_feature(
+            name,
+            PartFeatureDefinition::DeleteFace(Box::new(definition)),
+            reads,
+            ids,
+        )
+    }
+
+    /// Replace an existing Delete Face definition in place; example: `snapshot.edit_delete_face(id, definition)?`.
+    pub fn edit_delete_face(
+        &mut self,
+        feature: FeatureId,
+        definition: crate::feature::delete_face::DeleteFaceDefinition,
+    ) -> Result<(), HistoryError> {
+        let reads = definition.reads();
+        self.work_geometry
+            .replace(
+                feature,
+                PartFeatureDefinition::DeleteFace(Box::new(definition)),
+                reads,
+            )
+            .map_err(|cause| {
+                HistoryError::PartProgram(crate::feature::part::PartFeatureProgramError::Sequence(
+                    cause,
+                ))
+            })
+            .map(|_| ())
+    }
 }
