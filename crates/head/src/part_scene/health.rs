@@ -99,6 +99,7 @@ fn status_reason(
         | FeatureEvaluationStatus::Failed(PartFeatureFailure::ChamferInput(cause))
         | FeatureEvaluationStatus::Failed(PartFeatureFailure::HoleInput(cause))
         | FeatureEvaluationStatus::Failed(PartFeatureFailure::DraftInput(cause))
+        | FeatureEvaluationStatus::Failed(PartFeatureFailure::SplitInput(cause))
         | FeatureEvaluationStatus::Failed(PartFeatureFailure::ShellInput(cause))
         | FeatureEvaluationStatus::Failed(PartFeatureFailure::MoveBodyInput(cause))
         | FeatureEvaluationStatus::Failed(PartFeatureFailure::Unsupported(cause)) => cause.clone(),

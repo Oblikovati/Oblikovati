@@ -79,6 +79,16 @@ impl<
             super::owner_blend::owner_chamfer_v2::edit_seeds(snapshot, session.generation());
         browser.shell_v2_edits =
             super::owner_blend::owner_shell_v2::edit_seeds(snapshot, session.generation());
+        browser.split_edits = super::owner_blend::owner_split::edit_seeds(
+            snapshot,
+            self.part_scenes.current(session).ok(),
+            session.history(),
+            self.files
+                .workspace()
+                .identity(document)
+                .map_err(|cause| cause.to_string())?
+                .internal_name,
+        );
         browser.occurrences = occurrences::browser_occurrences(&self.files, document)?;
         browser.selected_occurrence =
             self.selected_occurrence.as_ref().and_then(|(owner, path)| {
@@ -393,6 +403,7 @@ fn feature_kind_name(
         oblikovati_model::feature::part::PartFeatureDefinition::Slot(_) => "Slot",
         oblikovati_model::feature::part::PartFeatureDefinition::Combine(_) => "Combine",
         oblikovati_model::feature::part::PartFeatureDefinition::Draft(_) => "Draft",
+        oblikovati_model::feature::part::PartFeatureDefinition::Split(_) => "Split",
         oblikovati_model::feature::part::PartFeatureDefinition::Shell(_) => "Shell",
         DeleteBody(_) => "Delete Body",
         oblikovati_model::feature::part::PartFeatureDefinition::Fixed(_)

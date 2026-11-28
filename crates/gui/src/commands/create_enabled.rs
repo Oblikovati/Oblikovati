@@ -18,6 +18,7 @@ pub(crate) fn enabled(action: &GuiShellAction, state: &GuiCommandState) -> Optio
         GuiShellAction::Slot(action) => action.enabled(state),
         GuiShellAction::Combine(action) => action.enabled(state),
         GuiShellAction::Draft(action) => action.enabled(state),
+        GuiShellAction::Split(action) => action.enabled(state),
         GuiShellAction::FilletV2(action) => action.enabled(state),
         GuiShellAction::ChamferV2(action) => action.enabled(state),
         GuiShellAction::ShellV2(action) => action.enabled(state),

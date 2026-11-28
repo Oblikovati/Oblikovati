@@ -47,6 +47,9 @@ pub(super) fn feature_edit_action(
     if browser.draft_edits.contains_key(&feature.id) {
         return GuiShellAction::Draft(crate::GuiDraftAction::OpenEdit(feature.id));
     }
+    if browser.split_edits.contains_key(&feature.id) {
+        return GuiShellAction::Split(crate::GuiSplitAction::OpenEdit(feature.id));
+    }
     if browser.shell_v2_edits.contains_key(&feature.id) {
         return GuiShellAction::OpenShellEdit(feature.id);
     }

@@ -63,6 +63,7 @@ glyph_catalog! {
     Unwrap => "unwrap",
     Hole => "hole",
     Shell => "shell",
+    Split => "split",
     Fillet => "fillet",
     Chamfer => "chamfer",
     Move => "move",

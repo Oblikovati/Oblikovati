@@ -26,6 +26,13 @@ macro_rules! hole_work_methods {
         ) -> Result<bool, String> {
             Err(format!("draft {action:?}: expected a certified part owner"))
         }
+        /// Dispatch a Split Properties panel action; example: `work.split_from_gui(action)?`.
+        fn split_from_gui(
+            &mut self,
+            action: oblikovati_gui::GuiSplitAction,
+        ) -> Result<bool, String> {
+            Err(format!("split {action:?}: expected a certified part owner"))
+        }
         /// Dispatch a Fillet v2 Properties panel action; example: `work.fillet_v2_from_gui(action)?`.
         fn fillet_v2_from_gui(
             &mut self,
@@ -73,6 +80,12 @@ macro_rules! forward_hole_work_methods {
             action: oblikovati_gui::GuiDraftAction,
         ) -> Result<bool, String> {
             self.$owner.draft_from_gui(action)
+        }
+        fn split_from_gui(
+            &mut self,
+            action: oblikovati_gui::GuiSplitAction,
+        ) -> Result<bool, String> {
+            self.$owner.split_from_gui(action)
         }
         fn fillet_v2_from_gui(
             &mut self,
