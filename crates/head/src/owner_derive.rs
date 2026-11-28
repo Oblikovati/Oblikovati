@@ -151,6 +151,7 @@ fn summarize_source(path: &str, snapshot: &DocumentSnapshot) -> GuiDeriveSourceS
                 | PartFeatureDefinition::Offset { .. }
                 | PartFeatureDefinition::Axis(_)
                 | PartFeatureDefinition::Point(_)
+                | PartFeatureDefinition::WorkPoint(_)
         ) {
             work_geometry.push(feature.name().to_string());
         }

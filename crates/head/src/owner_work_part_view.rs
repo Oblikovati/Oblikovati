@@ -85,7 +85,8 @@ macro_rules! desktop_part_view_work {
             window: &mut dyn crate::HeadWindow,
         ) -> Result<bool, String> {
             let cue_changed = self.update_model_pick_cue(inputs, window);
-            Ok(self.process_live_placement_inputs(inputs, window)? || cue_changed)
+            let wp_cancelled = self.handle_work_point_escape(inputs);
+            Ok(self.process_live_placement_inputs(inputs, window)? || cue_changed || wp_cancelled)
         }
         fn poll_window(
             &mut self,

@@ -155,6 +155,7 @@ pub(super) fn project_precise_triad(
     owner: &dyn HeadWork,
     commands: &mut oblikovati_gui::GuiCommandState,
 ) {
+    project_work_point_overlays(window, commands);
     let Some(target) = commands.precise_target.as_mut() else {
         return;
     };
@@ -163,6 +164,36 @@ pub(super) fn project_precise_triad(
     };
     target.triad = window.sketch_pixel(plane, at).ok().map(triad_pixels);
     target.origin_triad = window.sketch_pixel(plane, [0., 0.]).ok().map(triad_pixels);
+}
+fn project_work_point_overlays(
+    window: &dyn HeadWindow,
+    commands: &mut oblikovati_gui::GuiCommandState,
+) {
+    for marker in &mut commands.work_points {
+        marker.pixel = window.model_pixel(marker.position).ok();
+    }
+    let Some(grounded) = commands
+        .work_point
+        .as_mut()
+        .and_then(|wp| wp.grounded.as_mut())
+    else {
+        return;
+    };
+    let origin = grounded.coordinates;
+    grounded.screen_origin = window.model_pixel(origin).ok();
+    let span = 0.8;
+    let x = window
+        .model_pixel([origin[0] + span, origin[1], origin[2]])
+        .ok();
+    let y = window
+        .model_pixel([origin[0], origin[1] + span, origin[2]])
+        .ok();
+    let z = window
+        .model_pixel([origin[0], origin[1], origin[2] + span])
+        .ok();
+    if let (Some(x), Some(y), Some(z)) = (x, y, z) {
+        grounded.screen_axes = Some([x, y, z]);
+    }
 }
 fn triad_pixels(origin: [i32; 2]) -> [[i32; 2]; 3] {
     [
