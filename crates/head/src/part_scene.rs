@@ -454,6 +454,7 @@ pub(crate) use preview_edit::FeatureEditPreviewError;
 mod references;
 
 mod bodies;
+pub(crate) use bodies::BodyRow;
 
 mod measure;
 mod physical;

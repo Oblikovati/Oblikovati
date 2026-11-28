@@ -104,6 +104,7 @@ fn track_replacement(
                 return;
             }
         }
+        PartFeatureDefinition::Split(split) => split.body_source(),
         PartFeatureDefinition::Shell(shell) => shell.body_source(),
         PartFeatureDefinition::MoveBody(motion) => motion.body_source(),
         PartFeatureDefinition::Mirror(mirror) => mirror.recipe().sources[0],

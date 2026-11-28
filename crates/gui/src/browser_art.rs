@@ -67,6 +67,7 @@ pub(crate) fn feature_glyph(kind: &str) -> Option<IconGlyph> {
         "Fillet" => IconGlyph::Fillet,
         "Chamfer" => IconGlyph::Chamfer,
         "Shell" => IconGlyph::Shell,
+        "Split" => IconGlyph::Split,
         "Move Body" => IconGlyph::MoveBodies,
         "Direct Edit" => IconGlyph::DirectEdit,
         "Work Plane" => IconGlyph::WorkPlane,

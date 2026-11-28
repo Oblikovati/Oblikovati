@@ -66,6 +66,8 @@ pub struct GuiModelBrowser {
         std::collections::BTreeMap<FeatureId, crate::GuiThickenOffsetEditSeed>,
     /// Authored operations for editable Direct Edit features.
     pub direct_edit_edits: std::collections::BTreeMap<FeatureId, crate::GuiDirectEditEditSeed>,
+    /// Authored options for editable Split features.
+    pub split_edits: std::collections::BTreeMap<FeatureId, crate::GuiSplitEditSeed>,
     /// Named imported mesh entries listed under the 3rd Party browser folder.
     pub third_party_entries: Vec<String>,
     /// Editable extrusion distance sources, indexed by their current feature identities.

@@ -297,6 +297,28 @@ impl NamedSolid {
         }
     }
 
+    /// Resolve the active feature-produced body key; example: `body.active_body_reference_key(&history, document)?`.
+    pub fn active_body_reference_key<'a>(
+        &'a self,
+        history: &'a DocumentEditHistory,
+        document: DocumentGuid,
+    ) -> Result<&'a [u8], String> {
+        match self {
+            Self::Prism(body) => body.body_reference_key(history, document),
+            Self::Derived(body) => body.active_body_reference_key(history, document),
+        }
+    }
+
+    /// Inspect split parent-to-child reference lineage when this solid is derived.
+    pub fn split_topology_keys(
+        &self,
+    ) -> Option<&std::collections::BTreeMap<Vec<u8>, Vec<Vec<u8>>>> {
+        match self {
+            Self::Prism(_) => None,
+            Self::Derived(body) => Some(body.split_keys()),
+        }
+    }
+
     /// Integrate properties for an exact body name; example: `body.physical_properties(&history, document, key)?`.
     pub fn physical_properties(
         &self,
@@ -409,53 +431,6 @@ impl<'a> CertifiedNamedSolidEvaluator<'a> {
             derived_sources: None,
         }
     }
-    /// Bind the host's per-sketch resolution policy; example: `CertifiedNamedSolidEvaluator::with_policy(&history, document, policy)`.
-    pub fn with_policy(
-        history: &'a DocumentEditHistory,
-        document: DocumentGuid,
-        policy: PrismResolutionPolicy,
-    ) -> Self {
-        Self {
-            prism: Some(CertifiedNamedPrismEvaluator::with_policy(
-                history, document, policy,
-            )),
-            diagnostic: NamedPrismEvaluator::new(history, document),
-            history,
-            document,
-            derived_sources: None,
-        }
-    }
-    /// Select the host's optional resolution policy; example: `CertifiedNamedSolidEvaluator::with_optional_policy(&history, document, None)`.
-    pub fn with_optional_policy(
-        history: &'a DocumentEditHistory,
-        document: DocumentGuid,
-        policy: Option<PrismResolutionPolicy>,
-    ) -> Self {
-        match policy {
-            Some(policy) => Self::with_policy(history, document, policy),
-            None => Self {
-                prism: None,
-                diagnostic: NamedPrismEvaluator::new(history, document),
-                history,
-                document,
-                derived_sources: None,
-            },
-        }
-    }
-    /// Attach loaded source Part snapshots for Derived Part evaluation.
-    pub fn with_derived_sources(
-        mut self,
-        sources: &'a std::collections::BTreeMap<
-            String,
-            oblikovati_model::history::DocumentSnapshot,
-        >,
-    ) -> Self {
-        self.derived_sources = Some(sources);
-        self
-    }
-    pub(crate) fn resolution_policy(&self) -> Option<PrismResolutionPolicy> {
-        self.prism.as_ref().map(|prism| prism.resolution_policy())
-    }
 }
 
 mod blend_evaluation;
@@ -472,5 +447,6 @@ mod hole_placement;
 mod move_body_evaluation;
 mod shell_evaluation;
 mod slot_evaluation;
+mod split_evaluation;
 mod thicken_offset_evaluation;
 mod thread_evaluation;

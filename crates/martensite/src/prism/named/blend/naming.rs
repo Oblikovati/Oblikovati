@@ -103,6 +103,17 @@ impl BlendNamedTopology {
         Ok(&self.primary_body)
     }
 
+    /// Resolve the active feature-produced body key; example: `named.active_body_reference_key(&history, document)?`.
+    pub fn active_body_reference_key<'a>(
+        &'a self,
+        history: &DocumentEditHistory,
+        document: DocumentGuid,
+    ) -> Result<&'a [u8], String> {
+        self.bindings
+            .bind(history, document, &self.active_body, 4)?;
+        Ok(&self.active_body)
+    }
+
     /// Integrate analytic properties of a named body; example: `named.physical_properties(&history, document, &body_key)?`.
     pub fn physical_properties(
         &self,
@@ -268,7 +279,25 @@ impl BlendCandidate {
             ));
         }
         let names = self.result_names(document, feature)?;
-        self.bind_topology(history, document, feature, names)
+        self.bind_topology(history, document, feature, names, None)
+    }
+
+    /// Name one output solid of a multi-body Split with a distinct primary body key (#3918).
+    pub(in crate::prism::named) fn name_split_body_topology(
+        &self,
+        history: &DocumentEditHistory,
+        document: DocumentGuid,
+        feature: FeatureId,
+        tag: &str,
+    ) -> Result<BlendNamedTopology, String> {
+        if document != self.document || !self.scope.is_current(history) {
+            return Err(format!(
+                "split document {document}, feature {feature:?}: expected the current source evaluation in {}",
+                self.document
+            ));
+        }
+        let names = self.result_names(document, feature)?;
+        self.bind_topology(history, document, feature, names, Some(tag))
     }
 
     fn bind_topology(
@@ -277,21 +306,25 @@ impl BlendCandidate {
         document: DocumentGuid,
         feature: FeatureId,
         names: result_names::ResultNames,
+        split_body_tag: Option<&str>,
     ) -> Result<BlendNamedTopology, String> {
         let body = DerivedReferenceName::new(
             document,
             feature.0,
             4,
-            "body",
+            split_body_tag.unwrap_or("body"),
             std::slice::from_ref(&self.body_parent),
         )?
         .encode()?;
-        let mut entries: Vec<_> = self
-            .source_bodies
-            .iter()
-            .filter(|key| *key != &body)
-            .map(|key| (key.clone(), self.shape.clone()))
-            .collect();
+        let mut entries: Vec<_> = if split_body_tag.is_some() {
+            Vec::new()
+        } else {
+            self.source_bodies
+                .iter()
+                .filter(|key| *key != &body)
+                .map(|key| (key.clone(), self.shape.clone()))
+                .collect()
+        };
         entries.push((body.clone(), self.shape.clone()));
         entries.extend(names.entries);
         let live: Vec<_> = entries.iter().map(|(key, _)| key.clone()).collect();
@@ -305,6 +338,11 @@ impl BlendCandidate {
             .encoded_keys(history, document)?
             .map(<[u8]>::to_vec)
             .collect();
+        let primary_body = if split_body_tag.is_some() {
+            body.clone()
+        } else {
+            self.primary_body.clone()
+        };
         Ok(BlendNamedTopology {
             resolution: self.resolution,
             achieved_tolerance: self.achieved_tolerance,
@@ -313,7 +351,7 @@ impl BlendCandidate {
             splits,
             bindings,
             active_body: body,
-            primary_body: self.primary_body.clone(),
+            primary_body,
             shape: self.shape.clone(),
             thread_overlays: Vec::new(),
         })

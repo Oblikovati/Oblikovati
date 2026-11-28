@@ -417,6 +417,7 @@ fn feature_kind(definition: &PartFeatureDefinition) -> &'static str {
         Thread(_) => "thread",
         DeleteFace(_) => "delete-face",
         ThickenOffset(_) => "thicken-offset",
+        Split(_) => "split",
         Shell(_) => "shell",
         Mirror(_) => "mirror",
         CircularPattern(_) => "circular-pattern",

@@ -64,6 +64,7 @@ glyph_catalog! {
     Hole => "hole",
     Thread => "thread",
     Shell => "shell",
+    Split => "split",
     Fillet => "fillet",
     Chamfer => "chamfer",
     Move => "move",

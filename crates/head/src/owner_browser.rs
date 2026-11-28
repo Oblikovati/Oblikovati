@@ -87,6 +87,16 @@ impl<
                 identity.internal_name,
             );
         }
+        browser.split_edits = super::owner_blend::owner_split::edit_seeds(
+            snapshot,
+            self.part_scenes.current(session).ok(),
+            session.history(),
+            self.files
+                .workspace()
+                .identity(document)
+                .map_err(|cause| cause.to_string())?
+                .internal_name,
+        );
         browser.occurrences = occurrences::browser_occurrences(&self.files, document)?;
         browser.selected_occurrence =
             self.selected_occurrence.as_ref().and_then(|(owner, path)| {

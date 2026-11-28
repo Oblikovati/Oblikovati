@@ -102,6 +102,34 @@ impl BodyLineageIndex {
         }
         Ok(())
     }
+    pub(super) fn replace_with_outputs(
+        &mut self,
+        current: BodySlot,
+        next: FeatureId,
+        slots: BTreeSet<BodySlot>,
+    ) -> Result<(), String> {
+        if self.owners.contains_key(&next)
+            || slots.is_empty()
+            || slots.iter().any(|slot| slot.feature != next)
+            || !self
+                .owners
+                .values()
+                .any(|owners| owners.slots.contains(&current))
+        {
+            return Err(format!(
+                "body replacement {current:?} -> {next:?} ({slots:?}): expected a live source and unused multi-output target"
+            ));
+        }
+        self.register_outputs(next, slots.clone())?;
+        let grouped = slots.len() > 1;
+        for (owner, outputs) in &mut self.owners {
+            if *owner != next && outputs.slots.remove(&current) {
+                outputs.slots.extend(slots.iter().copied());
+                outputs.grouped |= grouped || outputs.slots.len() > 1;
+            }
+        }
+        Ok(())
+    }
     pub(super) fn retire(&mut self, current: BodySlot) {
         self.owners.retain(|_, owners| {
             owners.slots.remove(&current);

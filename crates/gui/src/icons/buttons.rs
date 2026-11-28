@@ -230,6 +230,7 @@ pub(crate) fn action_glyph(action: &GuiShellAction) -> Option<IconGlyph> {
         GuiShellAction::Undo => IconGlyph::Undo,
         GuiShellAction::Redo => IconGlyph::Redo,
         GuiShellAction::OpenShellFeature => IconGlyph::Shell,
+        GuiShellAction::Split(crate::GuiSplitAction::Open) => IconGlyph::Split,
         GuiShellAction::Revolve(crate::GuiRevolveAction::Open) => IconGlyph::Revolve,
         GuiShellAction::Sweep(crate::GuiSweepAction::Open) => IconGlyph::Sweep,
         GuiShellAction::Loft(crate::GuiLoftAction::Open) => IconGlyph::Loft,

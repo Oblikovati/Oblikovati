@@ -171,6 +171,7 @@ mod face_draft;
 mod face_properties;
 mod hole_dialog;
 mod slot_dialog;
+mod split_dialog;
 mod thicken_offset_dialog;
 mod thread_dialog;
 pub use application::model_browser::feature_properties::{GuiFeatureCondition, GuiFeatureEdit};
@@ -197,6 +198,10 @@ pub use hole_dialog::{
 pub use slot_dialog::{
     GuiSlotAction, GuiSlotEditSeed, GuiSlotPick, GuiSlotPreview, GuiSlotPreviewState,
     GuiSlotRequest,
+};
+pub use split_dialog::{
+    GuiSplitAction, GuiSplitEditSeed, GuiSplitPick, GuiSplitPickKind, GuiSplitPickMode,
+    GuiSplitPreview, GuiSplitPreviewState, GuiSplitRequest,
 };
 pub use thicken_offset_dialog::{
     GuiThickenOffsetAction, GuiThickenOffsetEditSeed, GuiThickenOffsetPick,

@@ -113,6 +113,7 @@ pub(super) fn apply(owner: &mut dyn HeadWork, action: &GuiShellAction) -> Result
         GuiShellAction::Thread(action) => owner.thread_from_gui(action.clone()),
         GuiShellAction::DeleteFace(action) => owner.delete_face_from_gui(action.clone()),
         GuiShellAction::ThickenOffset(action) => owner.thicken_offset_from_gui(action.clone()),
+        GuiShellAction::Split(action) => owner.split_from_gui(action.clone()),
         GuiShellAction::FilletV2(action) => owner.fillet_v2_from_gui(action.clone()),
         GuiShellAction::ChamferV2(action) => owner.chamfer_v2_from_gui(action.clone()),
         GuiShellAction::ShellV2(action) => owner.shell_v2_from_gui(action.clone()),

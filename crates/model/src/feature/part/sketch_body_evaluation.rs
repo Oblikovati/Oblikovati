@@ -49,6 +49,12 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
             PartFeatureDefinition::SketchDecal(definition) => {
                 [Some(definition.sketch()), None, None]
             }
+            PartFeatureDefinition::Split(definition) => match definition.tool() {
+                crate::feature::split::SplitTool::SketchCurve { sketch, .. } => {
+                    [Some(*sketch), None, None]
+                }
+                _ => return Ok(()),
+            },
             PartFeatureDefinition::SketchLoft(definition) => {
                 let recipe = definition.recipe();
                 let [first, last] = recipe.sections;

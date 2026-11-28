@@ -149,6 +149,12 @@ macro_rules! desktop_extrusion_work {
         ) -> Result<bool, String> {
             self.direct_edit_command(action)
         }
+        fn split_from_gui(
+            &mut self,
+            action: oblikovati_gui::GuiSplitAction,
+        ) -> Result<bool, String> {
+            self.split_command(action)
+        }
         fn fillet_v2_from_gui(
             &mut self,
             action: oblikovati_gui::GuiFilletV2Action,

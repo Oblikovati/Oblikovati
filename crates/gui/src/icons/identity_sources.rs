@@ -51,6 +51,7 @@ pub(super) fn source(glyph: IconGlyph, light: bool) -> Option<&'static str> {
         IconGlyph::Fillet => include_str!("../../assets/identity/cmd-fillet-32.svg"),
         IconGlyph::Hole => include_str!("../../assets/identity/cmd-hole-32.svg"),
         IconGlyph::Shell => include_str!("../../assets/identity/cmd-shell-32.svg"),
+        IconGlyph::Split => include_str!("../../assets/identity/cmd-model-split-32.svg"),
         IconGlyph::WorkPlane => include_str!("../../assets/identity/cmd-work-plane-32.svg"),
         IconGlyph::RectangularPattern => {
             include_str!("../../assets/identity/cmd-pattern-rect-32.svg")

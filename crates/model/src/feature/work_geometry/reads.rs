@@ -17,6 +17,7 @@ impl WorkGeometryDefinition {
             Self::Draft(definition) => return definition.reads(),
             Self::DeleteFace(definition) => return definition.reads(),
             Self::ThickenOffset(definition) => return definition.reads(),
+            Self::Split(definition) => return definition.reads(),
             Self::Shell(definition) => return definition.reads(),
             Self::Mirror(definition) => return definition.reads(),
             Self::CircularPattern(definition) => return definition.reads(),

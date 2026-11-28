@@ -312,4 +312,41 @@ impl DocumentSnapshot {
             })
             .map(|_| ())
     }
+
+    /// Append Split inputs; example: `snapshot.create_split("Split1", definition, ids)?`.
+    pub fn create_split(
+        &mut self,
+        name: &str,
+        definition: crate::feature::split::SplitDefinition,
+        ids: &mut RecipeReservations<'_>,
+    ) -> Result<FeatureId, HistoryError> {
+        let reads = definition.reads();
+        self.create_body_feature(
+            name,
+            PartFeatureDefinition::Split(Box::new(definition)),
+            reads,
+            ids,
+        )
+    }
+
+    /// Replace an existing Split definition in place; example: `snapshot.edit_split(id, definition)?`.
+    pub fn edit_split(
+        &mut self,
+        feature: FeatureId,
+        definition: crate::feature::split::SplitDefinition,
+    ) -> Result<(), HistoryError> {
+        let reads = definition.reads();
+        self.work_geometry
+            .replace(
+                feature,
+                PartFeatureDefinition::Split(Box::new(definition)),
+                reads,
+            )
+            .map_err(|cause| {
+                HistoryError::PartProgram(crate::feature::part::PartFeatureProgramError::Sequence(
+                    cause,
+                ))
+            })
+            .map(|_| ())
+    }
 }

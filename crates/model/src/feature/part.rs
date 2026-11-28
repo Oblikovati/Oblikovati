@@ -36,6 +36,7 @@ mod prefix_replay_backend;
 mod prism_replacement;
 mod reads;
 mod resolver;
+mod split_evaluation;
 mod transfer;
 pub use prefix_replay::BorrowedPartReplay;
 pub use transfer::{CapturedPartTransfer, CompletedPartTransfer};
@@ -65,6 +66,7 @@ pub enum PartFeatureDefinition {
     Thread(Box<super::thread::ThreadDefinition>),
     DeleteFace(Box<super::delete_face::DeleteFaceDefinition>),
     ThickenOffset(Box<super::thicken_offset::ThickenOffsetDefinition>),
+    Split(Box<super::split::SplitDefinition>),
     MoveBody(Box<super::move_body::MoveBodyDefinition>),
     Shell(Box<super::shell::ShellDefinition>),
     Mirror(Box<super::mirror::MirrorDefinition>),
@@ -123,6 +125,7 @@ impl PartFeatureDefinition {
             Self::Thread(_) => "thread",
             Self::DeleteFace(_) => "delete-face",
             Self::ThickenOffset(_) => "thicken-offset",
+            Self::Split(_) => "split",
             Self::MoveBody(_) => "move-body",
             Self::Shell(_) => "shell",
             Self::Mirror(_) => "mirror",
@@ -160,6 +163,7 @@ impl PartFeatureDefinition {
                 | Self::Thread(_)
                 | Self::DeleteFace(_)
                 | Self::ThickenOffset(_)
+                | Self::Split(_)
                 | Self::Shell(_)
                 | Self::MoveBody(_)
                 | Self::Mirror(_)

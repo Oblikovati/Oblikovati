@@ -20,6 +20,8 @@ mod rigid_motion;
 mod shell;
 mod slot;
 mod solid_boolean;
+mod split;
+mod split_tool;
 mod thicken_offset;
 mod thicken_offset_chain;
 pub(super) mod thread;

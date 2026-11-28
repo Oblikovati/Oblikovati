@@ -98,4 +98,29 @@ impl BlendNamedTopology {
             request,
         )
     }
+    pub(in crate::prism::named) fn split_candidates(
+        &self,
+        history: &DocumentEditHistory,
+        document: DocumentGuid,
+        feature: FeatureId,
+        resolved: &oblikovati_model::feature::split::ResolvedSplit,
+    ) -> Result<Vec<BlendCandidate>, String> {
+        let input = self.source_topology(history, document)?;
+        super::super::split::build_split_candidates(
+            super::super::BlendInputTopology {
+                body: &input.body,
+                source: input.entities,
+                source_bodies: input.body_keys,
+                body_parent: self.active_body.clone(),
+                primary_body: self.primary_body.clone(),
+                inherited_deleted: self.deleted.clone(),
+                inherited_splits: self.splits.clone(),
+                resolution: self.resolution,
+            },
+            history,
+            document,
+            feature,
+            resolved,
+        )
+    }
 }

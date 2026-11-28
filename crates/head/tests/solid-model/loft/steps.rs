@@ -30,6 +30,8 @@ mod solid_rib;
 mod solid_shell;
 #[path = "../slot/steps.rs"]
 mod solid_slot;
+#[path = "../split/steps.rs"]
+mod solid_split;
 #[path = "../thicken-offset/steps.rs"]
 mod solid_thicken_offset;
 #[path = "../thread/steps.rs"]

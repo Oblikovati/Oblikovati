@@ -280,6 +280,8 @@ impl<
             thicken_offset_pick: self.gui_thicken_offset_pick(document, session.generation()),
             direct_edit_preview: self.gui_direct_edit_preview(document, session.generation()),
             direct_edit_pick: self.gui_direct_edit_pick(document, session.generation()),
+            split_preview: self.gui_split_preview(document, session.generation()),
+            split_pick: self.gui_split_pick(document, session.generation()),
             fillet_v2_preview: self.gui_fillet_v2_preview(document, session.generation()),
             fillet_v2_pick: self.gui_fillet_v2_pick(document, session.generation()),
             chamfer_v2_preview: self.gui_chamfer_v2_preview(document, session.generation()),

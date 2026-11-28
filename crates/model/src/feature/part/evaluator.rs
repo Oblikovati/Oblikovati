@@ -167,6 +167,17 @@ pub trait PartFeatureEvaluator {
             "direct edit: expected an available direct-edit evaluator".into(),
         ))
     }
+    /// Split faces of a solid or split a solid body; example: `backend.evaluate_split(id, body, input)`.
+    fn evaluate_split(
+        &mut self,
+        _feature: FeatureId,
+        _body: &Self::Body,
+        _input: crate::feature::split::ResolvedSplit,
+    ) -> Result<Vec<Self::Body>, PartFeatureFailure<Self::Failure>> {
+        Err(PartFeatureFailure::Unsupported(
+            "split: expected an available B-rep split evaluator".into(),
+        ))
+    }
     /// Resolve the sweep from a sketch plane to the current target body's bounds.
     /// Example: `backend.prism_through_all_span(body, plane, direction)?`.
     fn prism_through_all_span(

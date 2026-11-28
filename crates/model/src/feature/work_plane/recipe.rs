@@ -26,6 +26,7 @@ pub enum WorkPlaneDefinitionRecipe {
     Thread(crate::feature::thread::ThreadRecipe),
     DeleteFace(crate::feature::delete_face::DeleteFaceRecipe),
     ThickenOffset(crate::feature::thicken_offset::ThickenOffsetRecipe),
+    Split(crate::feature::split::SplitRecipe),
     MoveBody(crate::feature::move_body::MoveBodyRecipe),
     Shell(crate::feature::shell::ShellRecipe),
     Mirror(crate::feature::mirror::MirrorRecipe),
@@ -86,6 +87,7 @@ impl WorkPlaneDefinition {
             Self::Thread(definition) => Source::Thread(definition.recipe()),
             Self::DeleteFace(definition) => Source::DeleteFace(definition.recipe()),
             Self::ThickenOffset(definition) => Source::ThickenOffset(definition.recipe()),
+            Self::Split(definition) => Source::Split(definition.recipe()),
             Self::MoveBody(definition) => Source::MoveBody(definition.recipe()),
             Self::Shell(definition) => Source::Shell(definition.recipe()),
             Self::Mirror(mirror) => Source::Mirror(mirror.recipe().clone()),
@@ -183,6 +185,9 @@ fn restore_definition(
                 .map(|definition| WorkPlaneDefinition::ThickenOffset(Box::new(definition)))
                 .map_err(WorkPlaneError::BodyReference)
         }
+        Split(recipe) => crate::feature::split::SplitDefinition::from_recipe(recipe)
+            .map(|definition| WorkPlaneDefinition::Split(Box::new(definition)))
+            .map_err(WorkPlaneError::BodyReference),
         Chamfer(recipe) => crate::feature::chamfer::ChamferDefinition::from_recipe(&recipe)
             .map(|definition| WorkPlaneDefinition::Chamfer(Box::new(definition)))
             .map_err(WorkPlaneError::BodyReference),
@@ -320,6 +325,7 @@ impl WorkPlaneDefinitionRecipe {
             Self::Thread(_) => 48,
             Self::DeleteFace(_) => 53,
             Self::ThickenOffset(_) => 50,
+            Self::Split(_) => 51,
             Self::SketchSweep(recipe) => match recipe.version {
                 7 => 29,
                 6 => 28,
@@ -388,6 +394,7 @@ impl WorkPlaneDefinitionRecipe {
             Self::Thread(_) => 58,
             Self::DeleteFace(_) => 63,
             Self::ThickenOffset(_) => 60,
+            Self::Split(_) => 61,
             Self::SketchSweep(recipe) => match recipe.version {
                 7 => 34,
                 6 => 33,

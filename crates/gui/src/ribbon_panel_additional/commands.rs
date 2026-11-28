@@ -213,6 +213,7 @@ fn additional_icon_entries(
             ("Delete Face", Glyph::DeleteFace),
             ("Thicken/Offset", Glyph::Shell),
             ("Direct Edit", Glyph::DirectEdit),
+            ("Split", Glyph::Split),
         ],
         RibbonPanel::PartSimplification => &[
             ("Remove Details", Glyph::Simplify),
@@ -307,6 +308,7 @@ fn additional_action(label: &str) -> Option<GuiShellAction> {
             crate::GuiThickenOffsetAction::Open,
         )),
         "Direct Edit" => Some(GuiShellAction::DirectEdit(crate::GuiDirectEditAction::Open)),
+        "Split" => Some(GuiShellAction::Split(crate::GuiSplitAction::Open)),
         "Constraint Inference Scope" => Some(GuiShellAction::OpenInferenceScope),
         _ => None,
     }
