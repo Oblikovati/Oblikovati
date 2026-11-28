@@ -32,6 +32,8 @@ mod solid_hole;
 mod solid_import;
 #[path = "../mark/steps.rs"]
 mod solid_mark;
+#[path = "../replace_face/steps.rs"]
+mod solid_replace_face;
 #[path = "../rib/steps.rs"]
 mod solid_rib;
 #[path = "../ruled-surface/steps.rs"]
