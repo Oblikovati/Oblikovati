@@ -246,8 +246,15 @@ pub(crate) fn draw_panel_content(
             let (position, _) = owners.icons.appearance.cell(0);
             owners.icons.cursor(ui, origin, position);
             crate::ribbon_panels::builtin::draw(ui, panel, state, owners, actions, false);
+            let (axis_pos, axis_size) = crate::ribbon_panels::builtin::plane_neighbor_cell(
+                owners.icons,
+                state,
+                owners.customization,
+                0,
+            );
+            owners.icons.cursor(ui, origin, axis_pos);
+            crate::ribbon_axis_group::draw(ui, state, owners.icons, actions, axis_size);
             for (index, (label, icon)) in [
-                ("Axis", IconGlyph::WorkAxis),
                 ("Point", IconGlyph::WorkPoint),
                 ("UCS", IconGlyph::WorkCoordinateSystem),
             ]
@@ -258,7 +265,7 @@ pub(crate) fn draw_panel_content(
                     owners.icons,
                     state,
                     owners.customization,
-                    index,
+                    index + 1,
                 );
                 owners.icons.cursor(ui, origin, position);
                 muted::muted_command(ui, label, NOT_PORTED, owners.icons, Some(icon), false, size);

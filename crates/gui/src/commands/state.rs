@@ -227,6 +227,10 @@ pub struct GuiCommandState {
     /// Projected display segments grouped by the selected exact edge.
     pub selected_edge_outlines: Vec<Vec<[[i32; 2]; 2]>>,
     pub origin_axes: Vec<crate::GuiOriginAxis>,
+    /// Active status prompt while an interactive Work Axis command is running.
+    pub work_axis_prompt: Option<String>,
+    /// Projected visible user work axes and their browser selection highlight state.
+    pub work_axes: Vec<crate::GuiWorkAxisDisplay>,
     /// What the owner read from the file an Open dialog has selected.
     pub inspected_file: Option<crate::GuiInspectedFile>,
     /// A face of the model is chosen in the view.
