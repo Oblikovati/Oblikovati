@@ -125,6 +125,12 @@ macro_rules! desktop_extrusion_work {
         ) -> Result<bool, String> {
             self.chamfer_v2_command(action)
         }
+        fn shell_v2_from_gui(
+            &mut self,
+            action: oblikovati_gui::GuiShellV2Action,
+        ) -> Result<bool, String> {
+            self.shell_v2_command(action)
+        }
         fn preview_fillet_from_gui(
             &mut self,
             request: Option<&oblikovati_gui::GuiFilletRequest>,

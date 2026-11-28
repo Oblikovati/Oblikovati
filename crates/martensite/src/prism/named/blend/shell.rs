@@ -247,14 +247,7 @@ fn run_both_shell(
     }
     // Fallback to outward thick solid if two-pass symmetric offset declines on curved topology.
     run_single_shell(
-        body,
-        sources,
-        openings,
-        thickness,
-        overrides,
-        1.0,
-        offset_tol,
-        options,
+        body, sources, openings, thickness, overrides, 1.0, offset_tol, options,
     )
 }
 
@@ -277,7 +270,9 @@ fn offset_history_records(
                 .iter()
                 .cloned()
                 .collect();
-            let deleted = maker.is_deleted(source).map_err(|cause| cause.to_string())?;
+            let deleted = maker
+                .is_deleted(source)
+                .map_err(|cause| cause.to_string())?;
             Ok(BlendHistoryRecord {
                 name: name.clone(),
                 source: source.clone(),
@@ -309,7 +304,9 @@ fn composed_offset_history(
             .iter()
             .cloned()
             .collect();
-        let outer_deleted = outer.is_deleted(source).map_err(|cause| cause.to_string())?;
+        let outer_deleted = outer
+            .is_deleted(source)
+            .map_err(|cause| cause.to_string())?;
         let mut intermediates: Vec<Shape> = Vec::new();
         for shape in mid_mod.iter().chain(&mid_gen) {
             push_unique_shape(&mut intermediates, shape);

@@ -154,6 +154,8 @@ pub struct GuiCommandState {
     pub fillet_v2_pick: Option<crate::GuiFilletV2Pick>,
     pub chamfer_v2_preview: Option<crate::GuiChamferV2PreviewState>,
     pub chamfer_v2_pick: Option<crate::GuiChamferV2Pick>,
+    pub shell_v2_preview: Option<crate::GuiShellV2PreviewState>,
+    pub shell_v2_pick: Option<crate::GuiShellV2Pick>,
     /// Selected named solid face reference key when a model face is chosen.
     pub selected_model_face: Option<Vec<u8>>,
     /// The exact extrusion draft accepted for preview at this document generation.

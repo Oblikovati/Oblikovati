@@ -132,6 +132,13 @@ fn again_reports_create_rib_failed(world: &mut ApplicationWorld) {
 
 #[when("the user cancels")]
 fn user_cancels_rib_failure(world: &mut ApplicationWorld) {
+    if super::super::diagnostics::window_geometry("Shell").is_some() {
+        let center = world.run_in_window("Shell", "Cancel").center();
+        world.click(super::super::diagnostics::pointer_pixels(center));
+        world.pump(Vec::new());
+        world.pump(Vec::new());
+        return;
+    }
     click_modal_control(world, CREATE_FAILED_WINDOW, "Cancel");
 }
 

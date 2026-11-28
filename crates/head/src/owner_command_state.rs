@@ -271,6 +271,8 @@ impl<
             fillet_v2_pick: self.gui_fillet_v2_pick(document, session.generation()),
             chamfer_v2_preview: self.gui_chamfer_v2_preview(document, session.generation()),
             chamfer_v2_pick: self.gui_chamfer_v2_pick(document, session.generation()),
+            shell_v2_preview: self.gui_shell_v2_preview(document, session.generation()),
+            shell_v2_pick: self.gui_shell_v2_pick(document, session.generation()),
             selected_model_face: self
                 .chosen_model_face(document)
                 .map(|face| face.key.clone()),

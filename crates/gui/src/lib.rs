@@ -162,6 +162,7 @@ pub use fillet_panel::{
 };
 mod dimensions;
 mod extrude_dialog;
+#[cfg(test)]
 mod face_draft;
 mod face_properties;
 mod hole_dialog;
@@ -179,9 +180,14 @@ mod loft_dialog;
 mod move_body_dialog;
 mod move_body_ribbon;
 mod shell_feature_dialog;
+mod shell_panel;
 pub use loft_dialog::{
     GuiLoftAction, GuiLoftEditSeed, GuiLoftElement, GuiLoftPathMode, GuiLoftPlacedView,
     GuiLoftSection,
+};
+pub use shell_panel::{
+    GuiShellOverrideSet, GuiShellPickMode, GuiShellV2Action, GuiShellV2EditSeed, GuiShellV2Pick,
+    GuiShellV2Preview, GuiShellV2PreviewState, GuiShellV2Request,
 };
 mod feature_properties;
 pub use feature_properties::FeatureOutputMode;

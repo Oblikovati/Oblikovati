@@ -338,6 +338,7 @@ impl GuiShellAction {
             Self::LookAtSelection => state.look_at_available,
             Self::OpenMoveBody => hole_enabled::open(state),
             Self::OpenShellFeature => shell_enabled::open(state),
+            Self::OpenShellEdit(feature) => shell_enabled::open_edit(state, *feature),
             Self::Revolve(_)
             | Self::Sweep(_)
             | Self::Loft(_)
@@ -351,7 +352,8 @@ impl GuiShellAction {
             | Self::Hole(_)
             | Self::Slot(_)
             | Self::FilletV2(_)
-            | Self::ChamferV2(_) => false,
+            | Self::ChamferV2(_)
+            | Self::ShellV2(_) => false,
             Self::PreviewMoveBody(None) | Self::PreviewShellFeature(None) => true,
             Self::PreviewMoveBody(Some(r)) | Self::CreateMoveBody(r) => motion::request(state, r),
             Self::PreviewShellFeature(Some(request)) | Self::CreateShellFeature(request) => {

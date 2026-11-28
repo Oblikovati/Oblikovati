@@ -38,9 +38,16 @@ fn shell_v2_directions_overrides_and_rounded_type() {
     h1.commit(&tok, false).unwrap();
     let mut backend = CertifiedNamedSolidEvaluator::new(&h1, document(), certified_resolution());
     let r1 = h1.snapshot().evaluate_part_features(&mut backend).unwrap();
-    assert!(r1.health().iter().all(|h| h.status == FeatureEvaluationStatus::Healthy));
+    assert!(
+        r1.health()
+            .iter()
+            .all(|h| h.status == FeatureEvaluationStatus::Healthy)
+    );
     let v_in = r1.body(id1).unwrap().volume(&h1, document()).unwrap();
-    assert!(v_in > 0.0 && v_in < base_vol, "v_in={v_in}, base={base_vol}");
+    assert!(
+        v_in > 0.0 && v_in < base_vol,
+        "v_in={v_in}, base={base_vol}"
+    );
 
     // 2) Both 0.2 cm with 0.1 cm side-face override
     let both_def = ShellDefinition::new_with_options(
@@ -62,7 +69,9 @@ fn shell_v2_directions_overrides_and_rounded_type() {
     let mut backend = CertifiedNamedSolidEvaluator::new(&h2, document(), certified_resolution());
     let r2 = h2.snapshot().evaluate_part_features(&mut backend).unwrap();
     assert!(
-        r2.health().iter().all(|h| h.status == FeatureEvaluationStatus::Healthy),
+        r2.health()
+            .iter()
+            .all(|h| h.status == FeatureEvaluationStatus::Healthy),
         "Both shell health: {:?}",
         r2.health()
     );
@@ -89,7 +98,9 @@ fn shell_v2_directions_overrides_and_rounded_type() {
     let mut backend = CertifiedNamedSolidEvaluator::new(&h3, document(), certified_resolution());
     let r3 = h3.snapshot().evaluate_part_features(&mut backend).unwrap();
     assert!(
-        r3.health().iter().all(|h| h.status == FeatureEvaluationStatus::Healthy),
+        r3.health()
+            .iter()
+            .all(|h| h.status == FeatureEvaluationStatus::Healthy),
         "Rounded shell health: {:?}",
         r3.health()
     );
@@ -138,7 +149,9 @@ fn shell_v2_directions_overrides_and_rounded_type() {
     let mut backend = CertifiedNamedSolidEvaluator::new(&h4b, document(), certified_resolution());
     let r4b = h4b.snapshot().evaluate_part_features(&mut backend).unwrap();
     assert!(
-        r4b.health().iter().all(|h| h.status == FeatureEvaluationStatus::Healthy),
+        r4b.health()
+            .iter()
+            .all(|h| h.status == FeatureEvaluationStatus::Healthy),
         "Both+Rounded health: {:?}",
         r4b.health()
     );
@@ -176,14 +189,21 @@ fn shell_v2_directions_overrides_and_rounded_type() {
     let chain = filleted
         .shell_tangent_face_chain(&h5, document(), &cyl_face)
         .unwrap();
-    assert_eq!(chain.len(), 3, "expected cylindrical fillet + 2 tangent planes");
+    assert_eq!(
+        chain.len(),
+        3,
+        "expected cylindrical fillet + 2 tangent planes"
+    );
     let planar_only = filleted
         .shell_tangent_face_chain(&h5, document(), &chain[1])
         .unwrap();
     assert_eq!(planar_only.len(), 1);
 
     let tok = h5.begin("Shell3Faces").unwrap();
-    let body_key = filleted.body_reference_key(&h5, document()).unwrap().to_vec();
+    let body_key = filleted
+        .body_reference_key(&h5, document())
+        .unwrap()
+        .to_vec();
     let s3_def = ShellDefinition::new_with_options(
         body_key,
         chain,
@@ -201,7 +221,9 @@ fn shell_v2_directions_overrides_and_rounded_type() {
     let mut backend = CertifiedNamedSolidEvaluator::new(&h5, document(), certified_resolution());
     let r5s = h5.snapshot().evaluate_part_features(&mut backend).unwrap();
     assert!(
-        r5s.health().iter().all(|h| h.status == FeatureEvaluationStatus::Healthy),
+        r5s.health()
+            .iter()
+            .all(|h| h.status == FeatureEvaluationStatus::Healthy),
         "3-face filleted shell health: {:?}",
         r5s.health()
     );

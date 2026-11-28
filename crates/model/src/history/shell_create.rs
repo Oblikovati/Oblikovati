@@ -47,9 +47,9 @@ impl DocumentSnapshot {
             )
             .map(|_| ())
             .map_err(|cause| {
-                HistoryError::PartProgram(
-                    crate::feature::part::PartFeatureProgramError::Sequence(cause),
-                )
+                HistoryError::PartProgram(crate::feature::part::PartFeatureProgramError::Sequence(
+                    cause,
+                ))
             })
     }
 }

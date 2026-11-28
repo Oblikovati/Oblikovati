@@ -112,6 +112,11 @@ pub struct PreparedShell {
     definition: ShellDefinition,
 }
 impl PreparedShell {
+    /// Construct from a validated definition and feature name; used by Shell v2.
+    pub(crate) fn from_parts(name: String, definition: ShellDefinition) -> Self {
+        Self { name, definition }
+    }
+
     /// Add the recipe to a private candidate; example: `prepared.create(candidate, ids)?`.
     pub fn create(
         self,
