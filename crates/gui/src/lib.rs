@@ -148,6 +148,12 @@ mod sketch_constraints;
 pub use sketch_constraints::GuiSketchConstraint;
 
 mod blend_dialog;
+mod fillet_panel;
+pub use fillet_panel::{
+    GuiFilletCornerSetback, GuiFilletEdgeSet, GuiFilletSelectionMode, GuiFilletSharedVertex,
+    GuiFilletV2Action, GuiFilletV2EditSeed, GuiFilletV2Pick, GuiFilletV2Preview,
+    GuiFilletV2PreviewState, GuiFilletV2Request, GuiFilletVariablePoint,
+};
 mod dimensions;
 mod extrude_dialog;
 mod face_draft;

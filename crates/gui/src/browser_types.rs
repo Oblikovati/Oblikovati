@@ -59,6 +59,8 @@ pub struct GuiModelBrowser {
     pub extrusion_edits: std::collections::BTreeMap<FeatureId, GuiExtrudeEditSeed>,
     /// Authored radius expressions for editable Fillet features.
     pub fillet_edits: std::collections::BTreeMap<FeatureId, GuiFilletEditSeed>,
+    /// Full v1/v2 authored Fillet settings for Properties panel hydration.
+    pub fillet_v2_edits: std::collections::BTreeMap<FeatureId, crate::GuiFilletV2EditSeed>,
     /// Authored distance expressions for editable Chamfer features.
     pub chamfer_edits: std::collections::BTreeMap<FeatureId, GuiFilletEditSeed>,
     /// Placed components in assembly order, including their reference status.

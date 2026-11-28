@@ -260,6 +260,20 @@ fn click_ok(world: &mut ApplicationWorld) {
         world.pump(Vec::new());
         return;
     }
+    if diagnostics::window_geometry("Create Fillet").is_some() {
+        let button = world.run_in_window("Create Fillet", "OK").center();
+        world.click(diagnostics::pointer_pixels(button));
+        world.pump(Vec::new());
+        world.pump(Vec::new());
+        return;
+    }
+    if diagnostics::window_geometry("Fillet").is_some() {
+        let button = world.run_in_window("Fillet", "OK").center();
+        world.click(diagnostics::pointer_pixels(button));
+        world.pump(Vec::new());
+        world.pump(Vec::new());
+        return;
+    }
     if diagnostics::window_geometry("Slot").is_some() {
         let button = world.run_in_window("Slot", "OK").center();
         world.click(diagnostics::pointer_pixels(button));

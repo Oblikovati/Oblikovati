@@ -166,6 +166,12 @@ macro_rules! forward_owner_view_work {
         fn slot_from_gui(&mut self, action: oblikovati_gui::GuiSlotAction) -> Result<bool, String> {
             self.$owner.slot_from_gui(action)
         }
+        fn fillet_v2_from_gui(
+            &mut self,
+            action: oblikovati_gui::GuiFilletV2Action,
+        ) -> Result<bool, String> {
+            self.$owner.fillet_v2_from_gui(action)
+        }
         fn preview_fillet_from_gui(
             &mut self,
             request: Option<&oblikovati_gui::GuiFilletRequest>,

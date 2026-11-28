@@ -188,6 +188,9 @@ pub struct PreparedFillet {
     definition: FilletDefinition,
 }
 impl PreparedFillet {
+    pub(crate) fn from_parts(name: String, definition: FilletDefinition) -> Self {
+        Self { name, definition }
+    }
     /// Append to a private transaction candidate; example: `prepared.create(candidate, ids)?`.
     pub fn create(
         self,

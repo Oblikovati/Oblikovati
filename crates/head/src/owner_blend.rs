@@ -9,6 +9,8 @@ pub(super) mod owner_decal;
 pub(super) mod owner_derive;
 #[path = "owner_emboss.rs"]
 pub(super) mod owner_emboss;
+#[path = "owner_fillet_v2.rs"]
+pub(super) mod owner_fillet_v2;
 #[path = "owner_hole.rs"]
 pub(super) mod owner_hole;
 #[path = "owner_import.rs"]
@@ -41,6 +43,7 @@ pub(super) struct CreateFeatureState {
     pub(super) unwrap: owner_unwrap::UnwrapOwnerState,
     pub(super) hole: owner_hole::HoleOwnerState,
     pub(super) slot: owner_slot::SlotOwnerState,
+    pub(super) fillet_v2: owner_fillet_v2::FilletV2OwnerState,
 }
 
 impl<

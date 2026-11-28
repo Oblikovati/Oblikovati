@@ -29,6 +29,7 @@ mod extrusion;
 mod feature_suppression;
 mod file_host;
 mod fillet;
+mod fillet_v2;
 mod hole;
 mod import;
 mod loft;
@@ -57,6 +58,10 @@ pub use extrusion::{
 pub use fillet::{
     CertifiedFilletAccess, CertifiedFilletValidation, FilletAccess, FilletValidation,
     PreparedFillet, prepare_fillet,
+};
+pub use fillet_v2::{
+    FilletCornerSetbackInput, FilletEdgeSetInput, FilletV2Inputs, FilletVariablePointInput,
+    build_fillet_v2_definition, evaluate_positive_cm, prepare_fillet_v2, replace_fillet,
 };
 pub use hole::{
     HoleFeatureInputs, HoleSeatInput, HoleTerminationInput, PreparedHole, build_hole_definition,

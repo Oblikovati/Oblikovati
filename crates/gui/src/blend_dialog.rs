@@ -19,6 +19,7 @@ pub(crate) struct BlendDialog {
     edit: Option<(oblikovati_model::feature::FeatureId, u64)>,
     attempted_edit: Option<crate::GuiFilletEditRequest>,
     submitted_edit: Option<crate::GuiFilletEditRequest>,
+    v2: crate::fillet_panel::FilletV2State,
 }
 impl DockableWindow for BlendDialog {}
 impl BlendDialog {
@@ -39,6 +40,11 @@ impl BlendDialog {
     pub(crate) fn active(&self) -> bool {
         self.document.is_some()
     }
+    pub(crate) fn status_prompt(&self) -> Option<&str> {
+        (!self.chamfer && self.document.is_some())
+            .then_some(self.v2.status_notice.as_deref())
+            .flatten()
+    }
     pub(crate) fn open(&mut self, state: &GuiCommandState) {
         self.open_for(state, false);
     }
@@ -52,6 +58,8 @@ impl BlendDialog {
         self.edit = None;
         self.attempted_edit = None;
         self.submitted_edit = None;
+        let pick_seq = state.fillet_v2_pick.as_ref().map_or(0, |p| p.sequence);
+        self.v2.reset_new("2 mm", pick_seq);
     }
     pub(crate) fn open_chamfer(&mut self, state: &GuiCommandState) {
         self.open_for(state, true);
@@ -95,6 +103,17 @@ impl BlendDialog {
         self.submitted = None;
         self.attempted_edit = None;
         self.submitted_edit = None;
+        let pick_seq = state.fillet_v2_pick.as_ref().map_or(0, |p| p.sequence);
+        if !chamfer
+            && let Some(v2_seed) = state
+                .browser
+                .as_ref()
+                .and_then(|browser| browser.fillet_v2_edits.get(&feature))
+        {
+            self.v2.hydrate_edit(v2_seed, pick_seq);
+        } else {
+            self.v2.reset_new(&self.radius, pick_seq);
+        }
     }
     fn edit_request(&self) -> Option<crate::GuiFilletEditRequest> {
         let (feature, generation) = self.edit?;
@@ -119,12 +138,20 @@ impl BlendDialog {
         if self.document.is_some() {
             self.set_document(None);
             actions.push(self.preview_action(None));
+            if !self.chamfer && self.v2.is_v2_active() {
+                actions.push(GuiShellAction::FilletV2(crate::GuiFilletV2Action::Clear));
+            }
         }
         self.attempted = None;
         self.submitted = None;
         self.edit = None;
         self.attempted_edit = None;
         self.submitted_edit = None;
+        self.v2.status_notice = None;
+        self.v2.attempted_v2 = None;
+        self.v2.submitted_v2 = None;
+        self.v2.partial_modal = None;
+        self.v2.pending_commit_after_partial = false;
     }
     pub(crate) fn sync_before_docking(
         &mut self,
@@ -144,6 +171,14 @@ impl BlendDialog {
                 .as_ref()
                 .is_none_or(|(generation, _)| *generation != request.generation)
         }) {
+            self.close(actions);
+        }
+        if self
+            .v2
+            .submitted_v2
+            .as_ref()
+            .is_some_and(|request| state.document_generation != Some(request.generation))
+        {
             self.close(actions);
         }
         if self.submitted_edit.as_ref().is_some_and(|request| {

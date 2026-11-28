@@ -95,7 +95,8 @@ impl GuiFrameEngine {
                 self.command_alias.text(),
                 self.extrude_dialog
                     .distance_prompt()
-                    .or_else(|| self.create_dialogs.status_prompt()),
+                    .or_else(|| self.create_dialogs.status_prompt())
+                    .or_else(|| self.blend_dialog.status_prompt()),
             ),
         );
         self.workspace
