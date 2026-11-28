@@ -35,6 +35,9 @@ impl<
         toggle: bool,
     ) -> Result<bool, String> {
         self.require_browser_document(document)?;
+        if let Some(changed) = self.pick_hole_geometry(document, line, depth_window)? {
+            return Ok(changed);
+        }
         if let Some(changed) = self.pick_revolve_geometry(document, line, depth_window)? {
             return Ok(changed);
         }

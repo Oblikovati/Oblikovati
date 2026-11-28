@@ -57,7 +57,10 @@ pub use fillet::{
     CertifiedFilletAccess, CertifiedFilletValidation, FilletAccess, FilletValidation,
     PreparedFillet, prepare_fillet,
 };
-pub use hole::{PreparedHole, prepare_hole};
+pub use hole::{
+    HoleFeatureInputs, HoleSeatInput, HoleTerminationInput, PreparedHole, build_hole_definition,
+    prepare_hole, prepare_hole_definition, replace_hole,
+};
 pub use import::{
     ImportInputs, PreparedImport, build_import_definition, prepare_import_definition,
     replace_imported_model,

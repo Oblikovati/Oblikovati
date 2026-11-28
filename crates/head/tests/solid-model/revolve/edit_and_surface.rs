@@ -446,6 +446,15 @@ fn indicator_clears_ok_enabled(world: &mut ApplicationWorld) {
 
 #[then("a validation indicator appears and OK is disabled")]
 fn validation_indicator_ok_disabled(world: &mut ApplicationWorld) {
+    if diagnostics::window_geometry("Hole").is_some() {
+        let text = world.window_text("Hole");
+        assert!(
+            text.contains('!'),
+            "expected validation indicator in Hole window, saw {text}"
+        );
+        assert!(!world.run_is_enabled("OK"));
+        return;
+    }
     red_error_marker_appears(world);
     assert!(!world.run_is_enabled("OK"));
 }

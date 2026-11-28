@@ -33,6 +33,7 @@ struct PresetEntry<F> {
 /// Reusable preset row and management menu for any Properties-based Part command.
 pub(crate) struct SessionPresets<F> {
     pub(crate) shown: bool,
+    pub(crate) popup_open: bool,
     entries: Vec<Option<PresetEntry<F>>>,
     selected: Option<usize>,
     sort: SortOrder,
@@ -45,6 +46,7 @@ impl<F> Default for SessionPresets<F> {
     fn default() -> Self {
         Self {
             shown: false,
+            popup_open: false,
             entries: Vec::new(),
             selected: None,
             sort: SortOrder::Recent,
@@ -168,8 +170,10 @@ impl<F: Clone> SessionPresets<F> {
         current_fields: Option<F>,
     ) {
         let Some(_popup) = ui.begin_popup(popup_id) else {
+            self.popup_open = false;
             return;
         };
+        self.popup_open = true;
         let has_selected = self
             .selected
             .and_then(|i| self.entries.get(i)?.as_ref())
@@ -201,47 +205,49 @@ impl<F: Clone> SessionPresets<F> {
             }
         }
         ui.separator();
-        if let Some(_menu) = ui.begin_menu("Sort Order") {
-            for (order, label) in [
-                (SortOrder::Recent, "Recently Used"),
-                (SortOrder::Created, "Created"),
-                (SortOrder::Alphabetical, "Alphabetical"),
-                (SortOrder::Modified, "Modified"),
-            ] {
-                if ui
-                    .menu_item_config(label)
-                    .selected(self.sort == order)
-                    .build()
-                {
-                    self.sort = order;
-                }
+        ui.text("Sort Order");
+        for (order, label) in [
+            (SortOrder::Recent, "Recently Used"),
+            (SortOrder::Created, "Date Created"),
+            (SortOrder::Alphabetical, "Alphanumeric"),
+            (SortOrder::Modified, "Last Modified"),
+        ] {
+            if ui
+                .menu_item_config(label)
+                .selected(self.sort == order)
+                .build()
+            {
+                self.sort = order;
             }
         }
-        if let Some(_menu) = ui.begin_menu(new_default_label) {
-            if ui
-                .menu_item_config(NO_PRESET)
-                .selected(self.initial == NewDefault::None)
-                .build()
-            {
-                self.initial = NewDefault::None;
-            }
-            if ui
-                .menu_item_config("Last Used")
-                .selected(self.initial == NewDefault::LastUsed)
-                .build()
-            {
-                self.initial = NewDefault::LastUsed;
-            }
-            for index in self.ordered_indices() {
-                if let Some(entry) = &self.entries[index]
-                    && ui
-                        .menu_item_config(&entry.name)
-                        .selected(self.initial == NewDefault::Named(index))
-                        .build()
-                {
-                    self.initial = NewDefault::Named(index);
-                }
-            }
+        ui.separator();
+        ui.text(new_default_label);
+        if ui
+            .menu_item_config("Last Used")
+            .selected(self.initial == NewDefault::LastUsed)
+            .build()
+        {
+            self.initial = NewDefault::LastUsed;
+        }
+        let selected_named = self
+            .selected
+            .filter(|_| has_selected)
+            .map(NewDefault::Named);
+        if ui
+            .menu_item_config("Use Current Preset")
+            .selected(selected_named.as_ref() == Some(&self.initial))
+            .enabled(has_selected)
+            .build()
+            && let Some(named) = selected_named
+        {
+            self.initial = named;
+        }
+        if ui
+            .menu_item_config(NO_PRESET)
+            .selected(self.initial == NewDefault::None)
+            .build()
+        {
+            self.initial = NewDefault::None;
         }
     }
 

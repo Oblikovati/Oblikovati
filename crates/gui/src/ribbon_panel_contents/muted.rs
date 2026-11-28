@@ -49,7 +49,7 @@ pub(super) fn part_modify_controls(
     let large_shell = crate::shell_ribbon::large_in_main(owners.customization);
     use crate::icons::IconGlyph;
     let size = muted_command_position(ui, origin, icons, 0);
-    let action = crate::GuiShellAction::OpenHole;
+    let action = crate::GuiShellAction::Hole(crate::GuiHoleAction::Open);
     let disabled = ui.begin_disabled(!action.dispatchable(state));
     if icons.button(ui, "Hole", IconGlyph::Hole, size) {
         actions.push(action);

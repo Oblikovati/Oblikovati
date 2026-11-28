@@ -359,12 +359,8 @@ pub enum GuiShellAction {
     OpenMoveBody,
     PreviewMoveBody(Option<GuiMoveBodyRequest>),
     CreateMoveBody(GuiMoveBodyRequest),
-    /// Open a straight-hole draft.
-    OpenHole,
-    /// Show or clear the private hole preview.
-    PreviewHole(Option<GuiHoleRequest>),
-    /// Create a hole from the selected face.
-    CreateHole(GuiHoleRequest),
+    /// Open, preview, or commit a Part Modify Hole feature.
+    Hole(crate::GuiHoleAction),
     /// Open the Shell properties draft.
     OpenShellFeature,
     /// Show or clear the exact Shell preview.
@@ -455,8 +451,8 @@ mod feature_requests;
 pub use feature_requests::{
     GuiBaseViewRequest, GuiDrawingLayoutAction, GuiDrawingLine, GuiDrawingProjection,
     GuiExtrudeDistanceValidation, GuiExtrudeEditRequest, GuiExtrudePreview, GuiExtrudeProfilePick,
-    GuiExtrudeReferenceExtent, GuiFilletEditRequest, GuiFilletRequest, GuiHoleRequest,
-    GuiLayoutComponent, GuiMoveBodyRequest, GuiShellFeatureRequest,
+    GuiExtrudeReferenceExtent, GuiFilletEditRequest, GuiFilletRequest, GuiLayoutComponent,
+    GuiMoveBodyRequest, GuiShellFeatureRequest,
 };
 mod parameter_mutation;
 pub use parameter_mutation::GuiParameterMutation;

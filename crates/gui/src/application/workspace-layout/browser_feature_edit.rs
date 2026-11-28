@@ -35,6 +35,9 @@ pub(super) fn feature_edit_action(
     if browser.unwrap_edits.contains_key(&feature.id) {
         return GuiShellAction::Unwrap(crate::GuiUnwrapAction::OpenEdit(feature.id));
     }
+    if browser.hole_edits.contains_key(&feature.id) {
+        return GuiShellAction::Hole(crate::GuiHoleAction::OpenEdit(feature.id));
+    }
     if browser.chamfer_edits.contains_key(&feature.id) {
         return GuiShellAction::OpenChamferEdit(feature.id);
     }

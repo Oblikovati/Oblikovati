@@ -336,7 +336,7 @@ impl GuiShellAction {
                 offset,
             } => offset_enabled::create(state, *document, base, offset),
             Self::LookAtSelection => state.look_at_available,
-            Self::OpenMoveBody | Self::OpenHole => hole_enabled::open(state),
+            Self::OpenMoveBody => hole_enabled::open(state),
             Self::OpenShellFeature => shell_enabled::open(state),
             Self::Revolve(_)
             | Self::Sweep(_)
@@ -347,14 +347,10 @@ impl GuiShellAction {
             | Self::Rib(_)
             | Self::Decal(_)
             | Self::Import(_)
-            | Self::Unwrap(_) => false,
-            Self::PreviewMoveBody(None)
-            | Self::PreviewHole(None)
-            | Self::PreviewShellFeature(None) => true,
+            | Self::Unwrap(_)
+            | Self::Hole(_) => false,
+            Self::PreviewMoveBody(None) | Self::PreviewShellFeature(None) => true,
             Self::PreviewMoveBody(Some(r)) | Self::CreateMoveBody(r) => motion::request(state, r),
-            Self::PreviewHole(Some(request)) | Self::CreateHole(request) => {
-                hole_enabled::request(state, request)
-            }
             Self::PreviewShellFeature(Some(request)) | Self::CreateShellFeature(request) => {
                 shell_enabled::request(state, request)
             }

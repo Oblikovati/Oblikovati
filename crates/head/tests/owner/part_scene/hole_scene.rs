@@ -175,18 +175,54 @@ fn selected_face_hole_preview_cancel_and_commit_use_current_generation() {
         .session(document)
         .unwrap()
         .generation();
+    let face_hex: String = face.key.iter().map(|byte| format!("{byte:02x}")).collect();
     let request = oblikovati_gui::GuiHoleRequest {
         document,
         generation,
-        face: face.key.iter().map(|byte| format!("{byte:02x}")).collect(),
+        feature: None,
+        body: None,
+        face: Some(face.key.clone()),
+        position: None,
+        kind: oblikovati_model::feature::hole::HoleKind::Simple,
+        seat: oblikovati_gui::GuiHoleSeatKind::None,
         diameter: "2 mm".into(),
-        depth: String::new(),
+        depth: "8 mm".into(),
+        seat_diameter: "6 mm".into(),
+        seat_depth: "2 mm".into(),
+        seat_angle: "90 deg".into(),
+        termination: oblikovati_gui::GuiHoleTermination::ThroughAll,
+        termination_surface: None,
+        drill_point_angled: false,
+        drill_point_angle: "118 deg".into(),
+        direction_flipped: false,
+        extend_start: false,
+        fastener: None,
+        thread: None,
+        preview_hidden: false,
     };
     let mut stale = request.clone();
     stale.generation += 1;
-    assert!(crate::HeadWork::preview_hole_from_gui(&mut owner, Some(&stale)).is_err());
-    assert!(crate::HeadWork::commit_hole_from_gui(&mut owner, &stale).is_err());
-    assert!(crate::HeadWork::preview_hole_from_gui(&mut owner, Some(&request)).unwrap());
+    assert!(
+        crate::HeadWork::hole_from_gui(
+            &mut owner,
+            oblikovati_gui::GuiHoleAction::Preview(Box::new(stale.clone()))
+        )
+        .is_err()
+    );
+    assert!(
+        crate::HeadWork::hole_from_gui(
+            &mut owner,
+            oblikovati_gui::GuiHoleAction::Commit(Box::new(stale))
+        )
+        .is_err()
+    );
+    assert!(
+        crate::HeadWork::hole_from_gui(
+            &mut owner,
+            oblikovati_gui::GuiHoleAction::Preview(Box::new(request.clone()))
+        )
+        .unwrap()
+    );
     assert!(owner.extrusion_preview.is_some());
     assert_eq!(
         owner
@@ -197,7 +233,9 @@ fn selected_face_hole_preview_cancel_and_commit_use_current_generation() {
             .generation(),
         generation
     );
-    assert!(crate::HeadWork::preview_hole_from_gui(&mut owner, None).unwrap());
+    assert!(
+        crate::HeadWork::hole_from_gui(&mut owner, oblikovati_gui::GuiHoleAction::Clear).unwrap()
+    );
     assert!(owner.extrusion_preview.is_none());
     assert_eq!(
         owner
@@ -208,6 +246,19 @@ fn selected_face_hole_preview_cancel_and_commit_use_current_generation() {
             .generation(),
         generation
     );
-    assert!(crate::HeadWork::commit_hole_from_gui(&mut owner, &request).unwrap());
-    expect_area(&mut owner, &request.face, 2.);
+    assert!(
+        crate::HeadWork::hole_from_gui(
+            &mut owner,
+            oblikovati_gui::GuiHoleAction::Preview(Box::new(request.clone()))
+        )
+        .unwrap()
+    );
+    assert!(
+        crate::HeadWork::hole_from_gui(
+            &mut owner,
+            oblikovati_gui::GuiHoleAction::Commit(Box::new(request))
+        )
+        .unwrap()
+    );
+    expect_area(&mut owner, &face_hex, 2.);
 }

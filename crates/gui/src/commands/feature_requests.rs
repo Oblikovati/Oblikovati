@@ -38,15 +38,6 @@ pub enum GuiExtrudeReferenceExtent {
     ToFace { to: String },
     FromTo { from: String, to: String },
 }
-/// One generation-scoped face and size for a straight-hole draft.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct GuiHoleRequest {
-    pub document: u64,
-    pub generation: u64,
-    pub face: String,
-    pub diameter: String,
-    pub depth: String,
-}
 /// Selected opening faces and wall thickness for a Shell draft.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct GuiShellFeatureRequest {

@@ -225,7 +225,7 @@ fn apply_key_tip(
             }
         }
         Some(KeyTipAction::Hole) => {
-            let action = GuiShellAction::OpenHole;
+            let action = GuiShellAction::Hole(crate::GuiHoleAction::Open);
             if !owners.home_active && action.enabled(state) {
                 owners.ribbon.display.temporary = None;
                 actions.push(action);

@@ -104,9 +104,7 @@ pub(super) fn apply(owner: &mut dyn HeadWork, action: &GuiShellAction) -> Result
             owner.preview_shell_from_gui(request.as_ref())
         }
         GuiShellAction::CreateShellFeature(request) => owner.commit_shell_from_gui(request),
-        GuiShellAction::OpenHole => Ok(false),
-        GuiShellAction::PreviewHole(request) => owner.preview_hole_from_gui(request.as_ref()),
-        GuiShellAction::CreateHole(request) => owner.commit_hole_from_gui(request),
+        GuiShellAction::Hole(action) => owner.hole_from_gui(action.clone()),
         GuiShellAction::OpenFillet => Ok(false),
         GuiShellAction::OpenChamfer => Ok(false),
         GuiShellAction::OpenFilletEdit(_) => Ok(false),

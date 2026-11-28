@@ -122,6 +122,14 @@ fn open_extrude_with_presets(world: &mut ApplicationWorld) {
 
 #[when("the user opens Preset Settings")]
 fn open_published_preset_menu(world: &mut ApplicationWorld) {
+    if let Some((origin, size)) = diagnostics::window_geometry("Hole") {
+        let no_preset = world.run_in_window("Hole", "NoPreset").clone();
+        let gear = diagnostics::pointer_pixels([origin[0] + size[0] - 18.0, no_preset.center()[1]]);
+        world.click(gear);
+        world.pump(Vec::new());
+        world.pump(Vec::new());
+        return;
+    }
     open_preset_menu(world, EMPTY);
 }
 

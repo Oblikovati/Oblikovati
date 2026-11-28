@@ -304,7 +304,11 @@ const MARKING_COMMANDS: [(&str, &str, GuiShellAction); 9] = [
     ),
     ("Modify.Fillet", "Fillet", GuiShellAction::OpenFillet),
     ("Modify.Chamfer", "Chamfer", GuiShellAction::OpenChamfer),
-    ("Modify.Hole", "Hole", GuiShellAction::OpenHole),
+    (
+        "Modify.Hole",
+        "Hole",
+        GuiShellAction::Hole(crate::GuiHoleAction::Open),
+    ),
     ("edit.undo", "Undo", GuiShellAction::Undo),
     (
         "Inspect.Measure",
@@ -462,7 +466,7 @@ mod tests {
         );
         assert_eq!(
             command("Modify.Hole"),
-            Some(("Hole", GuiShellAction::OpenHole))
+            Some(("Hole", GuiShellAction::Hole(crate::GuiHoleAction::Open)))
         );
         assert_eq!(command("edit.undo"), Some(("Undo", GuiShellAction::Undo)));
         assert_eq!(

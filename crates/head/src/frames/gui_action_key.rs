@@ -153,9 +153,7 @@ pub(super) fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
         | GuiShellAction::OpenShellFeature
         | GuiShellAction::PreviewShellFeature(_)
         | GuiShellAction::CreateShellFeature(_)
-        | GuiShellAction::OpenHole
-        | GuiShellAction::PreviewHole(_)
-        | GuiShellAction::CreateHole(_)
+        | GuiShellAction::Hole(_)
         | GuiShellAction::OpenFillet
         | GuiShellAction::OpenChamfer
         | GuiShellAction::OpenFilletEdit(_)

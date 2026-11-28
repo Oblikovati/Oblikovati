@@ -48,6 +48,7 @@ pub(super) fn recipe(
         position: position(snapshot, input)?,
         diameter: crate::extrusion::positive_length(snapshot, &input.diameter, "hole diameter")?,
         extent: extent(snapshot, input)?,
+        options: Default::default(),
     })
 }
 fn extent(snapshot: &DocumentSnapshot, input: &Hole) -> Result<HoleExtent, Error> {

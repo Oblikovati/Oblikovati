@@ -126,7 +126,7 @@ pub use commands::{
     GuiAuthoringContext, GuiBaseViewRequest, GuiBrowserChoice, GuiCommandState, GuiDocumentStorage,
     GuiDrawingLayoutAction, GuiDrawingLine, GuiDrawingProjection, GuiExtrudeDistanceValidation,
     GuiExtrudeEditRequest, GuiExtrudePreview, GuiExtrudeProfilePick, GuiExtrudeReferenceExtent,
-    GuiFilletEditRequest, GuiFilletRequest, GuiHoleRequest, GuiLayoutComponent, GuiMoveBodyRequest,
+    GuiFilletEditRequest, GuiFilletRequest, GuiLayoutComponent, GuiMoveBodyRequest,
     GuiOffsetPlaneBase, GuiOffsetPlaneValidation, GuiParameterMutation, GuiPartAssetKind,
     GuiPreviewImage, GuiProject, GuiProjectAction, GuiProjectGroup, GuiProjectSettings,
     GuiSelectionMode, GuiShellAction, GuiShellFeatureRequest, GuiSketchLineStyle,
@@ -154,6 +154,10 @@ mod face_draft;
 mod face_properties;
 mod hole_dialog;
 pub use application::model_browser::feature_properties::{GuiFeatureCondition, GuiFeatureEdit};
+pub use hole_dialog::{
+    GuiHoleAction, GuiHoleEditSeed, GuiHolePick, GuiHolePreview, GuiHolePreviewState,
+    GuiHoleRequest, GuiHoleSeatKind, GuiHoleTermination,
+};
 mod loft_dialog;
 mod move_body_dialog;
 mod move_body_ribbon;

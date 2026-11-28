@@ -47,6 +47,7 @@ pub(super) fn draw_feature_dialogs(
     ),
     selected: &mut Vec<GuiShellAction>,
 ) {
+    let hole_plane = browser_plane.clone();
     extrude.panel(
         ui,
         commands,
@@ -67,7 +68,7 @@ pub(super) fn draw_feature_dialogs(
         selected,
     );
     blend.panel(ui, commands, selected, area);
-    hole.panel(ui, commands, area, selected);
+    hole.panel(ui, commands, area, icons, hole_plane.as_deref(), selected);
     shell.panel(ui, commands, area, selected);
     motion.panel(ui, commands, area, selected);
     offset.panel(ui, commands, area, selected);
@@ -184,7 +185,9 @@ fn requested_draft(action: &GuiShellAction) -> Option<Draft> {
         | GuiShellAction::OpenFilletEdit(_)
         | GuiShellAction::OpenChamferEdit(_) => Draft::Blend,
         GuiShellAction::OpenShellFeature => Draft::Shell,
-        GuiShellAction::OpenHole => Draft::Hole,
+        GuiShellAction::Hole(crate::GuiHoleAction::Open | crate::GuiHoleAction::OpenEdit(_)) => {
+            Draft::Hole
+        }
         GuiShellAction::OpenMoveBody => Draft::MoveBody,
         _ => return None,
     })
@@ -319,7 +322,10 @@ pub(super) fn open_drafts(
         GuiShellAction::OpenFilletEdit(feature) => blend.open_edit(state, feature),
         GuiShellAction::OpenChamferEdit(feature) => blend.open_chamfer_edit(state, feature),
         GuiShellAction::OpenShellFeature => shell.open(state),
-        GuiShellAction::OpenHole => hole.open(state),
+        GuiShellAction::Hole(crate::GuiHoleAction::Open) => hole.open(state, None),
+        GuiShellAction::Hole(crate::GuiHoleAction::OpenEdit(feature)) => {
+            hole.open(state, Some(feature))
+        }
         GuiShellAction::OpenMoveBody => motion.open(state),
         _ => {}
     }

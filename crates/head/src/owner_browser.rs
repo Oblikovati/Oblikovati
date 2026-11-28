@@ -193,6 +193,7 @@ fn populate_browser<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
     browser.decal_edits = super::owner_blend::owner_decal::edit_seeds(snapshot);
     browser.import_edits = super::owner_blend::owner_import::edit_seeds(snapshot);
     browser.unwrap_edits = super::owner_blend::owner_unwrap::edit_seeds(snapshot);
+    browser.hole_edits = super::owner_blend::owner_hole::edit_seeds(snapshot);
     browser.third_party_entries = super::owner_blend::owner_import::third_party_entries(snapshot);
     browser.extrusion_edits = snapshot
         .work_geometry

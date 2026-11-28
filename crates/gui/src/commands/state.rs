@@ -146,6 +146,8 @@ pub struct GuiCommandState {
     pub import_source: Option<crate::GuiImportSourceSummary>,
     pub unwrap_preview: Option<crate::GuiUnwrapPreviewState>,
     pub unwrap_pick: Option<crate::GuiUnwrapFacePick>,
+    pub hole_preview: Option<crate::GuiHolePreviewState>,
+    pub hole_pick: Option<crate::GuiHolePick>,
     /// Selected named solid face reference key when a model face is chosen.
     pub selected_model_face: Option<Vec<u8>>,
     /// The exact extrusion draft accepted for preview at this document generation.
