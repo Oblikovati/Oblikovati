@@ -167,6 +167,7 @@ pub(super) fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
         | GuiShellAction::Finish(_)
         | GuiShellAction::WorkAxis(_)
         | GuiShellAction::Ucs(_)
+        | GuiShellAction::WorkPoint(_)
         | GuiShellAction::FilletV2(_)
         | GuiShellAction::ChamferV2(_)
         | GuiShellAction::ShellV2(_)

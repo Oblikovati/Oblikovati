@@ -50,6 +50,22 @@ pub trait WorkPlaneResolver {
     }
     /// Resolve one available current position; example: `resolver.point(FeatureId(2))?`.
     fn point(&self, feature: FeatureId) -> Result<[f64; 3], WorkPlaneError>;
+    /// Resolve a named vertex or circular edge center; example: `resolver.topology_origin(&reference)?`.
+    fn topology_origin(
+        &self,
+        reference: &crate::document_sketch::SketchFrameTopologyOrigin,
+    ) -> Result<[f64; 3], WorkPlaneError> {
+        Err(unavailable_topology_origin(reference))
+    }
+}
+
+pub(crate) fn unavailable_topology_origin(
+    reference: &crate::document_sketch::SketchFrameTopologyOrigin,
+) -> WorkPlaneError {
+    WorkPlaneError::BodyReference(format!(
+        "topology origin key {:?}: expected a current named-topology resolver",
+        reference.key()
+    ))
 }
 
 pub(crate) fn unavailable_face(reference: &WorkPlaneFaceReference) -> WorkPlaneError {

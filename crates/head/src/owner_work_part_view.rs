@@ -86,7 +86,11 @@ macro_rules! desktop_part_view_work {
         ) -> Result<bool, String> {
             let cue_changed = self.update_model_pick_cue(inputs, window);
             let ucs_changed = self.process_ucs_inputs(inputs);
-            Ok(self.process_live_placement_inputs(inputs, window)? || cue_changed || ucs_changed)
+            let wp_cancelled = self.handle_work_point_escape(inputs);
+            Ok(self.process_live_placement_inputs(inputs, window)?
+                || cue_changed
+                || ucs_changed
+                || wp_cancelled)
         }
         fn poll_window(
             &mut self,

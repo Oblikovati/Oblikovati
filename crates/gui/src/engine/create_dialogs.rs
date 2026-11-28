@@ -17,6 +17,7 @@ pub(super) struct CreateFeatureDialogs {
     pub(super) thread: crate::thread_dialog::ThreadDialog,
     pub(super) mark: crate::mark_dialog::MarkDialog,
     pub(super) finish: crate::finish_dialog::FinishDialog,
+    pub(super) grounded_point: crate::work_point::overlay::GroundedPointHud,
 }
 
 impl CreateFeatureDialogs {
@@ -36,6 +37,7 @@ impl CreateFeatureDialogs {
         self.thread.register_dockable(registry)?;
         self.mark.register_dockable(registry)?;
         self.finish.register_dockable(registry)?;
+        self.grounded_point.register_dockable(registry)?;
         self.loft.register_dockable(registry)
     }
 
@@ -57,6 +59,7 @@ impl CreateFeatureDialogs {
         self.finish.synchronize(state, actions);
         self.sweep.synchronize(state, actions);
         self.loft.synchronize(state, actions);
+        self.grounded_point.synchronize(state);
     }
 
     pub(super) fn status_prompt<'a>(&self, state: &'a GuiCommandState) -> Option<&'a str> {
@@ -102,5 +105,6 @@ impl CreateFeatureDialogs {
         self.thread.panel(ui, commands, (area, icons), selected);
         self.mark.panel(ui, commands, (area, icons), selected);
         self.finish.panel(ui, commands, (area, icons), selected);
+        self.grounded_point.panel(ui, commands, area, selected);
     }
 }

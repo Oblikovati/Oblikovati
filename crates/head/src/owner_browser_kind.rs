@@ -60,6 +60,9 @@ pub(super) fn feature_kind_name(
         | oblikovati_model::feature::part::PartFeatureDefinition::AxisThroughPoints(_) => {
             "Work Axis"
         }
+        oblikovati_model::feature::part::PartFeatureDefinition::Point(_)
+        | oblikovati_model::feature::part::PartFeatureDefinition::PointAtReference(_)
+        | oblikovati_model::feature::part::PartFeatureDefinition::WorkPoint(_) => "Work Point",
         _ => "Work Feature",
     }
 }

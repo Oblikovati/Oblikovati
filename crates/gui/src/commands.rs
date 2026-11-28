@@ -374,6 +374,7 @@ pub enum GuiShellAction {
     Mark(crate::GuiMarkAction),
     Finish(crate::GuiFinishAction),
     Ucs(crate::GuiUcsAction),
+    WorkPoint(crate::GuiWorkPointAction),
     /// Selection mode, preview, or commit for Part Modify Fillet v2.
     FilletV2(crate::GuiFilletV2Action),
     ChamferV2(crate::GuiChamferV2Action),

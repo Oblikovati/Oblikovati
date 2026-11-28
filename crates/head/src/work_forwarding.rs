@@ -469,6 +469,12 @@ macro_rules! forward_owner_view_work {
         fn set_work_plane_overlays(&mut self, visible: bool) -> bool {
             self.$owner.set_work_plane_overlays(visible)
         }
+        fn work_point_from_gui(
+            &mut self,
+            action: oblikovati_gui::GuiWorkPointAction,
+        ) -> Result<bool, String> {
+            self.$owner.work_point_from_gui(action)
+        }
         fn take_scene(&mut self) -> Result<Option<$crate::HeadSceneUpdate>, String> {
             self.$owner.take_scene()
         }

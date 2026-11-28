@@ -79,6 +79,7 @@ pub(crate) fn origin_row(
                 ));
             }
         }
+        forward_origin_pick_to_work_point(state, picked_plane, picked_axis, row, actions);
     }
     if ui.is_item_hovered() && ui.is_mouse_clicked(MouseButton::Right) {
         choose_origin_row(state, view, row, actions);
@@ -289,6 +290,37 @@ pub(crate) fn draw_selected_origin(
     }
     if let Some(row) = selected {
         draw_origin_row(ui, request, row, PLANE_FILL, ACCENT, view);
+    }
+    crate::work_point::overlay::draw_viewport_overlays(ui, request);
+}
+fn forward_origin_pick_to_work_point(
+    state: &GuiCommandState,
+    plane: Option<crate::GuiOriginPlaneKind>,
+    axis: Option<oblikovati_model::feature::work_axis::WorkAxisReference>,
+    row: usize,
+    actions: &mut Vec<GuiShellAction>,
+) {
+    let Some(wp) = state.work_point.as_ref() else {
+        return;
+    };
+    if let Some(plane) = plane
+        && wp.mode.accepts_plane()
+    {
+        actions.push(GuiShellAction::WorkPoint(
+            crate::GuiWorkPointAction::PickOriginPlane(plane),
+        ));
+    } else if let Some(axis) = axis
+        && wp.mode.accepts_axis()
+    {
+        actions.push(GuiShellAction::WorkPoint(
+            crate::GuiWorkPointAction::PickOriginAxis(axis),
+        ));
+    } else if *crate::browser::ORIGIN_ROWS.get(row).unwrap_or(&"") == "Center Point"
+        && wp.mode.accepts_point()
+    {
+        actions.push(GuiShellAction::WorkPoint(
+            crate::GuiWorkPointAction::PickOriginCenter,
+        ));
     }
 }
 fn draw_origin_row(

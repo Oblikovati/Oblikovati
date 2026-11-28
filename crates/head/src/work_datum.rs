@@ -37,6 +37,13 @@ macro_rules! datum_work_methods {
         fn set_work_plane_overlays(&mut self, _visible: bool) -> bool {
             false
         }
+        /// Dispatch a Work Point command action; example: `work.work_point_from_gui(action)?`.
+        fn work_point_from_gui(
+            &mut self,
+            action: oblikovati_gui::GuiWorkPointAction,
+        ) -> Result<bool, String> {
+            Err(format!("work point {action:?}: expected a datum owner"))
+        }
     };
 }
 
@@ -60,6 +67,12 @@ macro_rules! datum_view_owner_methods {
         fn set_work_plane_overlays(&mut self, visible: bool) -> bool {
             let hidden = !visible;
             std::mem::replace(&mut self.work_plane_overlays_hidden, hidden) != hidden
+        }
+        fn work_point_from_gui(
+            &mut self,
+            action: oblikovati_gui::GuiWorkPointAction,
+        ) -> Result<bool, String> {
+            self.work_point_command(action)
         }
     };
 }

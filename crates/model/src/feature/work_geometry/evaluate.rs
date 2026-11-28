@@ -113,11 +113,19 @@ impl WorkGeometryEvaluation {
         id: FeatureId,
         parameters: &ParameterCollection<u64>,
     ) -> Result<(), WorkPlaneError> {
-        self.evaluate_entry_with_face(sequence, id, parameters, &|reference| {
-            Err(crate::feature::work_plane::unavailable_face(reference))
-        })
+        self.evaluate_entry_with_topology(
+            sequence,
+            id,
+            parameters,
+            &|reference| Err(crate::feature::work_plane::unavailable_face(reference)),
+            &|reference| {
+                Err(crate::feature::work_plane::unavailable_topology_origin(
+                    reference,
+                ))
+            },
+        )
     }
-    pub(crate) fn evaluate_entry_with_face(
+    pub(crate) fn evaluate_entry_with_topology(
         &mut self,
         sequence: &FeatureSequence<WorkPlaneDefinition>,
         id: FeatureId,
@@ -125,6 +133,9 @@ impl WorkGeometryEvaluation {
         resolve_face: &impl Fn(
             &crate::feature::work_plane::WorkPlaneFaceReference,
         ) -> Result<crate::sketch::SketchPlane, WorkPlaneError>,
+        resolve_topology: &impl Fn(
+            &crate::document_sketch::SketchFrameTopologyOrigin,
+        ) -> Result<[f64; 3], WorkPlaneError>,
     ) -> Result<(), WorkPlaneError> {
         let feature = sequence.get(id).map_err(|_| WorkPlaneError::Unavailable {
             feature: id,
@@ -152,9 +163,10 @@ impl WorkGeometryEvaluation {
                 actual: "body feature",
             }));
         }
-        let resolver = face::DatumFaceResolver {
+        let resolver = face::DatumTopologyResolver {
             datums: self,
             resolve_face,
+            resolve_topology,
         };
         let datum =
             WorkGeometryResult::evaluate(feature.definition().clone(), parameters, &resolver)?;

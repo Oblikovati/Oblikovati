@@ -440,12 +440,19 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
                     |reference: &crate::feature::work_plane::WorkPlaneFaceReference| {
                         resolve_body_face(bodies, lineage, backend, reference)
                     };
+                let resolve_topology =
+                    |reference: &crate::document_sketch::SketchFrameTopologyOrigin| {
+                        super::body_resolution::resolve_body_frame_origin(
+                            bodies, lineage, backend, reference,
+                        )
+                    };
                 self.datums
-                    .evaluate_entry_with_face(
+                    .evaluate_entry_with_topology(
                         &snapshot.work_geometry,
                         id,
                         &snapshot.parameters,
                         &resolve_face,
+                        &resolve_topology,
                     )
                     .map_err(|cause| PartFeatureFailure::Datum(Box::new(cause)))
             }

@@ -49,6 +49,7 @@ mod validation;
 pub mod work_axis;
 pub mod work_geometry;
 pub mod work_plane;
+pub mod work_point;
 
 use crate::dependency::DependencyGraph;
 pub use error::FeatureSequenceError;

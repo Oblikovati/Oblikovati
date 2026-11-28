@@ -48,6 +48,9 @@ impl<
         if self.handle_work_axis_browser_feature(document, feature)? {
             return Ok(true);
         }
+        if let Some(changed) = self.handle_work_point_browser_feature(document, feature)? {
+            return Ok(changed);
+        }
         self.files
             .commands(document)
             .map_err(|cause| cause.to_string())?

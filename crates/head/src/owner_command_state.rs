@@ -335,6 +335,8 @@ impl<
             sketch_at_ready: self.sketch_tool.is_none() && self.active_sketch_edit().is_some(),
             // Projected by the frame, which owns the camera.
             origin_planes: Vec::new(),
+            work_point: self.gui_work_point_state(document),
+            work_points: self.gui_work_point_markers(document),
             feature_edges: Vec::new(),
             selected_edge_outlines: Vec::new(),
             origin_axes: Vec::new(),

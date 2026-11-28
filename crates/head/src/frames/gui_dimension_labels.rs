@@ -156,6 +156,7 @@ pub(super) fn project_precise_triad(
     commands: &mut oblikovati_gui::GuiCommandState,
 ) {
     commands.work_axes = project_work_axes(window, owner);
+    project_work_point_overlays(window, commands);
     let Some(target) = commands.precise_target.as_mut() else {
         return;
     };
@@ -183,6 +184,36 @@ fn project_work_axes(
             })
         })
         .collect()
+}
+fn project_work_point_overlays(
+    window: &dyn HeadWindow,
+    commands: &mut oblikovati_gui::GuiCommandState,
+) {
+    for marker in &mut commands.work_points {
+        marker.pixel = window.model_pixel(marker.position).ok();
+    }
+    let Some(grounded) = commands
+        .work_point
+        .as_mut()
+        .and_then(|wp| wp.grounded.as_mut())
+    else {
+        return;
+    };
+    let origin = grounded.coordinates;
+    grounded.screen_origin = window.model_pixel(origin).ok();
+    let span = 0.8;
+    let x = window
+        .model_pixel([origin[0] + span, origin[1], origin[2]])
+        .ok();
+    let y = window
+        .model_pixel([origin[0], origin[1] + span, origin[2]])
+        .ok();
+    let z = window
+        .model_pixel([origin[0], origin[1], origin[2] + span])
+        .ok();
+    if let (Some(x), Some(y), Some(z)) = (x, y, z) {
+        grounded.screen_axes = Some([x, y, z]);
+    }
 }
 fn triad_pixels(origin: [i32; 2]) -> [[i32; 2]; 3] {
     [

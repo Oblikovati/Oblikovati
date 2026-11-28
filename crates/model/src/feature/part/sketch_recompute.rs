@@ -20,6 +20,9 @@ impl DocumentSnapshot {
             return true;
         }
         self.work_geometry.features().iter().any(|feature| {
+            if let PartFeatureDefinition::WorkPoint(definition) = feature.definition() {
+                return definition.requires_named_part_replay();
+            }
             let base = match feature.definition() {
                 PartFeatureDefinition::Offset { base, .. } => Some(base),
                 PartFeatureDefinition::ParallelThroughPoint(source) => Some(&source.base),

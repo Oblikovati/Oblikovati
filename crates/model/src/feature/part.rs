@@ -101,6 +101,7 @@ pub enum PartFeatureDefinition {
     Axis(WorkAxisLine),
     Point([DatumLength; 3]),
     PointAtReference(WorkPointReference),
+    WorkPoint(Box<super::work_point::WorkPointDefinition>),
     AxisThroughPoints(WorkAxisPoints),
     Ucs(Box<super::ucs::UcsDefinition>),
 }
@@ -139,7 +140,7 @@ impl PartFeatureDefinition {
             Self::CircularPattern(_) => "circular-pattern",
             Self::RectangularPattern(_) => "rectangular-pattern",
             Self::Axis(_) | Self::AxisThroughPoints(_) => "work-axis",
-            Self::Point(_) | Self::PointAtReference(_) => "work-point",
+            Self::Point(_) | Self::PointAtReference(_) | Self::WorkPoint(_) => "work-point",
             Self::Ucs(_) => "ucs",
             _ => "work-plane",
         }
