@@ -55,6 +55,16 @@ pub trait PartFeatureEvaluator {
     ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
         self.evaluate_blend(PartBlendKind::Fillet, feature, body, edges, input.radius)
     }
+    /// Construct and validate an extended v2 Chamfer; defaults to `evaluate_blend` for equal distance.
+    fn evaluate_chamfer_v2(
+        &mut self,
+        feature: FeatureId,
+        body: &Self::Body,
+        edges: &[Vec<u8>],
+        input: crate::feature::chamfer_options::ResolvedChamfer,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        self.evaluate_blend(PartBlendKind::Chamfer, feature, body, edges, input.distance)
+    }
     /// Transform a named body; example: `backend.evaluate_move_body(id, body, &motions)`.
     fn evaluate_move_body(
         &mut self,

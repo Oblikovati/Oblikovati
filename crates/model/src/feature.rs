@@ -7,6 +7,7 @@ mod scalar_ownership;
 mod scalar_parameters;
 pub use scalar_ownership::{FeatureScalarBinding, FeatureScalarOwnershipError};
 pub mod chamfer;
+pub mod chamfer_options;
 pub mod circular_pattern;
 pub mod derived_part;
 mod error;

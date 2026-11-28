@@ -69,6 +69,22 @@ impl DocumentSnapshot {
             ids,
         )
     }
+    /// Replace an existing chamfer definition in-place; example: `snapshot.edit_chamfer(id, definition)?`.
+    pub fn edit_chamfer(
+        &mut self,
+        id: FeatureId,
+        definition: ChamferDefinition,
+    ) -> Result<(), HistoryError> {
+        let reads = definition.reads();
+        self.work_geometry
+            .replace(
+                id,
+                PartFeatureDefinition::Chamfer(Box::new(definition)),
+                reads,
+            )
+            .map(|_| ())
+            .map_err(|cause| HistoryError::PartProgram(PartFeatureProgramError::Sequence(cause)))
+    }
     pub(super) fn create_body_feature(
         &mut self,
         name: &str,

@@ -72,20 +72,45 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
         feature: FeatureId,
         definition: &ChamferDefinition,
     ) -> Result<(), PartFeatureFailure<Failure>> {
-        let distance = definition
-            .resolved_distance(&snapshot.parameters)
+        let resolved = definition
+            .resolve(&snapshot.parameters)
             .map_err(PartFeatureFailure::ChamferInput)?;
-        self.evaluate_blend(
+        if definition.options().is_default() {
+            return self.evaluate_blend(
+                backend,
+                feature,
+                BlendInput {
+                    body_source: definition.body_source(),
+                    body: definition.body(),
+                    edges: definition.edges(),
+                    distance: resolved.distance,
+                    kind: PartBlendKind::Chamfer,
+                },
+            );
+        }
+        let slot = resolve_body_slot(
+            &self.bodies,
+            &self.body_lineage,
             backend,
-            feature,
-            BlendInput {
-                body_source: definition.body_source(),
-                body: definition.body(),
-                edges: definition.edges(),
-                distance,
-                kind: PartBlendKind::Chamfer,
-            },
+            definition.body_source(),
+            definition.body(),
         )
+        .map_err(PartFeatureFailure::BodyReference)?;
+        let before = self.bodies.get(&slot).ok_or_else(|| {
+            PartFeatureFailure::BodyReference(format!(
+                "body slot {slot:?}: expected a current body"
+            ))
+        })?;
+        let result = backend.evaluate_chamfer_v2(feature, before, definition.edges(), resolved)?;
+        backend
+            .verify_body_reference(&result, definition.body())
+            .map_err(PartFeatureFailure::BodyReference)?;
+        self.body_lineage
+            .replace(slot, feature)
+            .map_err(PartFeatureFailure::BodyReference)?;
+        self.bodies.remove(&slot);
+        self.bodies.insert(feature.into(), result);
+        Ok(())
     }
     fn evaluate_blend<B: PartFeatureEvaluator<Body = Body, Failure = Failure>>(
         &mut self,

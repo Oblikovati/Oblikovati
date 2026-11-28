@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Named blend execution and lineage checks (#4045, #4046).
 use super::*;
+use crate::prism::named::blend::extrusion_boolean::BooleanFailure;
 
 impl CertifiedNamedSolidEvaluator<'_> {
     pub(super) fn evaluate_named_blend(
@@ -46,6 +47,76 @@ impl CertifiedNamedSolidEvaluator<'_> {
             .map_err(|message| {
                 PartFeatureFailure::Kernel(failure(Phase::Naming, feature, message))
             })?;
+        let result = NamedSolid::Derived(Box::new(named));
+        self.verify_result_lineage(body, &result)
+            .map_err(PartFeatureFailure::BodyReference)?;
+        Ok(result)
+    }
+
+    pub(super) fn evaluate_named_chamfer_v2(
+        &mut self,
+        feature: FeatureId,
+        body: &NamedSolid,
+        edges: &[Vec<u8>],
+        input: oblikovati_model::feature::chamfer_options::ResolvedChamfer,
+    ) -> Result<NamedSolid, PartFeatureFailure<EvaluationFailure>> {
+        let candidate = match body {
+            NamedSolid::Prism(body) => {
+                body.chamfer_v2_candidate(self.history, self.document, feature, edges, &input)
+            }
+            NamedSolid::Derived(body) => {
+                body.chamfer_v2_candidate(self.history, self.document, feature, edges, &input)
+            }
+        }
+        .map_err(|message| PartFeatureFailure::Kernel(failure(Phase::Chamfer, feature, message)))?;
+        let named = candidate
+            .name_topology(self.history, self.document, feature)
+            .map_err(|message| {
+                PartFeatureFailure::Kernel(failure(Phase::Naming, feature, message))
+            })?;
+        let result = NamedSolid::Derived(Box::new(named));
+        self.verify_result_lineage(body, &result)
+            .map_err(PartFeatureFailure::BodyReference)?;
+        Ok(result)
+    }
+
+    pub(super) fn evaluate_named_sweep_boolean(
+        &mut self,
+        feature: FeatureId,
+        body: &NamedSolid,
+        tool: Box<BlendNamedTopology>,
+        operation: oblikovati_model::feature::sketch_prism::PrismBoolean,
+    ) -> Result<NamedSolid, PartFeatureFailure<EvaluationFailure>> {
+        let fail = |kind, message| {
+            PartFeatureFailure::Kernel(
+                crate::EvaluationPhase::Sweep
+                    .refused(kind, crate::EvaluationEntity::Body, message)
+                    .for_feature(feature),
+            )
+        };
+        let tool = tool
+            .sweep_boolean_tool(self.history, self.document)
+            .map_err(|message| fail(crate::EvaluationFailureKind::InvalidResult, message))?;
+        let candidate = body
+            .boolean_tools(
+                self.history,
+                self.document,
+                vec![tool],
+                operation,
+                &format!("sweep {operation}"),
+            )
+            .map_err(|decline| match decline {
+                BooleanFailure::UnchangedCut { faces, .. } => fail(
+                    crate::EvaluationFailureKind::UnchangedCut,
+                    format!("The feature did not change the number of faces ({faces})."),
+                ),
+                BooleanFailure::Refused(message) => {
+                    fail(crate::EvaluationFailureKind::InvalidResult, message)
+                }
+            })?;
+        let named = candidate
+            .name_topology(self.history, self.document, feature)
+            .map_err(|message| fail(crate::EvaluationFailureKind::InvalidResult, message))?;
         let result = NamedSolid::Derived(Box::new(named));
         self.verify_result_lineage(body, &result)
             .map_err(PartFeatureFailure::BodyReference)?;

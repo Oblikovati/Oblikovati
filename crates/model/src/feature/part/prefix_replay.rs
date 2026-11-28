@@ -66,6 +66,17 @@ where
             .evaluate_fillet_v2(feature, body.get(), edges, input)
             .map(PrefixBody::Created)
     }
+    fn evaluate_chamfer_v2(
+        &mut self,
+        feature: FeatureId,
+        body: &Self::Body,
+        edges: &[Vec<u8>],
+        input: crate::feature::chamfer_options::ResolvedChamfer,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        self.0
+            .evaluate_chamfer_v2(feature, body.get(), edges, input)
+            .map(PrefixBody::Created)
+    }
     fn evaluate_move_body(
         &mut self,
         feature: FeatureId,
