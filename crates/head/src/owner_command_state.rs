@@ -274,6 +274,8 @@ impl<
             has_threadable_faces: self.part_has_threadable_faces(document),
             thread_preview: self.gui_thread_preview(document, session.generation()),
             thread_pick: self.gui_thread_pick(document, session.generation()),
+            delete_face_preview: self.gui_delete_face_preview(document, session.generation()),
+            delete_face_pick: self.gui_delete_face_pick(document, session.generation()),
             fillet_v2_preview: self.gui_fillet_v2_preview(document, session.generation()),
             fillet_v2_pick: self.gui_fillet_v2_pick(document, session.generation()),
             chamfer_v2_preview: self.gui_chamfer_v2_preview(document, session.generation()),

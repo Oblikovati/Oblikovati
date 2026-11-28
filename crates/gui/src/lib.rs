@@ -161,6 +161,7 @@ pub use fillet_panel::{
     GuiFilletV2PreviewState, GuiFilletV2Request, GuiFilletVariablePoint,
 };
 mod combine_dialog;
+mod delete_face_dialog;
 mod dimensions;
 mod draft_dialog;
 mod extrude_dialog;
@@ -174,6 +175,10 @@ pub use application::model_browser::feature_properties::{GuiFeatureCondition, Gu
 pub use combine_dialog::{
     GuiCombineAction, GuiCombineEditSeed, GuiCombinePick, GuiCombinePickMode, GuiCombinePreview,
     GuiCombinePreviewState, GuiCombineRequest,
+};
+pub use delete_face_dialog::{
+    GuiDeleteFaceAction, GuiDeleteFaceEditSeed, GuiDeleteFacePick, GuiDeleteFacePreview,
+    GuiDeleteFacePreviewState, GuiDeleteFaceRequest,
 };
 pub use draft_dialog::{
     GuiDraftAction, GuiDraftEditSeed, GuiDraftPick, GuiDraftPickTarget, GuiDraftPreview,

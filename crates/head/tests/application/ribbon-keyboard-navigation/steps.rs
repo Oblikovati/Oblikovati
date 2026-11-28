@@ -477,6 +477,7 @@ fn cancel_hole(world: &mut ApplicationWorld) {
 fn hole_panel_closed(world: &mut ApplicationWorld) {
     assert!(super::diagnostics::window_geometry("Hole").is_none());
     assert!(super::diagnostics::window_geometry("Revolution").is_none());
+    assert!(super::diagnostics::window_geometry("Delete Face").is_none());
     if !world.observed_counts.is_empty() {
         let count = world.state().browser.as_ref().unwrap().features.len();
         assert_eq!(Some(&count), world.observed_counts.last());

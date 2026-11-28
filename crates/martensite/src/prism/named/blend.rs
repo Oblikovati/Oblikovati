@@ -9,6 +9,7 @@ use martensite_tktopalgo::brep_builder_api::{BRepBuilderAPICopy, BRepBuilderAPIM
 use oblikovati_model::identity::ReferenceEnvelope;
 mod chamfer_v2;
 mod combine;
+mod delete_face;
 mod draft;
 pub(super) mod extrusion_boolean;
 mod fillet_topology;
@@ -25,6 +26,7 @@ pub use fillet_topology::{SharedFilletVertex, SolidFilletEdgeGroups};
 pub use rigid_motion::RigidMotion;
 pub use thread::ThreadableFaceInfo;
 mod naming;
+pub(super) use delete_face::DeleteFaceRequest;
 pub(super) use draft::DraftRequest;
 pub(super) use hole::{HoleRequest, build_hole_tool};
 pub(super) use slot::{SlotRequest, build_slot_tools};

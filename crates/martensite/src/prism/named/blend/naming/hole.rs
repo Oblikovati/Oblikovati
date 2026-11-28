@@ -75,4 +75,27 @@ impl BlendNamedTopology {
             request,
         )
     }
+    pub(in crate::prism::named) fn delete_face_candidate(
+        &self,
+        history: &DocumentEditHistory,
+        document: DocumentGuid,
+        request: &super::super::DeleteFaceRequest<'_>,
+    ) -> Result<BlendCandidate, String> {
+        let input = self.source_topology(history, document)?;
+        super::super::delete_face::build_delete_face_candidate(
+            super::super::BlendInputTopology {
+                body: &input.body,
+                source: input.entities,
+                source_bodies: input.body_keys,
+                body_parent: self.active_body.clone(),
+                primary_body: self.primary_body.clone(),
+                inherited_deleted: self.deleted.clone(),
+                inherited_splits: self.splits.clone(),
+                resolution: self.resolution,
+            },
+            history,
+            document,
+            request,
+        )
+    }
 }

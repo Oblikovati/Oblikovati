@@ -27,6 +27,7 @@ mod coil;
 mod combine;
 mod command_owner;
 mod decal;
+mod delete_face;
 mod derive;
 mod draft;
 mod edit;
@@ -54,6 +55,10 @@ pub use combine::{
 };
 pub use decal::{
     DecalInputs, PreparedDecal, build_decal_definition, prepare_decal_definition, replace_decal,
+};
+pub use delete_face::{
+    DeleteFaceFeatureInputs, PreparedDeleteFace, build_delete_face_definition,
+    prepare_delete_face_definition, replace_delete_face,
 };
 pub use derive::{
     DeriveInputs, PreparedDerivedPart, build_derived_part_definition,

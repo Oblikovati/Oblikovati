@@ -157,6 +157,8 @@ pub struct GuiCommandState {
     pub has_threadable_faces: bool,
     pub thread_preview: Option<crate::GuiThreadPreviewState>,
     pub thread_pick: Option<crate::GuiThreadPick>,
+    pub delete_face_preview: Option<crate::GuiDeleteFacePreviewState>,
+    pub delete_face_pick: Option<crate::GuiDeleteFacePick>,
     pub fillet_v2_preview: Option<crate::GuiFilletV2PreviewState>,
     pub fillet_v2_pick: Option<crate::GuiFilletV2Pick>,
     pub chamfer_v2_preview: Option<crate::GuiChamferV2PreviewState>,

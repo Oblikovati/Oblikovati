@@ -10,6 +10,7 @@ pub mod chamfer;
 pub mod chamfer_options;
 pub mod circular_pattern;
 pub mod combine;
+pub mod delete_face;
 pub mod derived_part;
 pub mod draft;
 mod error;

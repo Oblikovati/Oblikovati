@@ -211,6 +211,7 @@ fn populate_browser<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
     browser.slot_edits = super::owner_blend::owner_slot::edit_seeds(snapshot);
     browser.combine_edits = super::owner_blend::owner_combine::edit_seeds(snapshot);
     browser.draft_edits = super::owner_blend::owner_draft::edit_seeds(snapshot);
+    browser.delete_face_edits = super::owner_blend::owner_delete_face::edit_seeds(snapshot);
     browser.third_party_entries = super::owner_blend::owner_import::third_party_entries(snapshot);
     browser.extrusion_edits = snapshot
         .work_geometry
@@ -401,6 +402,7 @@ fn feature_kind_name(
         oblikovati_model::feature::part::PartFeatureDefinition::Slot(_) => "Slot",
         oblikovati_model::feature::part::PartFeatureDefinition::Combine(_) => "Combine",
         oblikovati_model::feature::part::PartFeatureDefinition::Draft(_) => "Draft",
+        oblikovati_model::feature::part::PartFeatureDefinition::DeleteFace(_) => "Delete Face",
         oblikovati_model::feature::part::PartFeatureDefinition::Shell(_) => "Shell",
         oblikovati_model::feature::part::PartFeatureDefinition::Thread(_) => "Thread",
         DeleteBody(_) => "Delete Body",

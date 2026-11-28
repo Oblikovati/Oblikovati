@@ -144,6 +144,7 @@ glyph_catalog! {
     RibbonDensity => "layout-single",
     BrandWordmark => "view-cube",
     CopyObject => "copy-object",
+    DeleteFace => "delete-face",
 }
 
 pub(crate) fn document_glyph(kind: crate::GuiTemplateKind) -> IconGlyph {

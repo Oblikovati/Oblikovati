@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::{
     PartFeatureDefinition, PartFeatureEvaluator, PartFeatureProgramError,
-    body_resolution::{resolve_body_face, resolve_body_slot},
+    body_resolution::resolve_body_face,
 };
 use crate::{
     feature::{
-        FeatureHealthRecord, FeatureId, FeatureReplayController, FeatureReplayRange,
+        FeatureHealthRecord, FeatureId, FeatureReplayController,
         sketch_prism::SketchPrismError,
         work_geometry::{WorkGeometryError, WorkGeometryEvaluation},
     },
@@ -58,6 +58,7 @@ pub enum PartFeatureFailure<Failure> {
     HoleInput(String),
     DraftInput(String),
     ThreadInput(String),
+    DeleteFaceInput(String),
     ShellInput(String),
     MoveBodyInput(String),
     Unsupported(String),
@@ -427,6 +428,9 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
             PartFeatureDefinition::Thread(definition) => {
                 self.evaluate_thread(snapshot, backend, id, definition)
             }
+            PartFeatureDefinition::DeleteFace(definition) => {
+                self.evaluate_delete_face(backend, id, definition)
+            }
             definition @ (PartFeatureDefinition::Mirror(_)
             | PartFeatureDefinition::CircularPattern(_)
             | PartFeatureDefinition::RectangularPattern(_)) => {
@@ -453,45 +457,5 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
             }
         }
     }
-    fn delete_body<B: PartFeatureEvaluator<Body = Body, Failure = Failure>>(
-        &mut self,
-        backend: &B,
-        feature: FeatureId,
-        definition: &super::DeleteBodyDefinition,
-    ) -> Result<(), PartFeatureFailure<Failure>> {
-        let source = definition.source();
-        let slot = resolve_body_slot(
-            &self.bodies,
-            &self.body_lineage,
-            backend,
-            source,
-            definition.key(),
-        )
-        .map_err(PartFeatureFailure::BodyReference)?;
-        self.bodies.remove(&slot);
-        self.body_lineage.retire(slot);
-        self.deleted.insert(feature, definition.key().to_vec());
-        Ok(())
-    }
 }
-impl DocumentSnapshot {
-    pub(super) fn part_replay_range(&self) -> Result<FeatureReplayRange, PartFeatureProgramError> {
-        self.validate_prism_reads()?;
-        self.work_geometry
-            .validate_work_plane_reads()
-            .map_err(PartFeatureProgramError::Reads)?;
-        Ok(FeatureReplayRange {
-            start: 0,
-            end: self.work_geometry.effective_end(),
-        })
-    }
-}
-pub(super) fn require_replay_current(
-    cancelled: bool,
-    completed: usize,
-) -> Result<(), PartFeatureProgramError> {
-    if cancelled {
-        return Err(PartFeatureProgramError::Cancelled { completed });
-    }
-    Ok(())
-}
+pub(super) use super::delete::require_replay_current;
