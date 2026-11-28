@@ -13,6 +13,7 @@ mod body_dependencies;
 mod body_lineage;
 mod body_resolution;
 mod checkpoints;
+mod combine_evaluation;
 
 mod hole_evaluation;
 mod move_body_evaluation;
@@ -54,6 +55,7 @@ pub enum PartFeatureDefinition {
     Fillet(Box<super::fillet::FilletDefinition>),
     Hole(Box<super::hole::HoleDefinition>),
     Slot(Box<super::slot::SlotDefinition>),
+    Combine(Box<super::combine::CombineDefinition>),
     MoveBody(Box<super::move_body::MoveBodyDefinition>),
     Shell(Box<super::shell::ShellDefinition>),
     Mirror(Box<super::mirror::MirrorDefinition>),
@@ -106,6 +108,7 @@ impl PartFeatureDefinition {
             Self::Fillet(_) => "fillet",
             Self::Hole(_) => "hole",
             Self::Slot(_) => "slot",
+            Self::Combine(_) => "combine",
             Self::MoveBody(_) => "move-body",
             Self::Shell(_) => "shell",
             Self::Mirror(_) => "mirror",
@@ -137,6 +140,7 @@ impl PartFeatureDefinition {
                 | Self::Chamfer(_)
                 | Self::Hole(_)
                 | Self::Slot(_)
+                | Self::Combine(_)
                 | Self::Shell(_)
                 | Self::MoveBody(_)
                 | Self::Mirror(_)

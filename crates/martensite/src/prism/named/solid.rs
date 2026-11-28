@@ -459,6 +459,7 @@ impl<'a> CertifiedNamedSolidEvaluator<'a> {
 }
 
 mod blend_evaluation;
+mod combine_evaluation;
 mod evaluator;
 mod extrusion_boolean;
 mod extrusion_pattern;

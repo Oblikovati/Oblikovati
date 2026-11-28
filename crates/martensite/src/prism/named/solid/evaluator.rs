@@ -461,6 +461,15 @@ impl PartFeatureEvaluator for CertifiedNamedSolidEvaluator<'_> {
     ) -> Result<NamedSolid, PartFeatureFailure<EvaluationFailure>> {
         self.evaluate_named_slot(feature, body, face, input)
     }
+    fn evaluate_combine(
+        &mut self,
+        feature: FeatureId,
+        base: &NamedSolid,
+        tools: &[&NamedSolid],
+        input: oblikovati_model::feature::combine::ResolvedCombine,
+    ) -> Result<NamedSolid, PartFeatureFailure<EvaluationFailure>> {
+        self.evaluate_named_combine(feature, base, tools, input)
+    }
     fn evaluate_shell(
         &mut self,
         feature: FeatureId,

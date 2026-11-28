@@ -411,6 +411,7 @@ fn feature_kind(definition: &PartFeatureDefinition) -> &'static str {
         Chamfer(_) => "chamfer",
         Hole(_) => "hole",
         Slot(_) => "slot",
+        Combine(_) => "combine",
         Shell(_) => "shell",
         Mirror(_) => "mirror",
         CircularPattern(_) => "circular-pattern",

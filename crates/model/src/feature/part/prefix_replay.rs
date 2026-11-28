@@ -109,6 +109,18 @@ where
             .evaluate_slot(feature, body.get(), face, input)
             .map(PrefixBody::Created)
     }
+    fn evaluate_combine(
+        &mut self,
+        feature: FeatureId,
+        base: &Self::Body,
+        tools: &[&Self::Body],
+        input: crate::feature::combine::ResolvedCombine,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        let inner: Vec<_> = tools.iter().map(|tool| tool.get()).collect();
+        self.0
+            .evaluate_combine(feature, base.get(), &inner, input)
+            .map(PrefixBody::Created)
+    }
     fn evaluate_shell(
         &mut self,
         feature: FeatureId,

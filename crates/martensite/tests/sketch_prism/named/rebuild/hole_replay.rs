@@ -9,6 +9,8 @@ use oblikovati_model::feature::{
 
 #[path = "chamfer_v2.rs"]
 mod chamfer_v2;
+#[path = "combine_replay.rs"]
+mod combine_replay;
 #[path = "fillet_v2.rs"]
 mod fillet_v2;
 #[path = "hole_frame_origin.rs"]
