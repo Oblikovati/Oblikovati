@@ -148,6 +148,7 @@ glyph_catalog! {
     BrandWordmark => "view-cube",
     CopyObject => "copy-object",
     DeleteFace => "delete-face",
+    ReplaceFace => "replace-face",
     DirectEdit => "direct-edit",
     Finish => "finish",
     ExtendSurface => "extend-surface",

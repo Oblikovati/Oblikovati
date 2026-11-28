@@ -101,6 +101,7 @@ fn status_reason(
         | FeatureEvaluationStatus::Failed(PartFeatureFailure::DraftInput(cause))
         | FeatureEvaluationStatus::Failed(PartFeatureFailure::ThreadInput(cause))
         | FeatureEvaluationStatus::Failed(PartFeatureFailure::DeleteFaceInput(cause))
+        | FeatureEvaluationStatus::Failed(PartFeatureFailure::ReplaceFaceInput(cause))
         | FeatureEvaluationStatus::Failed(PartFeatureFailure::DirectEditInput(cause))
         | FeatureEvaluationStatus::Failed(PartFeatureFailure::SplitInput(cause))
         | FeatureEvaluationStatus::Failed(PartFeatureFailure::MarkInput(cause))

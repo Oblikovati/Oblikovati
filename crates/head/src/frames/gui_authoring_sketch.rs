@@ -112,6 +112,7 @@ pub(super) fn apply(owner: &mut dyn HeadWork, action: &GuiShellAction) -> Result
         GuiShellAction::Draft(action) => owner.draft_from_gui(action.clone()),
         GuiShellAction::Thread(action) => owner.thread_from_gui(action.clone()),
         GuiShellAction::DeleteFace(action) => owner.delete_face_from_gui(action.clone()),
+        GuiShellAction::ReplaceFace(action) => owner.replace_face_from_gui(action.clone()),
         GuiShellAction::ThickenOffset(action) => owner.thicken_offset_from_gui(action.clone()),
         GuiShellAction::Split(action) => owner.split_from_gui(action.clone()),
         GuiShellAction::Mark(action) => owner.mark_from_gui(action.clone()),

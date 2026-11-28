@@ -96,6 +96,7 @@ fn track_replacement(
         PartFeatureDefinition::Draft(draft) => draft.body_source(),
         PartFeatureDefinition::Thread(thread) => thread.body_source(),
         PartFeatureDefinition::DeleteFace(delete_face) => delete_face.body_source(),
+        PartFeatureDefinition::ReplaceFace(replace_face) => replace_face.body_source(),
         PartFeatureDefinition::ThickenOffset(thicken) => {
             if thicken.replaces_target_body() {
                 thicken.body_source()

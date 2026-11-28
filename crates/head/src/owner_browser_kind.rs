@@ -35,6 +35,7 @@ pub(super) fn feature_kind_name(
         oblikovati_model::feature::part::PartFeatureDefinition::Draft(_) => "Draft",
         oblikovati_model::feature::part::PartFeatureDefinition::Split(_) => "Split",
         oblikovati_model::feature::part::PartFeatureDefinition::DeleteFace(_) => "Delete Face",
+        oblikovati_model::feature::part::PartFeatureDefinition::ReplaceFace(_) => "Replace Face",
         oblikovati_model::feature::part::PartFeatureDefinition::Shell(_) => "Shell",
         oblikovati_model::feature::part::PartFeatureDefinition::Thread(_) => "Thread",
         oblikovati_model::feature::part::PartFeatureDefinition::Mark(_) => "Mark",

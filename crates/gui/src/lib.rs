@@ -187,6 +187,7 @@ mod face_properties;
 mod finish_dialog;
 mod hole_dialog;
 mod mark_dialog;
+mod replace_face_dialog;
 mod slot_dialog;
 mod split_dialog;
 mod thicken_offset_dialog;
@@ -224,6 +225,10 @@ pub use hole_dialog::{
 pub use mark_dialog::{
     GuiMarkAction, GuiMarkEditSeed, GuiMarkEligibility, GuiMarkFacePick, GuiMarkGeometrySet,
     GuiMarkPreview, GuiMarkPreviewState, GuiMarkRequest, GuiMarkSketchPick,
+};
+pub use replace_face_dialog::{
+    GuiReplaceFaceAction, GuiReplaceFaceEditSeed, GuiReplaceFacePick, GuiReplaceFacePickMode,
+    GuiReplaceFacePreview, GuiReplaceFacePreviewState, GuiReplaceFaceRequest,
 };
 pub use slot_dialog::{
     GuiSlotAction, GuiSlotEditSeed, GuiSlotPick, GuiSlotPreview, GuiSlotPreviewState,

@@ -20,6 +20,8 @@ impl AuthoredFeature<WorkGeometryDefinition> {
                     | WorkGeometryDefinition::Fillet(_)
                     | WorkGeometryDefinition::Chamfer(_)
                     | WorkGeometryDefinition::Hole(_)
+                    | WorkGeometryDefinition::DeleteFace(_)
+                    | WorkGeometryDefinition::ReplaceFace(_)
                     | WorkGeometryDefinition::Split(_)
                     | WorkGeometryDefinition::Shell(_)
                     | WorkGeometryDefinition::MoveBody(_)

@@ -44,6 +44,15 @@ macro_rules! hole_work_methods {
                 "delete face {action:?}: expected a certified part owner"
             ))
         }
+        /// Dispatch a Replace Face Properties panel action; example: `work.replace_face_from_gui(action)?`.
+        fn replace_face_from_gui(
+            &mut self,
+            action: oblikovati_gui::GuiReplaceFaceAction,
+        ) -> Result<bool, String> {
+            Err(format!(
+                "replace face {action:?}: expected a certified part owner"
+            ))
+        }
         /// Dispatch a Thicken/Offset Properties panel action; example: `work.thicken_offset_from_gui(action)?`.
         fn thicken_offset_from_gui(
             &mut self,
@@ -181,6 +190,12 @@ macro_rules! forward_hole_work_methods {
             action: oblikovati_gui::GuiDeleteFaceAction,
         ) -> Result<bool, String> {
             self.$owner.delete_face_from_gui(action)
+        }
+        fn replace_face_from_gui(
+            &mut self,
+            action: oblikovati_gui::GuiReplaceFaceAction,
+        ) -> Result<bool, String> {
+            self.$owner.replace_face_from_gui(action)
         }
         fn thicken_offset_from_gui(
             &mut self,

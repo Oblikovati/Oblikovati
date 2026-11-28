@@ -20,6 +20,7 @@ pub(crate) fn enabled(action: &GuiShellAction, state: &GuiCommandState) -> Optio
         GuiShellAction::Draft(action) => action.enabled(state),
         GuiShellAction::Thread(action) => action.enabled(state),
         GuiShellAction::DeleteFace(action) => action.enabled(state),
+        GuiShellAction::ReplaceFace(action) => action.enabled(state),
         GuiShellAction::ThickenOffset(action) => action.enabled(state),
         GuiShellAction::DirectEdit(action) => action.enabled(state),
         GuiShellAction::Split(action) => action.enabled(state),

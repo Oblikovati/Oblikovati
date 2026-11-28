@@ -20,6 +20,8 @@ mod fillet_v2;
 pub(super) mod finish;
 mod hole;
 pub(super) mod mark;
+mod replace_face;
+mod replace_face_geom;
 mod rigid_motion;
 pub(super) mod ruled_surface;
 mod shell;

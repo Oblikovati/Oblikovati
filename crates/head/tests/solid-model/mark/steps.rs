@@ -202,9 +202,14 @@ fn mark_open_no_sketch_geometry(world: &mut ApplicationWorld) {
 
 #[then("OK is disabled.")]
 fn mark_ok_is_disabled(world: &mut ApplicationWorld) {
+    let window = if super::super::diagnostics::window_geometry("Replace Face").is_some() {
+        "Replace Face"
+    } else {
+        MARK_WINDOW
+    };
     assert!(
-        world.run_in_window(MARK_WINDOW, "OK").alpha < 200,
-        "expected OK disabled when no sketch geometry is selected"
+        world.run_in_window(window, "OK").alpha < 200,
+        "expected OK disabled in {window}"
     );
 }
 

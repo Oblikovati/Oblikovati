@@ -207,6 +207,13 @@ fn cancel_extrusion(world: &mut ApplicationWorld) {
         world.pump(Vec::new());
         return;
     }
+    if super::diagnostics::window_geometry("Replace Face").is_some() {
+        let button = world.run_in_window("Replace Face", "Cancel").center();
+        world.click(super::diagnostics::pointer_pixels(button));
+        world.pump(Vec::new());
+        world.pump(Vec::new());
+        return;
+    }
     world.click_text("Cancel");
     world.pump(Vec::new());
 }

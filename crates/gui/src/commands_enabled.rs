@@ -355,6 +355,7 @@ impl GuiShellAction {
             | Self::Draft(_)
             | Self::Thread(_)
             | Self::DeleteFace(_)
+            | Self::ReplaceFace(_)
             | Self::ThickenOffset(_)
             | Self::DirectEdit(_)
             | Self::Split(_)

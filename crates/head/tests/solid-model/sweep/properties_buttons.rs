@@ -19,6 +19,7 @@ fn help_and_ok(world: &mut ApplicationWorld) {
 #[when("OK is clicked")]
 pub(super) fn accept(world: &mut ApplicationWorld) {
     click_button(world, active_tool(), "OK");
+    world.pump(Vec::new());
 }
 
 fn click_button(world: &mut ApplicationWorld, tool: &str, label: &str) {
@@ -29,7 +30,7 @@ fn click_button(world: &mut ApplicationWorld, tool: &str, label: &str) {
 }
 
 fn active_tool() -> &'static str {
-    ["Extrude", "Loft", "Sweep", "Revolution"]
+    ["Extrude", "Loft", "Sweep", "Revolution", "Replace Face"]
         .into_iter()
         .find(|tool| super::super::diagnostics::window_geometry(tool).is_some())
         .expect("expected a Part Create properties window")

@@ -5,6 +5,8 @@ mod boundary_patch_create;
 use super::*;
 use crate::feature::{FeatureId, hole::HoleDefinition, part::PartFeatureDefinition};
 
+#[path = "replace_face_create.rs"]
+mod replace_face_create;
 #[path = "ruled_surface_create.rs"]
 mod ruled_surface_create;
 #[path = "ucs_create.rs"]

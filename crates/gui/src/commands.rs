@@ -368,6 +368,7 @@ pub enum GuiShellAction {
     Draft(crate::GuiDraftAction),
     Thread(crate::GuiThreadAction),
     DeleteFace(crate::GuiDeleteFaceAction),
+    ReplaceFace(crate::GuiReplaceFaceAction),
     ThickenOffset(crate::GuiThickenOffsetAction),
     DirectEdit(crate::GuiDirectEditAction),
     Split(crate::GuiSplitAction),
@@ -468,32 +469,18 @@ pub enum GuiShellAction {
     Redo,
     Home,
 }
-mod misc;
-pub use misc::{GuiOffsetPlaneBase, GuiOffsetPlaneValidation, GuiSelectionMode};
-mod feature_requests;
-pub use feature_requests::{
-    GuiBaseViewRequest, GuiDrawingLayoutAction, GuiDrawingLine, GuiDrawingProjection,
-    GuiExtrudeDistanceValidation, GuiExtrudeEditRequest, GuiExtrudePreview, GuiExtrudeProfilePick,
-    GuiExtrudeReferenceExtent, GuiFilletEditRequest, GuiFilletRequest, GuiLayoutComponent,
-    GuiMoveBodyRequest, GuiShellFeatureRequest,
-};
-mod parameter_mutation;
-pub use parameter_mutation::GuiParameterMutation;
 mod asset_kind;
-pub use asset_kind::GuiPartAssetKind;
-mod line_style;
-pub use line_style::GuiSketchLineStyle;
 mod browser_choice;
-pub use browser_choice::GuiBrowserChoice;
-mod presentation;
-pub use presentation::{
-    GuiDocumentStorage, GuiPreviewImage, GuiProject, GuiProjectAction, GuiProjectGroup,
-    GuiProjectSettings,
-};
-mod state;
-pub use state::{GuiAuthoringContext, GuiCommandState};
 #[path = "commands_enabled.rs"]
 mod enabled;
+mod feature_requests;
+mod line_style;
+mod misc;
+mod parameter_mutation;
+mod presentation;
+mod reexports;
+mod state;
+pub use reexports::*;
 #[cfg(test)]
 #[path = "../tests/commands/unit.rs"]
 mod tests;

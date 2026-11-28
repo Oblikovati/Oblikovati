@@ -153,6 +153,7 @@ enum Draft {
     Taper,
     Thread,
     DeleteFace,
+    ReplaceFace,
     ThickenOffset,
     DirectEdit,
     Split,
@@ -220,6 +221,9 @@ fn requested_draft(action: &GuiShellAction) -> Option<Draft> {
         GuiShellAction::DeleteFace(
             crate::GuiDeleteFaceAction::Open | crate::GuiDeleteFaceAction::OpenEdit(_),
         ) => Draft::DeleteFace,
+        GuiShellAction::ReplaceFace(
+            crate::GuiReplaceFaceAction::Open | crate::GuiReplaceFaceAction::OpenEdit(_),
+        ) => Draft::ReplaceFace,
         GuiShellAction::ThickenOffset(
             crate::GuiThickenOffsetAction::Open | crate::GuiThickenOffsetAction::OpenEdit(_),
         ) => Draft::ThickenOffset,
@@ -444,6 +448,12 @@ pub(super) fn open_drafts(
         }
         GuiShellAction::RuledSurface(crate::GuiRuledSurfaceAction::OpenEdit(feature)) => {
             create.ruled_surface.open(state, Some(feature), actions)
+        }
+        GuiShellAction::ReplaceFace(crate::GuiReplaceFaceAction::Open) => {
+            create.replace_face.open(state, None, actions)
+        }
+        GuiShellAction::ReplaceFace(crate::GuiReplaceFaceAction::OpenEdit(feature)) => {
+            create.replace_face.open(state, Some(feature), actions)
         }
         GuiShellAction::OpenMoveBody => motion.open(state),
         _ => {}

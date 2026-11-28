@@ -35,6 +35,8 @@ pub(super) mod owner_import;
 pub(super) mod owner_mark;
 #[path = "owner_move_body.rs"]
 mod owner_move_body;
+#[path = "owner_replace_face.rs"]
+pub(super) mod owner_replace_face;
 #[path = "owner_revolve.rs"]
 pub(super) mod owner_revolve;
 #[path = "owner_rib.rs"]
@@ -84,6 +86,7 @@ pub(super) struct CreateFeatureState {
     pub(super) draft: owner_draft::DraftOwnerState,
     pub(super) thread: owner_thread::ThreadOwnerState,
     pub(super) delete_face: owner_delete_face::DeleteFaceOwnerState,
+    pub(super) replace_face: owner_replace_face::ReplaceFaceOwnerState,
     pub(super) thicken_offset: owner_thicken_offset::ThickenOffsetOwnerState,
     pub(super) split: owner_split::SplitOwnerState,
     pub(super) mark: owner_mark::MarkOwnerState,

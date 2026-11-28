@@ -35,9 +35,31 @@ impl BlendNamedTopology {
         shape: Shape,
         resolution: Option<PrismResolution>,
     ) -> Result<Self, String> {
+        Self::from_tagged_preserving_body(
+            history,
+            document,
+            feature,
+            "thicken-offset",
+            primary_body,
+            deleted,
+            shape,
+            resolution,
+        )
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    pub(crate) fn from_tagged_preserving_body(
+        history: &DocumentEditHistory,
+        document: DocumentGuid,
+        feature: FeatureId,
+        tag: &str,
+        primary_body: Vec<u8>,
+        deleted: Vec<Vec<u8>>,
+        shape: Shape,
+        resolution: Option<PrismResolution>,
+    ) -> Result<Self, String> {
         let active_body =
-            SemanticReferenceName::new(document, feature.0, 4, "thicken-offset", "body", &[1])?
-                .encode()?;
+            SemanticReferenceName::new(document, feature.0, 4, tag, "body", &[1])?.encode()?;
         Self::from_derived_with_bodies(
             history,
             document,
