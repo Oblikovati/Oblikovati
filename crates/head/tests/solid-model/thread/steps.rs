@@ -77,6 +77,10 @@ fn panel_shows_iso_taper_r6_10mm(world: &mut ApplicationWorld) {
 #[when("the user accepts the settings")]
 #[when("the user accepts")]
 fn accept_thread_settings(world: &mut ApplicationWorld) {
+    if super::super::diagnostics::window_geometry("Split").is_some() {
+        super::solid_split::accept_split_from_shared(world);
+        return;
+    }
     accept_thread_and_wait(world);
 }
 

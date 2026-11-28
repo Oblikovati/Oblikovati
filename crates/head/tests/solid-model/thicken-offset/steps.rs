@@ -75,8 +75,7 @@ fn reopen_thicken1_with_allow_approx(world: &mut ApplicationWorld) {
     set_checkbox(world, "AllowApproximation", current, true);
 }
 
-#[when("the user opens Type")]
-fn open_approx_type_dropdown(world: &mut ApplicationWorld) {
+pub(in super::super) fn open_approx_type_dropdown_for_thicken(world: &mut ApplicationWorld) {
     open_type_combo(world);
 }
 

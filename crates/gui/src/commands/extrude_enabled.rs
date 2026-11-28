@@ -103,3 +103,28 @@ pub(super) fn commit_draft(
                 && !name.contains('\0')
         })
 }
+
+pub(super) fn open_edit(
+    state: &GuiCommandState,
+    feature: oblikovati_model::feature::FeatureId,
+) -> bool {
+    state.extrude_available
+        && state.document.is_some()
+        && state.authoring == GuiAuthoringContext::Part
+        && !state.transaction_open
+        && state
+            .browser
+            .as_ref()
+            .is_some_and(|browser| browser.extrusion_edits.contains_key(&feature))
+}
+
+pub(super) fn edit_distance(state: &GuiCommandState, request: &GuiExtrudeEditRequest) -> bool {
+    state.extrude_available
+        && state.document == Some(request.document)
+        && !state.transaction_open
+        && !request.distance.trim().is_empty()
+        && state
+            .browser
+            .as_ref()
+            .is_some_and(|browser| browser.extrusion_edits.contains_key(&request.feature))
+}

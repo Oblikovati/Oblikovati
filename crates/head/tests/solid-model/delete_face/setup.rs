@@ -31,8 +31,16 @@ pub(super) fn click_panel_control(world: &mut ApplicationWorld, label: &str) {
 }
 
 pub(super) fn click_modal_control(world: &mut ApplicationWorld, label: &str) {
+    world.pump(Vec::new());
     let center = world.run_in_window(FAILURE_MODAL_WINDOW, label).center();
-    world.click(super::super::super::diagnostics::pointer_pixels(center));
+    let point = super::super::super::diagnostics::pointer_pixels(center);
+    world.pump(vec![oblikovati_viewport::ViewportEvent::Input(
+        oblikovati_viewport::ViewportInput::Motion {
+            position: point,
+            modifiers: Default::default(),
+        },
+    )]);
+    world.click(point);
     world.pump(Vec::new());
     world.pump(Vec::new());
 }

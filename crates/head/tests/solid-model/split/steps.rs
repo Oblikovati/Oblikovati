@@ -61,8 +61,11 @@ fn open_split_all_faces_and_select_line(world: &mut ApplicationWorld) {
     assert_eq!(preview.result, GuiSplitPreview::Ready);
 }
 
+pub(in super::super) fn accept_split_from_shared(world: &mut ApplicationWorld) {
+    accept_split_and_wait(world);
+}
+
 #[when("the user accepts Split")]
-#[when("the user accepts")]
 fn accept_split(world: &mut ApplicationWorld) {
     accept_split_and_wait(world);
 }

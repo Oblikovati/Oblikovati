@@ -275,11 +275,7 @@ pub(crate) fn draw_panel_content(
             );
             owners.icons.cursor(ui, origin, axis_pos);
             crate::ribbon_axis_group::draw(ui, state, owners.icons, actions, axis_size);
-            for (index, (label, icon)) in [
-                ("Point", IconGlyph::WorkPoint),
-            ]
-            .into_iter()
-            .enumerate()
+            for (index, (label, icon)) in [("Point", IconGlyph::WorkPoint)].into_iter().enumerate()
             {
                 let (position, size) = crate::ribbon_panels::builtin::plane_neighbor_cell(
                     owners.icons,

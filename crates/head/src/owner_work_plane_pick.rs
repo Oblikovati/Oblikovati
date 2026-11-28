@@ -96,7 +96,7 @@ impl<
             .internal_name;
         let mut hits = Vec::new();
         for (_, body) in self.part_scenes.current(session)?.ordered_body_outputs() {
-            for hit in body.vertex_hits_on_ray(session.history(), guid, ray, tolerance)? {
+            for hit in body.named_vertex_hits_on_ray(session.history(), guid, ray, tolerance)? {
                 hits.push((hit.distance, hit.reach, hit.key));
             }
         }

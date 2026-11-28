@@ -446,6 +446,7 @@ mod extrusion_span;
 mod finish_evaluation;
 mod hole_evaluation;
 mod hole_placement;
+mod loft_revolve;
 mod mark_evaluation;
 mod move_body_evaluation;
 mod shell_evaluation;

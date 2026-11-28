@@ -155,6 +155,10 @@ fn shell_open_with_allow_approximation(world: &mut ApplicationWorld) {
 
 #[when("the user opens Type")]
 fn open_approx_type_dropdown(world: &mut ApplicationWorld) {
+    if super::super::diagnostics::window_geometry(SHELL_WINDOW).is_none() {
+        super::solid_thicken_offset::open_approx_type_dropdown_for_thicken(world);
+        return;
+    }
     let row = world.run_in_window(SHELL_WINDOW, "Type").clone();
     let (origin, size) = super::super::diagnostics::window_geometry(SHELL_WINDOW).unwrap();
     let combo =

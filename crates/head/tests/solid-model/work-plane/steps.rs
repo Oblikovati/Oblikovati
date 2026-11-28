@@ -268,11 +268,6 @@ fn choose_midplane_of_torus(world: &mut ApplicationWorld) {
     choose_plane_menu_item(world, "Midplane of Torus");
 }
 
-#[then("the MCAD Software prompts me to select a torus")]
-fn prompts_to_select_torus(world: &mut ApplicationWorld) {
-    world.expect_text("Select a torus");
-}
-
 #[when("the user chooses Tangent to Surface through Edge")]
 fn choose_tangent_through_edge(world: &mut ApplicationWorld) {
     choose_plane_menu_item(world, "Tangent to Surface through Edge");

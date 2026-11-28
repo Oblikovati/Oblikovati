@@ -58,15 +58,6 @@ fn select_model_vertex_for_work_point(world: &mut ApplicationWorld) {
     }
 }
 
-#[given(
-    "a writable copy of `fixtures/cad/fillet-circular-edge-candidate.opd` is open with a circular end edge visible"
-)]
-fn open_circular_edge_candidate_for_work_point(world: &mut ApplicationWorld) {
-    open_work_point_fixture(world, "fixtures/cad/fillet-circular-edge-candidate.opd");
-    let browser = world.state().browser.expect("expected browser");
-    assert_eq!(browser.bodies.len(), 1, "expected circular extrusion body");
-}
-
 #[when("the user chooses Center Point of Loop of Edges and selects the loop")]
 fn choose_loop_center_and_select_loop(world: &mut ApplicationWorld) {
     let before = work_point_count(world);
@@ -152,12 +143,6 @@ fn accept_grounded_initial_position(world: &mut ApplicationWorld) {
         before + 1,
         "expected Grounded Point feature created"
     );
-}
-
-#[given("a writable copy of `fixtures/cad/blank-metric-part.opd` is open")]
-#[given("`fixtures/cad/blank-metric-part.opd` is open")]
-fn open_blank_metric_part_for_work_point(world: &mut ApplicationWorld) {
-    open_work_point_fixture(world, "fixtures/cad/blank-metric-part.opd");
 }
 
 #[given("its X Axis and Y Axis are available in Origin")]

@@ -36,3 +36,51 @@ impl DeleteBodyDefinition {
         FeatureReadFootprint::new([FeatureReadKey::Feature(self.source)], false)
     }
 }
+
+impl<Body, Failure> super::PartFeatureEvaluation<Body, Failure> {
+    pub(super) fn delete_body<B: super::PartFeatureEvaluator<Body = Body, Failure = Failure>>(
+        &mut self,
+        backend: &B,
+        feature: FeatureId,
+        definition: &DeleteBodyDefinition,
+    ) -> Result<(), super::PartFeatureFailure<Failure>> {
+        let source = definition.source();
+        let slot = super::body_resolution::resolve_body_slot(
+            &self.bodies,
+            &self.body_lineage,
+            backend,
+            source,
+            definition.key(),
+        )
+        .map_err(super::PartFeatureFailure::BodyReference)?;
+        self.bodies.remove(&slot);
+        self.body_lineage.retire(slot);
+        self.deleted.insert(feature, definition.key().to_vec());
+        Ok(())
+    }
+}
+
+impl crate::history::DocumentSnapshot {
+    pub(super) fn part_replay_range(
+        &self,
+    ) -> Result<crate::feature::FeatureReplayRange, super::PartFeatureProgramError> {
+        self.validate_prism_reads()?;
+        self.work_geometry
+            .validate_work_plane_reads()
+            .map_err(super::PartFeatureProgramError::Reads)?;
+        Ok(crate::feature::FeatureReplayRange {
+            start: 0,
+            end: self.work_geometry.effective_end(),
+        })
+    }
+}
+
+pub(super) fn require_replay_current(
+    cancelled: bool,
+    completed: usize,
+) -> Result<(), super::PartFeatureProgramError> {
+    if cancelled {
+        return Err(super::PartFeatureProgramError::Cancelled { completed });
+    }
+    Ok(())
+}

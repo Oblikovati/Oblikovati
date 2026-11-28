@@ -190,6 +190,17 @@ where
             .map(PrefixBody::Created)
     }
 
+    fn evaluate_thread(
+        &mut self,
+        feature: FeatureId,
+        body: &Self::Body,
+        input: crate::feature::thread::ResolvedThread,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        self.0
+            .evaluate_thread(feature, body.get(), input)
+            .map(PrefixBody::Created)
+    }
+
     fn evaluate_delete_face(
         &mut self,
         feature: FeatureId,
@@ -198,6 +209,50 @@ where
     ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
         self.0
             .evaluate_delete_face(feature, body.get(), input)
+            .map(PrefixBody::Created)
+    }
+
+    fn evaluate_thicken_offset(
+        &mut self,
+        feature: FeatureId,
+        body: &Self::Body,
+        input: crate::feature::thicken_offset::ResolvedThickenOffset,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        self.0
+            .evaluate_thicken_offset(feature, body.get(), input)
+            .map(PrefixBody::Created)
+    }
+
+    fn evaluate_direct_edit(
+        &mut self,
+        feature: FeatureId,
+        body: &Self::Body,
+        input: crate::feature::direct_edit::ResolvedDirectEdit,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        self.0
+            .evaluate_direct_edit(feature, body.get(), input)
+            .map(PrefixBody::Created)
+    }
+
+    fn evaluate_split(
+        &mut self,
+        feature: FeatureId,
+        body: &Self::Body,
+        input: crate::feature::split::ResolvedSplit,
+    ) -> Result<Vec<Self::Body>, PartFeatureFailure<Self::Failure>> {
+        self.0
+            .evaluate_split(feature, body.get(), input)
+            .map(|bodies| bodies.into_iter().map(PrefixBody::Created).collect())
+    }
+
+    fn evaluate_mark(
+        &mut self,
+        feature: FeatureId,
+        body: &Self::Body,
+        input: crate::feature::mark::ResolvedMark,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        self.0
+            .evaluate_mark(feature, body.get(), input)
             .map(PrefixBody::Created)
     }
 

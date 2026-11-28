@@ -1,29 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
+//! Source and minimum program version mapping for persisted part feature definitions.
 
 use super::WorkPlaneDefinitionRecipe;
-use crate::feature::work_plane::WorkPlaneReference;
 
 impl WorkPlaneDefinitionRecipe {
-    fn base_reference(&self) -> Option<&WorkPlaneReference> {
-        match self {
-            Self::Offset { base, .. } => Some(base),
-            Self::ParallelThroughPoint(source) => Some(&source.base),
-            Self::AtAngleAboutAxis(source) => Some(&source.base),
-            _ => None,
-        }
-    }
-
-    fn has_go_face_reference(&self) -> bool {
-        matches!(
-            self.base_reference(),
-            Some(WorkPlaneReference::GoPrismFace(_))
-        )
-    }
-
-    fn has_face_reference(&self) -> bool {
-        matches!(self.base_reference(), Some(WorkPlaneReference::Face(_)))
-    }
-
     pub(in crate::feature::work_plane) fn source_version(&self) -> u32 {
         if self.has_go_face_reference() {
             return 14;
@@ -59,7 +39,12 @@ impl WorkPlaneDefinitionRecipe {
             Self::ThickenOffset(_) => 50,
             Self::Split(_) => 51,
             Self::Mark(_) => 54,
+            Self::Finish(_) => 55,
+            Self::WorkPoint(_) => 56,
             Self::WorkPlaneExtended(_) => 58,
+            Self::Ucs(_) => 59,
+            Self::BoundaryPatch(_) => 60,
+            Self::ExtendSurface(_) => 61,
             Self::SketchSweep(recipe) => match recipe.version {
                 7 => 29,
                 6 => 28,
@@ -131,7 +116,12 @@ impl WorkPlaneDefinitionRecipe {
             Self::ThickenOffset(_) => 60,
             Self::Split(_) => 61,
             Self::Mark(_) => 64,
+            Self::Finish(_) => 65,
+            Self::WorkPoint(_) => 66,
             Self::WorkPlaneExtended(_) => 68,
+            Self::Ucs(_) => 69,
+            Self::BoundaryPatch(_) => 70,
+            Self::ExtendSurface(_) => 71,
             Self::SketchSweep(recipe) => match recipe.version {
                 7 => 34,
                 6 => 33,

@@ -16,7 +16,7 @@ use oblikovati_model::{
 
 /// One named B-rep vertex hit along a viewport picking ray.
 #[derive(Clone, Debug, PartialEq)]
-pub struct NamedVertexHit {
+pub struct NamedKeyedVertexHit {
     pub key: Vec<u8>,
     pub point: [f64; 3],
     pub distance: f64,
@@ -25,13 +25,13 @@ pub struct NamedVertexHit {
 
 impl NamedSolid {
     /// Query named vertices (kind 3) near a forward view ray in deterministic distance order.
-    pub fn vertex_hits_on_ray(
+    pub fn named_vertex_hits_on_ray(
         &self,
         history: &DocumentEditHistory,
         document: DocumentGuid,
         [origin, direction]: [[f64; 3]; 2],
         tolerance: f64,
-    ) -> Result<Vec<NamedVertexHit>, String> {
+    ) -> Result<Vec<NamedKeyedVertexHit>, String> {
         if !tolerance.is_finite() || tolerance <= 0.0 {
             return Err(format!(
                 "vertex pick tolerance {tolerance}: expected a finite positive length"
@@ -59,7 +59,7 @@ impl NamedSolid {
             ];
             let distance = len3(sub3(point, closest));
             if distance.is_finite() && distance <= tolerance {
-                hits.push(NamedVertexHit {
+                hits.push(NamedKeyedVertexHit {
                     key,
                     point,
                     distance,

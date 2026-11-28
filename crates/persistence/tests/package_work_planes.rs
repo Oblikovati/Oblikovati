@@ -165,18 +165,18 @@ fn invalid_versions_marks_and_unknown_fields_fail_before_restore() {
     assert_recipe_version_boundary(&captured);
 }
 fn assert_recipe_version_boundary(captured: &DocumentPackage) {
-    for version in 23..=68u64 {
+    for version in 23..=71u64 {
         let mut model = section(captured);
         model["workPlanes"]["recipe"]["version"] = version.into();
         assert!(from_section(&model, 3).restore_work_planes().is_ok());
     }
     let mut model = section(captured);
-    model["workPlanes"]["recipe"]["version"] = 69u64.into();
+    model["workPlanes"]["recipe"]["version"] = 72u64.into();
     let error = from_section(&model, 3).restore_work_planes().unwrap_err();
     assert!(
         error
             .to_string()
-            .contains("version 69: expected 1 through 68")
+            .contains("version 72: expected 1 through 71")
     );
 }
 
