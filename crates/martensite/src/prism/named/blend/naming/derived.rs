@@ -183,6 +183,23 @@ impl BlendNamedTopology {
         )
     }
 
+    pub(crate) fn from_ruled_surface_shell(
+        history: &DocumentEditHistory,
+        document: DocumentGuid,
+        feature: FeatureId,
+        shape: Shape,
+        resolution: Option<PrismResolution>,
+    ) -> Result<Self, String> {
+        Self::from_tagged_shell(
+            history,
+            document,
+            feature,
+            "ruled-surface",
+            shape,
+            resolution,
+        )
+    }
+
     fn from_tagged_shell(
         history: &DocumentEditHistory,
         document: DocumentGuid,

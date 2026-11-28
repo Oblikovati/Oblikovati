@@ -63,6 +63,7 @@ pub enum PartFeatureFailure<Failure> {
     SplitInput(String),
     MarkInput(String),
     FinishInput(String),
+    RuledSurfaceInput(String),
     ShellInput(String),
     MoveBodyInput(String),
     Unsupported(String),
@@ -430,6 +431,9 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
             }
             PartFeatureDefinition::BoundaryPatch(definition) => {
                 self.evaluate_boundary_patch(snapshot, backend, id, definition)
+            }
+            PartFeatureDefinition::RuledSurface(definition) => {
+                self.evaluate_ruled_surface(backend, id, definition)
             }
             definition @ (PartFeatureDefinition::Mirror(_)
             | PartFeatureDefinition::CircularPattern(_)

@@ -47,6 +47,7 @@ pub use transfer::{CapturedPartTransfer, CompletedPartTransfer};
 mod checkpoint_suffix;
 mod replay_boundary;
 mod replay_observer;
+mod ruled_surface_evaluation;
 mod shell_evaluation;
 mod sketch_body_evaluation;
 mod sketch_recompute;
@@ -76,6 +77,7 @@ pub enum PartFeatureDefinition {
     Finish(Box<super::finish::FinishDefinition>),
     ExtendSurface(Box<super::extend_surface::ExtendSurfaceDefinition>),
     BoundaryPatch(Box<super::boundary_patch::BoundaryPatchDefinition>),
+    RuledSurface(Box<super::ruled_surface::RuledSurfaceDefinition>),
     MoveBody(Box<super::move_body::MoveBodyDefinition>),
     Shell(Box<super::shell::ShellDefinition>),
     Mirror(Box<super::mirror::MirrorDefinition>),
@@ -142,6 +144,7 @@ impl PartFeatureDefinition {
             Self::Finish(_) => "finish",
             Self::ExtendSurface(_) => "extend-surface",
             Self::BoundaryPatch(_) => "boundary-patch",
+            Self::RuledSurface(_) => "ruled-surface",
             Self::MoveBody(_) => "move-body",
             Self::Shell(_) => "shell",
             Self::Mirror(_) => "mirror",
@@ -185,6 +188,7 @@ impl PartFeatureDefinition {
                 | Self::Finish(_)
                 | Self::ExtendSurface(_)
                 | Self::BoundaryPatch(_)
+                | Self::RuledSurface(_)
                 | Self::Shell(_)
                 | Self::MoveBody(_)
                 | Self::Mirror(_)

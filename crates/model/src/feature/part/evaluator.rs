@@ -280,6 +280,17 @@ pub trait PartFeatureEvaluator {
             "boundary patch: expected an available surface patch evaluator".into(),
         ))
     }
+    /// Build a ruled surface shell from selected boundary edges; example: `backend.evaluate_ruled_surface(id, body, input)`.
+    fn evaluate_ruled_surface(
+        &mut self,
+        _feature: FeatureId,
+        _body: &Self::Body,
+        _input: crate::feature::ruled_surface::ResolvedRuledSurface,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        Err(PartFeatureFailure::Unsupported(
+            "ruled surface: expected an available named-edge ruled-surface evaluator".into(),
+        ))
+    }
     /// Resolve the sweep from a sketch plane to the current target body's bounds.
     /// Example: `backend.prism_through_all_span(body, plane, direction)?`.
     fn prism_through_all_span(
