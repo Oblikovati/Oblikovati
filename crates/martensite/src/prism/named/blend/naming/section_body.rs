@@ -36,6 +36,7 @@ pub(super) fn bind_section_body(
         active_body: body.clone(),
         primary_body: body,
         shape,
+        thread_overlays: Vec::new(),
     })
 }
 

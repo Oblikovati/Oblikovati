@@ -90,4 +90,41 @@ impl DocumentSnapshot {
             })
             .map(|_| ())
     }
+
+    /// Append Thread inputs; example: `snapshot.create_thread("Thread1", definition, ids)?`.
+    pub fn create_thread(
+        &mut self,
+        name: &str,
+        definition: crate::feature::thread::ThreadDefinition,
+        ids: &mut RecipeReservations<'_>,
+    ) -> Result<FeatureId, HistoryError> {
+        let reads = definition.reads();
+        self.create_body_feature(
+            name,
+            PartFeatureDefinition::Thread(Box::new(definition)),
+            reads,
+            ids,
+        )
+    }
+
+    /// Replace an existing Thread definition in place; example: `snapshot.edit_thread(id, definition)?`.
+    pub fn edit_thread(
+        &mut self,
+        feature: FeatureId,
+        definition: crate::feature::thread::ThreadDefinition,
+    ) -> Result<(), HistoryError> {
+        let reads = definition.reads();
+        self.work_geometry
+            .replace(
+                feature,
+                PartFeatureDefinition::Thread(Box::new(definition)),
+                reads,
+            )
+            .map_err(|cause| {
+                HistoryError::PartProgram(crate::feature::part::PartFeatureProgramError::Sequence(
+                    cause,
+                ))
+            })
+            .map(|_| ())
+    }
 }

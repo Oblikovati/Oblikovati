@@ -17,6 +17,8 @@ mod hole_frame_origin;
 mod hole_v2;
 #[path = "slot_replay.rs"]
 mod slot_replay;
+#[path = "thread_replay.rs"]
+mod thread_replay;
 
 fn hole_document() -> DocumentSnapshot {
     let mut snapshot = cube_document();

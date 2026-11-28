@@ -56,6 +56,7 @@ pub enum PartFeatureFailure<Failure> {
     FilletInput(String),
     ChamferInput(String),
     HoleInput(String),
+    ThreadInput(String),
     ShellInput(String),
     MoveBodyInput(String),
     Unsupported(String),
@@ -415,6 +416,9 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
             }
             PartFeatureDefinition::Slot(definition) => {
                 self.evaluate_slot(snapshot, backend, id, definition)
+            }
+            PartFeatureDefinition::Thread(definition) => {
+                self.evaluate_thread(snapshot, backend, id, definition)
             }
             definition @ (PartFeatureDefinition::Mirror(_)
             | PartFeatureDefinition::CircularPattern(_)

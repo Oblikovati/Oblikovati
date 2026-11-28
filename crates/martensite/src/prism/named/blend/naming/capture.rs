@@ -12,6 +12,7 @@ pub(in crate::prism::named) struct CapturedBlendTopology {
     active_body: Vec<u8>,
     primary_body: Vec<u8>,
     shape: Shape,
+    thread_overlays: Vec<crate::DisplayTriangle>,
 }
 
 impl CapturedBlendTopology {
@@ -50,6 +51,7 @@ impl CapturedBlendTopology {
             active_body: self.active_body,
             primary_body: self.primary_body,
             shape: self.shape,
+            thread_overlays: self.thread_overlays,
         }
     }
 
@@ -85,6 +87,7 @@ impl CapturedBlendTopology {
             active_body: self.active_body,
             primary_body: self.primary_body,
             shape: self.shape,
+            thread_overlays: self.thread_overlays,
         })
     }
 }
@@ -105,6 +108,7 @@ impl BlendNamedTopology {
             active_body: self.active_body.clone(),
             primary_body: self.primary_body.clone(),
             shape: self.shape.clone(),
+            thread_overlays: self.thread_overlays.clone(),
         })
     }
 }
