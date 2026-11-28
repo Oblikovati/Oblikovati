@@ -159,6 +159,7 @@ enum Draft {
     Mark,
     Finish,
     ExtendSurface,
+    BoundaryPatch,
     MoveBody,
 }
 
@@ -236,6 +237,9 @@ fn requested_draft(action: &GuiShellAction) -> Option<Draft> {
         GuiShellAction::ExtendSurface(
             crate::GuiExtendSurfaceAction::Open | crate::GuiExtendSurfaceAction::OpenEdit(_),
         ) => Draft::ExtendSurface,
+        GuiShellAction::BoundaryPatch(
+            crate::GuiBoundaryPatchAction::Open | crate::GuiBoundaryPatchAction::OpenEdit(_),
+        ) => Draft::BoundaryPatch,
         GuiShellAction::OpenMoveBody => Draft::MoveBody,
         _ => return None,
     })
@@ -279,36 +283,7 @@ pub(super) fn open_drafts(
     if draft != Draft::Extrude || matches!(action, GuiShellAction::OpenExtrudeEdit(_)) {
         extrude.close(actions);
     }
-    if draft != Draft::Revolve {
-        create.revolve.close(actions);
-    }
-    if draft != Draft::Coil {
-        create.coil.close(actions);
-    }
-    if draft != Draft::Emboss {
-        create.emboss.close(actions);
-    }
-    if draft != Draft::Derive {
-        create.derive.close(actions);
-    }
-    if draft != Draft::Rib {
-        create.rib.close(actions);
-    }
-    if draft != Draft::Decal {
-        create.decal.close(actions);
-    }
-    if draft != Draft::Import {
-        create.import.close(actions);
-    }
-    if draft != Draft::Unwrap {
-        create.unwrap.close(actions);
-    }
-    if draft != Draft::Sweep {
-        create.sweep.close(actions);
-    }
-    if draft != Draft::Loft {
-        create.loft.close(actions);
-    }
+    create.close_all(actions);
     if draft != Draft::Shell {
         shell.close(actions);
     }
@@ -323,9 +298,6 @@ pub(super) fn open_drafts(
     }
     if draft != Draft::Taper {
         face_draft.close(actions);
-    }
-    if draft != Draft::Thread {
-        create.thread.close(actions);
     }
     if draft != Draft::DeleteFace {
         delete_face.close(actions);
@@ -347,6 +319,9 @@ pub(super) fn open_drafts(
     }
     if draft != Draft::ExtendSurface {
         create.extend_surface.close(actions);
+    }
+    if draft != Draft::BoundaryPatch {
+        create.boundary_patch.close(actions);
     }
     if draft != Draft::MoveBody {
         motion.close(actions);
@@ -466,6 +441,12 @@ pub(super) fn open_drafts(
             create.finish.open(state, Some(feature), actions)
         }
         GuiShellAction::ExtendSurface(action) => create.open_extend_surface(state, action, actions),
+        GuiShellAction::BoundaryPatch(crate::GuiBoundaryPatchAction::Open) => {
+            create.boundary_patch.open(state, None, actions)
+        }
+        GuiShellAction::BoundaryPatch(crate::GuiBoundaryPatchAction::OpenEdit(feature)) => {
+            create.boundary_patch.open(state, Some(feature), actions)
+        }
         GuiShellAction::OpenMoveBody => motion.open(state),
         _ => {}
     }

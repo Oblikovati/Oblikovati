@@ -428,6 +428,9 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
             PartFeatureDefinition::ExtendSurface(definition) => {
                 self.evaluate_extend_surface(backend, id, definition)
             }
+            PartFeatureDefinition::BoundaryPatch(definition) => {
+                self.evaluate_boundary_patch(snapshot, backend, id, definition)
+            }
             definition @ (PartFeatureDefinition::Mirror(_)
             | PartFeatureDefinition::CircularPattern(_)
             | PartFeatureDefinition::RectangularPattern(_)) => {

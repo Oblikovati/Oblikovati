@@ -31,6 +31,7 @@ pub enum WorkPlaneDefinitionRecipe {
     Finish(crate::feature::finish::FinishRecipe),
     Ucs(crate::feature::ucs::UcsRecipe),
     ExtendSurface(crate::feature::extend_surface::ExtendSurfaceRecipe),
+    BoundaryPatch(crate::feature::boundary_patch::BoundaryPatchRecipe),
     MoveBody(crate::feature::move_body::MoveBodyRecipe),
     Shell(crate::feature::shell::ShellRecipe),
     Mirror(crate::feature::mirror::MirrorRecipe),
@@ -98,6 +99,7 @@ impl WorkPlaneDefinition {
             Self::Finish(definition) => Source::Finish(definition.recipe()),
             Self::Ucs(definition) => Source::Ucs(definition.recipe()),
             Self::ExtendSurface(definition) => Source::ExtendSurface(definition.recipe()),
+            Self::BoundaryPatch(definition) => Source::BoundaryPatch(definition.recipe()),
             Self::MoveBody(definition) => Source::MoveBody(definition.recipe()),
             Self::Shell(definition) => Source::Shell(definition.recipe()),
             Self::Mirror(mirror) => Source::Mirror(mirror.recipe().clone()),
@@ -212,6 +214,11 @@ fn restore_definition(
             .map(|definition| WorkPlaneDefinition::Ucs(Box::new(definition)))
             .map_err(WorkPlaneError::BodyReference),
         ExtendSurface(recipe) => crate::feature::extend_surface::restore_definition(recipe),
+        BoundaryPatch(recipe) => {
+            crate::feature::boundary_patch::BoundaryPatchDefinition::from_recipe(recipe)
+                .map(|definition| WorkPlaneDefinition::BoundaryPatch(Box::new(definition)))
+                .map_err(WorkPlaneError::BodyReference)
+        }
         Chamfer(recipe) => crate::feature::chamfer::ChamferDefinition::from_recipe(&recipe)
             .map(|definition| WorkPlaneDefinition::Chamfer(Box::new(definition)))
             .map_err(WorkPlaneError::BodyReference),
@@ -361,11 +368,9 @@ fn restore_line_angle(
 fn restore_prism_inputs(
     recipe: crate::feature::sketch_prism::SketchPrismRecipe,
 ) -> Result<WorkPlaneDefinition, WorkPlaneError> {
-    {
-        crate::feature::sketch_prism::SketchPrismDefinition::from_recipe(&recipe)
-            .map(|definition| WorkPlaneDefinition::SketchPrism(Box::new(definition)))
-            .map_err(WorkPlaneError::Prism)
-    }
+    crate::feature::sketch_prism::SketchPrismDefinition::from_recipe(&recipe)
+        .map(|definition| WorkPlaneDefinition::SketchPrism(Box::new(definition)))
+        .map_err(WorkPlaneError::Prism)
 }
 
 fn offset_source_recipe(

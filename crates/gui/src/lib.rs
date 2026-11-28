@@ -156,6 +156,12 @@ mod sketch_constraints;
 pub use sketch_constraints::GuiSketchConstraint;
 
 mod blend_dialog;
+mod boundary_patch_dialog;
+pub use boundary_patch_dialog::{
+    GuiBoundaryCondition, GuiBoundaryCurveRef, GuiBoundaryEdgeSet, GuiBoundaryPatchAction,
+    GuiBoundaryPatchEditSeed, GuiBoundaryPatchPick, GuiBoundaryPatchPreview,
+    GuiBoundaryPatchPreviewState, GuiBoundaryPatchRequest, GuiBoundaryPatchSelectionMode,
+};
 mod chamfer_panel;
 pub use chamfer_panel::{
     GuiChamferPartialState, GuiChamferPickMode, GuiChamferTab, GuiChamferV2Action,

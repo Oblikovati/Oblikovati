@@ -174,6 +174,8 @@ pub struct GuiCommandState {
     pub ucs: crate::GuiUcsState,
     pub extend_surface_preview: Option<crate::GuiExtendSurfacePreviewState>,
     pub extend_surface_pick: Option<crate::GuiExtendSurfacePick>,
+    pub boundary_patch_preview: Option<crate::GuiBoundaryPatchPreviewState>,
+    pub boundary_patch_pick: Option<crate::GuiBoundaryPatchPick>,
     pub fillet_v2_preview: Option<crate::GuiFilletV2PreviewState>,
     pub fillet_v2_pick: Option<crate::GuiFilletV2Pick>,
     pub chamfer_v2_preview: Option<crate::GuiChamferV2PreviewState>,

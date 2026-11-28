@@ -122,7 +122,9 @@ pub use prism::{
 };
 mod loft;
 pub use loft::check_loft_guide_closure;
+mod boundary_patch;
 pub mod coil;
+pub use boundary_patch::{chain_sketch_boundary_loop, is_interior_diagonal_curve};
 mod decal;
 mod derive;
 mod emboss;

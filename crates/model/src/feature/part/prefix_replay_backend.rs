@@ -396,6 +396,16 @@ where
             .map(PrefixBody::Created)
     }
 
+    fn evaluate_boundary_patch(
+        &mut self,
+        feature: FeatureId,
+        input: crate::feature::boundary_patch::ResolvedBoundaryPatch<'_>,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        self.0
+            .evaluate_boundary_patch(feature, input)
+            .map(PrefixBody::Created)
+    }
+
     fn evaluate_sweep_boolean(
         &mut self,
         feature: FeatureId,

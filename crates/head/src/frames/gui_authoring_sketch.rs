@@ -121,6 +121,7 @@ pub(super) fn apply(owner: &mut dyn HeadWork, action: &GuiShellAction) -> Result
         GuiShellAction::WorkPoint(action) => owner.work_point_from_gui(action.clone()),
         GuiShellAction::WorkPlane(action) => owner.work_plane_from_gui(action.clone()),
         GuiShellAction::ExtendSurface(action) => owner.extend_surface_from_gui(action.clone()),
+        GuiShellAction::BoundaryPatch(action) => owner.boundary_patch_from_gui(action.clone()),
         GuiShellAction::FilletV2(action) => owner.fillet_v2_from_gui(action.clone()),
         GuiShellAction::ChamferV2(action) => owner.chamfer_v2_from_gui(action.clone()),
         GuiShellAction::ShellV2(action) => owner.shell_v2_from_gui(action.clone()),

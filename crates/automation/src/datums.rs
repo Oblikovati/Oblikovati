@@ -191,6 +191,7 @@ impl DatumCollection {
             | WorkGeometryDefinition::Finish(_)
             | WorkGeometryDefinition::Ucs(_)
             | WorkGeometryDefinition::ExtendSurface(_)
+            | WorkGeometryDefinition::BoundaryPatch(_)
             | WorkGeometryDefinition::Shell(_)
             | WorkGeometryDefinition::MoveBody(_)
             | WorkGeometryDefinition::Mirror(_)

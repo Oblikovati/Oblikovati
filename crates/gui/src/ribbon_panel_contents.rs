@@ -213,14 +213,25 @@ pub(crate) fn draw_panel_content(
             );
         }
         RibbonPanel::PartSurface => {
-            owners.icons.command_button(
-                ui,
-                "Extend",
-                GuiShellAction::ExtendSurface(crate::GuiExtendSurfaceAction::Open),
-                state,
-                owners.icons.appearance.single_cell(),
-                actions,
-            );
+            for (index, (label, action)) in [
+                (
+                    "Boundary Patch",
+                    GuiShellAction::BoundaryPatch(crate::GuiBoundaryPatchAction::Open),
+                ),
+                (
+                    "Extend",
+                    GuiShellAction::ExtendSurface(crate::GuiExtendSurfaceAction::Open),
+                ),
+            ]
+            .into_iter()
+            .enumerate()
+            {
+                let (position, size) = owners.icons.appearance.cell(index);
+                owners.icons.cursor(ui, origin, position);
+                owners
+                    .icons
+                    .command_button(ui, label, action, state, size, actions);
+            }
         }
         RibbonPanel::PartSimplification => {
             muted::muted_command(

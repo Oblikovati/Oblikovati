@@ -240,6 +240,9 @@ pub(crate) fn action_glyph(action: &GuiShellAction) -> Option<IconGlyph> {
         GuiShellAction::Decal(crate::GuiDecalAction::Open) => IconGlyph::Decal,
         GuiShellAction::Import(crate::GuiImportAction::Open) => IconGlyph::Import,
         GuiShellAction::Unwrap(crate::GuiUnwrapAction::Open) => IconGlyph::Unwrap,
+        GuiShellAction::BoundaryPatch(crate::GuiBoundaryPatchAction::Open) => {
+            IconGlyph::BoundaryPatch
+        }
         GuiShellAction::Derive(crate::GuiDeriveAction::Open) => IconGlyph::Derive,
         GuiShellAction::ExtendSurface(crate::GuiExtendSurfaceAction::Open) => {
             IconGlyph::ExtendSurface

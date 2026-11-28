@@ -291,6 +291,8 @@ impl<
             ucs: self.gui_ucs_state(document, session.generation()),
             extend_surface_preview: self.gui_extend_surface_preview(document, session.generation()),
             extend_surface_pick: self.gui_extend_surface_pick(document, session.generation()),
+            boundary_patch_preview: self.gui_boundary_patch_preview(document, session.generation()),
+            boundary_patch_pick: self.gui_boundary_patch_pick(document, session.generation()),
             fillet_v2_preview: self.gui_fillet_v2_preview(document, session.generation()),
             fillet_v2_pick: self.gui_fillet_v2_pick(document, session.generation()),
             chamfer_v2_preview: self.gui_chamfer_v2_preview(document, session.generation()),

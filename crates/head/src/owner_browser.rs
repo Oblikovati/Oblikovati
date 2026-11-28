@@ -62,6 +62,8 @@ impl<
                 identity.internal_name,
             );
         }
+        browser.boundary_patch_edits =
+            super::owner_blend::owner_boundary_patch::edit_seeds(snapshot);
         browser.split_edits = super::owner_blend::owner_split::edit_seeds(
             snapshot,
             self.part_scenes.current(session).ok(),

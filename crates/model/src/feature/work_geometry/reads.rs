@@ -21,6 +21,7 @@ impl WorkGeometryDefinition {
             Self::Split(definition) => return definition.reads(),
             Self::Finish(definition) => return definition.reads(),
             Self::ExtendSurface(definition) => return definition.reads(),
+            Self::BoundaryPatch(definition) => return definition.reads(),
             Self::Shell(definition) => return definition.reads(),
             Self::Mirror(definition) => return definition.reads(),
             Self::CircularPattern(definition) => return definition.reads(),

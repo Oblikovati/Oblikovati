@@ -17,8 +17,13 @@ mod clients;
 pub use clients::CLIENT_COMMAND_METHODS;
 mod attachments;
 mod attributes;
+mod boundary_patch;
 mod chamfer;
 mod chamfer_v2;
+pub use boundary_patch::{
+    BoundaryPatchInputs, PreparedBoundaryPatch, build_boundary_patch_definition,
+    prepare_boundary_patch_definition, replace_boundary_patch,
+};
 pub use chamfer::{PreparedChamfer, prepare_chamfer};
 pub use chamfer_v2::{
     ChamferV2Inputs, build_chamfer_v2_definition, prepare_chamfer_v2, replace_chamfer,

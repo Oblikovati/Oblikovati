@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Exercise the Loft command through native ribbon and viewport input.
+#[path = "../boundary_patch/steps.rs"]
+mod solid_boundary_patch;
 #[path = "../chamfer/steps.rs"]
 mod solid_chamfer;
 #[path = "../coil/steps.rs"]

@@ -30,6 +30,7 @@ pub(crate) fn enabled(action: &GuiShellAction, state: &GuiCommandState) -> Optio
         GuiShellAction::WorkPoint(action) => action.enabled(state),
         GuiShellAction::WorkPlane(action) => action.enabled(state),
         GuiShellAction::ExtendSurface(action) => action.enabled(state),
+        GuiShellAction::BoundaryPatch(action) => action.enabled(state),
         GuiShellAction::FilletV2(action) => action.enabled(state),
         GuiShellAction::ChamferV2(action) => action.enabled(state),
         GuiShellAction::ShellV2(action) => action.enabled(state),

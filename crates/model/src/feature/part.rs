@@ -12,6 +12,7 @@ mod blend_evaluation;
 mod body_dependencies;
 mod body_lineage;
 mod body_resolution;
+mod boundary_patch_evaluation;
 mod checkpoints;
 mod combine_evaluation;
 mod delete_face_evaluation;
@@ -74,6 +75,7 @@ pub enum PartFeatureDefinition {
     Mark(Box<super::mark::MarkDefinition>),
     Finish(Box<super::finish::FinishDefinition>),
     ExtendSurface(Box<super::extend_surface::ExtendSurfaceDefinition>),
+    BoundaryPatch(Box<super::boundary_patch::BoundaryPatchDefinition>),
     MoveBody(Box<super::move_body::MoveBodyDefinition>),
     Shell(Box<super::shell::ShellDefinition>),
     Mirror(Box<super::mirror::MirrorDefinition>),
@@ -139,6 +141,7 @@ impl PartFeatureDefinition {
             Self::Mark(_) => "mark",
             Self::Finish(_) => "finish",
             Self::ExtendSurface(_) => "extend-surface",
+            Self::BoundaryPatch(_) => "boundary-patch",
             Self::MoveBody(_) => "move-body",
             Self::Shell(_) => "shell",
             Self::Mirror(_) => "mirror",
@@ -181,6 +184,7 @@ impl PartFeatureDefinition {
                 | Self::Mark(_)
                 | Self::Finish(_)
                 | Self::ExtendSurface(_)
+                | Self::BoundaryPatch(_)
                 | Self::Shell(_)
                 | Self::MoveBody(_)
                 | Self::Mirror(_)

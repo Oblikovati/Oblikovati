@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-labelledby="t d">
+  <title id="t">Boundary Patch</title>
+  <desc id="d">Translucent Warm-Amber surface patch bounded by four curved boundary edges.</desc>
+  <g id="layer-surface">
+    <path class="f-icon-surface-fill s-icon-surface-stroke" d="M5.5,21.5 C11,17.5 21,17.5 26.5,21.5 L23.5,9.5 C18.5,12.8 13.5,12.8 8.5,9.5 Z" fill="#F59E0B" fill-opacity="0.62" stroke="#181B22" stroke-width="1.25" stroke-linejoin="round"/>
+  </g>
+  <g id="layer-boundary">
+    <path d="M5.5,21.5 C11,17.5 21,17.5 26.5,21.5" fill="none" stroke="#0B2926" stroke-width="1.6" stroke-linecap="round"/>
+    <path d="M8.5,9.5 C13.5,12.8 18.5,12.8 23.5,9.5" fill="none" stroke="#0B2926" stroke-width="1.6" stroke-linecap="round"/>
+    <path d="M7.0,15.5 C12.5,14.8 19.5,14.8 25.0,15.5" fill="none" stroke="#FFFBEB" stroke-width="1.15" stroke-dasharray="2.4 2.0" stroke-linecap="round"/>
+  </g>
+</svg>

@@ -20,6 +20,7 @@ pub(super) struct CreateFeatureDialogs {
     pub(super) grounded_point: crate::work_point::overlay::GroundedPointHud,
     pub(super) work_plane: crate::work_plane_dialog::WorkPlaneDialog,
     pub(super) extend_surface: crate::extend_surface_dialog::ExtendSurfaceDialog,
+    pub(super) boundary_patch: crate::boundary_patch_dialog::BoundaryPatchDialog,
 }
 
 impl CreateFeatureDialogs {
@@ -41,6 +42,7 @@ impl CreateFeatureDialogs {
         self.finish.register_dockable(registry)?;
         self.grounded_point.register_dockable(registry)?;
         self.extend_surface.register_dockable(registry)?;
+        self.boundary_patch.register_dockable(registry)?;
         self.loft.register_dockable(registry)
     }
 
@@ -61,6 +63,7 @@ impl CreateFeatureDialogs {
         self.mark.synchronize(state, actions);
         self.finish.synchronize(state, actions);
         self.extend_surface.synchronize(state, actions);
+        self.boundary_patch.synchronize(state, actions);
         self.sweep.synchronize(state, actions);
         self.loft.synchronize(state, actions);
         self.grounded_point.synchronize(state);
@@ -98,6 +101,24 @@ impl CreateFeatureDialogs {
         }
     }
 
+    pub(super) fn close_all(&mut self, actions: &mut Vec<GuiShellAction>) {
+        self.revolve.close(actions);
+        self.coil.close(actions);
+        self.emboss.close(actions);
+        self.derive.close(actions);
+        self.rib.close(actions);
+        self.decal.close(actions);
+        self.import.close(actions);
+        self.unwrap.close(actions);
+        self.sweep.close(actions);
+        self.loft.close(actions);
+        self.thread.close(actions);
+        self.mark.close(actions);
+        self.finish.close(actions);
+        self.extend_surface.close(actions);
+        self.boundary_patch.close(actions);
+    }
+
     pub(super) fn draw(
         &mut self,
         ui: &imgui::Ui,
@@ -127,6 +148,8 @@ impl CreateFeatureDialogs {
         self.finish.panel(ui, commands, (area, icons), selected);
         self.grounded_point.panel(ui, commands, area, selected);
         self.extend_surface
+            .panel(ui, commands, (area, icons), selected);
+        self.boundary_patch
             .panel(ui, commands, (area, icons), selected);
     }
 }

@@ -79,6 +79,9 @@ pub struct GuiModelBrowser {
     /// Authored options for editable Extend Surface features.
     pub extend_surface_edits:
         std::collections::BTreeMap<FeatureId, crate::GuiExtendSurfaceEditSeed>,
+    /// Authored options for editable Boundary Patch features.
+    pub boundary_patch_edits:
+        std::collections::BTreeMap<FeatureId, crate::GuiBoundaryPatchEditSeed>,
     /// Named imported mesh entries listed under the 3rd Party browser folder.
     pub third_party_entries: Vec<String>,
     /// Editable extrusion distance sources, indexed by their current feature identities.

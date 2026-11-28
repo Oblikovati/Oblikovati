@@ -270,6 +270,16 @@ pub trait PartFeatureEvaluator {
             "extend surface: expected an available surface extension evaluator".into(),
         ))
     }
+    /// Construct a named surface body from boundary sketch curves and optional guide rails.
+    fn evaluate_boundary_patch(
+        &mut self,
+        _feature: FeatureId,
+        _input: crate::feature::boundary_patch::ResolvedBoundaryPatch<'_>,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        Err(PartFeatureFailure::Unsupported(
+            "boundary patch: expected an available surface patch evaluator".into(),
+        ))
+    }
     /// Resolve the sweep from a sketch plane to the current target body's bounds.
     /// Example: `backend.prism_through_all_span(body, plane, direction)?`.
     fn prism_through_all_span(

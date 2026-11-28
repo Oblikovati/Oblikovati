@@ -376,6 +376,7 @@ pub enum GuiShellAction {
     Ucs(crate::GuiUcsAction),
     WorkPoint(crate::GuiWorkPointAction),
     ExtendSurface(crate::GuiExtendSurfaceAction),
+    BoundaryPatch(crate::GuiBoundaryPatchAction),
     /// Selection mode, preview, or commit for Part Modify Fillet v2.
     FilletV2(crate::GuiFilletV2Action),
     ChamferV2(crate::GuiChamferV2Action),

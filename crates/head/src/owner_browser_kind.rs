@@ -43,6 +43,9 @@ pub(super) fn feature_kind_name(
         oblikovati_model::feature::part::PartFeatureDefinition::ExtendSurface(_) => {
             "Extend Surface"
         }
+        oblikovati_model::feature::part::PartFeatureDefinition::BoundaryPatch(_) => {
+            "Boundary Patch"
+        }
         oblikovati_model::feature::part::PartFeatureDefinition::ThickenOffset(def) => {
             if def.output().is_surface() {
                 "Offset Surface"

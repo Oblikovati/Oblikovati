@@ -70,6 +70,7 @@ pub(crate) fn feature_glyph(kind: &str) -> Option<IconGlyph> {
         "Split" => IconGlyph::Split,
         "Finish" => IconGlyph::Finish,
         "Extend Surface" => IconGlyph::ExtendSurface,
+        "Boundary Patch" => IconGlyph::BoundaryPatch,
         "Delete Face" => IconGlyph::DeleteFace,
         "Move Body" => IconGlyph::MoveBodies,
         "Direct Edit" => IconGlyph::DirectEdit,
