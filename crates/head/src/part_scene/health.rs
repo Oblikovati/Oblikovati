@@ -105,6 +105,7 @@ fn status_reason(
         | FeatureEvaluationStatus::Failed(PartFeatureFailure::SplitInput(cause))
         | FeatureEvaluationStatus::Failed(PartFeatureFailure::MarkInput(cause))
         | FeatureEvaluationStatus::Failed(PartFeatureFailure::FinishInput(cause))
+        | FeatureEvaluationStatus::Failed(PartFeatureFailure::RuledSurfaceInput(cause))
         | FeatureEvaluationStatus::Failed(PartFeatureFailure::ShellInput(cause))
         | FeatureEvaluationStatus::Failed(PartFeatureFailure::MoveBodyInput(cause))
         | FeatureEvaluationStatus::Failed(PartFeatureFailure::Unsupported(cause)) => cause.clone(),

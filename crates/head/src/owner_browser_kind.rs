@@ -39,6 +39,7 @@ pub(super) fn feature_kind_name(
         oblikovati_model::feature::part::PartFeatureDefinition::Thread(_) => "Thread",
         oblikovati_model::feature::part::PartFeatureDefinition::Mark(_) => "Mark",
         oblikovati_model::feature::part::PartFeatureDefinition::Finish(_) => "Finish",
+        oblikovati_model::feature::part::PartFeatureDefinition::RuledSurface(_) => "Ruled Surface",
         oblikovati_model::feature::part::PartFeatureDefinition::Ucs(_) => "User Coordinate System",
         oblikovati_model::feature::part::PartFeatureDefinition::ExtendSurface(_) => {
             "Extend Surface"

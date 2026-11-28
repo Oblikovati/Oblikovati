@@ -116,6 +116,7 @@ pub(super) fn apply(owner: &mut dyn HeadWork, action: &GuiShellAction) -> Result
         GuiShellAction::Split(action) => owner.split_from_gui(action.clone()),
         GuiShellAction::Mark(action) => owner.mark_from_gui(action.clone()),
         GuiShellAction::Finish(action) => owner.finish_from_gui(action.clone()),
+        GuiShellAction::RuledSurface(action) => owner.ruled_surface_from_gui(action.clone()),
         GuiShellAction::WorkAxis(action) => owner.work_axis_from_gui(*action),
         GuiShellAction::Ucs(action) => owner.ucs_from_gui(action.clone()),
         GuiShellAction::WorkPoint(action) => owner.work_point_from_gui(action.clone()),

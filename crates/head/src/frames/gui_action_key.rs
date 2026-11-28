@@ -165,6 +165,7 @@ pub(super) fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
         | GuiShellAction::Split(_)
         | GuiShellAction::Mark(_)
         | GuiShellAction::Finish(_)
+        | GuiShellAction::RuledSurface(_)
         | GuiShellAction::WorkAxis(_)
         | GuiShellAction::Ucs(_)
         | GuiShellAction::WorkPoint(_)

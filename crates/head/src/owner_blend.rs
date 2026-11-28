@@ -39,6 +39,8 @@ mod owner_move_body;
 pub(super) mod owner_revolve;
 #[path = "owner_rib.rs"]
 pub(super) mod owner_rib;
+#[path = "owner_ruled_surface.rs"]
+pub(super) mod owner_ruled_surface;
 #[path = "owner_shell_face_body.rs"]
 mod owner_shell_face_body;
 #[path = "owner_shell_feature.rs"]
@@ -86,6 +88,7 @@ pub(super) struct CreateFeatureState {
     pub(super) split: owner_split::SplitOwnerState,
     pub(super) mark: owner_mark::MarkOwnerState,
     pub(super) finish: owner_finish::FinishOwnerState,
+    pub(super) ruled_surface: owner_ruled_surface::RuledSurfaceOwnerState,
     pub(super) ucs: owner_ucs::UcsOwnerState,
     pub(super) extend_surface: owner_extend_surface::ExtendSurfaceOwnerState,
     pub(super) boundary_patch: owner_boundary_patch::BoundaryPatchOwnerState,
