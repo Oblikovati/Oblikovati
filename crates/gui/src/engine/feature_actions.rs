@@ -38,10 +38,11 @@ pub(super) fn draw_feature_dialogs(
         &mut super::create_dialogs::CreateFeatureDialogs,
         Option<oblikovati_model::feature::work_axis::WorkAxisReference>,
     ),
-    (blend, hole, slot, shell, motion, offset): (
+    (blend, hole, slot, draft, shell, motion, offset): (
         &mut crate::blend_dialog::BlendDialog,
         &mut crate::hole_dialog::HoleDialog,
         &mut crate::slot_dialog::SlotDialog,
+        &mut crate::draft_dialog::DraftDialog,
         &mut crate::shell_feature_dialog::ShellFeatureDialog,
         &mut crate::move_body_dialog::MoveBodyDialog,
         &mut crate::offset_plane::OffsetPlaneDialog,
@@ -71,6 +72,7 @@ pub(super) fn draw_feature_dialogs(
     blend.panel(ui, commands, selected, area);
     hole.panel(ui, commands, area, icons, hole_plane.as_deref(), selected);
     slot.panel(ui, commands, area, icons, hole_plane.as_deref(), selected);
+    draft.panel(ui, commands, area, icons, hole_plane.as_deref(), selected);
     shell.panel(ui, commands, area, selected);
     motion.panel(ui, commands, area, selected);
     offset.panel(ui, commands, area, selected);
@@ -147,6 +149,7 @@ enum Draft {
     Shell,
     Hole,
     Slot,
+    Taper,
     MoveBody,
 }
 
@@ -194,6 +197,9 @@ fn requested_draft(action: &GuiShellAction) -> Option<Draft> {
         GuiShellAction::Slot(crate::GuiSlotAction::Open | crate::GuiSlotAction::OpenEdit(_)) => {
             Draft::Slot
         }
+        GuiShellAction::Draft(crate::GuiDraftAction::Open | crate::GuiDraftAction::OpenEdit(_)) => {
+            Draft::Taper
+        }
         GuiShellAction::OpenMoveBody => Draft::MoveBody,
         _ => return None,
     })
@@ -202,10 +208,11 @@ fn requested_draft(action: &GuiShellAction) -> Option<Draft> {
 pub(super) fn open_drafts(
     state: &GuiCommandState,
     actions: &mut Vec<GuiShellAction>,
-    (shell, hole, slot): (
+    (shell, hole, slot, face_draft): (
         &mut crate::shell_feature_dialog::ShellFeatureDialog,
         &mut crate::hole_dialog::HoleDialog,
         &mut crate::slot_dialog::SlotDialog,
+        &mut crate::draft_dialog::DraftDialog,
     ),
     (motion, blend): (
         &mut crate::move_body_dialog::MoveBodyDialog,
@@ -269,6 +276,9 @@ pub(super) fn open_drafts(
     }
     if draft != Draft::Slot {
         slot.close(actions);
+    }
+    if draft != Draft::Taper {
+        face_draft.close(actions);
     }
     if draft != Draft::MoveBody {
         motion.close(actions);
@@ -339,6 +349,10 @@ pub(super) fn open_drafts(
         GuiShellAction::Slot(crate::GuiSlotAction::Open) => slot.open(state, None),
         GuiShellAction::Slot(crate::GuiSlotAction::OpenEdit(feature)) => {
             slot.open(state, Some(feature))
+        }
+        GuiShellAction::Draft(crate::GuiDraftAction::Open) => face_draft.open(state, None),
+        GuiShellAction::Draft(crate::GuiDraftAction::OpenEdit(feature)) => {
+            face_draft.open(state, Some(feature))
         }
         GuiShellAction::OpenMoveBody => motion.open(state),
         _ => {}

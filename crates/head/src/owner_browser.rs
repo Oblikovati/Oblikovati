@@ -199,6 +199,7 @@ fn populate_browser<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
     browser.unwrap_edits = super::owner_blend::owner_unwrap::edit_seeds(snapshot);
     browser.hole_edits = super::owner_blend::owner_hole::edit_seeds(snapshot);
     browser.slot_edits = super::owner_blend::owner_slot::edit_seeds(snapshot);
+    browser.draft_edits = super::owner_blend::owner_draft::edit_seeds(snapshot);
     browser.third_party_entries = super::owner_blend::owner_import::third_party_entries(snapshot);
     browser.extrusion_edits = snapshot
         .work_geometry
@@ -387,6 +388,7 @@ fn feature_kind_name(
         Chamfer(_) => "Chamfer",
         oblikovati_model::feature::part::PartFeatureDefinition::Hole(_) => "Hole",
         oblikovati_model::feature::part::PartFeatureDefinition::Slot(_) => "Slot",
+        oblikovati_model::feature::part::PartFeatureDefinition::Draft(_) => "Draft",
         DeleteBody(_) => "Delete Body",
         oblikovati_model::feature::part::PartFeatureDefinition::Fixed(_)
         | oblikovati_model::feature::part::PartFeatureDefinition::Offset { .. }

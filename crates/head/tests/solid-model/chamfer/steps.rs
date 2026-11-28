@@ -95,7 +95,11 @@ fn reports_chamfer_creation_failed(world: &mut ApplicationWorld) {
 
 #[when("I choose Edit")]
 fn choose_edit_in_failure_modal(world: &mut ApplicationWorld) {
-    let center = world.run_in_window("Create Chamfer", "Edit").center();
+    let window = ["Create Face Draft", "Edit Face Draft", "Create Chamfer"]
+        .into_iter()
+        .find(|name| super::super::diagnostics::window_geometry(name).is_some())
+        .unwrap_or("Create Chamfer");
+    let center = world.run_in_window(window, "Edit").center();
     world.click(super::super::diagnostics::pointer_pixels(center));
     world.pump(Vec::new());
     world.pump(Vec::new());

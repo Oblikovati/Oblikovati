@@ -27,6 +27,7 @@ mod coil;
 mod command_owner;
 mod decal;
 mod derive;
+mod draft;
 mod edit;
 mod emboss;
 mod extrusion;
@@ -50,6 +51,10 @@ pub use decal::{
 pub use derive::{
     DeriveInputs, PreparedDerivedPart, build_derived_part_definition,
     prepare_derived_part_definition, replace_derived_part,
+};
+pub use draft::{
+    DraftFeatureInputs, PreparedDraft, build_draft_definition, prepare_draft_definition,
+    replace_draft,
 };
 pub use emboss::{
     EmbossInputs, PreparedEmboss, build_emboss_definition, prepare_emboss_definition,

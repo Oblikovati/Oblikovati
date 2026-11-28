@@ -161,12 +161,17 @@ pub use fillet_panel::{
     GuiFilletV2PreviewState, GuiFilletV2Request, GuiFilletVariablePoint,
 };
 mod dimensions;
+mod draft_dialog;
 mod extrude_dialog;
 mod face_draft;
 mod face_properties;
 mod hole_dialog;
 mod slot_dialog;
 pub use application::model_browser::feature_properties::{GuiFeatureCondition, GuiFeatureEdit};
+pub use draft_dialog::{
+    GuiDraftAction, GuiDraftEditSeed, GuiDraftPick, GuiDraftPickTarget, GuiDraftPreview,
+    GuiDraftPreviewState, GuiDraftRequest,
+};
 pub use hole_dialog::{
     GuiHoleAction, GuiHoleEditSeed, GuiHolePick, GuiHolePreview, GuiHolePreviewState,
     GuiHoleRequest, GuiHoleSeatKind, GuiHoleTermination,

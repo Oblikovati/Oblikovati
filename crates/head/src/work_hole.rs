@@ -10,6 +10,13 @@ macro_rules! hole_work_methods {
         fn slot_from_gui(&mut self, action: oblikovati_gui::GuiSlotAction) -> Result<bool, String> {
             Err(format!("slot {action:?}: expected a certified part owner"))
         }
+        /// Dispatch a Draft Properties panel action; example: `work.draft_from_gui(action)?`.
+        fn draft_from_gui(
+            &mut self,
+            action: oblikovati_gui::GuiDraftAction,
+        ) -> Result<bool, String> {
+            Err(format!("draft {action:?}: expected a certified part owner"))
+        }
         /// Dispatch a Fillet v2 Properties panel action; example: `work.fillet_v2_from_gui(action)?`.
         fn fillet_v2_from_gui(
             &mut self,

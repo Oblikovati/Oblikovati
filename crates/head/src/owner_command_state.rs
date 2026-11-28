@@ -267,6 +267,8 @@ impl<
             hole_pick: self.gui_hole_pick(document, session.generation()),
             slot_preview: self.gui_slot_preview(document, session.generation()),
             slot_pick: self.gui_slot_pick(document, session.generation()),
+            draft_preview: self.gui_draft_preview(document, session.generation()),
+            draft_pick: self.gui_draft_pick(document, session.generation()),
             fillet_v2_preview: self.gui_fillet_v2_preview(document, session.generation()),
             fillet_v2_pick: self.gui_fillet_v2_pick(document, session.generation()),
             chamfer_v2_preview: self.gui_chamfer_v2_preview(document, session.generation()),

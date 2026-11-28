@@ -41,6 +41,9 @@ pub(super) fn feature_edit_action(
     if browser.slot_edits.contains_key(&feature.id) {
         return GuiShellAction::Slot(crate::GuiSlotAction::OpenEdit(feature.id));
     }
+    if browser.draft_edits.contains_key(&feature.id) {
+        return GuiShellAction::Draft(crate::GuiDraftAction::OpenEdit(feature.id));
+    }
     if browser.chamfer_edits.contains_key(&feature.id) {
         return GuiShellAction::OpenChamferEdit(feature.id);
     }
