@@ -184,6 +184,7 @@ impl DatumCollection {
             | WorkGeometryDefinition::Split(_)
             | WorkGeometryDefinition::Mark(_)
             | WorkGeometryDefinition::Finish(_)
+            | WorkGeometryDefinition::ExtendSurface(_)
             | WorkGeometryDefinition::Shell(_)
             | WorkGeometryDefinition::MoveBody(_)
             | WorkGeometryDefinition::Mirror(_)

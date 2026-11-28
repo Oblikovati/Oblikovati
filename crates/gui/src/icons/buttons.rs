@@ -241,6 +241,9 @@ pub(crate) fn action_glyph(action: &GuiShellAction) -> Option<IconGlyph> {
         GuiShellAction::Import(crate::GuiImportAction::Open) => IconGlyph::Import,
         GuiShellAction::Unwrap(crate::GuiUnwrapAction::Open) => IconGlyph::Unwrap,
         GuiShellAction::Derive(crate::GuiDeriveAction::Open) => IconGlyph::Derive,
+        GuiShellAction::ExtendSurface(crate::GuiExtendSurfaceAction::Open) => {
+            IconGlyph::ExtendSurface
+        }
         _ => return None,
     })
 }

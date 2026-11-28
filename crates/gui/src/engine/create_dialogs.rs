@@ -17,6 +17,7 @@ pub(super) struct CreateFeatureDialogs {
     pub(super) thread: crate::thread_dialog::ThreadDialog,
     pub(super) mark: crate::mark_dialog::MarkDialog,
     pub(super) finish: crate::finish_dialog::FinishDialog,
+    pub(super) extend_surface: crate::extend_surface_dialog::ExtendSurfaceDialog,
 }
 
 impl CreateFeatureDialogs {
@@ -36,6 +37,7 @@ impl CreateFeatureDialogs {
         self.thread.register_dockable(registry)?;
         self.mark.register_dockable(registry)?;
         self.finish.register_dockable(registry)?;
+        self.extend_surface.register_dockable(registry)?;
         self.loft.register_dockable(registry)
     }
 
@@ -55,6 +57,7 @@ impl CreateFeatureDialogs {
         self.thread.synchronize(state, actions);
         self.mark.synchronize(state, actions);
         self.finish.synchronize(state, actions);
+        self.extend_surface.synchronize(state, actions);
         self.sweep.synchronize(state, actions);
         self.loft.synchronize(state, actions);
     }
@@ -71,6 +74,21 @@ impl CreateFeatureDialogs {
 
     pub(super) fn is_opening(&self) -> bool {
         self.derive.is_opening() || self.import.is_opening()
+    }
+
+    pub(super) fn open_extend_surface(
+        &mut self,
+        state: &GuiCommandState,
+        action: crate::GuiExtendSurfaceAction,
+        actions: &mut Vec<GuiShellAction>,
+    ) {
+        match action {
+            crate::GuiExtendSurfaceAction::Open => self.extend_surface.open(state, None, actions),
+            crate::GuiExtendSurfaceAction::OpenEdit(feature) => {
+                self.extend_surface.open(state, Some(feature), actions)
+            }
+            _ => {}
+        }
     }
 
     pub(super) fn draw(
@@ -100,5 +118,7 @@ impl CreateFeatureDialogs {
         self.thread.panel(ui, commands, (area, icons), selected);
         self.mark.panel(ui, commands, (area, icons), selected);
         self.finish.panel(ui, commands, (area, icons), selected);
+        self.extend_surface
+            .panel(ui, commands, (area, icons), selected);
     }
 }

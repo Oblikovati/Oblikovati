@@ -11,9 +11,7 @@ impl GuiFrameEngine {
     ) -> Result<(), String> {
         self.create_dialogs.sweep.set_preset_store(store)
     }
-}
 
-impl crate::GuiFrameEngine {
     /// Open a revolution draft for the active part. Example: `engine.request_revolve()`.
     pub fn request_revolve(&mut self) {
         self.create_dialogs.revolve.request_open();
@@ -183,6 +181,7 @@ enum Draft {
     Split,
     Mark,
     Finish,
+    ExtendSurface,
     MoveBody,
 }
 
@@ -257,6 +256,9 @@ fn requested_draft(action: &GuiShellAction) -> Option<Draft> {
         GuiShellAction::Finish(
             crate::GuiFinishAction::Open | crate::GuiFinishAction::OpenEdit(_),
         ) => Draft::Finish,
+        GuiShellAction::ExtendSurface(
+            crate::GuiExtendSurfaceAction::Open | crate::GuiExtendSurfaceAction::OpenEdit(_),
+        ) => Draft::ExtendSurface,
         GuiShellAction::OpenMoveBody => Draft::MoveBody,
         _ => return None,
     })
@@ -365,6 +367,9 @@ pub(super) fn open_drafts(
     }
     if draft != Draft::Finish {
         create.finish.close(actions);
+    }
+    if draft != Draft::ExtendSurface {
+        create.extend_surface.close(actions);
     }
     if draft != Draft::MoveBody {
         motion.close(actions);
@@ -483,6 +488,7 @@ pub(super) fn open_drafts(
         GuiShellAction::Finish(crate::GuiFinishAction::OpenEdit(feature)) => {
             create.finish.open(state, Some(feature), actions)
         }
+        GuiShellAction::ExtendSurface(action) => create.open_extend_surface(state, action, actions),
         GuiShellAction::OpenMoveBody => motion.open(state),
         _ => {}
     }

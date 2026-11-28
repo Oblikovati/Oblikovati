@@ -360,6 +360,7 @@ impl GuiShellAction {
             | Self::Split(_)
             | Self::Mark(_)
             | Self::Finish(_)
+            | Self::ExtendSurface(_)
             | Self::FilletV2(_)
             | Self::ChamferV2(_)
             | Self::ShellV2(_) => false,
@@ -432,14 +433,7 @@ impl GuiShellAction {
             }
             Self::OpenHistoryBrowser => !state.histories.is_empty(),
             Self::JumpHistoryTo { document, position } => {
-                !state.transaction_open
-                    && state.histories.iter().any(|history| {
-                        history.document == *document
-                            && *position >= 0
-                            && usize::try_from(*position).ok().is_some_and(|position| {
-                                position <= history.entries.as_ref().map_or(0, Vec::len)
-                            })
-                    })
+                create_enabled::jump_history_enabled(state, *document, *position)
             }
             Self::SetSelectionMode(_)
             | Self::OpenSelectionFilter
