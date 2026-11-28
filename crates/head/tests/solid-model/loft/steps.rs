@@ -22,6 +22,8 @@ mod solid_import;
 mod solid_rib;
 #[path = "../slot/steps.rs"]
 mod solid_slot;
+#[path = "../thicken-offset/steps.rs"]
+mod solid_thicken_offset;
 #[path = "../unwrap/steps.rs"]
 mod solid_unwrap;
 

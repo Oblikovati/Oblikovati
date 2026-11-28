@@ -351,6 +351,7 @@ impl GuiShellAction {
             | Self::Hole(_)
             | Self::Slot(_)
             | Self::Combine(_)
+            | Self::ThickenOffset(_)
             | Self::FilletV2(_)
             | Self::ChamferV2(_) => false,
             Self::PreviewMoveBody(None) | Self::PreviewShellFeature(None) => true,

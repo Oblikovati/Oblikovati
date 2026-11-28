@@ -172,6 +172,12 @@ macro_rules! forward_owner_view_work {
         ) -> Result<bool, String> {
             self.$owner.combine_from_gui(action)
         }
+        fn thicken_offset_from_gui(
+            &mut self,
+            action: oblikovati_gui::GuiThickenOffsetAction,
+        ) -> Result<bool, String> {
+            self.$owner.thicken_offset_from_gui(action)
+        }
         fn fillet_v2_from_gui(
             &mut self,
             action: oblikovati_gui::GuiFilletV2Action,

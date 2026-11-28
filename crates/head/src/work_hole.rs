@@ -19,6 +19,15 @@ macro_rules! hole_work_methods {
                 "combine {action:?}: expected a certified part owner"
             ))
         }
+        /// Dispatch a Thicken/Offset Properties panel action; example: `work.thicken_offset_from_gui(action)?`.
+        fn thicken_offset_from_gui(
+            &mut self,
+            action: oblikovati_gui::GuiThickenOffsetAction,
+        ) -> Result<bool, String> {
+            Err(format!(
+                "thicken/offset {action:?}: expected a certified part owner"
+            ))
+        }
         /// Dispatch a Fillet v2 Properties panel action; example: `work.fillet_v2_from_gui(action)?`.
         fn fillet_v2_from_gui(
             &mut self,

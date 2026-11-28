@@ -44,6 +44,9 @@ pub(super) fn feature_edit_action(
     if browser.combine_edits.contains_key(&feature.id) {
         return GuiShellAction::Combine(crate::GuiCombineAction::OpenEdit(feature.id));
     }
+    if browser.thicken_offset_edits.contains_key(&feature.id) {
+        return GuiShellAction::ThickenOffset(crate::GuiThickenOffsetAction::OpenEdit(feature.id));
+    }
     if browser.chamfer_edits.contains_key(&feature.id) {
         return GuiShellAction::OpenChamferEdit(feature.id);
     }
