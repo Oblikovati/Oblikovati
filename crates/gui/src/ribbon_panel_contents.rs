@@ -223,6 +223,10 @@ pub(crate) fn draw_panel_content(
                     GuiShellAction::ExtendSurface(crate::GuiExtendSurfaceAction::Open),
                 ),
                 (
+                    "Replace Face",
+                    GuiShellAction::ReplaceFace(crate::GuiReplaceFaceAction::Open),
+                ),
+                (
                     "Ruled Surface",
                     GuiShellAction::RuledSurface(crate::GuiRuledSurfaceAction::Open),
                 ),

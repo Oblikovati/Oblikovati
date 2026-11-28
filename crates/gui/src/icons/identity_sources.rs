@@ -110,6 +110,9 @@ pub(super) fn source(glyph: IconGlyph, light: bool) -> Option<&'static str> {
         IconGlyph::DeleteFace => {
             include_str!("../../assets/identity/cmd-model-delete-face-32.svg")
         }
+        IconGlyph::ReplaceFace => {
+            include_str!("../../assets/identity/cmd-model-replace-face-32.svg")
+        }
         IconGlyph::DirectEdit => include_str!("../../assets/identity/cmd-model-direct-edit-32.svg"),
         IconGlyph::Finish => include_str!("../../assets/identity/cmd-model-finish-32.svg"),
         IconGlyph::ExtendSurface => {

@@ -63,6 +63,8 @@ pub struct GuiModelBrowser {
     pub thread_edits: std::collections::BTreeMap<FeatureId, crate::GuiThreadEditSeed>,
     /// Authored options for editable Delete Face features.
     pub delete_face_edits: std::collections::BTreeMap<FeatureId, crate::GuiDeleteFaceEditSeed>,
+    /// Authored options for editable Replace Face features.
+    pub replace_face_edits: std::collections::BTreeMap<FeatureId, crate::GuiReplaceFaceEditSeed>,
     /// Authored options for editable Thicken/Offset features.
     pub thicken_offset_edits:
         std::collections::BTreeMap<FeatureId, crate::GuiThickenOffsetEditSeed>,

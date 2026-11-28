@@ -137,6 +137,12 @@ macro_rules! desktop_extrusion_work {
         ) -> Result<bool, String> {
             self.delete_face_command(action)
         }
+        fn replace_face_from_gui(
+            &mut self,
+            action: oblikovati_gui::GuiReplaceFaceAction,
+        ) -> Result<bool, String> {
+            self.replace_face_command(action)
+        }
         fn thicken_offset_from_gui(
             &mut self,
             action: oblikovati_gui::GuiThickenOffsetAction,

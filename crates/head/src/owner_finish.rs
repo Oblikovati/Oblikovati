@@ -77,6 +77,14 @@ impl<
                 .is_empty()
         {
             self.create_features.delete_face.highlighted_faces.clone()
+        } else if self.create_features.replace_face.active
+            && !self
+                .create_features
+                .replace_face
+                .highlighted_faces
+                .is_empty()
+        {
+            self.create_features.replace_face.highlighted_faces.clone()
         } else {
             self.current_face_appearance_picks(document)
                 .iter()

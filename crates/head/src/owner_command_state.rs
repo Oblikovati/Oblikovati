@@ -276,6 +276,8 @@ impl<
             thread_pick: self.gui_thread_pick(document, session.generation()),
             delete_face_preview: self.gui_delete_face_preview(document, session.generation()),
             delete_face_pick: self.gui_delete_face_pick(document, session.generation()),
+            replace_face_preview: self.gui_replace_face_preview(document, session.generation()),
+            replace_face_pick: self.gui_replace_face_pick(document, session.generation()),
             thicken_offset_preview: self.gui_thicken_offset_preview(document, session.generation()),
             thicken_offset_pick: self.gui_thicken_offset_pick(document, session.generation()),
             direct_edit_preview: self.gui_direct_edit_preview(document, session.generation()),

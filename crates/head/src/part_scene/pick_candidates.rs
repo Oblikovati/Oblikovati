@@ -68,6 +68,10 @@ impl PickCandidates {
         self.coverage = PickCoverage::NamedEdgesAndFaces;
     }
 
+    pub(crate) fn retain_targets(&mut self, mut keep: impl FnMut(&PickTarget) -> bool) {
+        self.candidates.retain(|candidate| keep(&candidate.target));
+    }
+
     pub(crate) fn push(&mut self, target: PickTarget, line_parameter: f64) -> Result<(), String> {
         if !line_parameter.is_finite() {
             return Err(format!(

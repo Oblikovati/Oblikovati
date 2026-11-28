@@ -62,6 +62,9 @@ impl<
         if let Some(changed) = self.pick_delete_face_geometry(document, line, depth_window)? {
             return Ok(changed);
         }
+        if let Some(changed) = self.pick_replace_face_geometry(document, line, depth_window)? {
+            return Ok(changed);
+        }
         if let Some(changed) = self.pick_thicken_offset_geometry(document, line, depth_window)? {
             return Ok(changed);
         }
