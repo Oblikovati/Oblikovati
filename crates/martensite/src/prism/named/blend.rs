@@ -18,6 +18,8 @@ mod rigid_motion;
 mod shell;
 mod slot;
 mod solid_boolean;
+mod split;
+mod split_tool;
 mod tolerances;
 pub use fillet_topology::{SharedFilletVertex, SolidFilletEdgeGroups};
 pub use rigid_motion::RigidMotion;

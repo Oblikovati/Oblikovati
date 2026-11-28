@@ -11,6 +11,7 @@ impl WorkPlaneDefinition {
             (Fillet(first), Fillet(second)) => first == second,
             (Chamfer(first), Chamfer(second)) => first == second,
             (Hole(first), Hole(second)) => first.same_recipe(second),
+            (Split(first), Split(second)) => first == second,
             (Shell(first), Shell(second)) => first == second,
             (Mirror(first), Mirror(second)) => first.same_recipe(second),
             (CircularPattern(first), CircularPattern(second)) => first.same_recipe(second),

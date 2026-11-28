@@ -44,6 +44,7 @@ mod rib;
 mod shell;
 mod shell_v2;
 mod slot;
+mod split;
 mod sweep;
 mod unwrap;
 pub use coil::{CoilInputs, PreparedCoil, build_coil_definition, prepare_coil_definition};
@@ -105,6 +106,10 @@ pub use shell_v2::{
 pub use slot::{
     PreparedSlot, SlotFeatureInputs, SlotSeatInput, build_slot_definition, prepare_slot_definition,
     replace_slot,
+};
+pub use split::{
+    PreparedSplit, SplitFeatureInputs, build_split_definition, prepare_split_definition,
+    replace_split,
 };
 pub use sweep::{
     PreparedSweep, automatic_sweep, prepare_surface_sweep, prepare_sweep, prepare_sweep_for_target,

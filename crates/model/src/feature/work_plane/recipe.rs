@@ -22,6 +22,7 @@ pub enum WorkPlaneDefinitionRecipe {
     Slot(crate::feature::slot::SlotRecipe),
     Combine(crate::feature::combine::CombineRecipe),
     Draft(crate::feature::draft::DraftRecipe),
+    Split(crate::feature::split::SplitRecipe),
     MoveBody(crate::feature::move_body::MoveBodyRecipe),
     Shell(crate::feature::shell::ShellRecipe),
     Mirror(crate::feature::mirror::MirrorRecipe),
@@ -78,6 +79,7 @@ impl WorkPlaneDefinition {
             Self::Slot(definition) => Source::Slot(definition.recipe()),
             Self::Combine(definition) => Source::Combine(definition.recipe()),
             Self::Draft(definition) => Source::Draft(definition.recipe()),
+            Self::Split(definition) => Source::Split(definition.recipe()),
             Self::MoveBody(definition) => Source::MoveBody(definition.recipe()),
             Self::Shell(definition) => Source::Shell(definition.recipe()),
             Self::Mirror(mirror) => Source::Mirror(mirror.recipe().clone()),
@@ -156,6 +158,9 @@ fn restore_definition(
             .map_err(WorkPlaneError::BodyReference),
         Draft(recipe) => crate::feature::draft::DraftDefinition::from_recipe(recipe)
             .map(|definition| WorkPlaneDefinition::Draft(Box::new(definition)))
+            .map_err(WorkPlaneError::BodyReference),
+        Split(recipe) => crate::feature::split::SplitDefinition::from_recipe(recipe)
+            .map(|definition| WorkPlaneDefinition::Split(Box::new(definition)))
             .map_err(WorkPlaneError::BodyReference),
         Chamfer(recipe) => crate::feature::chamfer::ChamferDefinition::from_recipe(&recipe)
             .map(|definition| WorkPlaneDefinition::Chamfer(Box::new(definition)))
@@ -290,6 +295,7 @@ impl WorkPlaneDefinitionRecipe {
             Self::Slot(_) => 46,
             Self::Combine(_) => 49,
             Self::Draft(_) => 47,
+            Self::Split(_) => 51,
             Self::SketchSweep(recipe) => match recipe.version {
                 7 => 29,
                 6 => 28,
@@ -354,6 +360,7 @@ impl WorkPlaneDefinitionRecipe {
             Self::Slot(_) => 53,
             Self::Combine(_) => 59,
             Self::Draft(_) => 57,
+            Self::Split(_) => 61,
             Self::SketchSweep(recipe) => match recipe.version {
                 7 => 34,
                 6 => 33,

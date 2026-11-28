@@ -23,6 +23,8 @@ mod hole_v2;
 mod shell_v2;
 #[path = "slot_replay.rs"]
 mod slot_replay;
+#[path = "split_replay.rs"]
+mod split_replay;
 
 fn hole_document() -> DocumentSnapshot {
     let mut snapshot = cube_document();

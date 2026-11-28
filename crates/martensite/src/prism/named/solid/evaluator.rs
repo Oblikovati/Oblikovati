@@ -478,6 +478,14 @@ impl PartFeatureEvaluator for CertifiedNamedSolidEvaluator<'_> {
     ) -> Result<NamedSolid, PartFeatureFailure<EvaluationFailure>> {
         self.evaluate_named_draft(feature, body, input)
     }
+    fn evaluate_split(
+        &mut self,
+        feature: FeatureId,
+        body: &NamedSolid,
+        input: oblikovati_model::feature::split::ResolvedSplit,
+    ) -> Result<Vec<NamedSolid>, PartFeatureFailure<EvaluationFailure>> {
+        self.evaluate_named_split(feature, body, input)
+    }
     fn evaluate_shell(
         &mut self,
         feature: FeatureId,

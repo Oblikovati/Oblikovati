@@ -297,6 +297,28 @@ impl NamedSolid {
         }
     }
 
+    /// Resolve the active feature-produced body key; example: `body.active_body_reference_key(&history, document)?`.
+    pub fn active_body_reference_key<'a>(
+        &'a self,
+        history: &'a DocumentEditHistory,
+        document: DocumentGuid,
+    ) -> Result<&'a [u8], String> {
+        match self {
+            Self::Prism(body) => body.body_reference_key(history, document),
+            Self::Derived(body) => body.active_body_reference_key(history, document),
+        }
+    }
+
+    /// Inspect split parent-to-child reference lineage when this solid is derived.
+    pub fn split_topology_keys(
+        &self,
+    ) -> Option<&std::collections::BTreeMap<Vec<u8>, Vec<Vec<u8>>>> {
+        match self {
+            Self::Prism(_) => None,
+            Self::Derived(body) => Some(body.split_keys()),
+        }
+    }
+
     /// Integrate properties for an exact body name; example: `body.physical_properties(&history, document, key)?`.
     pub fn physical_properties(
         &self,
@@ -470,3 +492,4 @@ mod hole_placement;
 mod move_body_evaluation;
 mod shell_evaluation;
 mod slot_evaluation;
+mod split_evaluation;

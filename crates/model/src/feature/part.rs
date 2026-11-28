@@ -29,10 +29,12 @@ pub use evaluate::{
 };
 pub use evaluator::PartFeatureEvaluator;
 mod extrusion_pattern;
+mod prefix_backend;
 mod prefix_replay;
 mod prism_replacement;
 mod reads;
 mod resolver;
+mod split_evaluation;
 mod transfer;
 pub use prefix_replay::BorrowedPartReplay;
 pub use transfer::{CapturedPartTransfer, CompletedPartTransfer};
@@ -57,6 +59,7 @@ pub enum PartFeatureDefinition {
     Slot(Box<super::slot::SlotDefinition>),
     Combine(Box<super::combine::CombineDefinition>),
     Draft(Box<super::draft::DraftDefinition>),
+    Split(Box<super::split::SplitDefinition>),
     MoveBody(Box<super::move_body::MoveBodyDefinition>),
     Shell(Box<super::shell::ShellDefinition>),
     Mirror(Box<super::mirror::MirrorDefinition>),
@@ -111,6 +114,7 @@ impl PartFeatureDefinition {
             Self::Slot(_) => "slot",
             Self::Combine(_) => "combine",
             Self::Draft(_) => "draft",
+            Self::Split(_) => "split",
             Self::MoveBody(_) => "move-body",
             Self::Shell(_) => "shell",
             Self::Mirror(_) => "mirror",
@@ -144,6 +148,7 @@ impl PartFeatureDefinition {
                 | Self::Slot(_)
                 | Self::Combine(_)
                 | Self::Draft(_)
+                | Self::Split(_)
                 | Self::Shell(_)
                 | Self::MoveBody(_)
                 | Self::Mirror(_)
