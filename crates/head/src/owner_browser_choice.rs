@@ -18,9 +18,9 @@ impl<
     ) -> Result<bool, String> {
         use oblikovati_gui::GuiBrowserChoice::{
             ActivateModelState, ActivatePartView, Body, BodyVisible, CopyModelState, CopyPartView,
-            CreateModelState, LockPartView, Nothing, Occurrence, PartViewAnnotationScale,
-            PartViewAutosave, PartViewBodyVisibility, PublishPartView, RenameModelState,
-            RenamePartView, RestorePartViewCamera, Root, SavePartViewCamera,
+            CreateModelState, DatumVisible, LockPartView, Nothing, Occurrence,
+            PartViewAnnotationScale, PartViewAutosave, PartViewBodyVisibility, PublishPartView,
+            RenameModelState, RenamePartView, RestorePartViewCamera, Root, SavePartViewCamera,
             SetOccurrenceSuppressed, ShowFeatureDimensions, SketchDimensionsShown,
             ToggleModelStateEditScope,
         };
@@ -170,6 +170,9 @@ impl<
         if let SketchDimensionsShown { sketch, shown } = choice {
             return self.set_sketch_dimensions_shown(document, *sketch, *shown);
         }
+        if let DatumVisible { feature, visible } = choice {
+            return self.set_datum_visible(document, *feature, *visible);
+        }
         if let BodyVisible { key, visible } = choice {
             use oblikovati_api::contract::PartDesignView as _;
             let active = self
@@ -218,6 +221,7 @@ impl<
             | ToggleModelStateEditScope
             | ShowFeatureDimensions(_)
             | SketchDimensionsShown { .. }
+            | DatumVisible { .. }
             | SetOccurrenceSuppressed { .. }
             | Occurrence(_) => {}
             Nothing => {

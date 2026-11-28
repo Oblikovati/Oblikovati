@@ -154,6 +154,12 @@ impl PickCandidates {
         };
         select_ranked(accepted, ambient, depth, window, self.coverage)
     }
+
+    pub(crate) fn into_sorted_targets(mut self) -> Vec<PickTarget> {
+        self.candidates
+            .sort_by(|a, b| a.line_parameter.total_cmp(&b.line_parameter));
+        self.candidates.into_iter().map(|hit| hit.target).collect()
+    }
 }
 
 fn select_ranked(

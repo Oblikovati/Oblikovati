@@ -49,6 +49,7 @@ mod shell_evaluation;
 mod sketch_body_evaluation;
 mod sketch_recompute;
 mod thicken_offset_evaluation;
+mod work_plane_evaluation;
 pub use super::work_plane::{
     WorkPlaneProgramRecipe as PartFeatureProgramRecipe,
     WorkPlaneProgramRecipeError as PartFeatureProgramRecipeError,
@@ -98,6 +99,7 @@ pub enum PartFeatureDefinition {
     NormalToAxis(WorkPlaneLinePoint),
     AtAngleAboutAxis(WorkPlaneLineAngle),
     ThroughTwoAxes([super::work_axis::WorkAxisReference; 2]),
+    WorkPlaneExtended(Box<super::work_plane::WorkPlaneExtendedDefinition>),
     Axis(WorkAxisLine),
     Point([DatumLength; 3]),
     PointAtReference(WorkPointReference),

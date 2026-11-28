@@ -3,8 +3,14 @@
 
 mod collection;
 mod construction;
+mod extended;
 mod face_reference;
 mod go_prism_frame;
+pub use extended::{
+    WorkPlaneEdgeReference, WorkPlaneExtendedDefinition, WorkPlaneExtendedRecipe,
+    WorkPlaneExtendedResolver, WorkPlaneSurfaceReference, WorkPlaneTopologyRef,
+    WorkPlaneVertexReference,
+};
 pub use face_reference::WorkPlaneFaceReference;
 mod recipe;
 pub use super::work_geometry::WorkGeometryError as WorkPlaneError;
@@ -108,6 +114,7 @@ impl WorkPlaneDefinition {
                 source.base.frame(resolver)?,
                 source.point.position(resolver)?,
             ),
+            Self::WorkPlaneExtended(definition) => definition.evaluate_plain(parameters, resolver),
             _ => Err(WorkPlaneError::NonPlane(Box::new(self))),
         }
     }

@@ -35,6 +35,65 @@ pub trait PartFeatureEvaluator {
             "frame origin {key:?}: expected an exact named vertex or circular-edge resolver"
         ))
     }
+    /// Resolve a named B-rep vertex (kind 3) to exact model coordinates.
+    fn resolve_topology_point(&self, _body: &Self::Body, key: &[u8]) -> Result<[f64; 3], String> {
+        Err(format!(
+            "vertex key {key:?}: expected an exact named vertex resolver"
+        ))
+    }
+    /// Resolve a named straight B-rep edge (kind 2) to an analytic axis line.
+    fn resolve_straight_edge(
+        &self,
+        _body: &Self::Body,
+        key: &[u8],
+    ) -> Result<crate::feature::work_axis::WorkAxisLine, String> {
+        Err(format!(
+            "edge key {key:?}: expected an exact straight-edge resolver"
+        ))
+    }
+    /// Resolve a toroidal face (kind 1) to its analytic midplane.
+    fn resolve_torus_midplane(
+        &self,
+        _body: &Self::Body,
+        key: &[u8],
+    ) -> Result<crate::sketch::SketchPlane, String> {
+        Err(format!(
+            "torus face key {key:?}: expected an exact torus-midplane resolver"
+        ))
+    }
+    /// Resolve a tangent plane to a curved face passing through a point.
+    fn resolve_tangent_plane_through_point(
+        &self,
+        _body: &Self::Body,
+        face_key: &[u8],
+        _point: [f64; 3],
+    ) -> Result<crate::sketch::SketchPlane, String> {
+        Err(format!(
+            "tangent face key {face_key:?}: expected an exact tangent-through-point resolver"
+        ))
+    }
+    /// Resolve a tangent plane to a curved face passing through a straight line.
+    fn resolve_tangent_plane_through_line(
+        &self,
+        _body: &Self::Body,
+        face_key: &[u8],
+        _line: crate::feature::work_axis::WorkAxisLine,
+    ) -> Result<crate::sketch::SketchPlane, String> {
+        Err(format!(
+            "tangent face key {face_key:?}: expected an exact tangent-through-line resolver"
+        ))
+    }
+    /// Resolve a tangent plane to a curved face parallel to a reference plane.
+    fn resolve_tangent_plane_parallel(
+        &self,
+        _body: &Self::Body,
+        face_key: &[u8],
+        _plane: crate::sketch::SketchPlane,
+    ) -> Result<crate::sketch::SketchPlane, String> {
+        Err(format!(
+            "tangent face key {face_key:?}: expected an exact tangent-parallel resolver"
+        ))
+    }
     /// Construct and validate one blend or return a named decline.
     /// Example: `backend.evaluate_blend(kind, feature, body, edges, distance)`.
     fn evaluate_blend(

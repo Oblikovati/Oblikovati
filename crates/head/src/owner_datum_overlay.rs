@@ -47,6 +47,16 @@ impl<
             bounds,
             theme,
         )?;
+        if let Some((preview_doc, frame)) = self.create_features.work_plane.preview
+            && preview_doc == document
+            && let Ok(preview) = super::owner_blend::owner_work_plane::preview_datum_plane(
+                session.snapshot(),
+                frame,
+                theme,
+            )
+        {
+            update.planes.push(preview);
+        }
         Ok(update)
     }
 

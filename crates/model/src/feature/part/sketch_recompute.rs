@@ -23,6 +23,9 @@ impl DocumentSnapshot {
             if let PartFeatureDefinition::WorkPoint(definition) = feature.definition() {
                 return definition.requires_named_part_replay();
             }
+            if let PartFeatureDefinition::WorkPlaneExtended(definition) = feature.definition() {
+                return definition.requires_topology();
+            }
             let base = match feature.definition() {
                 PartFeatureDefinition::Offset { base, .. } => Some(base),
                 PartFeatureDefinition::ParallelThroughPoint(source) => Some(&source.base),

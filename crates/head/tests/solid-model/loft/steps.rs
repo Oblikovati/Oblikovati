@@ -46,6 +46,8 @@ mod solid_ucs;
 mod solid_unwrap;
 #[path = "../work_axis/steps.rs"]
 mod solid_work_axis;
+#[path = "../work-plane/steps.rs"]
+mod solid_work_plane;
 #[path = "../work_point/steps.rs"]
 mod solid_work_point;
 

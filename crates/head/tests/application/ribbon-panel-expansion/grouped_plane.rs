@@ -197,10 +197,13 @@ fn icons_and_rules(world: &mut ApplicationWorld) {
         );
     }
     let left = offset.maximum[0].max(three_points.maximum[0]) + 4.;
-    let first_group = [offset.maximum[1], world.run("Midplane").minimum[1]];
+    let first_group = [
+        offset.maximum[1],
+        world.run("Midplane between Two Planes").minimum[1],
+    ];
     let second_group = [
-        world.run("Through Two Axes").maximum[1],
-        world.run("At Angle to Plane").minimum[1],
+        world.run("Two Coplanar Edges").maximum[1],
+        world.run("Angle to Plane around Edge").minimum[1],
     ];
     let frame = super::super::capture_framebuffer(&mut world.app().window.native);
     let pixel = |x: usize, y: usize| {

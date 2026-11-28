@@ -181,6 +181,7 @@ fn feature_menu(
     if ui.menu_item("Properties") {
         view.feature_properties.request(feature);
     }
+    edit::datum_visibility_menu_item(ui, state, browser, feature, actions);
     ui.separator();
     if ui.menu_item("Expand All Children") {
         view.open_branch(BrowserBranch::Feature(feature.id));

@@ -52,6 +52,7 @@ pub enum WorkPlaneDefinitionRecipe {
     LineThroughPoint(crate::feature::work_geometry::WorkPlaneLinePoint),
     ThroughThreePoints([crate::feature::work_geometry::WorkPointReference; 3]),
     ParallelThroughPoint(crate::feature::work_geometry::WorkPlaneThroughPoint),
+    WorkPlaneExtended(Box<super::extended::WorkPlaneExtendedRecipe>),
     Axis(crate::feature::work_axis::WorkAxisLineRecipe),
     Point([crate::feature::work_geometry::DatumLength; 3]),
     AxisThroughPoints(crate::feature::work_geometry::WorkAxisPoints),
@@ -119,6 +120,9 @@ impl WorkPlaneDefinition {
             Self::LineThroughPoint(source) => Source::LineThroughPoint(*source),
             Self::ThroughThreePoints(points) => Source::ThroughThreePoints(*points),
             Self::ParallelThroughPoint(source) => Source::ParallelThroughPoint(source.clone()),
+            Self::WorkPlaneExtended(definition) => {
+                Source::WorkPlaneExtended(Box::new(definition.recipe()))
+            }
             Self::Axis(axis) => Source::Axis(axis.recipe()),
             Self::Point(coordinates) => Source::Point(*coordinates),
             Self::PointAtReference(reference) => Source::PointAtReference(*reference),
@@ -267,6 +271,10 @@ fn restore_definition(
         LineThroughPoint(source) => Ok(WorkPlaneDefinition::LineThroughPoint(source)),
         ThroughThreePoints(points) => Ok(WorkPlaneDefinition::ThroughThreePoints(points)),
         ParallelThroughPoint(source) => Ok(WorkPlaneDefinition::ParallelThroughPoint(source)),
+        WorkPlaneExtended(recipe) => {
+            super::extended::WorkPlaneExtendedDefinition::from_recipe(*recipe)
+                .map(|definition| WorkPlaneDefinition::WorkPlaneExtended(Box::new(definition)))
+        }
         Axis(axis) => restore_line_axis(axis),
         Fixed { frame, options } => restore_frame(frame, options),
         Offset { base, distance } => validate_offset(base, distance),

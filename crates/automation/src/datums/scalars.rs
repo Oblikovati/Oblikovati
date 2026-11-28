@@ -40,6 +40,11 @@ pub(super) fn authored_feature(
             base,
             expression,
         } => angle_feature(snapshot, ids, owner, line, base, &expression),
+        PreparedGeometry::ExtendedAngle {
+            base,
+            edge,
+            expression,
+        } => extended_angle_feature(snapshot, ids, owner, base, edge, &expression),
         PreparedGeometry::Offset { base, expression } => {
             offset_feature(snapshot, ids, owner, base, &expression)
         }
@@ -78,6 +83,31 @@ fn angle_feature(
         base,
         angle: DatumAngle::parameter(parameter),
     });
+    let name = next_datum_name(snapshot, DatumCollection::Planes);
+    AuthoredFeature::datum(owner, &name, definition)
+        .with_owned_scalar(OwnedDatumScalar::Angle.role(), parameter)
+        .map_err(api_error)
+}
+
+fn extended_angle_feature(
+    snapshot: &mut DocumentSnapshot,
+    ids: &mut RecipeReservations<'_>,
+    owner: FeatureId,
+    base: oblikovati_model::feature::work_plane::WorkPlaneReference,
+    edge: oblikovati_model::feature::work_plane::WorkPlaneEdgeReference,
+    expression: &str,
+) -> Result<AuthoredFeature<WorkGeometryDefinition>, Error> {
+    use oblikovati_model::feature::{
+        work_geometry::DatumAngle, work_plane::WorkPlaneExtendedDefinition,
+    };
+    let parameter = OwnedDatumScalar::Angle.insert(snapshot, ids, owner, expression)?;
+    let definition = WorkGeometryDefinition::WorkPlaneExtended(std::boxed::Box::new(
+        WorkPlaneExtendedDefinition::AngleToPlaneAroundEdge {
+            base,
+            edge,
+            angle: DatumAngle::parameter(parameter),
+        },
+    ));
     let name = next_datum_name(snapshot, DatumCollection::Planes);
     AuthoredFeature::datum(owner, &name, definition)
         .with_owned_scalar(OwnedDatumScalar::Angle.role(), parameter)

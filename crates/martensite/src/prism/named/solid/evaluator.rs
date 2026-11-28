@@ -8,8 +8,10 @@ use oblikovati_model::{
             PartBlendKind, PartFeatureEvaluation, PartFeatureEvaluator, PartFeatureProgramError,
         },
         sketch_prism::PrismBoolean,
+        work_axis::WorkAxisLine,
     },
     history::DocumentSnapshot,
+    sketch::SketchPlane,
 };
 
 impl CertifiedNamedSolidEvaluator<'_> {
@@ -40,11 +42,7 @@ impl PartFeatureEvaluator for CertifiedNamedSolidEvaluator<'_> {
                 .map(|_| ()),
         }
     }
-    fn resolve_planar_face(
-        &self,
-        body: &NamedSolid,
-        key: &[u8],
-    ) -> Result<oblikovati_model::sketch::SketchPlane, String> {
+    fn resolve_planar_face(&self, body: &NamedSolid, key: &[u8]) -> Result<SketchPlane, String> {
         match body {
             NamedSolid::Prism(body) => self.diagnostic.resolve_planar_face(body, key),
             NamedSolid::Derived(body) => body.face_plane(self.history, self.document, key),
@@ -52,6 +50,39 @@ impl PartFeatureEvaluator for CertifiedNamedSolidEvaluator<'_> {
     }
     fn resolve_frame_origin(&self, body: &NamedSolid, key: &[u8]) -> Result<[f64; 3], String> {
         body.frame_origin(self.history, self.document, key)
+    }
+    fn resolve_topology_point(&self, body: &NamedSolid, key: &[u8]) -> Result<[f64; 3], String> {
+        body.resolve_topology_point(self.history, self.document, key)
+    }
+    fn resolve_straight_edge(&self, body: &NamedSolid, key: &[u8]) -> Result<WorkAxisLine, String> {
+        body.resolve_straight_edge(self.history, self.document, key)
+    }
+    fn resolve_torus_midplane(&self, body: &NamedSolid, key: &[u8]) -> Result<SketchPlane, String> {
+        body.resolve_torus_midplane(self.history, self.document, key)
+    }
+    fn resolve_tangent_plane_through_point(
+        &self,
+        body: &NamedSolid,
+        k: &[u8],
+        p: [f64; 3],
+    ) -> Result<SketchPlane, String> {
+        body.resolve_tangent_plane_through_point(self.history, self.document, k, p)
+    }
+    fn resolve_tangent_plane_through_line(
+        &self,
+        body: &NamedSolid,
+        k: &[u8],
+        l: WorkAxisLine,
+    ) -> Result<SketchPlane, String> {
+        body.resolve_tangent_plane_through_line(self.history, self.document, k, l)
+    }
+    fn resolve_tangent_plane_parallel(
+        &self,
+        body: &NamedSolid,
+        k: &[u8],
+        p: SketchPlane,
+    ) -> Result<SketchPlane, String> {
+        body.resolve_tangent_plane_parallel(self.history, self.document, k, p)
     }
     fn evaluate_loft(
         &mut self,

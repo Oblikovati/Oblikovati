@@ -12,6 +12,8 @@ pub(crate) struct OffsetPlaneDialog {
     base: Option<GuiOffsetPlaneBase>,
     offset: String,
     error: Option<String>,
+    pending_enter: bool,
+    last_preview: Option<(u64, GuiOffsetPlaneBase, String)>,
 }
 impl DockableWindow for OffsetPlaneDialog {}
 impl OffsetPlaneDialog {
@@ -24,12 +26,33 @@ impl OffsetPlaneDialog {
     fn set_document(&mut self, document: Option<u64>) {
         self.document = document;
         self.dock_state.set_open(document.is_some());
+        if document.is_none() {
+            self.pending_enter = false;
+            self.last_preview = None;
+        }
+    }
+    pub(crate) fn close(&mut self, actions: &mut Vec<GuiShellAction>) {
+        if self.active() {
+            actions.push(GuiShellAction::WorkPlane(
+                crate::GuiWorkPlaneAction::ClearPreview,
+            ));
+        }
+        self.set_document(None);
+    }
+    pub(crate) fn status_prompt(&self) -> Option<&'static str> {
+        self.active().then_some(if self.base.is_some() {
+            "Enter offset distance and press Enter"
+        } else {
+            "Select planar face or work plane"
+        })
     }
     pub(crate) fn open(&mut self, document: u64, base: Option<GuiOffsetPlaneBase>) {
         self.set_document(Some(document));
         self.base = base;
         self.offset = "10 mm".into();
         self.error = None;
+        self.pending_enter = false;
+        self.last_preview = None;
     }
     pub(crate) fn active(&self) -> bool {
         self.document.is_some()
@@ -83,6 +106,9 @@ impl OffsetPlaneDialog {
             done = self.controls(ui, state, actions, document);
         });
         if !open || done {
+            actions.push(GuiShellAction::WorkPlane(
+                crate::GuiWorkPlaneAction::ClearPreview,
+            ));
             self.set_document(None);
         }
     }
@@ -93,12 +119,43 @@ impl OffsetPlaneDialog {
         actions: &mut Vec<GuiShellAction>,
         document: u64,
     ) -> bool {
-        self.offset_field(ui, state, actions, document);
+        let enter_pressed = self.offset_field(ui, state, actions, document);
+        if enter_pressed {
+            self.pending_enter = true;
+        }
+        if let Some(base) = self.base {
+            let key = (document, base, self.offset.clone());
+            if self.last_preview.as_ref() != Some(&key) {
+                self.last_preview = Some(key);
+                actions.push(GuiShellAction::WorkPlane(
+                    crate::GuiWorkPlaneAction::PreviewOffset {
+                        document,
+                        base,
+                        offset: self.offset.clone(),
+                    },
+                ));
+            }
+        }
         let request = self.base.map(|base| GuiShellAction::CreateOffsetPlane {
             document,
             base,
             offset: self.offset.clone(),
         });
+        if self.pending_enter {
+            if let Some(action) = &request
+                && action.dispatchable(state)
+            {
+                actions.push(action.clone());
+                self.pending_enter = false;
+                return true;
+            }
+            if self
+                .current_validation(state, document)
+                .is_some_and(|v| v.error.is_some())
+            {
+                self.pending_enter = false;
+            }
+        }
         ui.separator();
         submit_buttons(ui, state, request, actions)
     }
@@ -108,7 +165,7 @@ impl OffsetPlaneDialog {
         state: &GuiCommandState,
         actions: &mut Vec<GuiShellAction>,
         document: u64,
-    ) {
+    ) -> bool {
         ui.text(if self.base.is_some() {
             "1 Plane"
         } else {
@@ -116,16 +173,21 @@ impl OffsetPlaneDialog {
         });
         let disabled = ui.begin_disabled(self.base.is_none());
         crate::theme::property_label(ui, "Offset");
-        let edited = {
+        let previous = self.offset.clone();
+        let enter_pressed = {
             let _numeric = crate::ui_scale::numeric_font(ui);
             let _outline = ui.push_style_var(imgui::StyleVar::FrameBorderSize(1.));
-            ui.input_text("##Offset", &mut self.offset).build()
+            ui.input_text("##Offset", &mut self.offset)
+                .enter_returns_true(true)
+                .build()
         };
-        if edited {
+        if self.offset != previous {
             self.error = None;
+            self.pending_enter = false;
         }
         drop(disabled);
         self.validation_message(ui, state, actions, document);
+        enter_pressed
     }
     fn validation_message(
         &self,

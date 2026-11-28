@@ -18,6 +18,7 @@ pub(super) struct CreateFeatureDialogs {
     pub(super) mark: crate::mark_dialog::MarkDialog,
     pub(super) finish: crate::finish_dialog::FinishDialog,
     pub(super) grounded_point: crate::work_point::overlay::GroundedPointHud,
+    pub(super) work_plane: crate::work_plane_dialog::WorkPlaneDialog,
 }
 
 impl CreateFeatureDialogs {
@@ -63,8 +64,9 @@ impl CreateFeatureDialogs {
     }
 
     pub(super) fn status_prompt<'a>(&self, state: &'a GuiCommandState) -> Option<&'a str> {
-        self.unwrap
+        self.work_plane
             .status_prompt()
+            .or_else(|| self.unwrap.status_prompt())
             .or_else(|| state.ucs.status_prompt())
     }
 

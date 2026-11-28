@@ -433,6 +433,7 @@ fn feature_kind(definition: &PartFeatureDefinition) -> &'static str {
         NormalToAxis(_) => "normal-to-curve",
         AtAngleAboutAxis(_) => "line-plane-angle",
         ThroughTwoAxes(_) => "two-lines",
+        WorkPlaneExtended(_) => "work-plane",
         Axis(_) => "line",
         Point(_) => "position",
         PointAtReference(_) => "point-reference",

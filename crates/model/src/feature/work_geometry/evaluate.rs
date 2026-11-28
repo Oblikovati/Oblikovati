@@ -73,6 +73,16 @@ impl FeatureSequence<WorkPlaneDefinition> {
 }
 
 impl WorkGeometryEvaluation {
+    pub(crate) fn insert_evaluated_plane(
+        &mut self,
+        id: FeatureId,
+        feature: &crate::feature::AuthoredFeature<WorkPlaneDefinition>,
+        plane: crate::sketch::SketchPlane,
+    ) -> Result<(), WorkPlaneError> {
+        let datum = WorkGeometryResult::Plane(plane).with_plane_orientation(feature)?;
+        self.datums.insert(id, datum);
+        Ok(())
+    }
     pub(crate) fn insert_sketch_face(
         &mut self,
         reference: &crate::feature::work_plane::WorkPlaneFaceReference,

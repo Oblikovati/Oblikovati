@@ -97,6 +97,7 @@ impl GuiFrameEngine {
                 self.extrude_dialog
                     .distance_prompt()
                     .or_else(|| self.create_dialogs.status_prompt(&request.commands))
+                    .or_else(|| self.offset_plane.status_prompt())
                     .or_else(|| self.direct_edit_dialog.status_prompt())
                     .or_else(|| self.blend_dialog.status_prompt()),
             ),
@@ -196,10 +197,11 @@ impl GuiFrameEngine {
         selected.retain(|action| !matches!(action, GuiShellAction::OpenModelStateTable));
         self.model_state_table
             .panel(ui, &request.commands, &mut selected);
-        feature_actions::sync_offset_plane(
+        super::work_plane::sync_offset_plane(
             &request.commands,
             &mut self.workspace,
             &mut self.offset_plane,
+            &mut self.create_dialogs.work_plane,
             &mut selected,
         );
         for action in &selected {
@@ -448,21 +450,18 @@ impl GuiFrameEngine {
             || self.ribbon.tips.consumed
             || self.workspace.browser_consumed_arrow()
             || self.ribbon.customization.navigation_consumed;
-        let arrow_press = super::frame_inputs::has_arrow_press(request);
-        // ImGui can queue the first navigation move before it exposes the focus highlight (#3874).
-        if arrow_press && activity.pending_navigation && !keys.tool_keyboard {
-            capture.keyboard = true;
-        }
-        if arrow_press
-            && self.ribbon.tips.active()
-            && !capture.text
-            && !popup_open
-            && !self.workspace.browser_consumed_arrow()
-        {
-            capture.keyboard = false;
-        }
-        if arrow_press && self.workspace.feature_keyboard_focus() {
-            capture.keyboard = true;
+        if super::frame_inputs::has_arrow_press(request) {
+            if activity.pending_navigation && !keys.tool_keyboard {
+                capture.keyboard = true;
+            }
+            if self.ribbon.tips.active()
+                && !capture.text
+                && !popup_open
+                && !self.workspace.browser_consumed_arrow()
+            {
+                capture.keyboard = false;
+            }
+            capture.keyboard |= self.workspace.feature_keyboard_focus();
         }
         feature_actions::finish_frame_capture(
             &mut capture,

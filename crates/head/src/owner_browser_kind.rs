@@ -55,7 +55,10 @@ pub(super) fn feature_kind_name(
         | oblikovati_model::feature::part::PartFeatureDefinition::LineThroughPoint(_)
         | oblikovati_model::feature::part::PartFeatureDefinition::NormalToAxis(_)
         | oblikovati_model::feature::part::PartFeatureDefinition::AtAngleAboutAxis(_)
-        | oblikovati_model::feature::part::PartFeatureDefinition::ThroughTwoAxes(_) => "Work Plane",
+        | oblikovati_model::feature::part::PartFeatureDefinition::ThroughTwoAxes(_)
+        | oblikovati_model::feature::part::PartFeatureDefinition::WorkPlaneExtended(_) => {
+            "Work Plane"
+        }
         oblikovati_model::feature::part::PartFeatureDefinition::Axis(_)
         | oblikovati_model::feature::part::PartFeatureDefinition::AxisThroughPoints(_) => {
             "Work Axis"

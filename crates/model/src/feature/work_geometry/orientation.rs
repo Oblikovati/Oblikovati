@@ -16,6 +16,7 @@ impl WorkGeometryDefinition {
                 | Self::NormalToAxis(_)
                 | Self::ThroughTwoAxes(_)
                 | Self::AtAngleAboutAxis(_)
+                | Self::WorkPlaneExtended(_)
         ) {
             return Ok(());
         }

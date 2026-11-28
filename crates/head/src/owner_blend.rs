@@ -57,6 +57,8 @@ pub(super) mod owner_ucs;
 pub(super) mod owner_unwrap;
 #[path = "owner_work_axis.rs"]
 pub(super) mod owner_work_axis;
+#[path = "owner_work_plane.rs"]
+pub(super) mod owner_work_plane;
 #[path = "owner_work_point.rs"]
 pub(super) mod owner_work_point;
 use oblikovati_automation::{PreparedChamfer, PreparedFillet, prepare_chamfer, prepare_fillet};
@@ -86,6 +88,7 @@ pub(super) struct CreateFeatureState {
     pub(super) shell_v2: owner_shell_v2::ShellV2OwnerState,
     pub(super) work_axis: owner_work_axis::WorkAxisOwnerState,
     pub(super) work_point: owner_work_point::WorkPointOwnerState,
+    pub(super) work_plane: owner_work_plane::WorkPlaneOwnerState,
 }
 
 impl<

@@ -357,9 +357,12 @@ mod discretize;
 mod projection;
 #[path = "named/work_axis_queries.rs"]
 mod work_axis_queries;
+#[path = "named/work_plane_queries.rs"]
+mod work_plane_queries;
 pub use base_view::{DrawingBaseProjection, drawing_base_view_bodies, drawing_base_view_solids};
 pub use projection::{
     DrawingProjectedCurve, DrawingProjection, DrawingProjectionCurveKind, DrawingProjectionFrame,
     drawing_projection_bodies, drawing_projection_solids,
 };
 pub use work_axis_queries::{AnalyticEdgeAxis, AnalyticEdgeAxisKind, NamedVertexHit};
+pub use work_plane_queries::NamedKeyedVertexHit;
