@@ -109,14 +109,14 @@ pub use prism::{
     PrismHistorySource, PrismMeshOptions, PrismPresentation, PrismPresentationSource,
     PrismProbeDefinition, PrismProbeLoop, PrismProbeReport, PrismProbeSnapshot, PrismResolution,
     PrismResolutionPolicy, PrismSubentityHistory, PrismSubentityProvenance, PrismSubentityRole,
-    PrismSurfaceKind, PrismTopologySummary, RigidMotion, TopologySummary,
-    capture_full_named_candidate, complete_named_candidate, complete_named_checkpoints,
-    drawing_base_view_bodies, drawing_base_view_solids, drawing_projection_bodies,
-    drawing_projection_solids, named_part_properties, named_solid_part_properties,
-    prepare_dependent_named_publication, prepare_full_named_publication, probe_planar_prism,
-    retain_certified_named_sketch_prism, retain_certified_profile_prism,
-    retain_certified_profile_prisms, retain_named_sketch_prism, retain_planar_prism,
-    retain_prism_on_plane, validate_full_named_snapshot,
+    PrismSurfaceKind, PrismTopologySummary, RigidMotion, SharedFilletVertex, SolidFilletEdgeGroups,
+    TopologySummary, capture_full_named_candidate, complete_named_candidate,
+    complete_named_checkpoints, drawing_base_view_bodies, drawing_base_view_solids,
+    drawing_projection_bodies, drawing_projection_solids, named_part_properties,
+    named_solid_part_properties, prepare_dependent_named_publication,
+    prepare_full_named_publication, probe_planar_prism, retain_certified_named_sketch_prism,
+    retain_certified_profile_prism, retain_certified_profile_prisms, retain_named_sketch_prism,
+    retain_planar_prism, retain_prism_on_plane, validate_full_named_snapshot,
 };
 mod loft;
 pub use loft::check_loft_guide_closure;

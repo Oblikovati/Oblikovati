@@ -449,14 +449,16 @@ impl PartFeatureEvaluator for CertifiedNamedSolidEvaluator<'_> {
         edges: &[Vec<u8>],
         distance: f64,
     ) -> Result<NamedSolid, PartFeatureFailure<EvaluationFailure>> {
-        let result = match kind {
-            PartBlendKind::Fillet => self.evaluate_fillet(feature, body, edges, distance),
-            PartBlendKind::Chamfer => self.evaluate_chamfer(feature, body, edges, distance),
-        }
-        .map_err(PartFeatureFailure::Kernel)?;
-        self.verify_result_lineage(body, &result)
-            .map_err(PartFeatureFailure::BodyReference)?;
-        Ok(result)
+        self.evaluate_named_blend(kind, feature, body, edges, distance)
+    }
+    fn evaluate_fillet_v2(
+        &mut self,
+        feature: FeatureId,
+        body: &NamedSolid,
+        edges: &[Vec<u8>],
+        input: oblikovati_model::feature::fillet_options::ResolvedFillet,
+    ) -> Result<NamedSolid, PartFeatureFailure<EvaluationFailure>> {
+        self.evaluate_named_fillet_v2(feature, body, edges, input)
     }
     fn evaluate_move_body(
         &mut self,

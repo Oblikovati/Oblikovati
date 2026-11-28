@@ -55,6 +55,17 @@ where
             .evaluate_blend(kind, feature, body.get(), edges, distance)
             .map(PrefixBody::Created)
     }
+    fn evaluate_fillet_v2(
+        &mut self,
+        feature: FeatureId,
+        body: &Self::Body,
+        edges: &[Vec<u8>],
+        input: crate::feature::fillet_options::ResolvedFillet,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        self.0
+            .evaluate_fillet_v2(feature, body.get(), edges, input)
+            .map(PrefixBody::Created)
+    }
     fn evaluate_move_body(
         &mut self,
         feature: FeatureId,

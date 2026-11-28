@@ -45,6 +45,16 @@ pub trait PartFeatureEvaluator {
         edges: &[Vec<u8>],
         distance: f64,
     ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>>;
+    /// Construct and validate an extended v2 Fillet; defaults to `evaluate_blend` for constant radii.
+    fn evaluate_fillet_v2(
+        &mut self,
+        feature: FeatureId,
+        body: &Self::Body,
+        edges: &[Vec<u8>],
+        input: crate::feature::fillet_options::ResolvedFillet,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        self.evaluate_blend(PartBlendKind::Fillet, feature, body, edges, input.radius)
+    }
     /// Transform a named body; example: `backend.evaluate_move_body(id, body, &motions)`.
     fn evaluate_move_body(
         &mut self,

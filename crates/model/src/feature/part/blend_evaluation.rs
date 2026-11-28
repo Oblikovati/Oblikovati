@@ -25,20 +25,45 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
         feature: FeatureId,
         definition: &FilletDefinition,
     ) -> Result<(), PartFeatureFailure<Failure>> {
-        let distance = definition
-            .resolved_radius(&snapshot.parameters)
+        let resolved = definition
+            .resolve(&snapshot.parameters)
             .map_err(PartFeatureFailure::FilletInput)?;
-        self.evaluate_blend(
+        if definition.options().is_default() {
+            return self.evaluate_blend(
+                backend,
+                feature,
+                BlendInput {
+                    body_source: definition.body_source(),
+                    body: definition.body(),
+                    edges: definition.edges(),
+                    distance: resolved.radius,
+                    kind: PartBlendKind::Fillet,
+                },
+            );
+        }
+        let slot = resolve_body_slot(
+            &self.bodies,
+            &self.body_lineage,
             backend,
-            feature,
-            BlendInput {
-                body_source: definition.body_source(),
-                body: definition.body(),
-                edges: definition.edges(),
-                distance,
-                kind: PartBlendKind::Fillet,
-            },
+            definition.body_source(),
+            definition.body(),
         )
+        .map_err(PartFeatureFailure::BodyReference)?;
+        let before = self.bodies.get(&slot).ok_or_else(|| {
+            PartFeatureFailure::BodyReference(format!(
+                "body slot {slot:?}: expected a current body"
+            ))
+        })?;
+        let result = backend.evaluate_fillet_v2(feature, before, definition.edges(), resolved)?;
+        backend
+            .verify_body_reference(&result, definition.body())
+            .map_err(PartFeatureFailure::BodyReference)?;
+        self.body_lineage
+            .replace(slot, feature)
+            .map_err(PartFeatureFailure::BodyReference)?;
+        self.bodies.remove(&slot);
+        self.bodies.insert(feature.into(), result);
+        Ok(())
     }
     pub(super) fn evaluate_chamfer<B: PartFeatureEvaluator<Body = Body, Failure = Failure>>(
         &mut self,

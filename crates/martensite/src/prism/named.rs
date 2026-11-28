@@ -146,7 +146,10 @@ pub use captured::{
 };
 pub use edge_pick::NamedEdgeHit;
 mod subentities;
-pub use blend::{BlendCandidate, BlendHistoryRecord, BlendNamedTopology, RigidMotion};
+pub use blend::{
+    BlendCandidate, BlendHistoryRecord, BlendNamedTopology, RigidMotion, SharedFilletVertex,
+    SolidFilletEdgeGroups,
+};
 pub use evaluate::retain_certified_named_sketch_prism;
 use evaluate::{CertifiedNamedPrismEvaluator, NamedPrismEvaluator};
 pub use face_topology::{PrismFaceTopology, PrismSurfaceKind};

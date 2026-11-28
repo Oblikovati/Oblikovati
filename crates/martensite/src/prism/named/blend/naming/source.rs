@@ -2,13 +2,13 @@
 //! Collect current named input entities for detached feature operations.
 use super::*;
 
-pub(super) struct NamedInputSources {
+pub(in crate::prism::named::blend) struct NamedInputSources {
     pub body: Shape,
     pub entities: Vec<(Vec<u8>, Shape)>,
     pub body_keys: Vec<Vec<u8>>,
 }
 impl BlendNamedTopology {
-    pub(super) fn source_topology(
+    pub(in crate::prism::named::blend) fn source_topology(
         &self,
         history: &DocumentEditHistory,
         document: DocumentGuid,

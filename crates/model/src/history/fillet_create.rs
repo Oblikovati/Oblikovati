@@ -38,6 +38,22 @@ impl DocumentSnapshot {
             ids,
         )
     }
+    /// Replace an existing fillet definition in-place; example: `snapshot.edit_fillet(id, definition)?`.
+    pub fn edit_fillet(
+        &mut self,
+        id: FeatureId,
+        definition: FilletDefinition,
+    ) -> Result<(), HistoryError> {
+        let reads = definition.reads();
+        self.work_geometry
+            .replace(
+                id,
+                PartFeatureDefinition::Fillet(Box::new(definition)),
+                reads,
+            )
+            .map(|_| ())
+            .map_err(|cause| HistoryError::PartProgram(PartFeatureProgramError::Sequence(cause)))
+    }
     /// Append authored chamfer inputs; example: `snapshot.create_chamfer("Chamfer", definition, ids)?`.
     pub fn create_chamfer(
         &mut self,

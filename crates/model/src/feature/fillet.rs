@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Authored named-edge fillet inputs, independent of a kernel result (#4045).
-use super::{FeatureId, FeatureReadFootprint, FeatureReadKey, work_geometry::DatumLength};
+use super::{
+    FeatureId, FeatureReadFootprint, FeatureReadKey,
+    fillet_options::{FilletOptions, ResolvedFillet},
+    work_geometry::DatumLength,
+};
 use crate::{
     identity::{DocumentGuid, ReferenceEnvelope, topology_reference_document},
     parameter::ParameterCollection,
@@ -15,6 +19,7 @@ pub struct BlendDefinition {
     edges: Vec<Vec<u8>>,
     radius: DatumLength,
     sources: Vec<FeatureId>,
+    options: FilletOptions,
 }
 
 /// Compatibility name for authored fillet inputs.
@@ -28,6 +33,8 @@ pub struct FilletRecipe {
     pub body: Vec<u8>,
     pub edges: Vec<Vec<u8>>,
     pub radius: DatumLength,
+    #[serde(default, skip_serializing_if = "FilletOptions::is_default")]
+    pub options: FilletOptions,
 }
 
 impl BlendDefinition {
@@ -35,6 +42,18 @@ impl BlendDefinition {
     /// Example: `FilletDefinition::new(body_key, edge_keys, radius)?`.
     pub fn new(body: Vec<u8>, edges: Vec<Vec<u8>>, radius: DatumLength) -> Result<Self, String> {
         Self::new_blend(body, edges, radius, "fillet")
+    }
+    /// Validate v2 Fillet inputs with variable radii, continuity, edge sets, or corner setbacks.
+    pub fn new_with_options(
+        body: Vec<u8>,
+        edges: Vec<Vec<u8>>,
+        radius: DatumLength,
+        options: FilletOptions,
+    ) -> Result<Self, String> {
+        options.validate()?;
+        let mut def = Self::new_blend(body, edges, radius, "fillet")?;
+        def.options = options;
+        Ok(def)
     }
     pub(super) fn new_blend(
         body: Vec<u8>,
@@ -51,7 +70,12 @@ impl BlendDefinition {
             edges,
             radius,
             sources,
+            options: FilletOptions::default(),
         })
+    }
+    /// Inspect extended v2 Fillet options.
+    pub fn options(&self) -> &FilletOptions {
+        &self.options
     }
     /// Inspect the body reference; example: `definition.body()` before current binding.
     pub fn body(&self) -> &[u8] {
@@ -71,32 +95,51 @@ impl BlendDefinition {
     }
     /// Capture authored inputs; example: `serde_json::to_string(&definition.recipe())?`.
     pub fn recipe(&self) -> FilletRecipe {
+        let version = if self.options.is_default() { 1 } else { 2 };
         FilletRecipe {
-            version: 1,
+            version,
             body: self.body.clone(),
             edges: self.edges.clone(),
             radius: self.radius,
+            options: self.options.clone(),
         }
     }
     /// Restore validated authored inputs; example: `FilletDefinition::from_recipe(&recipe)?`.
     pub fn from_recipe(recipe: &FilletRecipe) -> Result<Self, String> {
-        if recipe.version != 1 {
+        let expected = if recipe.options.is_default() { 1 } else { 2 };
+        if recipe.version != expected {
             return Err(format!(
-                "fillet recipe version {}: expected version 1",
+                "fillet recipe version {}: expected version {expected}",
                 recipe.version
             ));
         }
-        Self::new(recipe.body.clone(), recipe.edges.clone(), recipe.radius)
+        Self::new_with_options(
+            recipe.body.clone(),
+            recipe.edges.clone(),
+            recipe.radius,
+            recipe.options.clone(),
+        )
     }
-    /// Attribute all source features and the radius parameter; example: `definition.reads()`.
+    /// Attribute all source features and parameter dependencies; example: `definition.reads()`.
     pub fn reads(&self) -> FeatureReadFootprint {
         let features = self.sources.iter().copied().map(FeatureReadKey::Feature);
+        let opt_params = self
+            .options
+            .lengths()
+            .into_iter()
+            .filter_map(DatumLength::parameter)
+            .map(FeatureReadKey::Parameter);
         let parameter = self.radius.parameter().map(FeatureReadKey::Parameter);
-        FeatureReadFootprint::new(features.chain(parameter), false)
+        FeatureReadFootprint::new(features.chain(parameter).chain(opt_params), false)
     }
     /// Resolve a positive current radius; example: `definition.resolved_radius(&parameters)?`.
     pub fn resolved_radius(&self, parameters: &ParameterCollection<u64>) -> Result<f64, String> {
         self.resolved_blend_length(parameters, "fillet")
+    }
+    /// Resolve all v1/v2 Fillet inputs against document parameters.
+    pub fn resolve(&self, parameters: &ParameterCollection<u64>) -> Result<ResolvedFillet, String> {
+        let radius = self.resolved_radius(parameters)?;
+        self.options.resolve(radius, parameters)
     }
     pub(super) fn resolved_blend_length(
         &self,

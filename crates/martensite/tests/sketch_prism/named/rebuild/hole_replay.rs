@@ -7,6 +7,8 @@ use oblikovati_model::feature::{
     hole::{HoleDefinition, HoleExtent, HolePosition, HoleRecipe},
 };
 
+#[path = "fillet_v2.rs"]
+mod fillet_v2;
 #[path = "hole_frame_origin.rs"]
 mod hole_frame_origin;
 #[path = "hole_v2.rs"]

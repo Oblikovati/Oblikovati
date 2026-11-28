@@ -350,6 +350,7 @@ impl WorkPlaneDefinitionRecipe {
             Self::Mirror(_) => 27,
             Self::CircularPattern(_) => 26,
             Self::RectangularPattern(_) => 25,
+            Self::Fillet(recipe) if recipe.version == 2 => 54,
             Self::Fillet(_) => 20,
             Self::DeleteBody(_) => 17,
             Self::SketchPrism(recipe) if recipe.version == 5 => 43,
