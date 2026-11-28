@@ -22,6 +22,9 @@ sha2 = "=0.10.9"
 uuid = { version = "=1.27.0", features = ["v5"] }
 xml = "=1.4.0"
 
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+getrandom = { version = "=0.4.3", features = ["wasm_js"] }
+
 [[test]]
 name = "sketch_revolve_recipe"
 path = "tests/sketch_revolve_recipe.rs"

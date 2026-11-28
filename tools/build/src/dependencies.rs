@@ -86,7 +86,12 @@ pub(crate) fn check_pins(root: &Path) -> BuildResult<()> {
 /// For example, call `check_renderer_pin(root)?` before locating its installer.
 pub(crate) fn check_renderer_pin(root: &Path) -> BuildResult<()> {
     let lock = read_lockfile(&root.join("Cargo.lock"))?;
-    for required in ["martensite-vulkan", "martensite-tkv3d"] {
+    for required in [
+        "martensite-vulkan",
+        "martensite-render-core",
+        "martensite-webgpu",
+        "martensite-tkv3d",
+    ] {
         if !lock.package.iter().any(|package| package.name == required) {
             return Err(format!(
                 "renderer lock: missing {required}; expected both renderer toolkits"

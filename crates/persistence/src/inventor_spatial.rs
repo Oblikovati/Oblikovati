@@ -3,13 +3,16 @@
 
 use std::collections::BTreeMap;
 
+#[cfg(not(target_arch = "wasm32"))]
 use corliss::{
     Document, DocumentKind,
     grammar::{DecodeStatus, DecodedNode, FieldValue},
     model::{Model, Part, view::floats},
 };
 
+#[cfg(not(target_arch = "wasm32"))]
 const POINT_3D: u32 = 0xCE52_DF3E;
+#[cfg(not(target_arch = "wasm32"))]
 const LINE_3D: u32 = 0x8EF0_6C89;
 
 /// A point and its segment-local identity in an Inventor document.
@@ -37,6 +40,7 @@ pub struct InventorSpatialSketch {
 
 /// Read recognized spatial points and lines without interpreting other sketch entity types.
 /// Example: `let sketches = read_inventor_spatial_lines_and_points(&bytes)?;`.
+#[cfg(not(target_arch = "wasm32"))]
 pub fn read_inventor_spatial_lines_and_points(
     bytes: &[u8],
 ) -> Result<Vec<InventorSpatialSketch>, String> {
@@ -53,6 +57,19 @@ pub fn read_inventor_spatial_lines_and_points(
     collect_spatial_geometry(&part)
 }
 
+/// Read recognized spatial points and lines without interpreting other sketch entity types.
+/// Example: `let sketches = read_inventor_spatial_lines_and_points(&bytes)?;`.
+#[cfg(target_arch = "wasm32")]
+pub fn read_inventor_spatial_lines_and_points(
+    _bytes: &[u8],
+) -> Result<Vec<InventorSpatialSketch>, String> {
+    Err(
+        "Inventor document import: unsupported on wasm32 until upstream corliss adopts web-time"
+            .into(),
+    )
+}
+
+#[cfg(not(target_arch = "wasm32"))]
 fn collect_spatial_geometry(part: &Part<'_>) -> Result<Vec<InventorSpatialSketch>, String> {
     let mut sketches = BTreeMap::<usize, InventorSpatialSketch>::new();
     for (node, geometry) in part.view().nodes() {
@@ -66,6 +83,7 @@ fn collect_spatial_geometry(part: &Part<'_>) -> Result<Vec<InventorSpatialSketch
     Ok(sketches.into_values().collect())
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 fn append_sketch_node(
     part: &Part<'_>,
     sketches: &mut BTreeMap<usize, InventorSpatialSketch>,
@@ -88,6 +106,7 @@ fn append_sketch_node(
     append_geometry(sketch, geometry, node)
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 fn spatial_owner(geometry: &DecodedNode, node: usize) -> Result<Option<usize>, String> {
     match geometry.get("sketch") {
         Some(FieldValue::Ref(owner, _)) => Ok(owner.index()),
@@ -97,6 +116,7 @@ fn spatial_owner(geometry: &DecodedNode, node: usize) -> Result<Option<usize>, S
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 fn require_complete_node(geometry: &DecodedNode, node: usize) -> Result<(), String> {
     if geometry.status != DecodeStatus::Full {
         return Err(format!(
@@ -107,6 +127,7 @@ fn require_complete_node(geometry: &DecodedNode, node: usize) -> Result<(), Stri
     Ok(())
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 fn require_sketch_owner(part: &Part<'_>, node: usize, owner: usize) -> Result<(), String> {
     if part.view().node(owner).is_none() {
         return Err(format!(
@@ -116,6 +137,7 @@ fn require_sketch_owner(part: &Part<'_>, node: usize, owner: usize) -> Result<()
     Ok(())
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 fn append_geometry(
     sketch: &mut InventorSpatialSketch,
     geometry: &DecodedNode,
@@ -129,6 +151,7 @@ fn append_geometry(
     Ok(())
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 fn read_spatial_point(geometry: &DecodedNode, node: usize) -> Result<InventorSpatialPoint, String> {
     let values = floats(geometry, "pos");
     let position_cm: [f64; 3] = values.try_into().map_err(|values: Vec<f64>| {
@@ -142,6 +165,7 @@ fn read_spatial_point(geometry: &DecodedNode, node: usize) -> Result<InventorSpa
     Ok(InventorSpatialPoint { node, position_cm })
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 fn read_spatial_line(geometry: &DecodedNode, node: usize) -> Result<InventorSpatialLine, String> {
     let Some(FieldValue::List(points)) = geometry.get("points") else {
         return Err(format!(
@@ -162,6 +186,7 @@ fn read_spatial_line(geometry: &DecodedNode, node: usize) -> Result<InventorSpat
     })
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 fn endpoint_reference(fields: &[corliss::grammar::Field], node: usize) -> Result<usize, String> {
     match fields {
         [field] => match field.value {

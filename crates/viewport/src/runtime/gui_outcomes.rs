@@ -1,14 +1,26 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! #3851: consume checked GUI target observations without hiding renderer faults.
 use super::{Viewport, ViewportOptions, next_generation};
-use martensite_tkernel::standard::Handle;
-use martensite_vulkan::{
-    Graphic3dRenderDriver, RenderError, RenderGuiFreshPacket, RenderGuiSurfaceChange,
-    RenderGuiSurfaceOutcome, RenderGuiSurfacePolicy, RenderPipelinePolicies,
-    RenderUnlitFaceColorPolicy, VulkanOptions,
+use martensite_render_core::{
+    Graphic3dRenderDriver, RenderBehaviorConfiguration, RenderCoordinateConvention, RenderError,
+    RenderGuiFreshPacket, RenderGuiSurfaceChange, RenderGuiSurfaceOutcome, RenderGuiSurfacePolicy,
+    RenderLineWidthPolicy, RenderPipelinePolicies, RenderUnlitFaceColorPolicy,
 };
+use martensite_tkernel::standard::Handle;
+#[cfg(any(target_os = "linux", target_os = "windows"))]
+use martensite_vulkan::VulkanOptions;
+use martensite_webgpu::{WebGpuOptions, WebGpuRenderDriver};
 
-/// Select checked native GUI publication; example: `native_gui_driver(options)?`.
+fn viewport_pipeline_policies() -> RenderPipelinePolicies {
+    RenderPipelinePolicies {
+        gui_surface: RenderGuiSurfacePolicy::CheckedV2,
+        unlit_faces: RenderUnlitFaceColorPolicy::SideColorsV2,
+        ..Default::default()
+    }
+}
+
+/// Select checked native Vulkan GUI publication; example: `native_gui_driver(options)?`.
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 pub(super) fn native_gui_driver(
     options: ViewportOptions,
 ) -> Result<Handle<Graphic3dRenderDriver>, String> {
@@ -17,13 +29,35 @@ pub(super) fn native_gui_driver(
             validation: options.validation,
             device_index: options.physical_device,
         },
-        RenderPipelinePolicies {
-            gui_surface: RenderGuiSurfacePolicy::CheckedV2,
-            unlit_faces: RenderUnlitFaceColorPolicy::SideColorsV2,
-            ..Default::default()
-        },
+        viewport_pipeline_policies(),
     )
     .map_err(|error| error.to_string())
+}
+
+/// Select checked WebGPU GUI publication asynchronously; example: `webgpu_gui_driver_async(options).await?`.
+pub(super) async fn webgpu_gui_driver_async(
+    options: ViewportOptions,
+) -> Result<Handle<Graphic3dRenderDriver>, String> {
+    WebGpuRenderDriver::with_policies_async(
+        WebGpuOptions {
+            validation: options.validation,
+            ..WebGpuOptions::default()
+        },
+        viewport_pipeline_policies(),
+        RenderCoordinateConvention::default(),
+        RenderLineWidthPolicy::default(),
+        RenderBehaviorConfiguration::default(),
+    )
+    .await
+    .map_err(|error| error.to_string())
+}
+
+/// Select checked WebGPU GUI publication synchronously on native targets.
+#[cfg(not(target_arch = "wasm32"))]
+pub(super) fn webgpu_gui_driver_blocking(
+    options: ViewportOptions,
+) -> Result<Handle<Graphic3dRenderDriver>, String> {
+    martensite_webgpu::realm::block_on(webgpu_gui_driver_async(options))
 }
 impl Viewport {
     /// Keep real faults distinct from a fresh-frame request; example: `view.checked_gui_result(draw, "redraw")?`.

@@ -125,3 +125,19 @@ jobs:
         timeout-minutes: 6
         shell: pwsh
         run: ./tools/bootstrap/windows_gui_debug.ps1 -Architecture x64 -NativeLog (Join-Path $env:RUNNER_TEMP 'oblikovati-native.log')
+  wasm:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ inputs.revision || github.sha }}
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@e2a55d2ffb04f378e9626c28d38b36d230d1e12f
+        with:
+          toolchain: 1.99.0
+      - name: Install pinned wasm32 nightly toolchain
+        run: |
+          channel=$(sed -n 's/^channel = "\(.*\)"/\1/p' tools/build/wasm-toolchain.toml)
+          rustup toolchain install "$channel" --profile minimal --component rust-src --target wasm32-unknown-unknown
+      - name: Check wasm32 +atomics workspace crates
+        run: cargo xtask wasm-check

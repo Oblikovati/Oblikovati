@@ -1,0 +1,33 @@
+# SPDX-License-Identifier: GPL-2.0-only
+[package]
+name = "oblikovati-web"
+description = "WebAssembly and WebGPU browser platform target for Oblikovati"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[lints]
+workspace = true
+
+[dependencies]
+oblikovati-api = { git = "https://github.com/Oblikovati/Oblikovati.API.git", rev = "c8200b2da97c9a7dde43afb25debc977ff23b2fd", version = "=0.166.0" }
+oblikovati-automation = { path = "../automation" }
+oblikovati-drawing = { path = "../drawing" }
+oblikovati-martensite = { path = "../martensite" }
+oblikovati-model = { path = "../model" }
+oblikovati-persistence = { path = "../persistence" }
+oblikovati-session = { path = "../session" }
+oblikovati-viewport = { path = "../viewport" }
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = { version = "1", features = ["float_roundtrip"] }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+js-sys = "=0.3.107"
+wasm-bindgen = "=0.2.130"
+wasm-bindgen-futures = "=0.4.80"
+web-sys = { version = "=0.3.107", features = ["HtmlCanvasElement", "OffscreenCanvas"] }

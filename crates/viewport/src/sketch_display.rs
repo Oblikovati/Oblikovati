@@ -70,7 +70,12 @@ pub enum ViewportSketchFeedback {
     },
 }
 // #3795: only the Linux renderer consumes normalization; pure selection checks remain portable.
-#[cfg(any(target_os = "linux", target_os = "windows", test))]
+#[cfg(any(
+    target_os = "linux",
+    target_os = "windows",
+    target_arch = "wasm32",
+    test
+))]
 impl ViewportSketchSelection {
     pub(crate) fn normalized(&self) -> Self {
         let mut selection = self.clone();

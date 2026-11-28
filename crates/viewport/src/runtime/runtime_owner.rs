@@ -11,7 +11,8 @@ impl ViewportRuntime {
         self.state.driver.set_vertical_sync(enabled);
     }
 
-    /// Initialize the owner-thread runtime; example: `ViewportRuntime::new(ViewportOptions::default())?`.
+    /// Initialize the owner-thread Vulkan runtime; example: `ViewportRuntime::new(ViewportOptions::default())?`.
+    #[cfg(any(target_os = "linux", target_os = "windows"))]
     pub fn new(options: ViewportOptions) -> Result<Self, String> {
         #[cfg(target_os = "linux")]
         let linux = NativeLinux::open()?;
@@ -23,6 +24,37 @@ impl ViewportRuntime {
                 linux: Some(linux),
                 #[cfg(target_os = "windows")]
                 native_windows: true,
+                next_view: Cell::new(1),
+            }),
+        })
+    }
+    /// Asynchronously initialize a WebGPU-backed viewport runtime on WebAssembly or desktop.
+    /// Example: `let runtime = ViewportRuntime::new_webgpu_async(ViewportOptions::default()).await?;`.
+    pub async fn new_webgpu_async(options: ViewportOptions) -> Result<Self, String> {
+        let driver = gui_outcomes::webgpu_gui_driver_async(options).await?;
+        Ok(Self {
+            state: Rc::new(RuntimeState {
+                driver,
+                #[cfg(target_os = "linux")]
+                linux: None,
+                #[cfg(target_os = "windows")]
+                native_windows: false,
+                next_view: Cell::new(1),
+            }),
+        })
+    }
+    /// Synchronously initialize a WebGPU-backed viewport runtime on native platforms.
+    /// Example: `let runtime = ViewportRuntime::new_webgpu(ViewportOptions::default())?;`.
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn new_webgpu(options: ViewportOptions) -> Result<Self, String> {
+        let driver = gui_outcomes::webgpu_gui_driver_blocking(options)?;
+        Ok(Self {
+            state: Rc::new(RuntimeState {
+                driver,
+                #[cfg(target_os = "linux")]
+                linux: None,
+                #[cfg(target_os = "windows")]
+                native_windows: false,
                 next_view: Cell::new(1),
             }),
         })
@@ -56,6 +88,35 @@ impl ViewportRuntime {
             }
             NativeWindow::create(title, extent, system_frame)?
         };
+        #[cfg(target_arch = "wasm32")]
+        let window = {
+            let _ = system_frame;
+            NativeWindow::new_virtual(title, extent, 1.0)?
+        };
+        self.create(ViewTarget::Native(Box::new(window)))
+    }
+    /// Bind a worker-owned browser `OffscreenCanvas` for WebGPU presentation.
+    /// Example: `let view = runtime.open_offscreen_canvas("#viewport", canvas, 2.0)?;`.
+    #[cfg(target_arch = "wasm32")]
+    pub fn open_offscreen_canvas(
+        &self,
+        canvas_id: &str,
+        canvas: web_sys::OffscreenCanvas,
+        device_pixel_ratio: f64,
+    ) -> Result<Viewport, String> {
+        let window = NativeWindow::from_offscreen_canvas(canvas_id, canvas, device_pixel_ratio)?;
+        self.create(ViewTarget::Native(Box::new(window)))
+    }
+    /// Bind a main-thread browser `HtmlCanvasElement` for WebGPU presentation.
+    /// Example: `let view = runtime.open_html_canvas("#viewport", canvas, 2.0)?;`.
+    #[cfg(target_arch = "wasm32")]
+    pub fn open_html_canvas(
+        &self,
+        canvas_id: &str,
+        canvas: web_sys::HtmlCanvasElement,
+        device_pixel_ratio: f64,
+    ) -> Result<Viewport, String> {
+        let window = NativeWindow::from_html_canvas(canvas_id, canvas, device_pixel_ratio)?;
         self.create(ViewTarget::Native(Box::new(window)))
     }
     /// Set up a native Windows window before it becomes visible.

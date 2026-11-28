@@ -9,7 +9,7 @@ pub(crate) struct FitFraming {
     pub extent: [u32; 2],
 }
 
-#[cfg(any(target_os = "linux", target_os = "windows"))]
+#[cfg(any(target_os = "linux", target_os = "windows", target_arch = "wasm32"))]
 impl FitFraming {
     pub(crate) fn tile(self) -> martensite_tkservice::graphic3d::Graphic3dCameraTile {
         use martensite_tkernel::ncollection::Vec2;

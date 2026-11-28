@@ -1,0 +1,54 @@
+# SPDX-License-Identifier: GPL-2.0-only
+# Scoped deployer identity for `.github/workflows/web-deploy.yml` (KUBECONFIG_HETZNER secret).
+# Apply once on the Hetzner K3s cluster as cluster-admin, then export the token into a kubeconfig.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: app-deployer
+  namespace: oblikovati
+automountServiceAccountToken: false
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: app-deployer-token
+  namespace: oblikovati
+  annotations:
+    kubernetes.io/service-account.name: app-deployer
+type: kubernetes.io/service-account-token
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: app-deployer
+  namespace: oblikovati
+rules:
+  - apiGroups: [""]
+    resources: [services]
+    resourceNames: [app]
+    verbs: [get, patch]
+  - apiGroups: [networking.k8s.io]
+    resources: [ingresses]
+    resourceNames: [app]
+    verbs: [get, patch]
+  - apiGroups: [apps]
+    resources: [deployments]
+    resourceNames: [app]
+    verbs: [get, patch]
+  - apiGroups: [apps]
+    resources: [deployments, replicasets]
+    verbs: [list, watch]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: app-deployer
+  namespace: oblikovati
+subjects:
+  - kind: ServiceAccount
+    name: app-deployer
+    namespace: oblikovati
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: app-deployer
