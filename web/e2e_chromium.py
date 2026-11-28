@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 """Run headless Chromium WebGPU end-to-end verification against the full Oblikovati desktop UI."""
+import argparse
+import base64
 import functools
 import gzip
 import http.server
@@ -11,6 +13,32 @@ import time
 
 WEB_ROOT = pathlib.Path(__file__).resolve().parent
 PKG = WEB_ROOT / "pkg"
+
+
+def analyze_screenshot(page, png_bytes):
+    b64 = base64.b64encode(png_bytes).decode("ascii")
+    return page.evaluate(
+        """async (b64) => {
+        const img = new Image();
+        img.src = "data:image/png;base64," + b64;
+        await img.decode();
+        const canvas = document.createElement("canvas");
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0);
+        const rgba = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+        let nonBlack = 0;
+        const colors = new Set();
+        for (let i = 0; i < rgba.length; i += 4) {
+            const r = rgba[i], g = rgba[i + 1], b = rgba[i + 2];
+            if (r > 5 || g > 5 || b > 5) nonBlack++;
+            if (colors.size < 256) colors.add(((r >> 3) << 10) | ((g >> 3) << 5) | (b >> 3));
+        }
+        return { nonBlack, distinctColorBuckets: colors.size };
+    }""",
+        b64,
+    )
 
 
 class IsolatedHandler(http.server.SimpleHTTPRequestHandler):
@@ -33,6 +61,10 @@ class IsolatedHandler(http.server.SimpleHTTPRequestHandler):
 
 def main():
     from playwright.sync_api import sync_playwright
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--screenshot-dir", type=pathlib.Path, default=None)
+    args = parser.parse_args()
 
     wasm_file = PKG / "oblikovati_web_bg.wasm"
     if not wasm_file.is_file():
@@ -88,6 +120,12 @@ def main():
             }"""
             )
 
+            home_png = page.screenshot()
+            home_visible = analyze_screenshot(page, home_png)
+            if args.screenshot_dir:
+                args.screenshot_dir.mkdir(parents=True, exist_ok=True)
+                (args.screenshot_dir / "home_canvas.png").write_bytes(home_png)
+
             # Click the primary "New Part" button on the Home screen and verify the Part UI opens.
             page.mouse.click(100, 230)
             page.wait_for_function(
@@ -107,6 +145,10 @@ def main():
                 };
             }"""
             )
+            part_png = page.screenshot()
+            part_visible = analyze_screenshot(page, part_png)
+            if args.screenshot_dir:
+                (args.screenshot_dir / "part_canvas.png").write_bytes(part_png)
 
             browser.close()
     finally:
@@ -121,7 +163,11 @@ def main():
         "activeWorkers": home_metrics["status"]["activeWorkers"],
         "homeNonBlackPixels": home_metrics["nonBlack"],
         "homeDistinctColorBuckets": home_metrics["distinctColorBuckets"],
+        "homeVisibleCanvasNonBlackPixels": home_visible["nonBlack"],
+        "homeVisibleCanvasColorBuckets": home_visible["distinctColorBuckets"],
         "partOpenDocuments": part_metrics["status"]["openDocuments"],
+        "partVisibleCanvasNonBlackPixels": part_visible["nonBlack"],
+        "partVisibleCanvasColorBuckets": part_visible["distinctColorBuckets"],
         "validationErrors": len(home_metrics["validationErrors"])
         + len(part_metrics["validationErrors"]),
         "consoleLogs": console_logs,
@@ -132,7 +178,19 @@ def main():
     assert report["overlayHidden"], "expected boot overlay hidden after initialization"
     assert report["homeNonBlackPixels"] > 100000, "expected rendered Oblikovati desktop UI"
     assert report["homeDistinctColorBuckets"] >= 32, "expected rich desktop UI theme and icons"
+    assert (
+        report["homeVisibleCanvasNonBlackPixels"] > 100000
+    ), "expected visible browser canvas to display Home desktop UI"
+    assert (
+        report["homeVisibleCanvasColorBuckets"] >= 32
+    ), "expected visible browser canvas to preserve Home UI colors"
     assert report["partOpenDocuments"] >= 1, "expected New Part click to open a Part document"
+    assert (
+        report["partVisibleCanvasNonBlackPixels"] > 100000
+    ), "expected visible browser canvas to display Part desktop UI"
+    assert (
+        report["partVisibleCanvasColorBuckets"] >= 32
+    ), "expected visible browser canvas to preserve Part UI colors"
     assert report["validationErrors"] == 0, f"WebGPU validation errors: {report}"
 
 
