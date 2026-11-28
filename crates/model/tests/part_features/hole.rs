@@ -27,6 +27,7 @@ fn input() -> HoleDefinition {
         position: HolePosition::FaceCentroid,
         diameter: DatumLength::Parameter(3),
         extent: HoleExtent::ThroughAll,
+        options: Default::default(),
     })
     .unwrap()
 }

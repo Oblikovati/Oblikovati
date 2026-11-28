@@ -34,6 +34,7 @@ fn recipe() -> HoleRecipe {
         ]),
         diameter: DatumLength::Parameter(3),
         extent: HoleExtent::Distance(DatumLength::Parameter(5)),
+        options: Default::default(),
     }
 }
 fn parameters() -> ParameterCollection<u64> {
@@ -160,4 +161,78 @@ fn hole_recipe_comparison_preserves_coordinate_signed_zero() {
     let after = HoleDefinition::from_recipe(changed).unwrap();
     assert!(!before.same_recipe(&after));
     assert!(before.same_recipe(&HoleDefinition::from_recipe(before.recipe()).unwrap()));
+}
+
+#[test]
+fn hole_v2_options_validate_seats_taper_tapped_and_to_surface_round_trip() {
+    use oblikovati_model::feature::hole::{
+        HoleDrillPoint, HoleFastenerFit, HoleFastenerSpec, HoleKind, HoleOptions, HoleOriginPlane,
+        HoleSeat, HoleTerminationSurface, HoleThreadSpec, ResolvedHoleSeat,
+    };
+    let mut c_sink = recipe();
+    c_sink.version = 2;
+    c_sink.extent = HoleExtent::ToSurface(HoleTerminationSurface::OriginPlane(HoleOriginPlane::Xy));
+    c_sink.options = HoleOptions {
+        kind: HoleKind::Tapped,
+        seat: HoleSeat::Countersink {
+            diameter: DatumLength::Constant(6.),
+            angle_deg: 90.,
+        },
+        drill_point: HoleDrillPoint::Angle(118.),
+        direction_flipped: true,
+        extend_start: true,
+        fastener: None,
+        thread: Some(HoleThreadSpec {
+            profile: "ISO Metric profile".into(),
+            designation: "M4x0.7".into(),
+            full_depth: true,
+            left_hand: true,
+        }),
+    };
+    let def = HoleDefinition::from_recipe(c_sink.clone()).unwrap();
+    let encoded = serde_json::to_string(&def.recipe()).unwrap();
+    let decoded: HoleRecipe = serde_json::from_str(&encoded).unwrap();
+    assert_eq!(HoleDefinition::from_recipe(decoded).unwrap(), def);
+    let resolved = def.resolve(&parameters()).unwrap();
+    assert_eq!(
+        resolved.termination_surface,
+        Some(HoleTerminationSurface::OriginPlane(HoleOriginPlane::Xy))
+    );
+    assert_eq!(
+        resolved.seat,
+        ResolvedHoleSeat::Countersink {
+            diameter: 6.,
+            angle_deg: 90.
+        }
+    );
+    assert!(resolved.direction_flipped && resolved.extend_start);
+
+    // Invalid stepped seat: seat diameter equal to bore diameter must be refused.
+    let mut bad_seat = recipe();
+    bad_seat.version = 2;
+    bad_seat.diameter = DatumLength::Constant(4.);
+    bad_seat.options.seat = HoleSeat::Counterbore {
+        diameter: DatumLength::Constant(4.),
+        depth: DatumLength::Constant(2.),
+    };
+    assert!(HoleDefinition::from_recipe(bad_seat).is_err());
+
+    // Invalid taper-tapped hole with conical seat must be refused until seat is removed.
+    let mut bad_taper = c_sink;
+    bad_taper.options.kind = HoleKind::TaperTapped;
+    assert!(HoleDefinition::from_recipe(bad_taper.clone()).is_err());
+    bad_taper.options.seat = HoleSeat::None;
+    assert!(HoleDefinition::from_recipe(bad_taper).is_ok());
+
+    // Fastener clearance hole round-trips cleanly.
+    let mut clearance = recipe();
+    clearance.version = 2;
+    clearance.options.kind = HoleKind::Clearance;
+    clearance.options.fastener = Some(HoleFastenerSpec {
+        standard: "ANSI Unified Screw Threads".into(),
+        fastener_type: "Hex Head Bolt".into(),
+        size: "#4".into(),
+        fit: HoleFastenerFit::Loose,
+    });
+    assert!(HoleDefinition::from_recipe(clearance).is_ok());
 }

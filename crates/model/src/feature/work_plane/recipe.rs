@@ -312,6 +312,7 @@ impl WorkPlaneDefinitionRecipe {
         }
         match self {
             Self::Chamfer(_) => 21,
+            Self::Hole(recipe) if recipe.version == 2 => 52,
             Self::Hole(_) => 22,
             Self::MoveBody(_) => 23,
             Self::Shell(_) => 24,

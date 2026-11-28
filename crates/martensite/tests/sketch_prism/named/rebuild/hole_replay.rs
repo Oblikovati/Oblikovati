@@ -9,6 +9,8 @@ use oblikovati_model::feature::{
 
 #[path = "hole_frame_origin.rs"]
 mod hole_frame_origin;
+#[path = "hole_v2.rs"]
+mod hole_v2;
 
 fn hole_document() -> DocumentSnapshot {
     let mut snapshot = cube_document();
@@ -31,6 +33,7 @@ fn add_hole(history: &mut DocumentEditHistory, extent: HoleExtent) -> FeatureId 
         position: HolePosition::FaceCentroid,
         diameter: DatumLength::Parameter(4),
         extent,
+        options: Default::default(),
     })
     .unwrap();
     let token = history.begin("Hole").unwrap();
@@ -306,6 +309,7 @@ fn second_hole_replaces_the_current_body_and_preserves_the_first_names() {
         position: HolePosition::ModelPoint([0.25, 0.25, 1.].map(DatumLength::Constant)),
         diameter: DatumLength::Parameter(4),
         extent: HoleExtent::ThroughAll,
+        options: Default::default(),
     })
     .unwrap();
     let token = history.begin("Second hole").unwrap();
@@ -345,6 +349,7 @@ fn hole_outside_placement_face_does_not_replace_the_body() {
         position: HolePosition::ModelPoint([2., 2., 1.].map(DatumLength::Constant)),
         diameter: DatumLength::Parameter(4),
         extent: HoleExtent::ThroughAll,
+        options: Default::default(),
     })
     .unwrap();
     let token = history.begin("Invalid hole").unwrap();

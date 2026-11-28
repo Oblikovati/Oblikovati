@@ -227,6 +227,7 @@ fn add_hole(history: &mut DocumentEditHistory) -> FeatureId {
         position: HolePosition::FaceCentroid,
         diameter: DatumLength::Constant(0.2),
         extent: HoleExtent::ThroughAll,
+        options: Default::default(),
     })
     .unwrap();
     let token = history.begin("Hole").unwrap();

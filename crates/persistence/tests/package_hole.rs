@@ -39,6 +39,7 @@ fn program() -> FeatureSequence<PartFeatureDefinition> {
         ]),
         diameter: DatumLength::Parameter(3),
         extent: HoleExtent::Distance(DatumLength::Parameter(4)),
+        options: Default::default(),
     })
     .unwrap();
     let reads = hole.reads();

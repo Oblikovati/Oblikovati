@@ -6,6 +6,11 @@ use super::{
 };
 use crate::parameter::ParameterCollection;
 mod serde_inputs;
+mod types;
+pub use types::{
+    HoleDrillPoint, HoleFastenerFit, HoleFastenerSpec, HoleKind, HoleOptions, HoleOriginPlane,
+    HoleSeat, HoleTerminationSurface, HoleThreadSpec, ResolvedHoleSeat,
+};
 
 /// Position on the named placement face in model coordinates.
 #[derive(Clone, Copy, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
@@ -14,10 +19,11 @@ pub enum HolePosition {
     ModelPoint([DatumLength; 3]),
 }
 /// The extent of a straight bore, measured into the selected face.
-#[derive(Clone, Copy, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 pub enum HoleExtent {
     ThroughAll,
     Distance(DatumLength),
+    ToSurface(HoleTerminationSurface),
 }
 /// Stable inputs for a straight bore; membership and planarity are checked during replay.
 #[derive(Clone, Debug, PartialEq)]
@@ -39,13 +45,32 @@ pub struct HoleRecipe {
     pub diameter: DatumLength,
     #[serde(with = "serde_inputs::extent")]
     pub extent: HoleExtent,
+    #[serde(default, skip_serializing_if = "HoleOptions::is_default")]
+    pub options: HoleOptions,
 }
 /// Current numeric inputs, resolved from the document parameters.
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct ResolvedHole {
     pub position: Option<[f64; 3]>,
     pub diameter: f64,
     pub depth: Option<f64>,
+    pub termination_surface: Option<HoleTerminationSurface>,
+    pub seat: ResolvedHoleSeat,
+    pub drill_point: HoleDrillPoint,
+    pub direction_flipped: bool,
+    pub extend_start: bool,
+}
+
+impl HoleRecipe {
+    /// Return whether this recipe uses v2 Hole features (options or `ToSurface` extent).
+    pub fn requires_v2(&self) -> bool {
+        !self.options.is_default() || matches!(self.extent, HoleExtent::ToSurface(_))
+    }
+
+    /// Return the canonical recipe version (`1` for plain straight bores, `2` for extended holes).
+    pub fn canonical_version(&self) -> u32 {
+        if self.requires_v2() { 2 } else { 1 }
+    }
 }
 
 impl HoleDefinition {
@@ -56,13 +81,15 @@ impl HoleDefinition {
             && self.recipe.face == other.recipe.face
             && self.recipe.diameter.same_recipe(other.recipe.diameter)
             && same_position(self.recipe.position, other.recipe.position)
-            && same_extent(self.recipe.extent, other.recipe.extent)
+            && same_extent(&self.recipe.extent, &other.recipe.extent)
+            && self.recipe.options.same_recipe(&other.recipe.options)
     }
     /// Validate authored sources; example: `HoleDefinition::from_recipe(recipe)?` before adoption.
     pub fn from_recipe(recipe: HoleRecipe) -> Result<Self, String> {
-        if recipe.version != 1 {
+        let expected = recipe.canonical_version();
+        if recipe.version != expected {
             return Err(format!(
-                "hole recipe version {}: expected version 1",
+                "hole recipe version {}: expected version {expected}",
                 recipe.version
             ));
         }
@@ -114,14 +141,23 @@ impl HoleDefinition {
             HolePosition::ModelPoint(point) => Some(resolve_point(point, parameters)?),
         };
         let diameter = positive_length(self.recipe.diameter, parameters, "diameter")?;
-        let depth = match self.recipe.extent {
-            HoleExtent::ThroughAll => None,
-            HoleExtent::Distance(value) => Some(positive_length(value, parameters, "depth")?),
+        let (depth, termination_surface) = match &self.recipe.extent {
+            HoleExtent::ThroughAll => (None, None),
+            HoleExtent::Distance(value) => {
+                (Some(positive_length(*value, parameters, "depth")?), None)
+            }
+            HoleExtent::ToSurface(surface) => (None, Some(surface.clone())),
         };
+        let seat = self.recipe.options.resolve_seat(parameters, diameter)?;
         Ok(ResolvedHole {
             position,
             diameter,
             depth,
+            termination_surface,
+            seat,
+            drill_point: self.recipe.options.drill_point,
+            direction_flipped: self.recipe.options.direction_flipped,
+            extend_start: self.recipe.options.extend_start,
         })
     }
 }
@@ -136,10 +172,11 @@ fn same_position(first: HolePosition, second: HolePosition) -> bool {
         _ => false,
     }
 }
-fn same_extent(first: HoleExtent, second: HoleExtent) -> bool {
+fn same_extent(first: &HoleExtent, second: &HoleExtent) -> bool {
     match (first, second) {
         (HoleExtent::ThroughAll, HoleExtent::ThroughAll) => true,
-        (HoleExtent::Distance(first), HoleExtent::Distance(second)) => first.same_recipe(second),
+        (HoleExtent::Distance(first), HoleExtent::Distance(second)) => first.same_recipe(*second),
+        (HoleExtent::ToSurface(first), HoleExtent::ToSurface(second)) => first == second,
         _ => false,
     }
 }
@@ -152,6 +189,7 @@ fn input_lengths(recipe: &HoleRecipe) -> Vec<DatumLength> {
     if let HolePosition::ModelPoint(point) = recipe.position {
         values.extend(point);
     }
+    values.extend(recipe.options.seat_lengths());
     values
 }
 fn validate_inputs(recipe: &HoleRecipe) -> Result<(), String> {
@@ -167,6 +205,7 @@ fn validate_inputs(recipe: &HoleRecipe) -> Result<(), String> {
     if let HoleExtent::Distance(value) = recipe.extent {
         validate_positive_source(value, "depth")?;
     }
+    recipe.options.validate(recipe.diameter)?;
     Ok(())
 }
 fn validate_positive_source(value: DatumLength, label: &str) -> Result<(), String> {

@@ -15,7 +15,7 @@ mod solid_boolean;
 mod tolerances;
 pub use rigid_motion::RigidMotion;
 mod naming;
-pub(super) use hole::HoleRequest;
+pub(super) use hole::{HoleRequest, build_hole_tool};
 mod queries;
 pub use naming::BlendNamedTopology;
 pub(super) use naming::CapturedBlendTopology;

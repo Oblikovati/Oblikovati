@@ -32,4 +32,25 @@ impl DocumentSnapshot {
             ids,
         )
     }
+
+    /// Replace an existing Hole definition in place; example: `snapshot.edit_hole(id, definition)?`.
+    pub fn edit_hole(
+        &mut self,
+        feature: FeatureId,
+        definition: HoleDefinition,
+    ) -> Result<(), HistoryError> {
+        let reads = definition.reads();
+        self.work_geometry
+            .replace(
+                feature,
+                PartFeatureDefinition::Hole(Box::new(definition)),
+                reads,
+            )
+            .map_err(|cause| {
+                HistoryError::PartProgram(crate::feature::part::PartFeatureProgramError::Sequence(
+                    cause,
+                ))
+            })
+            .map(|_| ())
+    }
 }

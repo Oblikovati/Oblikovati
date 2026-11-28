@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Use mapping-valued Hole inputs so nested native YAML recipes remain portable (#4093).
-use super::{DatumLength, HoleExtent, HolePosition};
+use super::{DatumLength, HoleExtent, HolePosition, HoleTerminationSurface};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 #[derive(Serialize, Deserialize)]
@@ -36,6 +36,7 @@ enum PositionValue {
 enum ExtentValue {
     ThroughAll,
     Distance(LengthValue),
+    ToSurface(HoleTerminationSurface),
 }
 
 pub(super) mod length {
@@ -82,6 +83,7 @@ pub(super) mod extent {
         let value = match value {
             HoleExtent::ThroughAll => ExtentValue::ThroughAll,
             HoleExtent::Distance(depth) => ExtentValue::Distance((*depth).into()),
+            HoleExtent::ToSurface(surface) => ExtentValue::ToSurface(surface.clone()),
         };
         value.serialize(serializer)
     }
@@ -91,6 +93,7 @@ pub(super) mod extent {
         Ok(match ExtentValue::deserialize(deserializer)? {
             ExtentValue::ThroughAll => HoleExtent::ThroughAll,
             ExtentValue::Distance(depth) => HoleExtent::Distance(depth.into()),
+            ExtentValue::ToSurface(surface) => HoleExtent::ToSurface(surface),
         })
     }
 }
