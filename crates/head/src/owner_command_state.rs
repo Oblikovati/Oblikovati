@@ -286,6 +286,8 @@ impl<
             direct_edit_pick: self.gui_direct_edit_pick(document, session.generation()),
             split_preview: self.gui_split_preview(document, session.generation()),
             split_pick: self.gui_split_pick(document, session.generation()),
+            surface_trim_preview: self.gui_surface_trim_preview(document, session.generation()),
+            surface_trim_pick: self.gui_surface_trim_pick(document, session.generation()),
             mark_eligibility: self.part_mark_eligibility(document),
             mark_preview: self.gui_mark_preview(document, session.generation()),
             mark_face_pick: self.gui_mark_face_pick(document, session.generation()),

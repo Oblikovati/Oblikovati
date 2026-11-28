@@ -68,6 +68,7 @@ pub(crate) fn feature_glyph(kind: &str) -> Option<IconGlyph> {
         "Chamfer" => IconGlyph::Chamfer,
         "Shell" => IconGlyph::Shell,
         "Split" => IconGlyph::Split,
+        "Trim" | "Surface Trim" => IconGlyph::TrimSurface,
         "Finish" => IconGlyph::Finish,
         "Extend Surface" => IconGlyph::ExtendSurface,
         "Boundary Patch" => IconGlyph::BoundaryPatch,

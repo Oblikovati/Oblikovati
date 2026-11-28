@@ -167,6 +167,12 @@ macro_rules! desktop_extrusion_work {
         ) -> Result<bool, String> {
             self.split_command(action)
         }
+        fn surface_trim_from_gui(
+            &mut self,
+            action: oblikovati_gui::GuiSurfaceTrimAction,
+        ) -> Result<bool, String> {
+            self.surface_trim_command(action)
+        }
         fn mark_from_gui(&mut self, action: oblikovati_gui::GuiMarkAction) -> Result<bool, String> {
             self.mark_command(action)
         }

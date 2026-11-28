@@ -165,6 +165,7 @@ pub(super) fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
         | GuiShellAction::ThickenOffset(_)
         | GuiShellAction::Stitch(_)
         | GuiShellAction::Split(_)
+        | GuiShellAction::SurfaceTrim(_)
         | GuiShellAction::Mark(_)
         | GuiShellAction::Finish(_)
         | GuiShellAction::RuledSurface(_)

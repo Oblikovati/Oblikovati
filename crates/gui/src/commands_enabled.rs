@@ -360,6 +360,7 @@ impl GuiShellAction {
             | Self::Stitch(_)
             | Self::DirectEdit(_)
             | Self::Split(_)
+            | Self::SurfaceTrim(_)
             | Self::Mark(_)
             | Self::Finish(_)
             | Self::RuledSurface(_)

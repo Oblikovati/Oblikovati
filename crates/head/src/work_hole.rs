@@ -87,6 +87,15 @@ macro_rules! hole_work_methods {
         ) -> Result<bool, String> {
             Err(format!("split {action:?}: expected a certified part owner"))
         }
+        /// Dispatch a Trim Surface dialog action; example: `work.surface_trim_from_gui(action)?`.
+        fn surface_trim_from_gui(
+            &mut self,
+            action: oblikovati_gui::GuiSurfaceTrimAction,
+        ) -> Result<bool, String> {
+            Err(format!(
+                "surface trim {action:?}: expected a certified part owner"
+            ))
+        }
         /// Dispatch a Mark Properties panel action; example: `work.mark_from_gui(action)?`.
         fn mark_from_gui(&mut self, action: oblikovati_gui::GuiMarkAction) -> Result<bool, String> {
             Err(format!("mark {action:?}: expected a certified part owner"))
@@ -229,6 +238,12 @@ macro_rules! forward_hole_work_methods {
             action: oblikovati_gui::GuiSplitAction,
         ) -> Result<bool, String> {
             self.$owner.split_from_gui(action)
+        }
+        fn surface_trim_from_gui(
+            &mut self,
+            action: oblikovati_gui::GuiSurfaceTrimAction,
+        ) -> Result<bool, String> {
+            self.$owner.surface_trim_from_gui(action)
         }
         fn mark_from_gui(&mut self, action: oblikovati_gui::GuiMarkAction) -> Result<bool, String> {
             self.$owner.mark_from_gui(action)

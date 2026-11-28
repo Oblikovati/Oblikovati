@@ -373,6 +373,7 @@ pub enum GuiShellAction {
     Stitch(crate::GuiStitchAction),
     DirectEdit(crate::GuiDirectEditAction),
     Split(crate::GuiSplitAction),
+    SurfaceTrim(crate::GuiSurfaceTrimAction),
     Mark(crate::GuiMarkAction),
     Finish(crate::GuiFinishAction),
     RuledSurface(crate::GuiRuledSurfaceAction),

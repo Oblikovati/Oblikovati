@@ -74,6 +74,8 @@ pub struct GuiModelBrowser {
     pub direct_edit_edits: std::collections::BTreeMap<FeatureId, crate::GuiDirectEditEditSeed>,
     /// Authored options for editable Split features.
     pub split_edits: std::collections::BTreeMap<FeatureId, crate::GuiSplitEditSeed>,
+    /// Authored options for editable Surface Trim features.
+    pub surface_trim_edits: std::collections::BTreeMap<FeatureId, crate::GuiSurfaceTrimEditSeed>,
     /// Authored options for editable Mark features.
     pub mark_edits: std::collections::BTreeMap<FeatureId, crate::GuiMarkEditSeed>,
     /// Authored options for editable Finish features.
