@@ -113,6 +113,12 @@ macro_rules! desktop_extrusion_work {
         fn slot_from_gui(&mut self, action: oblikovati_gui::GuiSlotAction) -> Result<bool, String> {
             self.slot_command(action)
         }
+        fn thread_from_gui(
+            &mut self,
+            action: oblikovati_gui::GuiThreadAction,
+        ) -> Result<bool, String> {
+            self.thread_command(action)
+        }
         fn fillet_v2_from_gui(
             &mut self,
             action: oblikovati_gui::GuiFilletV2Action,

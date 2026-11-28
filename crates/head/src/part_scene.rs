@@ -445,28 +445,9 @@ fn resolved_body_color(
         .color;
     Ok([color.r, color.g, color.b, 1.])
 }
-pub(crate) fn render_part_scene(
-    evaluated: &oblikovati_model::feature::part::PartFeatureEvaluation<
-        NamedSolid,
-        oblikovati_martensite::EvaluationFailure,
-    >,
-    source: (u64, u64),
-    style: impl FnMut(&NamedSolid) -> Result<Option<[f32; 4]>, String>,
-) -> Result<HeadSceneUpdate, String> {
-    let presentation =
-        ViewportScene::from_part_evaluation_styled(evaluated, DISPLAY_MESH, [0., 0., 1.], style)?;
-    Ok(HeadSceneUpdate {
-        scene: presentation.scene,
-        status: HeadSceneStatus {
-            source: Some(source),
-            cached_assembly: false,
-            visible_bodies: presentation.visible_bodies,
-            health: evaluated.health().to_vec(),
-            presentation_declines: presentation.declines,
-            scene_errors: Vec::new(),
-        },
-    })
-}
+#[cfg(test)]
+pub(crate) use face_display::THREAD_OVERLAY_COLOR;
+pub(crate) use face_display::render_part_scene;
 
 mod preview_edit;
 pub(crate) use preview_edit::FeatureEditPreviewError;

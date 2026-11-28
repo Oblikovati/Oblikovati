@@ -77,6 +77,14 @@ impl<
             super::owner_blend::owner_fillet_v2::edit_seeds(snapshot, session.generation());
         browser.chamfer_v2_edits =
             super::owner_blend::owner_chamfer_v2::edit_seeds(snapshot, session.generation());
+        if let Ok(identity) = self.files.workspace().identity(document) {
+            browser.thread_edits = super::owner_blend::owner_thread::edit_seeds(
+                snapshot,
+                self.part_scenes.current(session).ok(),
+                session.history(),
+                identity.internal_name,
+            );
+        }
         browser.occurrences = occurrences::browser_occurrences(&self.files, document)?;
         browser.selected_occurrence =
             self.selected_occurrence.as_ref().and_then(|(owner, path)| {
@@ -387,6 +395,7 @@ fn feature_kind_name(
         Chamfer(_) => "Chamfer",
         oblikovati_model::feature::part::PartFeatureDefinition::Hole(_) => "Hole",
         oblikovati_model::feature::part::PartFeatureDefinition::Slot(_) => "Slot",
+        oblikovati_model::feature::part::PartFeatureDefinition::Thread(_) => "Thread",
         DeleteBody(_) => "Delete Body",
         oblikovati_model::feature::part::PartFeatureDefinition::Fixed(_)
         | oblikovati_model::feature::part::PartFeatureDefinition::Offset { .. }

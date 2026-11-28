@@ -20,6 +20,8 @@ mod solid_import;
 mod solid_rib;
 #[path = "../slot/steps.rs"]
 mod solid_slot;
+#[path = "../thread/steps.rs"]
+mod solid_thread;
 #[path = "../unwrap/steps.rs"]
 mod solid_unwrap;
 

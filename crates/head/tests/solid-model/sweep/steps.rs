@@ -273,8 +273,13 @@ fn enter_invalid_twist(world: &mut ApplicationWorld) {
 
 #[then("an error indicator appears and OK is disabled")]
 fn invalid_twist_disables_accept(world: &mut ApplicationWorld) {
-    assert!(matches!(world.state().sweep_preview.unwrap().result,
-        GuiSweepPreview::Failed(cause) if cause.contains("sweep twist \"q\"")));
+    if diagnostics::window_geometry("Thread").is_some() {
+        assert!(world.window_text("Thread").contains('!') && !world.run_is_enabled("OK"));
+        return;
+    }
+    assert!(
+        matches!(world.state().sweep_preview.unwrap().result, GuiSweepPreview::Failed(cause) if cause.contains("sweep twist \"q\""))
+    );
     assert!(super::world::squeezed(&world.window_text("Sweep")).contains("sweeptwist"));
     assert!(!world.run_is_enabled("OK"));
 }
@@ -292,17 +297,14 @@ fn valid_twist_enables_accept(world: &mut ApplicationWorld) {
 }
 
 fn preview_width(world: &mut ApplicationWorld) -> f32 {
-    let (left, right) = world
-        .app()
-        .window
-        .scene_triangles
-        .iter()
-        .filter(|triangle| triangle.color == crate::part_scene::NEW_SOLID_PREVIEW)
-        .flat_map(|triangle| triangle.positions.map(|point| point[0]))
-        .fold((f32::INFINITY, f32::NEG_INFINITY), |(left, right), x| {
-            (left.min(x), right.max(x))
+    let xs = world.app().window.scene_triangles.iter();
+    let (l, r) = xs
+        .filter(|t| t.color == crate::part_scene::NEW_SOLID_PREVIEW)
+        .flat_map(|t| t.positions.map(|p| p[0]))
+        .fold((f32::INFINITY, f32::NEG_INFINITY), |(l, r), x| {
+            (l.min(x), r.max(x))
         });
-    right - left
+    r - l
 }
 
 #[given("Sweep1 is open for editing with its profile and path selected")]
