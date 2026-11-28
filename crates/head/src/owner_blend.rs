@@ -21,6 +21,8 @@ pub(super) mod owner_fillet_v2;
 pub(super) mod owner_hole;
 #[path = "owner_import.rs"]
 pub(super) mod owner_import;
+#[path = "owner_mark.rs"]
+pub(super) mod owner_mark;
 #[path = "owner_move_body.rs"]
 mod owner_move_body;
 #[path = "owner_revolve.rs"]
@@ -56,6 +58,7 @@ pub(super) struct CreateFeatureState {
     pub(super) combine: owner_combine::CombineOwnerState,
     pub(super) draft: owner_draft::DraftOwnerState,
     pub(super) thread: owner_thread::ThreadOwnerState,
+    pub(super) mark: owner_mark::MarkOwnerState,
     pub(super) fillet_v2: owner_fillet_v2::FilletV2OwnerState,
     pub(super) chamfer_v2: owner_chamfer_v2::ChamferV2OwnerState,
     pub(super) shell_v2: owner_shell_v2::ShellV2OwnerState,

@@ -5,6 +5,7 @@ use oblikovati_model::{feature::FeatureId, history::DocumentEditHistory, identit
 
 pub(super) type FaceSelection = (u64, u64, Vec<(FeatureId, Vec<u8>)>, [u8; 3]);
 pub(crate) const THREAD_OVERLAY_COLOR: [f32; 4] = [0.22, 0.25, 0.30, 1.0];
+pub(crate) const MARK_OVERLAY_COLOR: [f32; 4] = [0.51, 0.45, 0.98, 1.0];
 type NamedFaces = Result<Vec<oblikovati_martensite::NamedFaceMesh>, String>;
 
 pub(super) fn append_thread_overlays(scene: &mut ViewportScene, body: &NamedSolid) {
@@ -13,6 +14,14 @@ pub(super) fn append_thread_overlays(scene: &mut ViewportScene, body: &NamedSoli
             positions: tri.positions.map(|p| p.map(|c| c as f32)),
             normals: tri.normals.map(|ns| ns.map(|n| n.map(|c| c as f32))),
             color: THREAD_OVERLAY_COLOR,
+            face_index: None,
+        });
+    }
+    for tri in body.mark_overlay_triangles() {
+        scene.triangles.push(oblikovati_viewport::ViewportTriangle {
+            positions: tri.positions.map(|p| p.map(|c| c as f32)),
+            normals: tri.normals.map(|ns| ns.map(|n| n.map(|c| c as f32))),
+            color: MARK_OVERLAY_COLOR,
             face_index: None,
         });
     }
@@ -39,6 +48,14 @@ pub(crate) fn render_part_scene(
                         positions: tri.positions.map(|p| p.map(|c| c as f32)),
                         normals: tri.normals.map(|ns| ns.map(|n| n.map(|c| c as f32))),
                         color: THREAD_OVERLAY_COLOR,
+                        face_index: None,
+                    });
+                }
+                for tri in body.mark_overlay_triangles() {
+                    overlay_tris.push(oblikovati_viewport::ViewportTriangle {
+                        positions: tri.positions.map(|p| p.map(|c| c as f32)),
+                        normals: tri.normals.map(|ns| ns.map(|n| n.map(|c| c as f32))),
+                        color: MARK_OVERLAY_COLOR,
                         face_index: None,
                     });
                 }

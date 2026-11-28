@@ -35,6 +35,10 @@ macro_rules! hole_work_methods {
                 "thread {action:?}: expected a certified part owner"
             ))
         }
+        /// Dispatch a Mark Properties panel action; example: `work.mark_from_gui(action)?`.
+        fn mark_from_gui(&mut self, action: oblikovati_gui::GuiMarkAction) -> Result<bool, String> {
+            Err(format!("mark {action:?}: expected a certified part owner"))
+        }
         /// Dispatch a Fillet v2 Properties panel action; example: `work.fillet_v2_from_gui(action)?`.
         fn fillet_v2_from_gui(
             &mut self,
@@ -88,6 +92,9 @@ macro_rules! forward_hole_work_methods {
             action: oblikovati_gui::GuiThreadAction,
         ) -> Result<bool, String> {
             self.$owner.thread_from_gui(action)
+        }
+        fn mark_from_gui(&mut self, action: oblikovati_gui::GuiMarkAction) -> Result<bool, String> {
+            self.$owner.mark_from_gui(action)
         }
         fn fillet_v2_from_gui(
             &mut self,
