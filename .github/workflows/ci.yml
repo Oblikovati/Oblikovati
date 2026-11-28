@@ -144,5 +144,12 @@ jobs:
         run: |
           channel=$(sed -n 's/^channel = "\(.*\)"/\1/p' tools/build/wasm-toolchain.toml)
           rustup toolchain install "$channel" --profile minimal --component rust-src --target wasm32-unknown-unknown
+      - name: Install WASI SDK for wasm32 Dear ImGui C++ compilation
+        run: |
+          sdk_dir="$HOME/.cache/oblikovati/wasi-sdk-34.0-x86_64-linux"
+          mkdir -p "$HOME/.cache/oblikovati"
+          curl -fsSL "https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-34/wasi-sdk-34.0-x86_64-linux.tar.gz" \
+            | tar -xz -C "$HOME/.cache/oblikovati"
+          echo "WASI_SDK_PATH=$sdk_dir" >> "$GITHUB_ENV"
       - name: Check wasm32 +atomics workspace crates
         run: cargo xtask wasm-check

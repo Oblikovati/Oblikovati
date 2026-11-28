@@ -1,26 +1,38 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//! Browser `wasm-bindgen` entry points for the Orchestrator Worker realm.
+//! Browser `wasm-bindgen` entry points driving the full Oblikovati desktop UI on WebGPU.
 #![cfg(target_arch = "wasm32")]
 
-use crate::WebSession;
+use oblikovati_head::web_host::{WebDesktopHost, WebStepOutcome};
 use oblikovati_viewport::{
-    ViewportOptions, ViewportPresentation, WebKeyEvent, WebModifiers, WebPointerEvent,
-    WebPointerKind, WebResizeEvent, WebWheelEvent,
+    ViewportEvent, ViewportOptions, ViewportRuntime, WebKeyEvent, WebModifiers, WebPointerEvent,
+    WebPointerKind, WebResizeEvent, WebWheelEvent, translate_web_key, translate_web_pointer,
+    translate_web_resize, translate_web_wheel,
     web::{WebWorkerPool, init_web_worker_pool_from_url, web_worker_pool_size},
 };
+use serde::Serialize;
 use wasm_bindgen::prelude::*;
 
-/// Orchestrator-worker owner for the Oblikovati WebAssembly + WebGPU session.
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct WebStatusSnapshot {
+    device_name: String,
+    extent: [u32; 2],
+    active_workers: usize,
+    open_documents: usize,
+}
+
+/// Orchestrator-worker owner for the full Oblikovati desktop UI running on WebAssembly + WebGPU.
 #[wasm_bindgen]
 pub struct WebCadRuntime {
-    session: WebSession,
+    host: WebDesktopHost,
     pool: Option<WebWorkerPool>,
+    dpr: f64,
 }
 
 #[wasm_bindgen]
 impl WebCadRuntime {
-    /// Initialize the compute worker pool, WebGPU driver, and bound `OffscreenCanvas` session.
-    /// Example (JS): `const cad = await WebCadRuntime.create(canvas, dpr, 4, glueUrl, true);`.
+    /// Initialize the compute worker pool, WebGPU driver, and full Oblikovati desktop UI.
+    /// Example (JS): `const cad = await WebCadRuntime.create(canvas, dpr, 4, glueUrl, false);`.
     pub async fn create(
         canvas: web_sys::OffscreenCanvas,
         device_pixel_ratio: f64,
@@ -37,54 +49,36 @@ impl WebCadRuntime {
         } else {
             None
         };
+        let dpr = if device_pixel_ratio.is_finite() && device_pixel_ratio > 0.0 {
+            device_pixel_ratio
+        } else {
+            1.0
+        };
         let options = ViewportOptions {
             validation,
             physical_device: None,
         };
-        let mut session = WebSession::new_offscreen_canvas(
-            options,
-            "#oblikovati-canvas",
-            canvas,
-            device_pixel_ratio,
-        )
-        .await
-        .map_err(|error| JsValue::from_str(&error))?;
-        session
-            .load_sample_part()
+        let runtime = ViewportRuntime::new_webgpu_async(options)
+            .await
             .map_err(|error| JsValue::from_str(&error))?;
-        let _ = session
-            .render_frame()
+        let view = runtime
+            .open_offscreen_canvas("#viewport", canvas, dpr)
             .map_err(|error| JsValue::from_str(&error))?;
-        Ok(Self { session, pool })
+        let host = WebDesktopHost::new(runtime, view, validation)
+            .map_err(|error| JsValue::from_str(&error))?;
+        Ok(Self { host, pool, dpr })
     }
 
-    /// Execute a JSON-encoded [`crate::WebCommand`] and return the updated JSON state snapshot.
-    pub fn dispatch_command_json(&mut self, command_json: &str) -> Result<String, JsValue> {
-        self.session
-            .execute_command_json(command_json)
-            .map_err(|error| JsValue::from_str(&error))
-    }
-
-    /// Load an `.opd` document from raw bytes into the in-memory browser workspace.
-    pub fn load_document_bytes(&mut self, name: &str, bytes: &[u8]) -> Result<String, JsValue> {
-        self.session
-            .open_document_bytes(name, bytes)
+    /// Advance the desktop UI and owner loop by one tick; returns next wake delay in ms or `-1`.
+    pub fn tick(&mut self) -> Result<i32, JsValue> {
+        let outcome = self
+            .host
+            .step()
             .map_err(|error| JsValue::from_str(&error))?;
-        self.session
-            .snapshot_json()
-            .map_err(|error| JsValue::from_str(&error))
+        Ok(encode_wake_ms(outcome))
     }
 
-    /// Export the active document as `.opd` bytes for browser download.
-    pub fn export_document_bytes(&mut self) -> Result<js_sys::Uint8Array, JsValue> {
-        let (_name, bytes) = self
-            .session
-            .export_active_document_bytes()
-            .map_err(|error| JsValue::from_str(&error))?;
-        Ok(js_sys::Uint8Array::from(bytes.as_slice()))
-    }
-
-    /// Forward a canvas pointer event (`kind`: 0=down, 1=up, 2=move); returns true if redraw needed.
+    /// Forward a browser pointer event (`kind`: 0=down, 1=up, 2=move); returns next wake delay ms.
     #[allow(clippy::too_many_arguments)]
     pub fn pointer_event(
         &mut self,
@@ -96,7 +90,7 @@ impl WebCadRuntime {
         control: bool,
         alt: bool,
         meta: bool,
-    ) -> Result<bool, JsValue> {
+    ) -> Result<i32, JsValue> {
         let pointer_kind = match kind {
             0 => WebPointerKind::Down,
             1 => WebPointerKind::Up,
@@ -114,31 +108,33 @@ impl WebCadRuntime {
                 meta,
             },
         };
-        self.session
-            .handle_pointer(event)
-            .map_err(|error| JsValue::from_str(&error))
+        if let Some(translated) = translate_web_pointer(event, self.dpr) {
+            self.host.push_event(translated);
+        }
+        self.tick()
     }
 
-    /// Forward a canvas wheel event; returns true if the camera moved and a redraw is needed.
+    /// Forward a browser wheel event; returns next wake delay in ms or `-1`.
     pub fn wheel_event(
         &mut self,
         css_x: f64,
         css_y: f64,
         delta_y: f64,
         delta_mode: u32,
-    ) -> Result<bool, JsValue> {
+    ) -> Result<i32, JsValue> {
         let event = WebWheelEvent {
             css_x,
             css_y,
             delta_y,
             delta_mode,
         };
-        self.session
-            .handle_wheel(event)
-            .map_err(|error| JsValue::from_str(&error))
+        if let Some(translated) = translate_web_wheel(event, self.dpr) {
+            self.host.push_event(translated);
+        }
+        self.tick()
     }
 
-    /// Forward a keyboard event; returns true if the scene or camera changed.
+    /// Forward a browser keyboard event (both physical key and text); returns next wake delay ms.
     #[allow(clippy::too_many_arguments)]
     pub fn key_event(
         &mut self,
@@ -149,7 +145,7 @@ impl WebCadRuntime {
         control: bool,
         alt: bool,
         meta: bool,
-    ) -> Result<bool, JsValue> {
+    ) -> Result<i32, JsValue> {
         let event = WebKeyEvent {
             code,
             key,
@@ -161,9 +157,16 @@ impl WebCadRuntime {
                 meta,
             },
         };
-        self.session
-            .handle_key(&event)
-            .map_err(|error| JsValue::from_str(&error))
+        for translated in translate_web_key(&event) {
+            self.host.push_event(translated);
+        }
+        self.tick()
+    }
+
+    /// Forward canvas focus or blur state to the desktop UI.
+    pub fn focus_event(&mut self, focused: bool) -> Result<i32, JsValue> {
+        self.host.push_event(ViewportEvent::Focus(focused));
+        self.tick()
     }
 
     /// Resize the WebGPU canvas from CSS dimensions and device pixel ratio.
@@ -173,70 +176,87 @@ impl WebCadRuntime {
         css_height: f64,
         device_pixel_ratio: f64,
     ) -> Result<String, JsValue> {
-        let extent = self
-            .session
-            .resize(WebResizeEvent {
-                css_width,
-                css_height,
-                device_pixel_ratio,
-            })
+        if device_pixel_ratio.is_finite() && device_pixel_ratio > 0.0 {
+            self.dpr = device_pixel_ratio;
+        }
+        let extent = translate_web_resize(WebResizeEvent {
+            css_width,
+            css_height,
+            device_pixel_ratio: self.dpr,
+        })
+        .map_err(|error| JsValue::from_str(&error))?;
+        self.host
+            .resize(extent)
             .map_err(|error| JsValue::from_str(&error))?;
+        let wake_after_ms = self.tick()?;
         Ok(format!(
-            "{{\"width\":{},\"height\":{}}}",
-            extent[0], extent[1]
+            "{{\"width\":{},\"height\":{},\"wakeAfterMs\":{}}}",
+            extent[0], extent[1], wake_after_ms
         ))
     }
 
-    /// Present the latest frame to the bound `OffscreenCanvas` without blocking readback.
-    pub fn render_frame(&mut self) -> Result<bool, JsValue> {
-        self.session
-            .render_frame()
-            .map_err(|error| JsValue::from_str(&error))
+    /// Open an uploaded `.opd` document from raw bytes into the desktop UI.
+    pub fn open_document_bytes(&mut self, name: &str, bytes: &[u8]) -> Result<i32, JsValue> {
+        self.host
+            .open_uploaded_document(name, bytes)
+            .map_err(|error| JsValue::from_str(&error))?;
+        self.tick()
     }
 
-    /// Present and asynchronously read back RGBA8 pixels for verification or thumbnail capture.
+    /// Asynchronously read back the composed RGBA8 framebuffer for E2E verification.
     pub async fn capture_rgba_async(&mut self) -> Result<js_sys::Uint8Array, JsValue> {
-        match self
-            .session
-            .present_async()
+        let _ = self
+            .host
+            .step()
+            .map_err(|error| JsValue::from_str(&error))?;
+        let capture = self
+            .host
+            .capture_async()
             .await
-            .map_err(|error| JsValue::from_str(&error))?
-        {
-            ViewportPresentation::Completed(capture) => {
-                Ok(js_sys::Uint8Array::from(capture.rgba.as_slice()))
-            }
-            ViewportPresentation::SurfaceChanged(extent) => Err(JsValue::from_str(&format!(
-                "capture surface changed to {extent:?}; retry after resize"
-            ))),
-        }
+            .map_err(|error| JsValue::from_str(&error))?;
+        Ok(js_sys::Uint8Array::from(capture.rgba.as_slice()))
     }
 
-    /// Serialize the current browser workbench snapshot to JSON.
-    pub fn state_json(&self) -> Result<String, JsValue> {
-        self.session
-            .snapshot_json()
-            .map_err(|error| JsValue::from_str(&error))
-    }
-
-    /// Return the number of active background WASM compute workers.
-    pub fn active_workers(&self) -> usize {
-        web_worker_pool_size()
+    /// Return JSON runtime diagnostics (device name, framebuffer extent, active workers).
+    pub fn status_json(&mut self) -> Result<String, JsValue> {
+        let extent = self
+            .host
+            .drawable_extent()
+            .map_err(|error| JsValue::from_str(&error))?;
+        let open_documents = self
+            .host
+            .open_document_count()
+            .map_err(|error| JsValue::from_str(&error))?;
+        let snapshot = WebStatusSnapshot {
+            device_name: self.host.device_name(),
+            extent,
+            active_workers: web_worker_pool_size(),
+            open_documents,
+        };
+        serde_json::to_string(&snapshot).map_err(|error| JsValue::from_str(&error.to_string()))
     }
 
     /// Return accumulated WebGPU validation errors as a JSON string array.
     pub fn validation_errors_json(&self) -> Result<String, JsValue> {
         let errors = self
-            .session
+            .host
             .validation_errors()
             .map_err(|error| JsValue::from_str(&error))?;
         serde_json::to_string(&errors).map_err(|error| JsValue::from_str(&error.to_string()))
     }
 
-    /// Close the viewport and terminate background compute workers cleanly.
+    /// Cleanly retire the desktop host and terminate background WASM workers.
     pub fn close(&mut self) {
-        self.session.close();
+        let _ = self.host.finish();
         if let Some(pool) = self.pool.take() {
             pool.terminate();
         }
+    }
+}
+
+fn encode_wake_ms(outcome: WebStepOutcome) -> i32 {
+    match outcome.wake_after_ms {
+        Some(ms) => i32::try_from(ms).unwrap_or(i32::MAX),
+        None => -1,
     }
 }

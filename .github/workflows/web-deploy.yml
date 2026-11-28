@@ -19,6 +19,7 @@ permissions:
 env:
   IMAGE: ghcr.io/oblikovati/app.oblikovati.org
   WASM_BINDGEN_VERSION: "0.2.130"
+  WASI_SDK_VERSION: "34.0"
 
 jobs:
   build-and-deploy:
@@ -39,18 +40,30 @@ jobs:
           channel=$(sed -n 's/^channel = "\(.*\)"/\1/p' tools/build/wasm-toolchain.toml)
           rustup toolchain install "$channel" --profile minimal --component rust-src --target wasm32-unknown-unknown
 
-      - name: Cache Cargo and wasm-bindgen build artifacts
+      - name: Cache Cargo, WASI SDK, and wasm-bindgen build artifacts
         uses: actions/cache@v4
         with:
           path: |
+            ~/.cache/oblikovati/wasi-sdk-${{ env.WASI_SDK_VERSION }}-x86_64-linux
             ~/.cargo/bin/wasm-bindgen
             ~/.cargo/registry/index/
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: web-deploy-${{ runner.os }}-${{ hashFiles('Cargo.lock', 'tools/build/wasm-toolchain.toml') }}
+          key: web-deploy-${{ runner.os }}-${{ env.WASI_SDK_VERSION }}-${{ hashFiles('Cargo.lock', 'tools/build/wasm-toolchain.toml') }}
           restore-keys: |
-            web-deploy-${{ runner.os }}-
+            web-deploy-${{ runner.os }}-${{ env.WASI_SDK_VERSION }}-
+
+      - name: Install WASI SDK for wasm32 Dear ImGui C++ compilation
+        shell: bash
+        run: |
+          sdk_dir="$HOME/.cache/oblikovati/wasi-sdk-${WASI_SDK_VERSION}-x86_64-linux"
+          if [ ! -x "$sdk_dir/bin/clang++" ]; then
+            mkdir -p "$HOME/.cache/oblikovati"
+            curl -fsSL "https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-34/wasi-sdk-${WASI_SDK_VERSION}-x86_64-linux.tar.gz" \
+              | tar -xz -C "$HOME/.cache/oblikovati"
+          fi
+          echo "WASI_SDK_PATH=$sdk_dir" >> "$GITHUB_ENV"
 
       - name: Install wasm-bindgen-cli
         shell: bash
