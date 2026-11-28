@@ -261,7 +261,19 @@ pub(crate) fn draw_panel_content(
                     index,
                 );
                 owners.icons.cursor(ui, origin, position);
-                muted::muted_command(ui, label, NOT_PORTED, owners.icons, Some(icon), false, size);
+                if label == "Point" {
+                    crate::work_point::ribbon_menu::draw(ui, state, owners.icons, size, actions);
+                } else {
+                    muted::muted_command(
+                        ui,
+                        label,
+                        NOT_PORTED,
+                        owners.icons,
+                        Some(icon),
+                        false,
+                        size,
+                    );
+                }
             }
         }
         RibbonPanel::Sketch => start_sketch_command(ui, state, owners, actions),

@@ -279,6 +279,11 @@ pub use face_properties::GuiFaceProperties;
 mod marking_menu;
 mod marking_menu_layout;
 mod offset_plane;
+mod work_point;
+pub use work_point::{
+    GuiGroundedPointState, GuiWorkPointAction, GuiWorkPointMarker, GuiWorkPointMode,
+    GuiWorkPointState,
+};
 mod part_context_menu;
 pub use dimensions::{GuiDimensionAction, GuiDimensionDraft};
 

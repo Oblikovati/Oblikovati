@@ -222,6 +222,10 @@ pub struct GuiCommandState {
     pub sketch_text_field_sources: Option<std::sync::Arc<crate::GuiSketchTextFieldSources>>,
     pub sketch_text_editor_fields: Option<std::sync::Arc<crate::GuiSketchTextEditorFields>>,
     pub origin_planes: Vec<crate::GuiOriginPlane>,
+    /// Active Work Point construction workflow state and grounded triad projection.
+    pub work_point: Option<crate::GuiWorkPointState>,
+    /// Visible evaluated Work Points projected into framebuffer pixels.
+    pub work_points: Vec<crate::GuiWorkPointMarker>,
     /// The chosen browser row's outline in the view, in pixels: a solid's edges or a sketch.
     pub feature_edges: Vec<[[i32; 2]; 2]>,
     /// Projected display segments grouped by the selected exact edge.

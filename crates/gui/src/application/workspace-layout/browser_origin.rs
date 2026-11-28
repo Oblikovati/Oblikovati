@@ -60,9 +60,11 @@ pub(crate) fn origin_row(
     let selected = view.selected_origin_row == Some(row);
     if ui.selectable_config(label).selected(selected).build() {
         choose_origin_row(state, view, row, actions);
-        view.picked_plane_reference =
-            origin_plane_at_row(row).map(|plane| plane.work_reference().to_owned());
-        view.picked_axis_reference = origin_axis_at_row(row);
+        let plane = origin_plane_at_row(row);
+        let axis = origin_axis_at_row(row);
+        view.picked_plane_reference = plane.map(|plane| plane.work_reference().to_owned());
+        view.picked_axis_reference = axis;
+        forward_origin_pick_to_work_point(state, plane, axis, row, actions);
     }
     if ui.is_item_hovered() && ui.is_mouse_clicked(MouseButton::Right) {
         choose_origin_row(state, view, row, actions);
@@ -271,6 +273,37 @@ pub(crate) fn draw_selected_origin(
     }
     if let Some(row) = selected {
         draw_origin_row(ui, request, row, PLANE_FILL, ACCENT, view);
+    }
+    crate::work_point::overlay::draw_viewport_overlays(ui, request);
+}
+fn forward_origin_pick_to_work_point(
+    state: &GuiCommandState,
+    plane: Option<crate::GuiOriginPlaneKind>,
+    axis: Option<oblikovati_model::feature::work_axis::WorkAxisReference>,
+    row: usize,
+    actions: &mut Vec<GuiShellAction>,
+) {
+    let Some(wp) = state.work_point.as_ref() else {
+        return;
+    };
+    if let Some(plane) = plane
+        && wp.mode.accepts_plane()
+    {
+        actions.push(GuiShellAction::WorkPoint(
+            crate::GuiWorkPointAction::PickOriginPlane(plane),
+        ));
+    } else if let Some(axis) = axis
+        && wp.mode.accepts_axis()
+    {
+        actions.push(GuiShellAction::WorkPoint(
+            crate::GuiWorkPointAction::PickOriginAxis(axis),
+        ));
+    } else if *crate::browser::ORIGIN_ROWS.get(row).unwrap_or(&"") == "Center Point"
+        && wp.mode.accepts_point()
+    {
+        actions.push(GuiShellAction::WorkPoint(
+            crate::GuiWorkPointAction::PickOriginCenter,
+        ));
     }
 }
 fn draw_origin_row(

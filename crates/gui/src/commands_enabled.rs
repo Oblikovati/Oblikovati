@@ -359,6 +359,7 @@ impl GuiShellAction {
             | Self::DirectEdit(_)
             | Self::Split(_)
             | Self::Mark(_)
+            | Self::WorkPoint(_)
             | Self::FilletV2(_)
             | Self::ChamferV2(_)
             | Self::ShellV2(_) => false,
