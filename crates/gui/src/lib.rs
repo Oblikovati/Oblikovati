@@ -163,6 +163,7 @@ pub use fillet_panel::{
 mod combine_dialog;
 mod delete_face_dialog;
 mod dimensions;
+mod direct_edit_dialog;
 mod draft_dialog;
 mod extrude_dialog;
 #[cfg(test)]
@@ -180,6 +181,10 @@ pub use combine_dialog::{
 pub use delete_face_dialog::{
     GuiDeleteFaceAction, GuiDeleteFaceEditSeed, GuiDeleteFacePick, GuiDeleteFacePreview,
     GuiDeleteFacePreviewState, GuiDeleteFaceRequest,
+};
+pub use direct_edit_dialog::{
+    GuiDirectEditAction, GuiDirectEditEditSeed, GuiDirectEditPick, GuiDirectEditPreview,
+    GuiDirectEditPreviewState, GuiDirectEditRequest,
 };
 pub use draft_dialog::{
     GuiDraftAction, GuiDraftEditSeed, GuiDraftPick, GuiDraftPickTarget, GuiDraftPreview,

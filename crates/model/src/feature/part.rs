@@ -16,6 +16,7 @@ mod checkpoints;
 mod combine_evaluation;
 mod delete_face_evaluation;
 
+mod direct_edit_evaluation;
 mod hole_evaluation;
 mod move_body_evaluation;
 pub use checkpoints::{CheckpointedPart, PartReplayCheckpoints};
@@ -59,6 +60,7 @@ pub enum PartFeatureDefinition {
     Hole(Box<super::hole::HoleDefinition>),
     Slot(Box<super::slot::SlotDefinition>),
     Combine(Box<super::combine::CombineDefinition>),
+    DirectEdit(Box<super::direct_edit::DirectEditDefinition>),
     Draft(Box<super::draft::DraftDefinition>),
     Thread(Box<super::thread::ThreadDefinition>),
     DeleteFace(Box<super::delete_face::DeleteFaceDefinition>),
@@ -116,6 +118,7 @@ impl PartFeatureDefinition {
             Self::Hole(_) => "hole",
             Self::Slot(_) => "slot",
             Self::Combine(_) => "combine",
+            Self::DirectEdit(_) => "direct-edit",
             Self::Draft(_) => "draft",
             Self::Thread(_) => "thread",
             Self::DeleteFace(_) => "delete-face",
@@ -152,6 +155,7 @@ impl PartFeatureDefinition {
                 | Self::Hole(_)
                 | Self::Slot(_)
                 | Self::Combine(_)
+                | Self::DirectEdit(_)
                 | Self::Draft(_)
                 | Self::Thread(_)
                 | Self::DeleteFace(_)

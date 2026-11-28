@@ -10,6 +10,7 @@ use oblikovati_model::identity::ReferenceEnvelope;
 mod chamfer_v2;
 mod combine;
 mod delete_face;
+mod direct_edit;
 mod draft;
 pub(super) mod extrusion_boolean;
 mod fillet_topology;

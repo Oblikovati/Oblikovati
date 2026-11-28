@@ -13,6 +13,8 @@ mod chamfer_v2;
 mod combine_replay;
 #[path = "delete_face_replay.rs"]
 mod delete_face_replay;
+#[path = "direct_edit_replay.rs"]
+mod direct_edit_replay;
 #[path = "draft_replay.rs"]
 mod draft_replay;
 #[path = "fillet_v2.rs"]

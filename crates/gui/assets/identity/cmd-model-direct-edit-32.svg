@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <g id="layer-body">
+    <polygon class="f-icon-body-top s-icon-body-stroke" points="14.5,9.3 23,13.5 14.5,17.7 6,13.5" fill="#D2D7E2" stroke="#181B22" stroke-width="1.15" stroke-linejoin="round"/>
+    <polygon class="f-icon-body-front s-icon-body-stroke" points="6,13.5 14.5,17.7 14.5,27.2 6,23" fill="#9EA6B8" stroke="#181B22" stroke-width="1.15" stroke-linejoin="round"/>
+    <polygon class="f-icon-body-side s-icon-body-stroke" points="23,13.5 14.5,17.7 14.5,27.2 23,23" fill="#677084" stroke="#181B22" stroke-width="1.15" stroke-linejoin="round"/>
+  </g>
+  <g id="layer-accent">
+    <polygon class="f-icon-sel-top s-icon-sel-stroke" points="14.5,9.3 23,13.5 14.5,17.7 6,13.5" fill="#74EFE0" stroke="#0B2926" stroke-width="1.15"/>
+    <path class="s-icon-cutout" d="M14.5,13.5 L14.5,3.8 M15.96,6.19 L14.5,3.8 L13.04,6.19" fill="none" stroke="#121317" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    <path class="s-vp-triad-y" d="M14.5,13.5 L14.5,3.8 M15.96,6.19 L14.5,3.8 L13.04,6.19" fill="none" stroke="#22C55E" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path class="s-icon-cutout" d="M14.5,13.5 L25.5,13.5 M23.11,14.96 L25.5,13.5 L23.11,12.04" fill="none" stroke="#121317" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    <path class="s-vp-triad-x" d="M14.5,13.5 L25.5,13.5 M23.11,14.96 L25.5,13.5 L23.11,12.04" fill="none" stroke="#EF4444" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

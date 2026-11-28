@@ -59,6 +59,7 @@ pub enum PartFeatureFailure<Failure> {
     DraftInput(String),
     ThreadInput(String),
     DeleteFaceInput(String),
+    DirectEditInput(String),
     ShellInput(String),
     MoveBodyInput(String),
     Unsupported(String),
@@ -434,6 +435,7 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
             PartFeatureDefinition::ThickenOffset(definition) => {
                 self.evaluate_thicken_offset(backend, id, definition)
             }
+            PartFeatureDefinition::DirectEdit(def) => self.evaluate_direct_edit(backend, id, def),
             definition @ (PartFeatureDefinition::Mirror(_)
             | PartFeatureDefinition::CircularPattern(_)
             | PartFeatureDefinition::RectangularPattern(_)) => {

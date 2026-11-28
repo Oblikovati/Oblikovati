@@ -210,6 +210,7 @@ fn populate_browser<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
     browser.hole_edits = super::owner_blend::owner_hole::edit_seeds(snapshot);
     browser.slot_edits = super::owner_blend::owner_slot::edit_seeds(snapshot);
     browser.combine_edits = super::owner_blend::owner_combine::edit_seeds(snapshot);
+    browser.direct_edit_edits = super::owner_blend::owner_direct_edit::edit_seeds(snapshot);
     browser.draft_edits = super::owner_blend::owner_draft::edit_seeds(snapshot);
     browser.delete_face_edits = super::owner_blend::owner_delete_face::edit_seeds(snapshot);
     browser.thicken_offset_edits = super::owner_blend::owner_thicken_offset::edit_seeds(snapshot);

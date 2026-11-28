@@ -21,6 +21,7 @@ pub enum WorkPlaneDefinitionRecipe {
     Hole(crate::feature::hole::HoleRecipe),
     Slot(crate::feature::slot::SlotRecipe),
     Combine(crate::feature::combine::CombineRecipe),
+    DirectEdit(crate::feature::direct_edit::DirectEditRecipe),
     Draft(crate::feature::draft::DraftRecipe),
     Thread(crate::feature::thread::ThreadRecipe),
     DeleteFace(crate::feature::delete_face::DeleteFaceRecipe),
@@ -80,6 +81,7 @@ impl WorkPlaneDefinition {
             Self::Hole(definition) => Source::Hole(definition.recipe()),
             Self::Slot(definition) => Source::Slot(definition.recipe()),
             Self::Combine(definition) => Source::Combine(definition.recipe()),
+            Self::DirectEdit(definition) => Source::DirectEdit(definition.recipe()),
             Self::Draft(definition) => Source::Draft(definition.recipe()),
             Self::Thread(definition) => Source::Thread(definition.recipe()),
             Self::DeleteFace(definition) => Source::DeleteFace(definition.recipe()),
@@ -160,6 +162,11 @@ fn restore_definition(
         Combine(recipe) => crate::feature::combine::CombineDefinition::from_recipe(recipe)
             .map(|definition| WorkPlaneDefinition::Combine(Box::new(definition)))
             .map_err(WorkPlaneError::BodyReference),
+        DirectEdit(recipe) => {
+            crate::feature::direct_edit::DirectEditDefinition::from_recipe(recipe)
+                .map(|definition| WorkPlaneDefinition::DirectEdit(Box::new(definition)))
+                .map_err(WorkPlaneError::BodyReference)
+        }
         Draft(recipe) => crate::feature::draft::DraftDefinition::from_recipe(recipe)
             .map(|definition| WorkPlaneDefinition::Draft(Box::new(definition)))
             .map_err(WorkPlaneError::BodyReference),
@@ -308,6 +315,7 @@ impl WorkPlaneDefinitionRecipe {
             Self::Unwrap(_) => 45,
             Self::Slot(_) => 46,
             Self::Combine(_) => 49,
+            Self::DirectEdit(_) => 52,
             Self::Draft(_) => 47,
             Self::Thread(_) => 48,
             Self::DeleteFace(_) => 53,
@@ -375,6 +383,7 @@ impl WorkPlaneDefinitionRecipe {
             Self::Unwrap(_) => 51,
             Self::Slot(_) => 53,
             Self::Combine(_) => 59,
+            Self::DirectEdit(_) => 62,
             Self::Draft(_) => 57,
             Self::Thread(_) => 58,
             Self::DeleteFace(_) => 63,

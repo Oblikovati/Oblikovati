@@ -161,6 +161,8 @@ pub struct GuiCommandState {
     pub delete_face_pick: Option<crate::GuiDeleteFacePick>,
     pub thicken_offset_preview: Option<crate::GuiThickenOffsetPreviewState>,
     pub thicken_offset_pick: Option<crate::GuiThickenOffsetPick>,
+    pub direct_edit_preview: Option<crate::GuiDirectEditPreviewState>,
+    pub direct_edit_pick: Option<crate::GuiDirectEditPick>,
     pub fillet_v2_preview: Option<crate::GuiFilletV2PreviewState>,
     pub fillet_v2_pick: Option<crate::GuiFilletV2Pick>,
     pub chamfer_v2_preview: Option<crate::GuiChamferV2PreviewState>,

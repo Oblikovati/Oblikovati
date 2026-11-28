@@ -442,6 +442,14 @@ impl PartFeatureEvaluator for CertifiedNamedSolidEvaluator<'_> {
     ) -> Result<NamedSolid, PartFeatureFailure<EvaluationFailure>> {
         self.evaluate_named_thicken_offset(feature, body, input)
     }
+    fn evaluate_direct_edit(
+        &mut self,
+        feature: FeatureId,
+        body: &NamedSolid,
+        input: oblikovati_model::feature::direct_edit::ResolvedDirectEdit,
+    ) -> Result<NamedSolid, PartFeatureFailure<EvaluationFailure>> {
+        self.evaluate_named_direct_edit(feature, body, input)
+    }
     fn evaluate_shell(
         &mut self,
         feature: FeatureId,

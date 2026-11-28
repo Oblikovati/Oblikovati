@@ -50,6 +50,12 @@ pub(super) fn feature_edit_action(
     if browser.delete_face_edits.contains_key(&feature.id) {
         return GuiShellAction::DeleteFace(crate::GuiDeleteFaceAction::OpenEdit(feature.id));
     }
+    if browser.direct_edit_edits.contains_key(&feature.id) {
+        return GuiShellAction::DirectEdit(crate::GuiDirectEditAction::OpenEdit {
+            feature: feature.id,
+            operation: None,
+        });
+    }
     if browser.shell_v2_edits.contains_key(&feature.id) {
         return GuiShellAction::OpenShellEdit(feature.id);
     }

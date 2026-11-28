@@ -13,6 +13,7 @@ impl WorkGeometryDefinition {
             Self::Hole(definition) => return definition.reads(),
             Self::Slot(definition) => return definition.reads(),
             Self::Combine(definition) => return definition.reads(),
+            Self::DirectEdit(definition) => return definition.reads(),
             Self::Draft(definition) => return definition.reads(),
             Self::DeleteFace(definition) => return definition.reads(),
             Self::ThickenOffset(definition) => return definition.reads(),

@@ -29,6 +29,7 @@ mod command_owner;
 mod decal;
 mod delete_face;
 mod derive;
+mod direct_edit;
 mod draft;
 mod edit;
 mod emboss;
@@ -64,6 +65,10 @@ pub use delete_face::{
 pub use derive::{
     DeriveInputs, PreparedDerivedPart, build_derived_part_definition,
     prepare_derived_part_definition, replace_derived_part,
+};
+pub use direct_edit::{
+    DirectEditFeatureInputs, PreparedDirectEdit, build_direct_edit_definition,
+    prepare_direct_edit_definition, replace_direct_edit,
 };
 pub use draft::{
     DraftFeatureInputs, PreparedDraft, build_draft_definition, prepare_draft_definition,

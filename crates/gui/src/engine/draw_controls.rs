@@ -96,6 +96,7 @@ impl GuiFrameEngine {
                 self.extrude_dialog
                     .distance_prompt()
                     .or_else(|| self.create_dialogs.status_prompt())
+                    .or_else(|| self.direct_edit_dialog.status_prompt())
                     .or_else(|| self.blend_dialog.status_prompt()),
             ),
         );
@@ -274,7 +275,9 @@ impl GuiFrameEngine {
                 ui,
                 request,
                 &mut selected,
-                self.blend_dialog.active() || self.part_context_open,
+                self.blend_dialog.active()
+                    || self.direct_edit_dialog.active()
+                    || self.part_context_open,
             );
         } else {
             self.part_context_open = false;
@@ -290,6 +293,7 @@ impl GuiFrameEngine {
                 &mut self.draft_dialog,
                 &mut self.delete_face_dialog,
                 &mut self.thicken_offset_dialog,
+                &mut self.direct_edit_dialog,
             ),
             (&mut self.move_body_dialog, &mut self.blend_dialog),
             &mut self.create_dialogs,
@@ -299,50 +303,46 @@ impl GuiFrameEngine {
         if revolve_needs_plane {
             self.plane_selection.active = true;
         }
-        self.home.panel(
-            ui,
-            &request.commands,
-            area,
-            &mut selected,
-            &self.icons.presentation,
-        );
+        let (icons, commands) = (&self.icons.presentation, &request.commands);
+        self.home.panel(ui, commands, area, &mut selected, icons);
         if let Some(path) = apply_home_requests(&mut self.home, &mut self.document_files) {
             self.document_tabs.menu.properties.request_file(&path);
         }
-        let icons = &self.icons.presentation;
-        let commands = &request.commands;
         self.document_files
             .panel(ui, commands, &mut selected, icons);
         self.preferences
             .panel(ui, commands, &mut selected, self.home.active, icons);
-        let assets = (&mut self.material_browser, &mut self.appearance_browser);
-        Self::draw_asset_docks(assets, ui, commands, self.home.active, &mut selected);
+        Self::draw_asset_docks(
+            (&mut self.material_browser, &mut self.appearance_browser),
+            ui,
+            commands,
+            self.home.active,
+            &mut selected,
+        );
         let browser_plane = self.workspace.take_picked_plane_reference();
         let browser_axis = self.workspace.take_picked_axis_reference();
-        let extrude_ctx = (
-            &mut self.extrude_dialog,
-            self.plane_selection.active,
-            self.popup_was_open,
-            browser_plane,
-        );
-        let create_dialogs = (&mut self.create_dialogs, browser_axis);
-        let modify_dialogs = (
-            &mut self.blend_dialog,
-            &mut self.hole_dialog,
-            &mut self.slot_dialog,
-            &mut self.combine_dialog,
-            &mut self.draft_dialog,
-            &mut self.delete_face_dialog,
-            &mut self.thicken_offset_dialog,
-            &mut self.shell_feature_dialog,
-            &mut self.move_body_dialog,
-            &mut self.offset_plane,
-        );
         feature_actions::draw_feature_dialogs(
             (ui, commands, area, icons, &mut self.parameter_editor),
-            extrude_ctx,
-            create_dialogs,
-            modify_dialogs,
+            (
+                &mut self.extrude_dialog,
+                self.plane_selection.active,
+                self.popup_was_open,
+                browser_plane,
+            ),
+            (&mut self.create_dialogs, browser_axis),
+            (
+                &mut self.blend_dialog,
+                &mut self.hole_dialog,
+                &mut self.slot_dialog,
+                &mut self.combine_dialog,
+                &mut self.draft_dialog,
+                &mut self.delete_face_dialog,
+                &mut self.thicken_offset_dialog,
+                &mut self.direct_edit_dialog,
+                &mut self.shell_feature_dialog,
+                &mut self.move_body_dialog,
+                &mut self.offset_plane,
+            ),
             &mut selected,
         );
         let interface = (&self.quick_access, &self.workspace);

@@ -308,10 +308,10 @@ pub(super) fn gui_sketch_selection<O: TransactionObserver>(
 }
 /// A face a click chose in the view; it lasts until the next click, and no edit depends on it.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub(super) struct ChosenModelFace {
-    document: u64,
-    pub(super) feature: oblikovati_model::feature::FeatureId,
-    pub(super) key: Vec<u8>,
+pub(in crate::owner) struct ChosenModelFace {
+    pub(in crate::owner) document: u64,
+    pub(in crate::owner) feature: oblikovati_model::feature::FeatureId,
+    pub(in crate::owner) key: Vec<u8>,
 }
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(super) struct ChosenModelEdge {

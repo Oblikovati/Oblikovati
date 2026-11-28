@@ -13,6 +13,8 @@ pub(super) mod owner_decal;
 pub(super) mod owner_delete_face;
 #[path = "owner_derive.rs"]
 pub(super) mod owner_derive;
+#[path = "owner_direct_edit.rs"]
+pub(super) mod owner_direct_edit;
 #[path = "owner_draft.rs"]
 pub(super) mod owner_draft;
 #[path = "owner_emboss.rs"]
@@ -58,6 +60,7 @@ pub(super) struct CreateFeatureState {
     pub(super) hole: owner_hole::HoleOwnerState,
     pub(super) slot: owner_slot::SlotOwnerState,
     pub(super) combine: owner_combine::CombineOwnerState,
+    pub(super) direct_edit: owner_direct_edit::DirectEditOwnerState,
     pub(super) draft: owner_draft::DraftOwnerState,
     pub(super) thread: owner_thread::ThreadOwnerState,
     pub(super) delete_face: owner_delete_face::DeleteFaceOwnerState,

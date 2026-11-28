@@ -38,7 +38,7 @@ pub(super) fn draw_feature_dialogs(
         &mut super::create_dialogs::CreateFeatureDialogs,
         Option<oblikovati_model::feature::work_axis::WorkAxisReference>,
     ),
-    (blend, hole, slot, combine, draft, delete_face, thicken, shell, motion, offset): (
+    (blend, hole, slot, combine, draft, delete_face, thicken, direct_edit, shell, motion, offset): (
         &mut crate::blend_dialog::BlendDialog,
         &mut crate::hole_dialog::HoleDialog,
         &mut crate::slot_dialog::SlotDialog,
@@ -46,6 +46,7 @@ pub(super) fn draw_feature_dialogs(
         &mut crate::draft_dialog::DraftDialog,
         &mut crate::delete_face_dialog::DeleteFaceDialog,
         &mut crate::thicken_offset_dialog::ThickenOffsetDialog,
+        &mut crate::direct_edit_dialog::DirectEditDialog,
         &mut crate::shell_feature_dialog::ShellFeatureDialog,
         &mut crate::move_body_dialog::MoveBodyDialog,
         &mut crate::offset_plane::OffsetPlaneDialog,
@@ -79,6 +80,7 @@ pub(super) fn draw_feature_dialogs(
     draft.panel(ui, commands, area, icons, hole_plane.as_deref(), selected);
     delete_face.panel(ui, commands, area, icons, selected);
     thicken.panel(ui, commands, area, icons, selected);
+    direct_edit.panel(ui, commands, area, selected);
     shell.panel(ui, commands, area, selected);
     motion.panel(ui, commands, area, selected);
     offset.panel(ui, commands, area, selected);
@@ -160,6 +162,7 @@ enum Draft {
     Thread,
     DeleteFace,
     ThickenOffset,
+    DirectEdit,
     MoveBody,
 }
 
@@ -222,6 +225,9 @@ fn requested_draft(action: &GuiShellAction) -> Option<Draft> {
         GuiShellAction::ThickenOffset(
             crate::GuiThickenOffsetAction::Open | crate::GuiThickenOffsetAction::OpenEdit(_),
         ) => Draft::ThickenOffset,
+        GuiShellAction::DirectEdit(
+            crate::GuiDirectEditAction::Open | crate::GuiDirectEditAction::OpenEdit { .. },
+        ) => Draft::DirectEdit,
         GuiShellAction::OpenMoveBody => Draft::MoveBody,
         _ => return None,
     })
@@ -230,7 +236,7 @@ fn requested_draft(action: &GuiShellAction) -> Option<Draft> {
 pub(super) fn open_drafts(
     state: &GuiCommandState,
     actions: &mut Vec<GuiShellAction>,
-    (shell, hole, slot, combine, face_draft, delete_face, thicken): (
+    (shell, hole, slot, combine, face_draft, delete_face, thicken, direct_edit): (
         &mut crate::shell_feature_dialog::ShellFeatureDialog,
         &mut crate::hole_dialog::HoleDialog,
         &mut crate::slot_dialog::SlotDialog,
@@ -238,6 +244,7 @@ pub(super) fn open_drafts(
         &mut crate::draft_dialog::DraftDialog,
         &mut crate::delete_face_dialog::DeleteFaceDialog,
         &mut crate::thicken_offset_dialog::ThickenOffsetDialog,
+        &mut crate::direct_edit_dialog::DirectEditDialog,
     ),
     (motion, blend): (
         &mut crate::move_body_dialog::MoveBodyDialog,
@@ -316,6 +323,9 @@ pub(super) fn open_drafts(
     }
     if draft != Draft::ThickenOffset {
         thicken.close(actions);
+    }
+    if draft != Draft::DirectEdit {
+        direct_edit.close(actions);
     }
     if draft != Draft::MoveBody {
         motion.close(actions);
@@ -413,6 +423,12 @@ pub(super) fn open_drafts(
         }
         GuiShellAction::ThickenOffset(crate::GuiThickenOffsetAction::OpenEdit(feature)) => {
             thicken.open(state, Some(feature), actions)
+        }
+        GuiShellAction::DirectEdit(crate::GuiDirectEditAction::Open) => {
+            direct_edit.open(state, None, actions)
+        }
+        GuiShellAction::DirectEdit(crate::GuiDirectEditAction::OpenEdit { feature, operation }) => {
+            direct_edit.open(state, Some((feature, operation)), actions)
         }
         GuiShellAction::OpenMoveBody => motion.open(state),
         _ => {}

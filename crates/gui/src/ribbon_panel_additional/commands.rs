@@ -212,6 +212,7 @@ fn additional_icon_entries(
             ("Thread", Glyph::Thread),
             ("Delete Face", Glyph::DeleteFace),
             ("Thicken/Offset", Glyph::Shell),
+            ("Direct Edit", Glyph::DirectEdit),
         ],
         RibbonPanel::PartSimplification => &[
             ("Remove Details", Glyph::Simplify),
@@ -305,6 +306,7 @@ fn additional_action(label: &str) -> Option<GuiShellAction> {
         "Thicken/Offset" => Some(GuiShellAction::ThickenOffset(
             crate::GuiThickenOffsetAction::Open,
         )),
+        "Direct Edit" => Some(GuiShellAction::DirectEdit(crate::GuiDirectEditAction::Open)),
         "Constraint Inference Scope" => Some(GuiShellAction::OpenInferenceScope),
         _ => None,
     }

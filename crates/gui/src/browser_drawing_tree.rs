@@ -44,6 +44,21 @@ fn sheet_branch(sheet: &DrawingSheetRecipe, reference: &str) -> DrawingBranch {
     (sheet.name.clone(), rows)
 }
 
+pub(crate) fn drawing_row_glyph(name: &str) -> crate::icons::IconGlyph {
+    use crate::icons::IconGlyph;
+    if name.contains("Border") || name.contains("Sheet") {
+        IconGlyph::DrawingSheet
+    } else if name.contains("Title") || name.contains("Note") || name.contains("Text") {
+        IconGlyph::Annotation
+    } else if name.contains("Weld") {
+        IconGlyph::DrawingWeld
+    } else if name.contains("Surface") {
+        IconGlyph::DrawingSurface
+    } else {
+        IconGlyph::DrawingBase
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

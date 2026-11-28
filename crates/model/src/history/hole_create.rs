@@ -275,4 +275,41 @@ impl DocumentSnapshot {
             })
             .map(|_| ())
     }
+
+    /// Append Direct Edit inputs; example: `snapshot.create_direct_edit("Direct Edit1", definition, ids)?`.
+    pub fn create_direct_edit(
+        &mut self,
+        name: &str,
+        definition: crate::feature::direct_edit::DirectEditDefinition,
+        ids: &mut RecipeReservations<'_>,
+    ) -> Result<FeatureId, HistoryError> {
+        let reads = definition.reads();
+        self.create_body_feature(
+            name,
+            PartFeatureDefinition::DirectEdit(Box::new(definition)),
+            reads,
+            ids,
+        )
+    }
+
+    /// Replace an existing Direct Edit definition in place; example: `snapshot.edit_direct_edit(id, definition)?`.
+    pub fn edit_direct_edit(
+        &mut self,
+        feature: FeatureId,
+        definition: crate::feature::direct_edit::DirectEditDefinition,
+    ) -> Result<(), HistoryError> {
+        let reads = definition.reads();
+        self.work_geometry
+            .replace(
+                feature,
+                PartFeatureDefinition::DirectEdit(Box::new(definition)),
+                reads,
+            )
+            .map_err(|cause| {
+                HistoryError::PartProgram(crate::feature::part::PartFeatureProgramError::Sequence(
+                    cause,
+                ))
+            })
+            .map(|_| ())
+    }
 }

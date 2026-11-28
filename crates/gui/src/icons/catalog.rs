@@ -145,6 +145,7 @@ glyph_catalog! {
     BrandWordmark => "view-cube",
     CopyObject => "copy-object",
     DeleteFace => "delete-face",
+    DirectEdit => "direct-edit",
 }
 
 pub(crate) fn document_glyph(kind: crate::GuiTemplateKind) -> IconGlyph {

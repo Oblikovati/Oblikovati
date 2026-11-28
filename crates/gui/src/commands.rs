@@ -373,6 +373,8 @@ pub enum GuiShellAction {
     DeleteFace(crate::GuiDeleteFaceAction),
     /// Open, pick, preview, or commit a Part Modify Thicken/Offset feature.
     ThickenOffset(crate::GuiThickenOffsetAction),
+    /// Open, pick, preview, or commit a Direct Edit feature.
+    DirectEdit(crate::GuiDirectEditAction),
     /// Selection mode, preview, or commit for Part Modify Fillet v2.
     FilletV2(crate::GuiFilletV2Action),
     ChamferV2(crate::GuiChamferV2Action),

@@ -92,6 +92,7 @@ fn track_replacement(
         PartFeatureDefinition::Hole(hole) => hole.body_source(),
         PartFeatureDefinition::Slot(slot) => slot.body_source(),
         PartFeatureDefinition::Combine(combine) => combine.base_source(),
+        PartFeatureDefinition::DirectEdit(direct) => direct.body_source(),
         PartFeatureDefinition::Draft(draft) => draft.body_source(),
         PartFeatureDefinition::Thread(thread) => thread.body_source(),
         PartFeatureDefinition::DeleteFace(delete_face) => delete_face.body_source(),
