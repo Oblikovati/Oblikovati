@@ -38,6 +38,8 @@ mod solid_split;
 mod solid_thicken_offset;
 #[path = "../thread/steps.rs"]
 mod solid_thread;
+#[path = "../ucs/steps.rs"]
+mod solid_ucs;
 #[path = "../unwrap/steps.rs"]
 mod solid_unwrap;
 

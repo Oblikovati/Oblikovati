@@ -85,7 +85,8 @@ macro_rules! desktop_part_view_work {
             window: &mut dyn crate::HeadWindow,
         ) -> Result<bool, String> {
             let cue_changed = self.update_model_pick_cue(inputs, window);
-            Ok(self.process_live_placement_inputs(inputs, window)? || cue_changed)
+            let ucs_changed = self.process_ucs_inputs(inputs);
+            Ok(self.process_live_placement_inputs(inputs, window)? || cue_changed || ucs_changed)
         }
         fn poll_window(
             &mut self,
