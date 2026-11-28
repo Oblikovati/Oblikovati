@@ -164,6 +164,9 @@ macro_rules! desktop_extrusion_work {
         ) -> Result<bool, String> {
             self.finish_command(action)
         }
+        fn ucs_from_gui(&mut self, action: oblikovati_gui::GuiUcsAction) -> Result<bool, String> {
+            self.ucs_command(action)
+        }
         fn fillet_v2_from_gui(
             &mut self,
             action: oblikovati_gui::GuiFilletV2Action,

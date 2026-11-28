@@ -29,6 +29,7 @@ pub enum WorkPlaneDefinitionRecipe {
     Split(crate::feature::split::SplitRecipe),
     Mark(crate::feature::mark::MarkRecipe),
     Finish(crate::feature::finish::FinishRecipe),
+    Ucs(crate::feature::ucs::UcsRecipe),
     MoveBody(crate::feature::move_body::MoveBodyRecipe),
     Shell(crate::feature::shell::ShellRecipe),
     Mirror(crate::feature::mirror::MirrorRecipe),
@@ -92,6 +93,7 @@ impl WorkPlaneDefinition {
             Self::Split(definition) => Source::Split(definition.recipe()),
             Self::Mark(definition) => Source::Mark(definition.recipe()),
             Self::Finish(definition) => Source::Finish(definition.recipe()),
+            Self::Ucs(definition) => Source::Ucs(definition.recipe()),
             Self::MoveBody(definition) => Source::MoveBody(definition.recipe()),
             Self::Shell(definition) => Source::Shell(definition.recipe()),
             Self::Mirror(mirror) => Source::Mirror(mirror.recipe().clone()),
@@ -197,6 +199,9 @@ fn restore_definition(
             .map_err(WorkPlaneError::BodyReference),
         Finish(recipe) => crate::feature::finish::FinishDefinition::from_recipe(recipe)
             .map(|definition| WorkPlaneDefinition::Finish(Box::new(definition)))
+            .map_err(WorkPlaneError::BodyReference),
+        Ucs(recipe) => crate::feature::ucs::UcsDefinition::from_recipe(recipe)
+            .map(|definition| WorkPlaneDefinition::Ucs(Box::new(definition)))
             .map_err(WorkPlaneError::BodyReference),
         Chamfer(recipe) => crate::feature::chamfer::ChamferDefinition::from_recipe(&recipe)
             .map(|definition| WorkPlaneDefinition::Chamfer(Box::new(definition)))
@@ -338,6 +343,7 @@ impl WorkPlaneDefinitionRecipe {
             Self::Split(_) => 51,
             Self::Mark(_) => 54,
             Self::Finish(_) => 55,
+            Self::Ucs(_) => 59,
             Self::SketchSweep(recipe) => match recipe.version {
                 7 => 29,
                 6 => 28,
@@ -409,6 +415,7 @@ impl WorkPlaneDefinitionRecipe {
             Self::Split(_) => 61,
             Self::Mark(_) => 64,
             Self::Finish(_) => 65,
+            Self::Ucs(_) => 69,
             Self::SketchSweep(recipe) => match recipe.version {
                 7 => 34,
                 6 => 33,

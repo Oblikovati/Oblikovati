@@ -76,7 +76,7 @@ pub(crate) fn feature_glyph(kind: &str) -> Option<IconGlyph> {
         "Work Axis" => IconGlyph::WorkAxis,
         "Work Point" => IconGlyph::WorkPoint,
         "Delete Body" => IconGlyph::Delete,
-        "Work Feature" => IconGlyph::WorkCoordinateSystem,
+        "Work Feature" | "User Coordinate System" => IconGlyph::WorkCoordinateSystem,
         _ => return None,
     })
 }

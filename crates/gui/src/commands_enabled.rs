@@ -361,6 +361,7 @@ impl GuiShellAction {
             | Self::Mark(_)
             | Self::Finish(_)
             | Self::WorkAxis(_)
+            | Self::Ucs(_)
             | Self::FilletV2(_)
             | Self::ChamferV2(_)
             | Self::ShellV2(_) => false,

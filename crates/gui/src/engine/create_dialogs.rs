@@ -59,8 +59,10 @@ impl CreateFeatureDialogs {
         self.loft.synchronize(state, actions);
     }
 
-    pub(super) fn status_prompt(&self) -> Option<&'static str> {
-        self.unwrap.status_prompt()
+    pub(super) fn status_prompt<'a>(&self, state: &'a GuiCommandState) -> Option<&'a str> {
+        self.unwrap
+            .status_prompt()
+            .or_else(|| state.ucs.status_prompt())
     }
 
     pub(super) fn take_sketch_plane_request(&mut self) -> bool {

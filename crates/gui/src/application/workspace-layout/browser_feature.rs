@@ -61,7 +61,7 @@ pub(crate) fn feature_row<'ui>(
             )
         ))
         .flags(flags)
-        .default_open(true);
+        .default_open(feature.kind != "User Coordinate System");
     let opened = view.take_opened_branch(BrowserBranch::Feature(feature.id));
     let node = match (opened, expansion) {
         (true, _) => node.opened(true, Condition::Always),
@@ -155,7 +155,8 @@ fn feature_menu(
     let Some(_menu) = ui.begin_popup(FEATURE_MENU) else {
         return;
     };
-    if crate::browser::browser_import::reference_menu(ui, state, browser, feature, actions) {
+    if crate::browser::browser_ucs::custom_feature_menu(ui, state, browser, feature, view, actions)
+    {
         return;
     }
     edit_sketch_row(ui, state, browser, feature, actions);

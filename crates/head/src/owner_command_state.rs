@@ -288,6 +288,7 @@ impl<
             mark_sketch_pick: self.gui_mark_sketch_pick(document, session.generation()),
             finish_preview: self.gui_finish_preview(document, session.generation()),
             finish_pick: self.gui_finish_pick(document, session.generation()),
+            ucs: self.gui_ucs_state(document, session.generation()),
             fillet_v2_preview: self.gui_fillet_v2_preview(document, session.generation()),
             fillet_v2_pick: self.gui_fillet_v2_pick(document, session.generation()),
             chamfer_v2_preview: self.gui_chamfer_v2_preview(document, session.generation()),

@@ -38,6 +38,8 @@ pub(super) fn feature_kind_name(
         oblikovati_model::feature::part::PartFeatureDefinition::Shell(_) => "Shell",
         oblikovati_model::feature::part::PartFeatureDefinition::Thread(_) => "Thread",
         oblikovati_model::feature::part::PartFeatureDefinition::Mark(_) => "Mark",
+        oblikovati_model::feature::part::PartFeatureDefinition::Finish(_) => "Finish",
+        oblikovati_model::feature::part::PartFeatureDefinition::Ucs(_) => "User Coordinate System",
         oblikovati_model::feature::part::PartFeatureDefinition::ThickenOffset(def) => {
             if def.output().is_surface() {
                 "Offset Surface"

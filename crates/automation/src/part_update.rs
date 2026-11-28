@@ -437,6 +437,7 @@ fn feature_kind(definition: &PartFeatureDefinition) -> &'static str {
         Point(_) => "position",
         PointAtReference(_) => "point-reference",
         AxisThroughPoints(_) => "two-points",
+        Ucs(_) => "ucs",
     }
 }
 

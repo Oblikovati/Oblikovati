@@ -35,6 +35,8 @@ mod browser_direct_edit;
 pub(crate) mod browser_finish;
 #[path = "browser_import.rs"]
 pub(crate) mod browser_import;
+#[path = "browser_ucs.rs"]
+pub(crate) mod browser_ucs;
 /// Draw the browser tree, or the rows a search leaves; example: inside the Model window.
 pub(crate) fn browser_contents(
     ui: &Ui,
@@ -489,6 +491,7 @@ impl BrowserTree<'_> {
                 feature,
                 actions,
             );
+            browser_ucs::ucs_child_rows(self.ui, self.browser, feature, view);
         }
     }
 }

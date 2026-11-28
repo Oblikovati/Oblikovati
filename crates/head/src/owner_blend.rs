@@ -51,6 +51,8 @@ pub(super) mod owner_sweep;
 pub(super) mod owner_thicken_offset;
 #[path = "owner_thread.rs"]
 pub(super) mod owner_thread;
+#[path = "owner_ucs.rs"]
+pub(super) mod owner_ucs;
 #[path = "owner_unwrap.rs"]
 pub(super) mod owner_unwrap;
 #[path = "owner_work_axis.rs"]
@@ -76,6 +78,7 @@ pub(super) struct CreateFeatureState {
     pub(super) split: owner_split::SplitOwnerState,
     pub(super) mark: owner_mark::MarkOwnerState,
     pub(super) finish: owner_finish::FinishOwnerState,
+    pub(super) ucs: owner_ucs::UcsOwnerState,
     pub(super) fillet_v2: owner_fillet_v2::FilletV2OwnerState,
     pub(super) chamfer_v2: owner_chamfer_v2::ChamferV2OwnerState,
     pub(super) shell_v2: owner_shell_v2::ShellV2OwnerState,

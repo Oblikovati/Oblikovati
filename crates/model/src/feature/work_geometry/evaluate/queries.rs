@@ -60,6 +60,21 @@ impl WorkGeometryEvaluation {
     pub fn point(&self, feature: FeatureId) -> Result<[f64; 3], WorkPlaneError> {
         self.resolve_kind(feature, "point", project_point)
     }
+    /// Resolve one current User Coordinate System frame; example: `evaluation.ucs(FeatureId(1))?`.
+    pub fn ucs(
+        &self,
+        feature: FeatureId,
+    ) -> Result<crate::feature::ucs::ResolvedUcs, WorkPlaneError> {
+        self.resolve_kind(feature, "ucs", project_ucs)
+    }
+    /// Iterate successful current UCS frames by identity; example: `evaluation.ucs_frames().count()`.
+    pub fn ucs_frames(
+        &self,
+    ) -> impl Iterator<Item = (FeatureId, crate::feature::ucs::ResolvedUcs)> + '_ {
+        self.datums
+            .iter()
+            .filter_map(|(&feature, &datum)| project_ucs(datum).map(|frame| (feature, frame)))
+    }
     fn resolve_kind<T>(
         &self,
         feature: FeatureId,
@@ -93,6 +108,12 @@ fn project_axis(datum: WorkGeometryResult) -> Option<WorkAxisLine> {
 fn project_point(datum: WorkGeometryResult) -> Option<[f64; 3]> {
     match datum {
         WorkGeometryResult::Point(point) => Some(point),
+        _ => None,
+    }
+}
+fn project_ucs(datum: WorkGeometryResult) -> Option<crate::feature::ucs::ResolvedUcs> {
+    match datum {
+        WorkGeometryResult::Ucs(ucs) => Some(ucs),
         _ => None,
     }
 }

@@ -16,6 +16,18 @@ fn inactive_unlocked_copy(world: &mut ApplicationWorld) {
 #[when("the user reopens the copied view representation's context menu")]
 #[when("the user reopens its context menu")]
 fn copied_view_menu(world: &mut ApplicationWorld) {
+    if world
+        .state()
+        .browser
+        .as_ref()
+        .is_some_and(|browser| !browser.ucs_features.is_empty())
+    {
+        let at = world.run_in_window("Model", "UCS1").center();
+        world.right_click(diagnostics::pointer_pixels(at));
+        world.pump(Vec::new());
+        world.pump(Vec::new());
+        return;
+    }
     right_click_copy(world);
 }
 #[then("Lock is unchecked")]

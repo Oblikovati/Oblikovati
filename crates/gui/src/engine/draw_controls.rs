@@ -24,6 +24,7 @@ impl GuiFrameEngine {
             .sync_origin_document(request.commands.document);
         crate::application::workspace_layout::browser_feature::draw_feature_edges(ui, request);
         self.workspace.draw_selected_origin(ui, request);
+        crate::ucs_tool::draw_ucs_triads(ui, request, &mut selected);
         self.document_files.home_in_front = self.home.active;
         let home_was_active = self.home.active;
         // The selector can close before the same gesture releases over the viewport.
@@ -95,7 +96,7 @@ impl GuiFrameEngine {
                 self.command_alias.text(),
                 self.extrude_dialog
                     .distance_prompt()
-                    .or_else(|| self.create_dialogs.status_prompt())
+                    .or_else(|| self.create_dialogs.status_prompt(&request.commands))
                     .or_else(|| self.direct_edit_dialog.status_prompt())
                     .or_else(|| self.blend_dialog.status_prompt()),
             ),
