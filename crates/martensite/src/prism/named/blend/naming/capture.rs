@@ -13,6 +13,7 @@ pub(in crate::prism::named) struct CapturedBlendTopology {
     primary_body: Vec<u8>,
     shape: Shape,
     thread_overlays: Vec<crate::DisplayTriangle>,
+    finish_face_colors: BTreeMap<Vec<u8>, [f32; 4]>,
 }
 
 impl CapturedBlendTopology {
@@ -52,6 +53,7 @@ impl CapturedBlendTopology {
             primary_body: self.primary_body,
             shape: self.shape,
             thread_overlays: self.thread_overlays,
+            finish_face_colors: self.finish_face_colors,
         }
     }
 
@@ -88,6 +90,7 @@ impl CapturedBlendTopology {
             primary_body: self.primary_body,
             shape: self.shape,
             thread_overlays: self.thread_overlays,
+            finish_face_colors: self.finish_face_colors,
         })
     }
 }
@@ -109,6 +112,7 @@ impl BlendNamedTopology {
             primary_body: self.primary_body.clone(),
             shape: self.shape.clone(),
             thread_overlays: self.thread_overlays.clone(),
+            finish_face_colors: self.finish_face_colors.clone(),
         })
     }
 }

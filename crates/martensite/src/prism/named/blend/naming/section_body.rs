@@ -37,6 +37,7 @@ pub(super) fn bind_section_body(
         primary_body: body,
         shape,
         thread_overlays: Vec::new(),
+        finish_face_colors: BTreeMap::new(),
     })
 }
 

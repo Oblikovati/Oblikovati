@@ -434,6 +434,14 @@ impl PartFeatureEvaluator for CertifiedNamedSolidEvaluator<'_> {
     ) -> Result<NamedSolid, PartFeatureFailure<EvaluationFailure>> {
         self.evaluate_named_delete_face(feature, body, input)
     }
+    fn evaluate_finish(
+        &mut self,
+        feature: FeatureId,
+        body: &NamedSolid,
+        input: oblikovati_model::feature::finish::ResolvedFinish,
+    ) -> Result<NamedSolid, PartFeatureFailure<EvaluationFailure>> {
+        self.evaluate_named_finish(feature, body, input)
+    }
     fn evaluate_shell(
         &mut self,
         feature: FeatureId,

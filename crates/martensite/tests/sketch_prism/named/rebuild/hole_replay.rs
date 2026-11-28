@@ -17,6 +17,8 @@ mod delete_face_replay;
 mod draft_replay;
 #[path = "fillet_v2.rs"]
 mod fillet_v2;
+#[path = "finish_replay.rs"]
+mod finish_replay;
 #[path = "hole_frame_origin.rs"]
 mod hole_frame_origin;
 #[path = "hole_v2.rs"]

@@ -15,6 +15,7 @@ mod body_resolution;
 mod checkpoints;
 mod combine_evaluation;
 mod delete_face_evaluation;
+mod finish_evaluation;
 
 mod hole_evaluation;
 mod move_body_evaluation;
@@ -61,6 +62,7 @@ pub enum PartFeatureDefinition {
     Draft(Box<super::draft::DraftDefinition>),
     Thread(Box<super::thread::ThreadDefinition>),
     DeleteFace(Box<super::delete_face::DeleteFaceDefinition>),
+    Finish(Box<super::finish::FinishDefinition>),
     MoveBody(Box<super::move_body::MoveBodyDefinition>),
     Shell(Box<super::shell::ShellDefinition>),
     Mirror(Box<super::mirror::MirrorDefinition>),
@@ -117,6 +119,7 @@ impl PartFeatureDefinition {
             Self::Draft(_) => "draft",
             Self::Thread(_) => "thread",
             Self::DeleteFace(_) => "delete-face",
+            Self::Finish(_) => "finish",
             Self::MoveBody(_) => "move-body",
             Self::Shell(_) => "shell",
             Self::Mirror(_) => "mirror",
@@ -152,6 +155,7 @@ impl PartFeatureDefinition {
                 | Self::Draft(_)
                 | Self::Thread(_)
                 | Self::DeleteFace(_)
+                | Self::Finish(_)
                 | Self::Shell(_)
                 | Self::MoveBody(_)
                 | Self::Mirror(_)

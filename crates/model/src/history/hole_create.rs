@@ -238,4 +238,41 @@ impl DocumentSnapshot {
             })
             .map(|_| ())
     }
+
+    /// Append Finish inputs; example: `snapshot.create_finish("Finish1", definition, ids)?`.
+    pub fn create_finish(
+        &mut self,
+        name: &str,
+        definition: crate::feature::finish::FinishDefinition,
+        ids: &mut RecipeReservations<'_>,
+    ) -> Result<FeatureId, HistoryError> {
+        let reads = definition.reads();
+        self.create_body_feature(
+            name,
+            PartFeatureDefinition::Finish(Box::new(definition)),
+            reads,
+            ids,
+        )
+    }
+
+    /// Replace an existing Finish definition in place; example: `snapshot.edit_finish(id, definition)?`.
+    pub fn edit_finish(
+        &mut self,
+        feature: FeatureId,
+        definition: crate::feature::finish::FinishDefinition,
+    ) -> Result<(), HistoryError> {
+        let reads = definition.reads();
+        self.work_geometry
+            .replace(
+                feature,
+                PartFeatureDefinition::Finish(Box::new(definition)),
+                reads,
+            )
+            .map_err(|cause| {
+                HistoryError::PartProgram(crate::feature::part::PartFeatureProgramError::Sequence(
+                    cause,
+                ))
+            })
+            .map(|_| ())
+    }
 }

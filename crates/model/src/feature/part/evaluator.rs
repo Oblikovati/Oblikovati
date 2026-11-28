@@ -145,6 +145,17 @@ pub trait PartFeatureEvaluator {
             "delete face: expected an available named-face evaluator".into(),
         ))
     }
+    /// Apply a surface finish assignment to selected faces; example: `backend.evaluate_finish(id, body, input)`.
+    fn evaluate_finish(
+        &mut self,
+        _feature: FeatureId,
+        _body: &Self::Body,
+        _input: crate::feature::finish::ResolvedFinish,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        Err(PartFeatureFailure::Unsupported(
+            "finish: expected an available named-face evaluator".into(),
+        ))
+    }
     /// Resolve the sweep from a sketch plane to the current target body's bounds.
     /// Example: `backend.prism_through_all_span(body, plane, direction)?`.
     fn prism_through_all_span(

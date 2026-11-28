@@ -24,6 +24,7 @@ pub enum WorkPlaneDefinitionRecipe {
     Draft(crate::feature::draft::DraftRecipe),
     Thread(crate::feature::thread::ThreadRecipe),
     DeleteFace(crate::feature::delete_face::DeleteFaceRecipe),
+    Finish(crate::feature::finish::FinishRecipe),
     MoveBody(crate::feature::move_body::MoveBodyRecipe),
     Shell(crate::feature::shell::ShellRecipe),
     Mirror(crate::feature::mirror::MirrorRecipe),
@@ -82,6 +83,7 @@ impl WorkPlaneDefinition {
             Self::Draft(definition) => Source::Draft(definition.recipe()),
             Self::Thread(definition) => Source::Thread(definition.recipe()),
             Self::DeleteFace(definition) => Source::DeleteFace(definition.recipe()),
+            Self::Finish(definition) => Source::Finish(definition.recipe()),
             Self::MoveBody(definition) => Source::MoveBody(definition.recipe()),
             Self::Shell(definition) => Source::Shell(definition.recipe()),
             Self::Mirror(mirror) => Source::Mirror(mirror.recipe().clone()),
@@ -169,6 +171,9 @@ fn restore_definition(
                 .map(|definition| WorkPlaneDefinition::DeleteFace(Box::new(definition)))
                 .map_err(WorkPlaneError::BodyReference)
         }
+        Finish(recipe) => crate::feature::finish::FinishDefinition::from_recipe(recipe)
+            .map(|definition| WorkPlaneDefinition::Finish(Box::new(definition)))
+            .map_err(WorkPlaneError::BodyReference),
         Chamfer(recipe) => crate::feature::chamfer::ChamferDefinition::from_recipe(&recipe)
             .map(|definition| WorkPlaneDefinition::Chamfer(Box::new(definition)))
             .map_err(WorkPlaneError::BodyReference),
@@ -304,6 +309,7 @@ impl WorkPlaneDefinitionRecipe {
             Self::Draft(_) => 47,
             Self::Thread(_) => 48,
             Self::DeleteFace(_) => 53,
+            Self::Finish(_) => 55,
             Self::SketchSweep(recipe) => match recipe.version {
                 7 => 29,
                 6 => 28,
@@ -370,6 +376,7 @@ impl WorkPlaneDefinitionRecipe {
             Self::Draft(_) => 57,
             Self::Thread(_) => 58,
             Self::DeleteFace(_) => 63,
+            Self::Finish(_) => 65,
             Self::SketchSweep(recipe) => match recipe.version {
                 7 => 34,
                 6 => 33,
