@@ -21,6 +21,8 @@ impl ViewportRuntime {
                 driver,
                 #[cfg(target_os = "linux")]
                 linux: Some(linux),
+                #[cfg(target_os = "windows")]
+                native_windows: true,
                 next_view: Cell::new(1),
             }),
         })
@@ -48,7 +50,12 @@ impl ViewportRuntime {
             .ok_or("viewport runtime: expected a native Linux window backend")?
             .create(title, extent, system_frame)?;
         #[cfg(target_os = "windows")]
-        let window = NativeWindow::create(title, extent, system_frame)?;
+        let window = {
+            if !self.state.native_windows {
+                return Err("viewport runtime: expected a native Windows window backend".into());
+            }
+            NativeWindow::create(title, extent, system_frame)?
+        };
         self.create(ViewTarget::Native(Box::new(window)))
     }
     /// Set up a native Windows window before it becomes visible.
@@ -60,6 +67,9 @@ impl ViewportRuntime {
         extent: [u32; 2],
         setup: impl FnOnce(isize),
     ) -> Result<Viewport, String> {
+        if !self.state.native_windows {
+            return Err("viewport runtime: expected a native Windows window backend".into());
+        }
         let window = NativeWindow::create_with_setup(title, extent, setup)?;
         self.create(ViewTarget::Native(Box::new(window)))
     }

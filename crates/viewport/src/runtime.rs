@@ -23,6 +23,8 @@ struct RuntimeState {
     driver: Handle<Graphic3dRenderDriver>,
     #[cfg(target_os = "linux")]
     linux: Option<NativeLinux>,
+    #[cfg(target_os = "windows")]
+    native_windows: bool,
     next_view: Cell<u64>,
 }
 /// One owner's renderer runtime. Vulkan resources stay in Martensite; this type cannot be sent to a worker.
