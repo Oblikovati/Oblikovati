@@ -119,6 +119,14 @@ where
         let inner: Vec<_> = tools.iter().map(|tool| tool.get()).collect();
         self.0
             .evaluate_combine(feature, base.get(), &inner, input)
+    fn evaluate_draft(
+        &mut self,
+        feature: FeatureId,
+        body: &Self::Body,
+        input: crate::feature::draft::ResolvedDraft,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        self.0
+            .evaluate_draft(feature, body.get(), input)
             .map(PrefixBody::Created)
     }
     fn evaluate_shell(

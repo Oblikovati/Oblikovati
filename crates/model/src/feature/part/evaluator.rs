@@ -110,6 +110,15 @@ pub trait PartFeatureEvaluator {
     ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
         Err(PartFeatureFailure::Unsupported(
             "combine: expected an available solid Boolean evaluator".into(),
+    /// Construct a named face draft; example: `backend.evaluate_draft(id, body, input)`.
+    fn evaluate_draft(
+        &mut self,
+        _feature: FeatureId,
+        _body: &Self::Body,
+        _input: crate::feature::draft::ResolvedDraft,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        Err(PartFeatureFailure::Unsupported(
+            "draft: expected an available named-face evaluator".into(),
         ))
     }
     /// Resolve the sweep from a sketch plane to the current target body's bounds.

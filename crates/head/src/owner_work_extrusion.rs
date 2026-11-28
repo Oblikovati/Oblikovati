@@ -118,6 +118,11 @@ macro_rules! desktop_extrusion_work {
             action: oblikovati_gui::GuiCombineAction,
         ) -> Result<bool, String> {
             self.combine_command(action)
+        fn draft_from_gui(
+            &mut self,
+            action: oblikovati_gui::GuiDraftAction,
+        ) -> Result<bool, String> {
+            self.draft_command(action)
         }
         fn fillet_v2_from_gui(
             &mut self,

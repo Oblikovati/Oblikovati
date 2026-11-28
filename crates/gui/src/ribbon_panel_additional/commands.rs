@@ -208,6 +208,7 @@ fn additional_icon_entries(
             ("Shell", Glyph::Shell),
             ("Slot", Glyph::Hole),
             ("Combine", Glyph::ExtrudeJoin),
+            ("Draft", Glyph::Chamfer),
         ],
         RibbonPanel::PartSimplification => &[
             ("Remove Details", Glyph::Simplify),
@@ -295,6 +296,7 @@ fn additional_action(label: &str) -> Option<GuiShellAction> {
         crate::shell_ribbon::LABEL => Some(GuiShellAction::OpenShellFeature),
         "Slot" => Some(GuiShellAction::Slot(crate::GuiSlotAction::Open)),
         "Combine" => Some(GuiShellAction::Combine(crate::GuiCombineAction::Open)),
+        "Draft" => Some(GuiShellAction::Draft(crate::GuiDraftAction::Open)),
         "Constraint Inference Scope" => Some(GuiShellAction::OpenInferenceScope),
         _ => None,
     }

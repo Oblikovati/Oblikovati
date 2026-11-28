@@ -11,6 +11,8 @@ pub(super) mod owner_combine;
 pub(super) mod owner_decal;
 #[path = "owner_derive.rs"]
 pub(super) mod owner_derive;
+#[path = "owner_draft.rs"]
+pub(super) mod owner_draft;
 #[path = "owner_emboss.rs"]
 pub(super) mod owner_emboss;
 #[path = "owner_fillet_v2.rs"]
@@ -48,6 +50,7 @@ pub(super) struct CreateFeatureState {
     pub(super) hole: owner_hole::HoleOwnerState,
     pub(super) slot: owner_slot::SlotOwnerState,
     pub(super) combine: owner_combine::CombineOwnerState,
+    pub(super) draft: owner_draft::DraftOwnerState,
     pub(super) fillet_v2: owner_fillet_v2::FilletV2OwnerState,
     pub(super) chamfer_v2: owner_chamfer_v2::ChamferV2OwnerState,
 }

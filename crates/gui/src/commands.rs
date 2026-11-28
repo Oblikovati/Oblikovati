@@ -365,6 +365,8 @@ pub enum GuiShellAction {
     Slot(crate::GuiSlotAction),
     /// Open, pick, preview, or commit a Part Modify Combine feature.
     Combine(crate::GuiCombineAction),
+    /// Open, preview, or commit a Part Modify Draft feature.
+    Draft(crate::GuiDraftAction),
     /// Selection mode, preview, or commit for Part Modify Fillet v2.
     FilletV2(crate::GuiFilletV2Action),
     ChamferV2(crate::GuiChamferV2Action),

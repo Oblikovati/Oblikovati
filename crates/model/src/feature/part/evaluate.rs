@@ -56,6 +56,7 @@ pub enum PartFeatureFailure<Failure> {
     FilletInput(String),
     ChamferInput(String),
     HoleInput(String),
+    DraftInput(String),
     ShellInput(String),
     MoveBodyInput(String),
     Unsupported(String),
@@ -418,6 +419,8 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
             }
             PartFeatureDefinition::Combine(definition) => {
                 self.evaluate_combine(backend, id, definition)
+            PartFeatureDefinition::Draft(definition) => {
+                self.evaluate_draft(backend, id, definition)
             }
             definition @ (PartFeatureDefinition::Mirror(_)
             | PartFeatureDefinition::CircularPattern(_)

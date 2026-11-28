@@ -162,6 +162,7 @@ pub use fillet_panel::{
 };
 mod combine_dialog;
 mod dimensions;
+mod draft_dialog;
 mod extrude_dialog;
 mod face_draft;
 mod face_properties;
@@ -171,6 +172,9 @@ pub use application::model_browser::feature_properties::{GuiFeatureCondition, Gu
 pub use combine_dialog::{
     GuiCombineAction, GuiCombineEditSeed, GuiCombinePick, GuiCombinePickMode, GuiCombinePreview,
     GuiCombinePreviewState, GuiCombineRequest,
+pub use draft_dialog::{
+    GuiDraftAction, GuiDraftEditSeed, GuiDraftPick, GuiDraftPickTarget, GuiDraftPreview,
+    GuiDraftPreviewState, GuiDraftRequest,
 };
 pub use hole_dialog::{
     GuiHoleAction, GuiHoleEditSeed, GuiHolePick, GuiHolePreview, GuiHolePreviewState,

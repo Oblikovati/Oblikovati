@@ -10,6 +10,8 @@ mod solid_combine;
 mod solid_decal;
 #[path = "../derive/steps.rs"]
 mod solid_derive;
+#[path = "../draft/steps.rs"]
+mod solid_draft;
 #[path = "../emboss/steps.rs"]
 mod solid_emboss;
 #[path = "../fillet/steps.rs"]

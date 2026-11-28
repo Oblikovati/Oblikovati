@@ -171,6 +171,11 @@ macro_rules! forward_owner_view_work {
             action: oblikovati_gui::GuiCombineAction,
         ) -> Result<bool, String> {
             self.$owner.combine_from_gui(action)
+        fn draft_from_gui(
+            &mut self,
+            action: oblikovati_gui::GuiDraftAction,
+        ) -> Result<bool, String> {
+            self.$owner.draft_from_gui(action)
         }
         fn fillet_v2_from_gui(
             &mut self,

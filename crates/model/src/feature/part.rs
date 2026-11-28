@@ -56,6 +56,7 @@ pub enum PartFeatureDefinition {
     Hole(Box<super::hole::HoleDefinition>),
     Slot(Box<super::slot::SlotDefinition>),
     Combine(Box<super::combine::CombineDefinition>),
+    Draft(Box<super::draft::DraftDefinition>),
     MoveBody(Box<super::move_body::MoveBodyDefinition>),
     Shell(Box<super::shell::ShellDefinition>),
     Mirror(Box<super::mirror::MirrorDefinition>),
@@ -109,6 +110,7 @@ impl PartFeatureDefinition {
             Self::Hole(_) => "hole",
             Self::Slot(_) => "slot",
             Self::Combine(_) => "combine",
+            Self::Draft(_) => "draft",
             Self::MoveBody(_) => "move-body",
             Self::Shell(_) => "shell",
             Self::Mirror(_) => "mirror",
@@ -141,6 +143,7 @@ impl PartFeatureDefinition {
                 | Self::Hole(_)
                 | Self::Slot(_)
                 | Self::Combine(_)
+                | Self::Draft(_)
                 | Self::Shell(_)
                 | Self::MoveBody(_)
                 | Self::Mirror(_)
