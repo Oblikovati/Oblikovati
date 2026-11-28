@@ -32,4 +32,24 @@ impl DocumentSnapshot {
             ids,
         )
     }
+    /// Replace an existing Shell definition in-place; example: `snapshot.edit_shell(id, definition)?`.
+    pub fn edit_shell(
+        &mut self,
+        id: FeatureId,
+        definition: ShellDefinition,
+    ) -> Result<(), HistoryError> {
+        let reads = definition.reads();
+        self.work_geometry
+            .replace(
+                id,
+                PartFeatureDefinition::Shell(Box::new(definition)),
+                reads,
+            )
+            .map(|_| ())
+            .map_err(|cause| {
+                HistoryError::PartProgram(
+                    crate::feature::part::PartFeatureProgramError::Sequence(cause),
+                )
+            })
+    }
 }

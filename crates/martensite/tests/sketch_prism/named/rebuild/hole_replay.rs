@@ -11,6 +11,8 @@ use oblikovati_model::feature::{
 mod chamfer_v2;
 #[path = "fillet_v2.rs"]
 mod fillet_v2;
+#[path = "shell_v2.rs"]
+mod shell_v2;
 #[path = "hole_frame_origin.rs"]
 mod hole_frame_origin;
 #[path = "hole_v2.rs"]

@@ -251,6 +251,87 @@ impl NamedSolid {
         }
         (kept, failed)
     }
+    /// Expand a clicked rounded/curved face to its tangent face chain; planar clicks return only themselves.
+    pub fn shell_tangent_face_chain(
+        &self,
+        history: &DocumentEditHistory,
+        document: DocumentGuid,
+        face_key: &[u8],
+    ) -> Result<Vec<Vec<u8>>, String> {
+        use crate::PrismSurfaceKind;
+        use martensite_tkbrep::{brep_adaptor::BRepAdaptorSurface, topods};
+        use martensite_tkg3d::adaptor3d::Adaptor3dSurface;
+        use martensite_tkmath::geom_abs::SurfaceType;
+
+        let topo = self.face_topology(history, document, face_key)?;
+        if topo.surface == PrismSurfaceKind::Plane {
+            return Ok(vec![face_key.to_vec()]);
+        }
+        let all_faces = self.face_reference_keys(history, document)?;
+        let seed_shape = self.native_face(history, document, face_key)?;
+        let seed_edges = face_edge_shapes(seed_shape)?;
+        let seed_axis = face_cylinder_axis(seed_shape);
+
+        let mut chain = vec![face_key.to_vec()];
+        for other_key in &all_faces {
+            if other_key.as_slice() == face_key {
+                continue;
+            }
+            let Ok(other_shape) = self.native_face(history, document, other_key) else {
+                continue;
+            };
+            let Ok(other_edges) = face_edge_shapes(other_shape) else {
+                continue;
+            };
+            let shares_edge = seed_edges
+                .iter()
+                .any(|se| other_edges.iter().any(|oe| se.is_same(oe)));
+            if !shares_edge {
+                continue;
+            }
+            let is_tangent = if let Some(axis) = seed_axis
+                && let Ok(native) = topods::face(other_shape)
+                && let Ok(adaptor) = BRepAdaptorSurface::with_face(&native, false)
+                && adaptor.get_type().ok() == Some(SurfaceType::Plane)
+                && let Ok(plane) = adaptor.plane()
+            {
+                let n = *plane.position().direction().coordinates();
+                (axis[0] * n[0] + axis[1] * n[1] + axis[2] * n[2]).abs() < 0.05
+            } else {
+                self.face_topology(history, document, other_key)
+                    .is_ok_and(|t| t.surface != PrismSurfaceKind::Plane)
+            };
+            if is_tangent {
+                chain.push(other_key.clone());
+            }
+        }
+        Ok(chain)
+    }
+}
+
+fn face_edge_shapes(face: &Shape) -> Result<Vec<Shape>, String> {
+    let mut map = IndexedMapOfShape::default();
+    topexp::map_shapes_of_type(face, ShapeEnum::Edge, &mut map)
+        .map_err(|cause| cause.to_string())?;
+    let mut out = Vec::with_capacity(map.extent());
+    for i in 1..=map.extent() {
+        out.push(map.find_key(i).map_err(|cause| cause.to_string())?.clone());
+    }
+    Ok(out)
+}
+
+fn face_cylinder_axis(face: &Shape) -> Option<[f64; 3]> {
+    use martensite_tkbrep::{brep_adaptor::BRepAdaptorSurface, topods};
+    use martensite_tkg3d::adaptor3d::Adaptor3dSurface;
+    use martensite_tkmath::geom_abs::SurfaceType;
+
+    let native = topods::face(face).ok()?;
+    let adaptor = BRepAdaptorSurface::with_face(&native, false).ok()?;
+    if adaptor.get_type().ok()? != SurfaceType::Cylinder {
+        return None;
+    }
+    let cyl = adaptor.cylinder().ok()?;
+    Some(*cyl.axis().direction().coordinates())
 }
 
 /// One edge-key group paired with its constant radius in centimeters.

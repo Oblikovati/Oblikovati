@@ -322,6 +322,7 @@ impl WorkPlaneDefinitionRecipe {
             Self::Hole(recipe) if recipe.version == 2 => 52,
             Self::Hole(_) => 22,
             Self::MoveBody(_) => 23,
+            Self::Shell(recipe) if recipe.version == 2 => 56,
             Self::Shell(_) => 24,
             Self::SketchLoft(recipe) if recipe.takeoff.is_some() => 39,
             Self::SketchLoft(recipe) if recipe.placed.is_some() => 38,

@@ -14,6 +14,77 @@ pub enum ShellDirection {
     Both,
 }
 
+/// Corner join / behavior mode in the Shell Properties panel.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum ShellType {
+    #[default]
+    Sharp,
+    Rounded,
+}
+
+/// Approximation bias mode when `allow_approximation` is enabled.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum ShellApproximationType {
+    #[default]
+    Mean,
+    NeverTooThin,
+    NeverTooThick,
+}
+
+/// Approximation tolerance mode when `allow_approximation` is enabled.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum ShellApproximationTolerance {
+    #[default]
+    Optimized,
+    Specified,
+}
+
+/// Extended v2 Shell options; `Default` produces a byte-identical v1 recipe.
+#[derive(Clone, Copy, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ShellOptions {
+    #[serde(default)]
+    pub shell_type: ShellType,
+    #[serde(default)]
+    pub allow_approximation: bool,
+    #[serde(default)]
+    pub approximation_type: ShellApproximationType,
+    #[serde(default)]
+    pub approximation_tolerance: ShellApproximationTolerance,
+    #[serde(default = "default_approx_percent")]
+    pub approximation_percent: f64,
+}
+
+const fn default_approx_percent() -> f64 {
+    10.0
+}
+
+impl Default for ShellOptions {
+    fn default() -> Self {
+        Self {
+            shell_type: ShellType::Sharp,
+            allow_approximation: false,
+            approximation_type: ShellApproximationType::Mean,
+            approximation_tolerance: ShellApproximationTolerance::Optimized,
+            approximation_percent: default_approx_percent(),
+        }
+    }
+}
+
+impl ShellOptions {
+    /// True when no v2 field diverges from the v1 shell recipe.
+    pub fn is_default(&self) -> bool {
+        self.shell_type == ShellType::Sharp
+            && !self.allow_approximation
+            && self.approximation_type == ShellApproximationType::Mean
+            && self.approximation_tolerance == ShellApproximationTolerance::Optimized
+            && (self.approximation_percent - default_approx_percent()).abs() <= 1e-9
+    }
+}
+
 /// One retained face with a distinct wall-thickness source.
 #[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -32,6 +103,8 @@ pub struct ShellRecipe {
     pub thickness: DatumLength,
     pub direction: ShellDirection,
     pub face_thicknesses: Vec<ShellFaceThickness>,
+    #[serde(default, skip_serializing_if = "ShellOptions::is_default")]
+    pub options: ShellOptions,
 }
 
 /// A validated, canonical Shell recipe and its source-feature dependencies.
@@ -48,6 +121,7 @@ pub struct ResolvedShell {
     pub thickness: f64,
     pub direction: ShellDirection,
     pub face_thicknesses: Vec<(Vec<u8>, f64)>,
+    pub options: ShellOptions,
 }
 
 impl ShellDefinition {
@@ -59,6 +133,31 @@ impl ShellDefinition {
         direction: ShellDirection,
         face_thicknesses: Vec<ShellFaceThickness>,
     ) -> Result<Self, String> {
+        Self::new_with_options(
+            body,
+            openings,
+            thickness,
+            direction,
+            face_thicknesses,
+            ShellOptions::default(),
+        )
+    }
+
+    /// Validate named inputs with extended v2 Shell options.
+    pub fn new_with_options(
+        body: Vec<u8>,
+        openings: Vec<Vec<u8>>,
+        thickness: DatumLength,
+        direction: ShellDirection,
+        face_thicknesses: Vec<ShellFaceThickness>,
+        options: ShellOptions,
+    ) -> Result<Self, String> {
+        if !options.approximation_percent.is_finite() || options.approximation_percent <= 0.0 {
+            return Err(format!(
+                "shell approximation percent {}: expected a finite positive value",
+                options.approximation_percent
+            ));
+        }
         let (document, body_source) = super::fillet::reference_identity(&body, 4, "shell")?;
         super::fillet::validate_radius_source(thickness, "shell thickness")?;
         let (openings, opening_sources) = super::fillet::validate_topology_keys(
@@ -75,39 +174,61 @@ impl ShellDefinition {
             .into_iter()
             .chain(override_sources)
             .collect::<BTreeSet<_>>();
+        let version = if options.is_default() { 1 } else { 2 };
         Ok(Self {
             recipe: ShellRecipe {
-                version: 1,
+                version,
                 body,
                 openings,
                 thickness,
                 direction,
                 face_thicknesses,
+                options,
             },
             body_source,
             sources: sources.into_iter().collect(),
         })
     }
+
     /// Read the canonical authored recipe; for example, `definition.recipe().openings`.
     pub fn recipe(&self) -> ShellRecipe {
         self.recipe.clone()
     }
+
+    /// Read extended v2 shell options; for example, `definition.options()`.
+    pub fn options(&self) -> ShellOptions {
+        self.recipe.options
+    }
+
     /// Validate a saved recipe; for example, `ShellDefinition::from_recipe(&saved)`.
     pub fn from_recipe(recipe: &ShellRecipe) -> Result<Self, String> {
-        if recipe.version != 1 {
-            return Err(format!(
-                "shell recipe version {}: expected version 1",
-                recipe.version
-            ));
+        match recipe.version {
+            1 => {
+                if !recipe.options.is_default() {
+                    return Err("shell recipe version 1: unexpected v2 options".into());
+                }
+                Self::new(
+                    recipe.body.clone(),
+                    recipe.openings.clone(),
+                    recipe.thickness,
+                    recipe.direction,
+                    recipe.face_thicknesses.clone(),
+                )
+            }
+            2 => Self::new_with_options(
+                recipe.body.clone(),
+                recipe.openings.clone(),
+                recipe.thickness,
+                recipe.direction,
+                recipe.face_thicknesses.clone(),
+                recipe.options,
+            ),
+            other => Err(format!(
+                "shell recipe version {other}: expected version 1 or 2"
+            )),
         }
-        Self::new(
-            recipe.body.clone(),
-            recipe.openings.clone(),
-            recipe.thickness,
-            recipe.direction,
-            recipe.face_thicknesses.clone(),
-        )
     }
+
     /// Identify the source body producer; for example, `definition.body_source()`.
     pub fn body_source(&self) -> FeatureId {
         self.body_source
@@ -152,6 +273,7 @@ impl ShellDefinition {
             thickness: self.resolved_thickness(parameters)?,
             direction: self.recipe.direction,
             face_thicknesses,
+            options: self.recipe.options,
         })
     }
 }
