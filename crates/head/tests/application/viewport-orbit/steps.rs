@@ -260,12 +260,14 @@ fn click_ok(world: &mut ApplicationWorld) {
         world.pump(Vec::new());
         return;
     }
-    if diagnostics::window_geometry("Boundary Patch").is_some() {
-        let button = world.run_in_window("Boundary Patch", "OK").center();
-        world.click(diagnostics::pointer_pixels(button));
-        world.pump(Vec::new());
-        world.pump(Vec::new());
-        return;
+    for window in ["Boundary Patch", "Trim Surface"] {
+        if diagnostics::window_geometry(window).is_some() {
+            let button = world.run_in_window(window, "OK").center();
+            world.click(diagnostics::pointer_pixels(button));
+            world.pump(Vec::new());
+            world.pump(Vec::new());
+            return;
+        }
     }
     if diagnostics::window_geometry("Hole").is_some() {
         let button = world.run_in_window("Hole", "OK").center();
