@@ -247,6 +247,7 @@ pub(crate) fn action_glyph(action: &GuiShellAction) -> Option<IconGlyph> {
         GuiShellAction::ExtendSurface(crate::GuiExtendSurfaceAction::Open) => {
             IconGlyph::ExtendSurface
         }
+        GuiShellAction::RuledSurface(crate::GuiRuledSurfaceAction::Open) => IconGlyph::RuledSurface,
         _ => return None,
     })
 }

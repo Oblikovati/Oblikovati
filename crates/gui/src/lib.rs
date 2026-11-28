@@ -289,6 +289,12 @@ pub use unwrap_dialog::{
     GuiUnwrapAction, GuiUnwrapEdgeMode, GuiUnwrapEditSeed, GuiUnwrapFacePick, GuiUnwrapPreview,
     GuiUnwrapPreviewState, GuiUnwrapRequest,
 };
+mod ruled_surface_dialog;
+pub use ruled_surface_dialog::{
+    GuiRuledSurfaceAction, GuiRuledSurfaceArrow, GuiRuledSurfaceEditSeed, GuiRuledSurfacePick,
+    GuiRuledSurfacePickTarget, GuiRuledSurfacePreview, GuiRuledSurfacePreviewState,
+    GuiRuledSurfaceRequest,
+};
 mod revolve_dialog;
 pub use revolve_dialog::{
     GuiRevolveAction, GuiRevolveEditSeed, GuiRevolveExtent, GuiRevolvePreview,

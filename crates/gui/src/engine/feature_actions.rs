@@ -160,6 +160,7 @@ enum Draft {
     Finish,
     ExtendSurface,
     BoundaryPatch,
+    RuledSurface,
     MoveBody,
 }
 
@@ -240,6 +241,9 @@ fn requested_draft(action: &GuiShellAction) -> Option<Draft> {
         GuiShellAction::BoundaryPatch(
             crate::GuiBoundaryPatchAction::Open | crate::GuiBoundaryPatchAction::OpenEdit(_),
         ) => Draft::BoundaryPatch,
+        GuiShellAction::RuledSurface(
+            crate::GuiRuledSurfaceAction::Open | crate::GuiRuledSurfaceAction::OpenEdit(_),
+        ) => Draft::RuledSurface,
         GuiShellAction::OpenMoveBody => Draft::MoveBody,
         _ => return None,
     })
@@ -310,18 +314,6 @@ pub(super) fn open_drafts(
     }
     if draft != Draft::Split {
         split.close(actions);
-    }
-    if draft != Draft::Mark {
-        create.mark.close(actions);
-    }
-    if draft != Draft::Finish {
-        create.finish.close(actions);
-    }
-    if draft != Draft::ExtendSurface {
-        create.extend_surface.close(actions);
-    }
-    if draft != Draft::BoundaryPatch {
-        create.boundary_patch.close(actions);
     }
     if draft != Draft::MoveBody {
         motion.close(actions);
@@ -446,6 +438,12 @@ pub(super) fn open_drafts(
         }
         GuiShellAction::BoundaryPatch(crate::GuiBoundaryPatchAction::OpenEdit(feature)) => {
             create.boundary_patch.open(state, Some(feature), actions)
+        }
+        GuiShellAction::RuledSurface(crate::GuiRuledSurfaceAction::Open) => {
+            create.ruled_surface.open(state, None, actions)
+        }
+        GuiShellAction::RuledSurface(crate::GuiRuledSurfaceAction::OpenEdit(feature)) => {
+            create.ruled_surface.open(state, Some(feature), actions)
         }
         GuiShellAction::OpenMoveBody => motion.open(state),
         _ => {}

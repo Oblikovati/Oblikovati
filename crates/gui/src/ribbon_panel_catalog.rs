@@ -258,8 +258,8 @@ fn side_model_groups(panel: RibbonPanel) -> impl Iterator<Item = RibbonPanel> {
         PartSimulation => &[PartConvert],
         _ => &[],
     };
-    // Parameters is placed above Simplification on the side ribbon.
-    (panel != Parameters)
+    // Parameters and PartSurface are placed explicitly on the side ribbon.
+    (!matches!(panel, Parameters | PartSurface))
         .then_some(panel)
         .into_iter()
         .chain(extra.iter().copied())

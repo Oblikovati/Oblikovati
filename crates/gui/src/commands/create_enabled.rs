@@ -25,6 +25,7 @@ pub(crate) fn enabled(action: &GuiShellAction, state: &GuiCommandState) -> Optio
         GuiShellAction::Split(action) => action.enabled(state),
         GuiShellAction::Mark(action) => action.enabled(state),
         GuiShellAction::Finish(action) => action.enabled(state),
+        GuiShellAction::RuledSurface(action) => action.enabled(state),
         GuiShellAction::WorkAxis(action) => action.enabled(state),
         GuiShellAction::Ucs(action) => action.enabled(state),
         GuiShellAction::WorkPoint(action) => action.enabled(state),
