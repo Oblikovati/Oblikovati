@@ -370,8 +370,11 @@ pub enum GuiShellAction {
     /// Selection mode, preview, or commit for Part Modify Fillet v2.
     FilletV2(crate::GuiFilletV2Action),
     ChamferV2(crate::GuiChamferV2Action),
+    ShellV2(crate::GuiShellV2Action),
     /// Open the Shell properties draft.
     OpenShellFeature,
+    /// Reopen an existing Shell feature in the Shell Properties panel.
+    OpenShellEdit(oblikovati_model::feature::FeatureId),
     /// Show or clear the exact Shell preview.
     PreviewShellFeature(Option<GuiShellFeatureRequest>),
     /// Commit the Shell draft.

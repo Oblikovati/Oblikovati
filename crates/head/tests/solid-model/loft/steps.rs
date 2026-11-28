@@ -22,6 +22,8 @@ mod solid_hole;
 mod solid_import;
 #[path = "../rib/steps.rs"]
 mod solid_rib;
+#[path = "../shell/steps.rs"]
+mod solid_shell;
 #[path = "../slot/steps.rs"]
 mod solid_slot;
 #[path = "../unwrap/steps.rs"]

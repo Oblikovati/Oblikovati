@@ -193,7 +193,7 @@ fn requested_draft(action: &GuiShellAction) -> Option<Draft> {
         | GuiShellAction::OpenChamfer
         | GuiShellAction::OpenFilletEdit(_)
         | GuiShellAction::OpenChamferEdit(_) => Draft::Blend,
-        GuiShellAction::OpenShellFeature => Draft::Shell,
+        GuiShellAction::OpenShellFeature | GuiShellAction::OpenShellEdit(_) => Draft::Shell,
         GuiShellAction::Hole(crate::GuiHoleAction::Open | crate::GuiHoleAction::OpenEdit(_)) => {
             Draft::Hole
         }
@@ -352,6 +352,7 @@ pub(super) fn open_drafts(
         GuiShellAction::OpenFilletEdit(feature) => blend.open_edit(state, feature),
         GuiShellAction::OpenChamferEdit(feature) => blend.open_chamfer_edit(state, feature),
         GuiShellAction::OpenShellFeature => shell.open(state),
+        GuiShellAction::OpenShellEdit(feature) => shell.open_edit(state, feature),
         GuiShellAction::Hole(crate::GuiHoleAction::Open) => hole.open(state, None),
         GuiShellAction::Hole(crate::GuiHoleAction::OpenEdit(feature)) => {
             hole.open(state, Some(feature))

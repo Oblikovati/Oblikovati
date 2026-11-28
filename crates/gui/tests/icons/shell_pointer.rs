@@ -53,7 +53,14 @@ fn shell_ribbon_click_opens_draft_and_escape_clears_preview() {
         }];
         actions.extend(engine.frame(&request).unwrap().actions);
     }
-    assert!(actions.iter().any(|action| matches!(action, GuiShellAction::PreviewShellFeature(Some(draft)) if draft.faces == ["face"])), "actions: {actions:?}");
+    assert!(
+        actions.iter().any(|action| matches!(
+            action,
+            GuiShellAction::ShellV2(crate::GuiShellV2Action::Preview(draft))
+                if draft.openings == [vec![0xfa, 0xce]]
+        )),
+        "actions: {actions:?}"
+    );
     request.events = vec![crate::GuiInputEvent::Key {
         key: crate::GuiKey::Escape,
         pressed: true,
@@ -62,7 +69,7 @@ fn shell_ribbon_click_opens_draft_and_escape_clears_preview() {
     assert!(
         result
             .actions
-            .contains(&GuiShellAction::PreviewShellFeature(None)),
+            .contains(&GuiShellAction::ShellV2(crate::GuiShellV2Action::Clear)),
         "actions: {:?}",
         result.actions
     );

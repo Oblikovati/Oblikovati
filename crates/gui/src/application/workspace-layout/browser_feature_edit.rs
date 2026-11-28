@@ -43,8 +43,12 @@ pub(super) fn feature_edit_action(
     }
     if browser.combine_edits.contains_key(&feature.id) {
         return GuiShellAction::Combine(crate::GuiCombineAction::OpenEdit(feature.id));
+    }
     if browser.draft_edits.contains_key(&feature.id) {
         return GuiShellAction::Draft(crate::GuiDraftAction::OpenEdit(feature.id));
+    }
+    if browser.shell_v2_edits.contains_key(&feature.id) {
+        return GuiShellAction::OpenShellEdit(feature.id);
     }
     if browser.chamfer_edits.contains_key(&feature.id) {
         return GuiShellAction::OpenChamferEdit(feature.id);

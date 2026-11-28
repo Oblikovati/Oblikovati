@@ -151,6 +151,7 @@ pub(super) fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
         | GuiShellAction::PreviewMoveBody(_)
         | GuiShellAction::CreateMoveBody(_)
         | GuiShellAction::OpenShellFeature
+        | GuiShellAction::OpenShellEdit(_)
         | GuiShellAction::PreviewShellFeature(_)
         | GuiShellAction::CreateShellFeature(_)
         | GuiShellAction::Hole(_)
@@ -159,6 +160,7 @@ pub(super) fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
         | GuiShellAction::Draft(_)
         | GuiShellAction::FilletV2(_)
         | GuiShellAction::ChamferV2(_)
+        | GuiShellAction::ShellV2(_)
         | GuiShellAction::OpenFillet
         | GuiShellAction::OpenChamfer
         | GuiShellAction::OpenFilletEdit(_)

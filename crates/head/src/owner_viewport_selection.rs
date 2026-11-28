@@ -51,6 +51,9 @@ impl<
         if let Some(changed) = self.pick_chamfer_v2_geometry(document, line, depth_window)? {
             return Ok(changed);
         }
+        if let Some(changed) = self.pick_shell_v2_geometry(document, line, depth_window)? {
+            return Ok(changed);
+        }
         if let Some(changed) = self.pick_revolve_geometry(document, line, depth_window)? {
             return Ok(changed);
         }

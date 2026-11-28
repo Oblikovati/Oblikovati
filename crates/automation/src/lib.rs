@@ -42,6 +42,7 @@ mod loft;
 mod revolve;
 mod rib;
 mod shell;
+mod shell_v2;
 mod slot;
 mod sweep;
 mod unwrap;
@@ -98,6 +99,9 @@ pub use rib::{
     replace_rib,
 };
 pub use shell::{PreparedShell, prepare_shell};
+pub use shell_v2::{
+    ShellV2Inputs, ShellV2OverrideInput, build_shell_v2_definition, prepare_shell_v2, replace_shell,
+};
 pub use slot::{
     PreparedSlot, SlotFeatureInputs, SlotSeatInput, build_slot_definition, prepare_slot_definition,
     replace_slot,

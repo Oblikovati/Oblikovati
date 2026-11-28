@@ -19,6 +19,8 @@ mod fillet_v2;
 mod hole_frame_origin;
 #[path = "hole_v2.rs"]
 mod hole_v2;
+#[path = "shell_v2.rs"]
+mod shell_v2;
 #[path = "slot_replay.rs"]
 mod slot_replay;
 

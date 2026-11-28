@@ -100,6 +100,7 @@ pub(super) fn apply(owner: &mut dyn HeadWork, action: &GuiShellAction) -> Result
         }
         GuiShellAction::CreateMoveBody(request) => owner.commit_move_body_from_gui(request),
         GuiShellAction::OpenShellFeature => Ok(false),
+        GuiShellAction::OpenShellEdit(_) => Ok(false),
         GuiShellAction::PreviewShellFeature(request) => {
             owner.preview_shell_from_gui(request.as_ref())
         }
@@ -110,6 +111,7 @@ pub(super) fn apply(owner: &mut dyn HeadWork, action: &GuiShellAction) -> Result
         GuiShellAction::Draft(action) => owner.draft_from_gui(action.clone()),
         GuiShellAction::FilletV2(action) => owner.fillet_v2_from_gui(action.clone()),
         GuiShellAction::ChamferV2(action) => owner.chamfer_v2_from_gui(action.clone()),
+        GuiShellAction::ShellV2(action) => owner.shell_v2_from_gui(action.clone()),
         GuiShellAction::OpenFillet => Ok(false),
         GuiShellAction::OpenChamfer => Ok(false),
         GuiShellAction::OpenFilletEdit(_) => Ok(false),

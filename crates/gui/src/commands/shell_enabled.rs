@@ -8,6 +8,16 @@ pub(super) fn open(state: &GuiCommandState) -> bool {
         && state.authoring == GuiAuthoringContext::Part
         && !state.transaction_open
 }
+pub(super) fn open_edit(
+    state: &GuiCommandState,
+    feature: oblikovati_model::feature::FeatureId,
+) -> bool {
+    open(state)
+        && state
+            .browser
+            .as_ref()
+            .is_some_and(|browser| browser.shell_v2_edits.contains_key(&feature))
+}
 pub(super) fn request(state: &GuiCommandState, request: &GuiShellFeatureRequest) -> bool {
     let selected: Vec<_> = state
         .selected_face_appearances

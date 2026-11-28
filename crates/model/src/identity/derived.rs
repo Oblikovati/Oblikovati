@@ -73,6 +73,14 @@ impl DerivedReferenceName {
     pub fn document(&self) -> DocumentGuid {
         self.document
     }
+    /// Read the feature that generated this derived entity; example: `name.feature()`.
+    pub fn feature(&self) -> u64 {
+        self.feature
+    }
+    /// Read the canonical parent keys that produced this derived entity; example: `name.parents()`.
+    pub fn parents(&self) -> &[Vec<u8>] {
+        &self.parents
+    }
 }
 
 /// Validate a topology name and read its document; example: `topology_reference_document(&key)?`.

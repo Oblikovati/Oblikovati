@@ -96,6 +96,13 @@ fn depth_preview(world: &mut ApplicationWorld) {
 
 #[when("the user cancels the edit")]
 fn cancel_edit(world: &mut ApplicationWorld) {
+    if diagnostics::window_geometry("Shell").is_some() {
+        let center = world.run_in_window("Shell", "Cancel").center();
+        world.click(diagnostics::pointer_pixels(center));
+        world.pump(Vec::new());
+        world.pump(Vec::new());
+        return;
+    }
     super::cancel_extrusion(world);
 }
 
