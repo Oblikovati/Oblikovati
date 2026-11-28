@@ -442,6 +442,15 @@ impl PartFeatureEvaluator for CertifiedNamedSolidEvaluator<'_> {
     ) -> Result<Vec<NamedSolid>, PartFeatureFailure<EvaluationFailure>> {
         self.evaluate_named_split(feature, body, input)
     }
+    fn evaluate_surface_trim(
+        &mut self,
+        feature: FeatureId,
+        body: &NamedSolid,
+        tool_body: Option<&NamedSolid>,
+        input: oblikovati_model::feature::surface_trim::ResolvedSurfaceTrim,
+    ) -> Result<NamedSolid, PartFeatureFailure<EvaluationFailure>> {
+        self.evaluate_named_surface_trim(feature, body, tool_body, input)
+    }
     fn evaluate_mark(
         &mut self,
         feature: FeatureId,

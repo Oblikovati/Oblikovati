@@ -149,8 +149,8 @@ mod subentities;
 pub use blend::{
     BlendCandidate, BlendHistoryRecord, BlendNamedTopology, MarkEligibility, RigidMotion,
     RuledSurfaceArrow, SharedFilletVertex, SolidFilletEdgeGroups, StitchAnalysisReport,
-    StitchFreeEdgeReport, ThreadableFaceInfo, analyze_stitch_surfaces, check_mark_eligibility,
-    finish_appearance_rgb_u8, finish_appearance_rgba,
+    StitchFreeEdgeReport, SurfaceTrimRegionPreview, ThreadableFaceInfo, analyze_stitch_surfaces,
+    check_mark_eligibility, finish_appearance_rgb_u8, finish_appearance_rgba,
 };
 pub use evaluate::retain_certified_named_sketch_prism;
 use evaluate::{CertifiedNamedPrismEvaluator, NamedPrismEvaluator};

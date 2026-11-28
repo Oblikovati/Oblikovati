@@ -68,7 +68,7 @@ pub(super) fn build_section_edges(
     Ok(edges)
 }
 
-fn body_bounds_center_and_extent(body: &Shape) -> Result<([f64; 3], f64), String> {
+pub(super) fn body_bounds_center_and_extent(body: &Shape) -> Result<([f64; 3], f64), String> {
     let mut bounds = BoundingBox3::default();
     BRepBndLib::add_optimal(body, &mut bounds, false, false)
         .map_err(|cause| format!("split bounds: {cause}"))?;
@@ -90,7 +90,7 @@ fn body_bounds_center_and_extent(body: &Shape) -> Result<([f64; 3], f64), String
     Ok((center, (diag * 2.5).max(10.0)))
 }
 
-fn build_plane_tool(
+pub(super) fn build_plane_tool(
     plane: SketchPlane,
     center: [f64; 3],
     extent: f64,

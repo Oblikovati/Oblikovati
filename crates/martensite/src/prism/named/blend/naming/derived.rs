@@ -188,6 +188,31 @@ impl BlendNamedTopology {
         )
     }
 
+    pub(crate) fn from_trimmed_shell_preserving_body(
+        history: &DocumentEditHistory,
+        document: DocumentGuid,
+        feature: FeatureId,
+        primary_body: Vec<u8>,
+        deleted: Vec<Vec<u8>>,
+        shape: Shape,
+        resolution: Option<PrismResolution>,
+    ) -> Result<Self, String> {
+        let active_body =
+            SemanticReferenceName::new(document, feature.0, 4, "surface-trim", "body", &[1])?
+                .encode()?;
+        Self::from_tagged_shell_with_bodies(
+            history,
+            document,
+            feature,
+            "surface-trim",
+            primary_body,
+            active_body,
+            deleted,
+            shape,
+            resolution,
+        )
+    }
+
     pub(crate) fn from_boundary_patch_shell(
         history: &DocumentEditHistory,
         document: DocumentGuid,
@@ -231,7 +256,6 @@ impl BlendNamedTopology {
     ) -> Result<Self, String> {
         Self::from_tagged_shell(history, document, feature, "stitch", shape, resolution)
     }
-
     fn from_tagged_shell(
         history: &DocumentEditHistory,
         document: DocumentGuid,
