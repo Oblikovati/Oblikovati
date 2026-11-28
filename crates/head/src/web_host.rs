@@ -168,4 +168,51 @@ impl WebDesktopHost {
         let win_res = self.window.finish();
         owner_res.and(win_res)
     }
+
+    /// Return the Oblikovati public API major and minor version supported by this host.
+    pub fn api_version(&self) -> (i32, i32) {
+        (oblikovati_api::API_MAJOR, oblikovati_api::API_MINOR)
+    }
+
+    /// Validate an add-in's compiled API version against this host using the shared handshake.
+    pub fn check_addin_compatibility(major: i32, minor: i32) -> Result<(), String> {
+        oblikovati_addin_host::check_api_version(
+            Some((major, minor)),
+            (oblikovati_api::API_MAJOR, oblikovati_api::API_MINOR),
+        )
+        .map(|_| ())
+        .map_err(|cause| cause.to_string())
+    }
+
+    /// Dispatch a public JSON automation call from a browser WebAssembly add-in.
+    pub fn call_api(&mut self, method: &str, request: &[u8]) -> Result<Vec<u8>, String> {
+        let slots = self.owner.document_camera_slots();
+        let (reply, changed) = {
+            let caller =
+                crate::window_caller::WindowCaller::new(&mut self.owner, &mut self.window, slots);
+            let reply = oblikovati_api::client::Caller::call(&caller, method, request)
+                .map_err(|cause| cause.to_string())?;
+            (reply, caller.window_changed())
+        };
+        if changed {
+            let _ = self.step()?;
+        }
+        Ok(reply)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::WebDesktopHost;
+
+    #[test]
+    fn wasm_addin_compatibility_uses_shared_handshake() {
+        let host_major = oblikovati_api::API_MAJOR;
+        let host_minor = oblikovati_api::API_MINOR;
+        assert!(WebDesktopHost::check_addin_compatibility(host_major, host_minor).is_ok());
+        assert!(WebDesktopHost::check_addin_compatibility(host_major, 0).is_ok());
+        assert!(WebDesktopHost::check_addin_compatibility(host_major, host_minor + 1).is_err());
+        assert!(WebDesktopHost::check_addin_compatibility(host_major + 1, 0).is_err());
+        assert!(WebDesktopHost::check_addin_compatibility(-1, 0).is_err());
+    }
 }

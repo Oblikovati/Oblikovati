@@ -10,6 +10,13 @@ let worker = null;
 let nextRequestId = 1;
 const pending = new Map();
 let ready = false;
+const textEncoder = new TextEncoder();
+const textDecoder = new TextDecoder();
+let mcpState = {
+  addInId: "com.oblikovati.mcp-bridge",
+  tools: [],
+  registeredWebMCP: false,
+};
 
 function showBootMessage(text, isError = false) {
   bootOverlay.classList.remove("hidden");
@@ -182,6 +189,14 @@ async function boot() {
       else waiter.reject(new Error(msg.error || "Worker request failed"));
       return;
     }
+    if (msg.type === "addinChannel") {
+      handleAddInChannel(msg.addInId, msg.channel, msg.payload);
+      return;
+    }
+    if (msg.type === "addinLog") {
+      console.info(`[addin:${msg.addInId}] ${msg.message}`);
+      return;
+    }
     if (msg.type === "error") {
       showBootMessage(formatInitError(msg.message), true);
     }
@@ -208,16 +223,147 @@ async function boot() {
     ready = true;
     hideBootOverlay();
     canvas.focus({ preventScroll: true });
+    const addinsApi = {
+      loadUrl: (url) => rpc({ type: "loadAddIn", url }),
+      loadBundleZip: (bundleUrl) => rpc({ type: "loadAddIn", bundleUrl }),
+      loadBytes: (wasmBytes) => rpc({ type: "loadAddIn", wasmBytes }, [wasmBytes]),
+      loadFromCatalogue: (catalogueBaseUrl, addInId) =>
+        loadAddInFromCatalogue(catalogueBaseUrl, addInId, res.apiVersion),
+      unload: (addInId) => rpc({ type: "unloadAddIn", addInId }),
+      list: async () => (await rpc({ type: "listAddIns" })).addins,
+      callAutomation: async (addInId, method, req) => {
+        const bytes =
+          req instanceof Uint8Array
+            ? req.slice().buffer
+            : textEncoder.encode(typeof req === "string" ? req : JSON.stringify(req ?? {})).buffer;
+        const reply = await rpc({ type: "addinAutomation", addInId, method, reqBytes: bytes }, [
+          bytes,
+        ]);
+        return new Uint8Array(reply.data);
+      },
+      sendChannel: (addInId, channel, payload) =>
+        rpc({ type: "addinChannel", addInId, channel, payload }),
+    };
+
     window.__OBLIKOVATI_WEB__ = {
       status: () => rpc({ type: "status" }),
       capture: () => rpc({ type: "capture" }),
       openDocumentBytes: (name, buffer) =>
         rpc({ type: "openDocument", name, bytes: buffer }, [buffer]),
+      apiVersion: res.apiVersion,
+      addins: addinsApi,
+      requestSpaceMouse: () => connectSpaceMouseWebHID(addinsApi),
       initialStatus: res.status,
     };
+
+    await autoLoadQueryAddIns(addinsApi);
   } catch (error) {
     showBootMessage(formatInitError(error), true);
   }
+}
+
+async function loadAddInFromCatalogue(catalogueBaseUrl, addInId, apiVersion) {
+  const base = String(catalogueBaseUrl || "https://addins.oblikovati.org").replace(/\/+$/, "");
+  const query = apiVersion ? `?api=${apiVersion.major}.${apiVersion.minor}` : "";
+  const resp = await fetch(`${base}/catalogue${query}`);
+  if (!resp.ok) {
+    throw new Error(`catalogue query failed: HTTP ${resp.status}`);
+  }
+  const data = await resp.json();
+  const entry = (data.addins || []).find((item) => item.name === addInId);
+  if (!entry || !entry.versions || entry.versions.length === 0) {
+    throw new Error(`add-in ${addInId} not found in catalogue`);
+  }
+  const bundle = entry.versions[0].bundles?.["js-wasm"];
+  if (!bundle || !bundle.url) {
+    throw new Error(`add-in ${addInId} has no js-wasm bundle for this API version`);
+  }
+  return rpc({ type: "loadAddIn", bundleUrl: bundle.url });
+}
+
+async function autoLoadQueryAddIns(addinsApi) {
+  const params = new URLSearchParams(window.location.search);
+  for (const url of params.getAll("addin")) {
+    if (url) {
+      await addinsApi.loadUrl(url);
+    }
+  }
+  for (const bundleUrl of params.getAll("addin_bundle")) {
+    if (bundleUrl) {
+      await addinsApi.loadBundleZip(bundleUrl);
+    }
+  }
+  const relayUrl = params.get("mcp_relay");
+  if (relayUrl && window.__OBLIKOVATI_MCP__) {
+    await window.__OBLIKOVATI_MCP__.connectRelay(relayUrl);
+  }
+}
+
+function handleAddInChannel(addInId, channel, payload) {
+  if (channel === "webmcp:register") {
+    registerWebMCPBridge(addInId, payload);
+  }
+}
+
+function registerWebMCPBridge(addInId, payload) {
+  const tools = Array.isArray(payload?.tools) ? payload.tools : [];
+  mcpState = { addInId, tools, registeredWebMCP: false };
+
+  const invoke = async (method, body) => {
+    const raw = await window.__OBLIKOVATI_WEB__.addins.callAutomation(addInId, method, body);
+    const text = textDecoder.decode(raw);
+    return text ? JSON.parse(text) : {};
+  };
+
+  window.__OBLIKOVATI_MCP__ = {
+    listTools: () => mcpState.tools.slice(),
+    callTool: (name, args = {}) => invoke("mcp.callTool", { name, arguments: args }),
+    request: (jsonrpc) => invoke("mcp.jsonrpc", jsonrpc),
+    connectRelay: (url) =>
+      window.__OBLIKOVATI_WEB__.addins.sendChannel(addInId, "mcp:relay:connect", { url }),
+    disconnectRelay: () =>
+      window.__OBLIKOVATI_WEB__.addins.sendChannel(addInId, "mcp:relay:disconnect", {}),
+  };
+
+  if (navigator.modelContext && typeof navigator.modelContext.registerTool === "function") {
+    for (const tool of tools) {
+      navigator.modelContext.registerTool({
+        name: tool.name,
+        description: tool.description || "",
+        inputSchema: tool.inputSchema || { type: "object", properties: {} },
+        execute: async (input) => window.__OBLIKOVATI_MCP__.callTool(tool.name, input || {}),
+      });
+    }
+    mcpState.registeredWebMCP = true;
+  }
+}
+
+async function connectSpaceMouseWebHID(addinsApi) {
+  if (!navigator.hid || typeof navigator.hid.requestDevice !== "function") {
+    throw new Error("WebHID is not supported in this browser");
+  }
+  const devices = await navigator.hid.requestDevice({
+    filters: [{ vendorId: 0x046d }, { vendorId: 0x256f }],
+  });
+  if (!devices || devices.length === 0) {
+    return { connected: false };
+  }
+  const device = devices[0];
+  if (!device.opened) {
+    await device.open();
+  }
+  device.addEventListener("inputreport", (event) => {
+    const view = event.data;
+    const report = new Uint8Array(view.byteLength + 1);
+    report[0] = event.reportId & 0xff;
+    report.set(new Uint8Array(view.buffer, view.byteOffset, view.byteLength), 1);
+    addinsApi
+      .sendChannel("com.oblikovati.3d-connexion", "webhid:report", {
+        report: Array.from(report),
+      })
+      .catch(() => {});
+  });
+  return { connected: true, productName: device.productName || "SpaceMouse" };
 }
 
 boot();

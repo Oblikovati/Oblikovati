@@ -175,7 +175,15 @@ pub(crate) fn package(root: &Path, runner: &dyn Runner, version: &str) -> BuildR
         fs::remove_dir_all(&stage)
             .map_err(|error| format!("clear web stage {}: {error}", stage.display()))?;
     }
-    for asset in ["index.html", "styles.css", "main.js", "orchestrator.js"] {
+    for asset in [
+        "index.html",
+        "styles.css",
+        "main.js",
+        "orchestrator.js",
+        "addin-host.js",
+        "addin-worker.js",
+        "wasm_exec.js",
+    ] {
         copy_file(&root.join("web").join(asset), &stage.join(asset))?;
     }
     copy_tree(&root.join("web/pkg"), &stage.join("pkg"))?;
@@ -240,7 +248,15 @@ mod tests {
         );
         tree.put("release.toml", include_str!("../../../release.toml"));
         tree.put("LICENSE", "GPL-2.0-only\n");
-        for asset in ["index.html", "styles.css", "main.js", "orchestrator.js"] {
+        for asset in [
+            "index.html",
+            "styles.css",
+            "main.js",
+            "orchestrator.js",
+            "addin-host.js",
+            "addin-worker.js",
+            "wasm_exec.js",
+        ] {
             tree.put(&format!("web/{asset}"), "content\n");
         }
         tree.put(

@@ -1,8 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0-only
 // Orchestrator Worker: owns the Martensite WASM thread pool, WebGPU OffscreenCanvas,
-// and the full Oblikovati desktop UI (oblikovati-gui + oblikovati-head).
+// the full Oblikovati desktop UI (oblikovati-gui + oblikovati-head), and js-wasm add-ins.
+
+import { WebAddInHost } from "./addin-host.js";
 
 let runtime = null;
+let addInHost = null;
 let timerId = null;
 let rafScheduled = false;
 
@@ -65,9 +68,24 @@ self.onmessage = async (event) => {
         glueUrl,
         Boolean(msg.validation),
       );
+      addInHost = new WebAddInHost({
+        callApi: (method, reqBytes) => {
+          const out = runtime.call_api(method, reqBytes);
+          scheduleWake(runtime.tick());
+          return out;
+        },
+        checkCompatibility: (major, minor) => runtime.check_addin_compatibility(major, minor),
+        onChannel: (addInId, channel, payload) => {
+          self.postMessage({ type: "addinChannel", addInId, channel, payload });
+        },
+        onLog: (addInId, message) => {
+          self.postMessage({ type: "addinLog", addInId, message });
+        },
+      });
       scheduleWake(runtime.tick());
       const status = JSON.parse(runtime.status_json());
-      reply({ ok: true, status });
+      const apiVersion = JSON.parse(runtime.api_version_json());
+      reply({ ok: true, status, apiVersion });
       return;
     }
 
@@ -139,8 +157,41 @@ self.onmessage = async (event) => {
         reply({ ok: true, status, validationErrors });
         break;
       }
+      case "loadAddIn": {
+        const probe = await addInHost.load({
+          url: msg.url,
+          bundleUrl: msg.bundleUrl,
+          wasmBytes: msg.wasmBytes,
+        });
+        reply({ ok: true, probe });
+        break;
+      }
+      case "unloadAddIn": {
+        const removed = await addInHost.unload(msg.addInId);
+        reply({ ok: true, removed });
+        break;
+      }
+      case "listAddIns": {
+        reply({ ok: true, addins: addInHost.list() });
+        break;
+      }
+      case "addinAutomation": {
+        const req = msg.reqBytes ? new Uint8Array(msg.reqBytes) : new Uint8Array(0);
+        const res = await addInHost.callAutomation(msg.addInId, msg.method, req);
+        reply({ ok: true, data: res.data }, [res.data]);
+        break;
+      }
+      case "addinChannel": {
+        await addInHost.sendChannel(msg.addInId, msg.channel, msg.payload);
+        reply({ ok: true });
+        break;
+      }
       case "close": {
         cancelScheduledTick();
+        if (addInHost) {
+          await addInHost.closeAll();
+          addInHost = null;
+        }
         runtime.close();
         runtime = null;
         reply({ ok: true });
