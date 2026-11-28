@@ -13,6 +13,7 @@ mod accessibility;
     test
 ))]
 mod assembly_producer;
+#[cfg(any(target_os = "linux", target_os = "windows", target_arch = "wasm32"))]
 mod clock;
 #[cfg(any(target_os = "linux", target_os = "windows"))]
 #[allow(unsafe_code)]
