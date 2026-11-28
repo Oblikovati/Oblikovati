@@ -19,6 +19,20 @@ macro_rules! datum_work_methods {
         fn datum_planes(&mut self) -> Result<crate::HeadDatumPlaneUpdate, String> {
             Ok(crate::HeadDatumPlaneUpdate::default())
         }
+        /// Dispatch an interactive Work Axis action; example: `work.work_axis_from_gui(action)?`.
+        fn work_axis_from_gui(
+            &mut self,
+            action: oblikovati_gui::GuiWorkAxisAction,
+        ) -> Result<bool, String> {
+            Err(format!("work axis {action:?}: expected a datum owner"))
+        }
+        /// Read visible user work axes for viewport projection; example: `work.work_axis_displays(bounds)`.
+        fn work_axis_displays(
+            &self,
+            _bounds: Option<[[f64; 3]; 2]>,
+        ) -> Vec<crate::HeadWorkAxisSegment> {
+            Vec::new()
+        }
         /// Toggle the display and picking of user work planes for this desktop session.
         fn set_work_plane_overlays(&mut self, _visible: bool) -> bool {
             false
@@ -30,6 +44,18 @@ macro_rules! datum_view_owner_methods {
     () => {
         fn datum_planes(&mut self) -> Result<crate::HeadDatumPlaneUpdate, String> {
             self.datum_planes_for_view()
+        }
+        fn work_axis_from_gui(
+            &mut self,
+            action: oblikovati_gui::GuiWorkAxisAction,
+        ) -> Result<bool, String> {
+            self.work_axis_command(action)
+        }
+        fn work_axis_displays(
+            &self,
+            bounds: Option<[[f64; 3]; 2]>,
+        ) -> Vec<crate::HeadWorkAxisSegment> {
+            self.work_axis_displays_for_view(bounds)
         }
         fn set_work_plane_overlays(&mut self, visible: bool) -> bool {
             let hidden = !visible;

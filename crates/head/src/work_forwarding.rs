@@ -454,6 +454,18 @@ macro_rules! forward_owner_view_work {
         fn datum_planes(&mut self) -> Result<$crate::HeadDatumPlaneUpdate, String> {
             self.$owner.datum_planes()
         }
+        fn work_axis_from_gui(
+            &mut self,
+            action: oblikovati_gui::GuiWorkAxisAction,
+        ) -> Result<bool, String> {
+            self.$owner.work_axis_from_gui(action)
+        }
+        fn work_axis_displays(
+            &self,
+            bounds: Option<[[f64; 3]; 2]>,
+        ) -> Vec<$crate::HeadWorkAxisSegment> {
+            self.$owner.work_axis_displays(bounds)
+        }
         fn set_work_plane_overlays(&mut self, visible: bool) -> bool {
             self.$owner.set_work_plane_overlays(visible)
         }

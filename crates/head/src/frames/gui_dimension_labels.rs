@@ -155,6 +155,7 @@ pub(super) fn project_precise_triad(
     owner: &dyn HeadWork,
     commands: &mut oblikovati_gui::GuiCommandState,
 ) {
+    commands.work_axes = project_work_axes(window, owner);
     let Some(target) = commands.precise_target.as_mut() else {
         return;
     };
@@ -163,6 +164,25 @@ pub(super) fn project_precise_triad(
     };
     target.triad = window.sketch_pixel(plane, at).ok().map(triad_pixels);
     target.origin_triad = window.sketch_pixel(plane, [0., 0.]).ok().map(triad_pixels);
+}
+fn project_work_axes(
+    window: &dyn HeadWindow,
+    owner: &dyn HeadWork,
+) -> Vec<oblikovati_gui::GuiWorkAxisDisplay> {
+    owner
+        .work_axis_displays(window.presentation_bounds())
+        .into_iter()
+        .filter_map(|segment| {
+            let start = window.model_pixel(segment.endpoints[0]).ok()?;
+            let end = window.model_pixel(segment.endpoints[1]).ok()?;
+            Some(oblikovati_gui::GuiWorkAxisDisplay {
+                id: segment.id,
+                name: segment.name,
+                ends: [start, end],
+                selected: segment.selected,
+            })
+        })
+        .collect()
 }
 fn triad_pixels(origin: [i32; 2]) -> [[i32; 2]; 3] {
     [

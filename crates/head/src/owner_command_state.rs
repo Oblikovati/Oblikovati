@@ -335,6 +335,8 @@ impl<
             feature_edges: Vec::new(),
             selected_edge_outlines: Vec::new(),
             origin_axes: Vec::new(),
+            work_axis_prompt: self.gui_work_axis_prompt(document),
+            work_axes: Vec::new(),
             view_axes: None,
             inspected_file: self.inspected_file.clone(),
             model_face_chosen: self.chosen_model_face(document).is_some(),
