@@ -60,9 +60,25 @@ pub(crate) fn origin_row(
     let selected = view.selected_origin_row == Some(row);
     if ui.selectable_config(label).selected(selected).build() {
         choose_origin_row(state, view, row, actions);
-        view.picked_plane_reference =
-            origin_plane_at_row(row).map(|plane| plane.work_reference().to_owned());
-        view.picked_axis_reference = origin_axis_at_row(row);
+        let picked_plane = origin_plane_at_row(row);
+        let picked_axis = origin_axis_at_row(row);
+        view.picked_plane_reference = picked_plane.map(|plane| plane.work_reference().to_owned());
+        view.picked_axis_reference = picked_axis;
+        if state.work_axis_prompt.is_some() {
+            if let Some(plane) = picked_plane {
+                actions.push(GuiShellAction::WorkAxis(
+                    crate::GuiWorkAxisAction::PickOriginPlane(plane),
+                ));
+            } else if let Some(axis) = picked_axis {
+                actions.push(GuiShellAction::WorkAxis(
+                    crate::GuiWorkAxisAction::PickOriginAxis(axis),
+                ));
+            } else {
+                actions.push(GuiShellAction::WorkAxis(
+                    crate::GuiWorkAxisAction::PickOriginPoint,
+                ));
+            }
+        }
     }
     if ui.is_item_hovered() && ui.is_mouse_clicked(MouseButton::Right) {
         choose_origin_row(state, view, row, actions);
@@ -240,6 +256,7 @@ pub(crate) fn follow_view_click(
         || (assembly && context_click && !left_click)
         || (state.authoring != crate::GuiAuthoringContext::Part && !assembly)
     {
+        crate::work_axis_action::cancel_on_escape(ui, state, actions);
         return;
     }
     view.selected_origin_row = None;
@@ -266,6 +283,7 @@ pub(crate) fn draw_selected_origin(
     visible: impl Iterator<Item = usize>,
     view: &BrowserView,
 ) {
+    crate::work_axis_action::draw_work_axes(ui, request);
     for row in visible {
         draw_origin_row(ui, request, row, MUTED_FILL, MUTED_LINE, view);
     }

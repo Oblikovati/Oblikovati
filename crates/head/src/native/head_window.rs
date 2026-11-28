@@ -262,12 +262,13 @@ impl HeadWindow for NativeHeadWindow {
     }
     fn set_datum_planes(&mut self, update: &crate::HeadDatumPlaneUpdate) -> Result<bool, String> {
         let changed = self.view.set_datum_planes(&update.planes)?;
+        let axes_changed = self.view.set_datum_axes(&update.axes)?;
         let declined = self.datum_declines != update.declines;
         if declined {
             self.datum_declines.clone_from(&update.declines);
             self.refresh_title()?;
         }
-        Ok(changed || declined)
+        Ok(changed || axes_changed || declined)
     }
     fn submit_sketch_scene(&mut self, update: crate::HeadSketchSceneUpdate) -> Result<(), String> {
         self.update_sketch_scene(update)

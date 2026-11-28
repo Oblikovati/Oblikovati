@@ -42,6 +42,8 @@ mod solid_thicken_offset;
 mod solid_thread;
 #[path = "../unwrap/steps.rs"]
 mod solid_unwrap;
+#[path = "../work_axis/steps.rs"]
+mod solid_work_axis;
 
 use super::*;
 use cucumber::{given, then, when};

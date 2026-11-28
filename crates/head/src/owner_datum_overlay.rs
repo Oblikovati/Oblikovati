@@ -5,9 +5,9 @@ use oblikovati_model::{
     feature::{FeatureId, work_geometry::WorkGeometryEvaluation},
     history::DocumentSnapshot,
     sketch::SketchPlane,
-    theme::ThemeDefinition,
+    theme::{Rgba, ThemeDefinition},
 };
-use oblikovati_viewport::ViewportDatumPlane;
+use oblikovati_viewport::{ViewportDatumAxis, ViewportDatumPlane};
 
 impl<
     O: TransactionObserver,
@@ -25,6 +25,7 @@ impl<
         let Some(document) = self.active_datum_part()? else {
             return Ok(crate::HeadDatumPlaneUpdate::default());
         };
+        let bounds = self.datum_body_bounds(document);
         let theme = datum_theme(&self.themes, &mut self.datum_fallback_theme)?;
         let session = self
             .files
@@ -32,12 +33,44 @@ impl<
             .session(document)
             .map_err(|error| error.to_string())?;
         let evaluated = self.part_scenes.current(session)?.datum_evaluation();
-        planes_for_snapshot(
+        let mut update = planes_for_snapshot(
             session.snapshot(),
             &evaluated,
             session.selected_browser_feature(),
             theme,
-        )
+        )?;
+        append_axes_for_snapshot(
+            &mut update,
+            session.snapshot(),
+            &evaluated,
+            session.selected_browser_feature(),
+            bounds,
+            theme,
+        )?;
+        Ok(update)
+    }
+
+    fn datum_body_bounds(&self, document: u64) -> Option<[[f64; 3]; 2]> {
+        let workspace = self.files.workspace();
+        let session = workspace.session(document).ok()?;
+        let guid = workspace.identity(document).ok()?.internal_name;
+        let evaluation = self.part_scenes.current(session).ok()?;
+        let mut lo = [f64::INFINITY; 3];
+        let mut hi = [f64::NEG_INFINITY; 3];
+        let mut any = false;
+        for (_, body) in evaluation.ordered_body_outputs() {
+            let Ok(vertices) = body.vertex_positions(session.history(), guid) else {
+                continue;
+            };
+            for point in vertices {
+                any = true;
+                for axis in 0..3 {
+                    lo[axis] = lo[axis].min(point[axis]);
+                    hi[axis] = hi[axis].max(point[axis]);
+                }
+            }
+        }
+        any.then_some([lo, hi])
     }
 
     fn active_datum_part(&self) -> Result<Option<u64>, String> {
@@ -89,6 +122,47 @@ fn planes_for_snapshot(
         }
     }
     Ok(update)
+}
+
+fn append_axes_for_snapshot(
+    update: &mut crate::HeadDatumPlaneUpdate,
+    snapshot: &DocumentSnapshot,
+    evaluated: &WorkGeometryEvaluation,
+    selected: Option<FeatureId>,
+    bounds: Option<[[f64; 3]; 2]>,
+    theme: &ThemeDefinition,
+) -> Result<(), String> {
+    for (id, line) in evaluated.axes() {
+        let feature = snapshot
+            .work_geometry
+            .get(id)
+            .map_err(|error| error.to_string())?;
+        if !feature.is_visible() {
+            continue;
+        }
+        let is_selected = selected == Some(id);
+        let color = if is_selected {
+            theme.color(&oblikovati_api::types::TOKEN_PLANE_SELECTED)
+        } else {
+            Rgba {
+                r: 0.85,
+                g: 0.65,
+                b: 0.25,
+                a: 0.9,
+            }
+        };
+        let axis = ViewportDatumAxis {
+            endpoints: super::owner_blend::owner_work_axis::axis_display_endpoints(line, bounds),
+            color,
+            width: if is_selected { 2.5 } else { 1.5 },
+            selected: is_selected,
+        };
+        match axis.validate() {
+            Ok(()) => update.axes.push(axis),
+            Err(cause) => update.declines.push((id, cause)),
+        }
+    }
+    Ok(())
 }
 
 fn plane_for_feature(

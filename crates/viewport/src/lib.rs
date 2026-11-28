@@ -25,9 +25,11 @@ pub use oblikovati_model::viewport_keyboard_keys;
 mod presentation;
 mod scene_placement;
 pub use presentation::{PartPresentation, PartPresentationDecline};
+mod datum_axis;
 mod datum_plane;
 #[path = "scene/normal.rs"]
 mod render_normal;
+pub use datum_axis::ViewportDatumAxis;
 pub use datum_plane::ViewportDatumPlane;
 mod types;
 pub use types::{

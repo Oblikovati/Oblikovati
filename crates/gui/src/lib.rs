@@ -69,6 +69,7 @@ pub use parameter_snapshot::{
 };
 mod parameters;
 mod ribbon;
+mod ribbon_axis_group;
 mod ribbon_command_layout;
 mod ribbon_fit;
 mod ribbon_key_tips;
@@ -285,7 +286,9 @@ mod marking_menu;
 mod marking_menu_layout;
 mod offset_plane;
 mod part_context_menu;
+mod work_axis_action;
 pub use dimensions::{GuiDimensionAction, GuiDimensionDraft};
+pub use work_axis_action::{GuiWorkAxisAction, GuiWorkAxisDisplay, GuiWorkAxisMode};
 
 mod dimension_labels;
 pub use application::workspace_layout::object_visibility::GuiOverlayCategory;

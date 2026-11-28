@@ -42,7 +42,12 @@ pub(crate) fn status_bar(
         let prompt = if home {
             command_status(request.status.as_deref(), None)
         } else {
-            command_status(tool_prompt.or(request.status.as_deref()), alias)
+            command_status(
+                tool_prompt
+                    .or(request.commands.work_axis_prompt.as_deref())
+                    .or(request.status.as_deref()),
+                alias,
+            )
         };
         let origin = ui.window_pos();
         let y = ((STATUS_BAR_HEIGHT - ui.current_font_size()) * 0.5).floor();

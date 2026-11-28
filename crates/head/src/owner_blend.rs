@@ -53,6 +53,8 @@ pub(super) mod owner_thicken_offset;
 pub(super) mod owner_thread;
 #[path = "owner_unwrap.rs"]
 pub(super) mod owner_unwrap;
+#[path = "owner_work_axis.rs"]
+pub(super) mod owner_work_axis;
 use oblikovati_automation::{PreparedChamfer, PreparedFillet, prepare_chamfer, prepare_fillet};
 
 /// Bundled preview and session state for Part Create feature dialogs on `DesktopOwner`.
@@ -77,6 +79,7 @@ pub(super) struct CreateFeatureState {
     pub(super) fillet_v2: owner_fillet_v2::FilletV2OwnerState,
     pub(super) chamfer_v2: owner_chamfer_v2::ChamferV2OwnerState,
     pub(super) shell_v2: owner_shell_v2::ShellV2OwnerState,
+    pub(super) work_axis: owner_work_axis::WorkAxisOwnerState,
 }
 
 impl<
